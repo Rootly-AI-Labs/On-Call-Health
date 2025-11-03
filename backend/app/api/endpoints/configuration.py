@@ -6,6 +6,7 @@ from typing import Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field, validator
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.attributes import flag_modified
 
 from ...models import get_db, User, Organization
 from ...auth.dependencies import get_current_active_user
@@ -36,13 +37,12 @@ class CBIWeights(BaseModel):
     """Copenhagen Burnout Inventory dimension weights."""
     personal: int = Field(ge=0, le=100, description="Personal burnout weight")
     work: int = Field(ge=0, le=100, description="Work-related burnout weight")
-    accomplishment: int = Field(ge=0, le=100, description="Personal accomplishment weight")
 
-    @validator('accomplishment')
+    @validator('work')
     def validate_sum(cls, v, values):
         """Validate that weights sum to 100%."""
-        if 'personal' in values and 'work' in values:
-            total = values['personal'] + values['work'] + v
+        if 'personal' in values:
+            total = values['personal'] + v
             if total != 100:
                 raise ValueError(f"CBI weights must sum to 100%, got {total}%")
         return v
@@ -79,8 +79,7 @@ class ConfigurationResponse(BaseModel):
 DEFAULT_CONFIG = {
     "cbiWeights": {
         "personal": 50,
-        "work": 30,
-        "accomplishment": 20
+        "work": 50
     },
     "integrationImpacts": {
         "teamHealth": {"rootly": 60, "github": 20, "slack": 20},
@@ -138,6 +137,12 @@ async def get_configuration(
 
         # Ensure all required fields are present
         config = {**DEFAULT_CONFIG, **config}
+
+        # Fix legacy data: if CBI weights don't sum to 100%, reset to defaults
+        cbi_sum = config.get("cbiWeights", {}).get("personal", 0) + config.get("cbiWeights", {}).get("work", 0)
+        if cbi_sum != 100:
+            logger.warning(f"CBI weights sum to {cbi_sum}%, resetting to defaults")
+            config["cbiWeights"] = DEFAULT_CONFIG["cbiWeights"]
 
         logger.info(f"Retrieved configuration for organization {organization.id}")
         return ConfigurationResponse(
@@ -198,8 +203,9 @@ async def update_configuration(
         # Update burnout configuration
         settings["burnout_config"] = config_request.dict()
 
-        # Save to database
+        # Save to database - mark the JSON field as modified so SQLAlchemy detects the change
         organization.settings = settings
+        flag_modified(organization, "settings")
         db.commit()
         db.refresh(organization)
 
@@ -263,7 +269,9 @@ async def reset_configuration(
         settings = organization.settings or {}
         settings["burnout_config"] = DEFAULT_CONFIG
 
+        # Mark the JSON field as modified so SQLAlchemy detects the change
         organization.settings = settings
+        flag_modified(organization, "settings")
         db.commit()
         db.refresh(organization)
 
@@ -390,7 +398,9 @@ async def import_configuration(
         settings = organization.settings or {}
         settings["burnout_config"] = validated_config.dict()
 
+        # Mark the JSON field as modified so SQLAlchemy detects the change
         organization.settings = settings
+        flag_modified(organization, "settings")
         db.commit()
         db.refresh(organization)
 

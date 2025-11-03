@@ -46,8 +46,7 @@ export default function ConfigurationPage() {
   // State for CBI dimension weights
   const [cbiWeights, setCbiWeights] = useState({
     personal: 50,
-    work: 30,
-    accomplishment: 20
+    work: 50
   })
 
   // State for active preset
@@ -72,7 +71,7 @@ export default function ConfigurationPage() {
   })
 
   // Calculate if weights sum to 100%
-  const weightsSum = cbiWeights.personal + cbiWeights.work + cbiWeights.accomplishment
+  const weightsSum = cbiWeights.personal + cbiWeights.work
   const weightsValid = weightsSum === 100
 
   const toggleSection = (section: string) => {
@@ -83,7 +82,7 @@ export default function ConfigurationPage() {
     setActivePreset(presetName)
 
     if (presetName === "default") {
-      setCbiWeights({ personal: 50, work: 30, accomplishment: 20 })
+      setCbiWeights({ personal: 50, work: 50 })
       setIntegrationImpacts({
         teamHealth: { rootly: 60, github: 20, slack: 20 },
         atRisk: { rootly: 90, github: 10, slack: 0 },
@@ -94,7 +93,7 @@ export default function ConfigurationPage() {
         incidentLoad: { rootly: 100, github: 0, slack: 0 }
       })
     } else if (presetName === "incident-focused") {
-      setCbiWeights({ personal: 60, work: 30, accomplishment: 10 })
+      setCbiWeights({ personal: 40, work: 60 })
       setIntegrationImpacts({
         teamHealth: { rootly: 80, github: 10, slack: 10 },
         atRisk: { rootly: 95, github: 5, slack: 0 },
@@ -105,7 +104,7 @@ export default function ConfigurationPage() {
         incidentLoad: { rootly: 100, github: 0, slack: 0 }
       })
     } else if (presetName === "development") {
-      setCbiWeights({ personal: 40, work: 35, accomplishment: 25 })
+      setCbiWeights({ personal: 60, work: 40 })
       setIntegrationImpacts({
         teamHealth: { rootly: 40, github: 45, slack: 15 },
         atRisk: { rootly: 70, github: 25, slack: 5 },
@@ -116,7 +115,7 @@ export default function ConfigurationPage() {
         incidentLoad: { rootly: 80, github: 15, slack: 5 }
       })
     } else if (presetName === "communication") {
-      setCbiWeights({ personal: 40, work: 30, accomplishment: 30 })
+      setCbiWeights({ personal: 55, work: 45 })
       setIntegrationImpacts({
         teamHealth: { rootly: 35, github: 25, slack: 40 },
         atRisk: { rootly: 60, github: 15, slack: 25 },
@@ -641,7 +640,7 @@ export default function ConfigurationPage() {
                     </div>
                     <div className="flex items-center space-x-3">
                       <span className="text-2xl font-bold text-orange-600">{cbiWeights.work}%</span>
-                      {cbiWeights.work === 30 && (
+                      {cbiWeights.work === 50 && (
                         <Badge variant="outline" className="text-xs">Default</Badge>
                       )}
                     </div>
@@ -655,35 +654,6 @@ export default function ConfigurationPage() {
                   />
                   <p className="text-xs text-gray-600">
                     Work-specific exhaustion, cynicism, and frustration with job demands
-                  </p>
-                </div>
-
-                <Separator />
-
-                {/* Personal Accomplishment */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                      <span className="font-semibold text-gray-900">Personal Accomplishment</span>
-                      <Info className="w-4 h-4 text-gray-400 cursor-help" />
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <span className="text-2xl font-bold text-green-600">{cbiWeights.accomplishment}%</span>
-                      {cbiWeights.accomplishment === 20 && (
-                        <Badge variant="outline" className="text-xs">Default</Badge>
-                      )}
-                    </div>
-                  </div>
-                  <Slider
-                    value={[cbiWeights.accomplishment]}
-                    onValueChange={(value) => setCbiWeights({ ...cbiWeights, accomplishment: value[0] })}
-                    max={100}
-                    step={5}
-                    className="w-full"
-                  />
-                  <p className="text-xs text-gray-600">
-                    Sense of achievement, effectiveness, and personal growth (inverse scoring)
                   </p>
                 </div>
 
@@ -726,7 +696,7 @@ export default function ConfigurationPage() {
                       Detailed weights for personal burnout dimension components
                     </CardDescription>
                   </div>
-                  <Badge>50% of CBI Score</Badge>
+                  <Badge>{cbiWeights.personal}% of CBI Score</Badge>
                 </div>
               </CardHeader>
               {expandedSections.personalBurnout && (
@@ -813,7 +783,7 @@ export default function ConfigurationPage() {
                       Detailed weights for work-related burnout dimension components
                     </CardDescription>
                   </div>
-                  <Badge>30% of CBI Score</Badge>
+                  <Badge>{cbiWeights.work}% of CBI Score</Badge>
                 </div>
               </CardHeader>
               {expandedSections.workBurnout && (
@@ -1209,18 +1179,14 @@ export default function ConfigurationPage() {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <div className="text-sm font-medium text-gray-700">CBI Dimensions</div>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 gap-2">
                       <div className="bg-blue-50 rounded p-2 text-center">
                         <div className="text-lg font-bold text-blue-600">50%</div>
                         <div className="text-xs text-blue-600">Personal</div>
                       </div>
                       <div className="bg-orange-50 rounded p-2 text-center">
-                        <div className="text-lg font-bold text-orange-600">30%</div>
-                        <div className="text-xs text-orange-600">Work</div>
-                      </div>
-                      <div className="bg-green-50 rounded p-2 text-center">
-                        <div className="text-lg font-bold text-green-600">20%</div>
-                        <div className="text-xs text-green-600">Accomplishment</div>
+                        <div className="text-lg font-bold text-orange-600">50%</div>
+                        <div className="text-xs text-orange-600">Work-Related</div>
                       </div>
                     </div>
                   </div>
@@ -1270,18 +1236,14 @@ export default function ConfigurationPage() {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <div className="text-sm font-medium text-gray-700">CBI Dimensions</div>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 gap-2">
                       <div className="bg-blue-50 rounded p-2 text-center">
-                        <div className="text-lg font-bold text-blue-600">60%</div>
+                        <div className="text-lg font-bold text-blue-600">40%</div>
                         <div className="text-xs text-blue-600">Personal</div>
                       </div>
                       <div className="bg-orange-50 rounded p-2 text-center">
-                        <div className="text-lg font-bold text-orange-600">30%</div>
-                        <div className="text-xs text-orange-600">Work</div>
-                      </div>
-                      <div className="bg-green-50 rounded p-2 text-center">
-                        <div className="text-lg font-bold text-green-600">10%</div>
-                        <div className="text-xs text-green-600">Accomplishment</div>
+                        <div className="text-lg font-bold text-orange-600">60%</div>
+                        <div className="text-xs text-orange-600">Work-Related</div>
                       </div>
                     </div>
                   </div>
@@ -1331,18 +1293,14 @@ export default function ConfigurationPage() {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <div className="text-sm font-medium text-gray-700">CBI Dimensions</div>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 gap-2">
                       <div className="bg-blue-50 rounded p-2 text-center">
-                        <div className="text-lg font-bold text-blue-600">40%</div>
+                        <div className="text-lg font-bold text-blue-600">60%</div>
                         <div className="text-xs text-blue-600">Personal</div>
                       </div>
                       <div className="bg-orange-50 rounded p-2 text-center">
-                        <div className="text-lg font-bold text-orange-600">35%</div>
-                        <div className="text-xs text-orange-600">Work</div>
-                      </div>
-                      <div className="bg-green-50 rounded p-2 text-center">
-                        <div className="text-lg font-bold text-green-600">25%</div>
-                        <div className="text-xs text-green-600">Accomplishment</div>
+                        <div className="text-lg font-bold text-orange-600">40%</div>
+                        <div className="text-xs text-orange-600">Work-Related</div>
                       </div>
                     </div>
                   </div>
@@ -1392,18 +1350,14 @@ export default function ConfigurationPage() {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <div className="text-sm font-medium text-gray-700">CBI Dimensions</div>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 gap-2">
                       <div className="bg-blue-50 rounded p-2 text-center">
-                        <div className="text-lg font-bold text-blue-600">40%</div>
+                        <div className="text-lg font-bold text-blue-600">55%</div>
                         <div className="text-xs text-blue-600">Personal</div>
                       </div>
                       <div className="bg-orange-50 rounded p-2 text-center">
-                        <div className="text-lg font-bold text-orange-600">30%</div>
-                        <div className="text-xs text-orange-600">Work</div>
-                      </div>
-                      <div className="bg-green-50 rounded p-2 text-center">
-                        <div className="text-lg font-bold text-green-600">30%</div>
-                        <div className="text-xs text-green-600">Accomplishment</div>
+                        <div className="text-lg font-bold text-orange-600">45%</div>
+                        <div className="text-xs text-orange-600">Work-Related</div>
                       </div>
                     </div>
                   </div>
@@ -1610,15 +1564,14 @@ export default function ConfigurationPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Copenhagen Burnout Inventory (CBI) Composite Score</CardTitle>
-                <CardDescription>Final burnout score calculation from three dimensions</CardDescription>
+                <CardDescription>Final burnout score calculation from two dimensions</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="bg-gray-50 rounded-lg p-4 font-mono text-sm">
                   <div className="mb-2 text-gray-700">composite_cbi_score =</div>
                   <div className="pl-4 space-y-1">
-                    <div>(personal_burnout × 0.50) +</div>
-                    <div>(work_related_burnout × 0.30) +</div>
-                    <div>(personal_accomplishment × 0.20)</div>
+                    <div>(personal_burnout × {(cbiWeights.personal / 100).toFixed(2)}) +</div>
+                    <div>(work_related_burnout × {(cbiWeights.work / 100).toFixed(2)})</div>
                   </div>
                 </div>
 
