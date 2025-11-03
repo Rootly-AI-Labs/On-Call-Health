@@ -379,10 +379,11 @@ async def list_analyses(
     limit: int = Query(20, gt=0, le=100, description="Results per page"),
     offset: int = Query(0, ge=0, description="Results offset"),
     status: Optional[str] = Query(None, regex="^(pending|running|completed|failed)$", description="Filter by status"),
+    summary: bool = Query(False, description="Return condensed summaries for faster loading"),
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    """List all previous analyses for the current user."""
+    """List all previous analyses for the current user. Use summary=true for dashboard list view."""
     # Simplified: Filter by user_id only (no organization_id requirement)
     # TODO: Re-enable organization_id filtering after multi-tenant migration is stable
     query = db.query(Analysis).filter(Analysis.user_id == current_user.id)
@@ -416,28 +417,31 @@ async def list_analyses(
     # Apply pagination and ordering
     analyses = query.order_by(Analysis.created_at.desc()).offset(offset).limit(limit).all()
     
-    # Convert to response format
+    # Convert to response format (summary or full)
     response_analyses = []
     for analysis in analyses:
-        response_analyses.append(
-            AnalysisResponse(
-                id=analysis.id,
-                uuid=getattr(analysis, 'uuid', None),
-                integration_id=analysis.rootly_integration_id,
-                
-                # Include new integration fields
-                integration_name=analysis.integration_name,
-                platform=analysis.platform,
-                
-                status=analysis.status,
-                created_at=analysis.created_at,
-                completed_at=analysis.completed_at,
-                time_range=analysis.time_range or 30,
-                analysis_data=analysis.results,
-                config=analysis.config
+        if summary:
+            response_analyses.append(extract_summary_from_analysis(analysis))
+        else:
+            response_analyses.append(
+                AnalysisResponse(
+                    id=analysis.id,
+                    uuid=getattr(analysis, 'uuid', None),
+                    integration_id=analysis.rootly_integration_id,
+
+                    # Include new integration fields
+                    integration_name=analysis.integration_name,
+                    platform=analysis.platform,
+
+                    status=analysis.status,
+                    created_at=analysis.created_at,
+                    completed_at=analysis.completed_at,
+                    time_range=analysis.time_range or 30,
+                    analysis_data=analysis.results,
+                    config=analysis.config
+                )
             )
-        )
-    
+
     return AnalysisListResponse(
         analyses=response_analyses,
         total=total
