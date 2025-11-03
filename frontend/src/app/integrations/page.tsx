@@ -3444,7 +3444,12 @@ export default function IntegrationsPage() {
 
           <div className="mt-6 space-y-4">
             {/* Show synced users only */}
-            {syncedUsers.length > 0 ? (
+            {loadingSyncedUsers ? (
+              <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+                <p className="text-sm text-gray-600">Loading team members...</p>
+              </div>
+            ) : syncedUsers.length > 0 ? (
               <div>
                 <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                   <div className="flex items-center justify-between">
@@ -3510,12 +3515,7 @@ export default function IntegrationsPage() {
                   </Button>
                 </div>
                 <div className="space-y-2 pb-20">
-                  {loadingSyncedUsers ? (
-                    <div className="flex flex-col items-center justify-center py-12 space-y-4">
-                      <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
-                      <p className="text-sm text-gray-600">Loading team members...</p>
-                    </div>
-                  ) : syncedUsers.map((user: any) => {
+                  {syncedUsers.map((user: any) => {
                     const isSelected = selectedRecipients.has(user.id)
                     return (
                       <div
