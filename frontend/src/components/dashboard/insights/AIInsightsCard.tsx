@@ -42,10 +42,13 @@ export function AIInsightsCard({ currentAnalysis }: AIInsightsCardProps) {
                   className="leading-relaxed text-gray-800"
                   dangerouslySetInnerHTML={{
                     __html: aiInsights.llm_team_analysis
+                      .replace(/^### (.*?)$/gm, '<h3 class="text-lg font-semibold mt-6 mb-3">$1</h3>')
+                      .replace(/^## (.*?)$/gm, '<h2 class="text-xl font-bold mt-6 mb-4">$1</h2>')
+                      .replace(/^# (.*?)$/gm, '<h1 class="text-2xl font-bold mt-6 mb-4">$1</h1>')
                       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                       .replace(/\n\n/g, '</p><p class="mt-4">')
-                      .replace(/^/, '<p>')
-                      .replace(/$/, '</p>')
+                      .replace(/^(?!<h[123]|<p)/, '<p>')
+                      .replace(/(?<!>)$/, '</p>')
                   }}
                 />
               </div>
