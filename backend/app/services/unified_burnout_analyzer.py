@@ -3137,10 +3137,17 @@ class UnifiedBurnoutAnalyzer:
                 if not isinstance(original_members, list):
                     original_members = []
                     logger.warning("original_members is not a list, using empty list")
+
+                # DEBUG: Log member extraction
+                logger.info(f"🔍 AI ENHANCEMENT DEBUG: analysis_result keys: {list(analysis_result.keys()) if analysis_result else 'None'}")
+                logger.info(f"🔍 AI ENHANCEMENT DEBUG: team_analysis keys: {list(team_analysis.keys()) if team_analysis else 'None'}")
+                logger.info(f"🔍 AI ENHANCEMENT DEBUG: original_members count: {len(original_members)}")
+                if len(original_members) > 0:
+                    logger.info(f"🔍 AI ENHANCEMENT DEBUG: First member keys: {list(original_members[0].keys())}")
             except Exception as e:
                 logger.warning(f"Error extracting original_members: {e}")
                 original_members = []
-            
+
             for member in original_members:
                 # Prepare member data for AI analysis
                 member_data = {
