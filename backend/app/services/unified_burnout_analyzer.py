@@ -190,7 +190,9 @@ class UnifiedBurnoutAnalyzer:
         print(f"🚨 RAILWAY DEBUG: Analysis starting at {analysis_start_time}")
         print(f"🚨 RAILWAY DEBUG: Platform = {self.platform}")
         print(f"🚨 RAILWAY DEBUG: NEW SCORING ALGORITHM ACTIVE")
+        print(f"🚨 RAILWAY DEBUG: Features enabled = {self.features}")
         logger.error(f"🚨 RAILWAY FORCE LOG: NEW SCORING ALGORITHM DEPLOYED - {analysis_start_time}")
+        logger.error(f"🚨 RAILWAY FORCE LOG: Features = {self.features}")
 
         try:
             # Fetch data from Rootly/PagerDuty OR load mock data
