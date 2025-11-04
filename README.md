@@ -1,51 +1,29 @@
-# Rootly Burnout Detector
 
-A web application for detecting burnout risk in incident responder teams, using Rootly or PagerDuty incident data, GitHub activity, and Slack communication patterns.
+# On-call Burnout Detector
 
-We also offer a free hosted version at [www.oncallburnout.com](https://www.oncallburnout.com/)
+An application that detects signs of overwork in incident responders by analyzing operational, behavioral signals, and self-reported data. It integrates with Rootly, PagerDuty, GitHub, and Slack to compute a per-responder risk score highlighting potential burnout trends.
 
-The interface helps engineering managers spot team members who may be overworked or burned out. Our methodology is leveraging the [Copenhagen Burnout Inventory](https://nfa.dk/media/hl5nbers/cbi-first-edition.pdf) (CBI), which was developed by a team of Danish researchers. 
+There are two ways to run the On-call Burnout Detector:
+* By self-hosting the app using our [quick start](#-quick-start) guide
+* By using a hosted version [www.oncallburnout.com](https://www.oncallburnout.com/)
 
-![Rootly AI Labs burnout detector screenshot](assets/rootly-burnout-detector.png)
+The On-call Burnout Detector measures and tracks signals over time that may indicate someone is at risk; it isn’t a medical tool and doesn’t diagnose burnout.
+
+![Rootly AI Labs On-call Burnout Detector screenshot](assets/rootly-burnout-detector.png)
 
 ## ✨ Features
 
-- **🔐 Social Authentication**: Login with Google or GitHub
-- **📊 Interactive Dashboard**: Visual burnout risk analysis
-- **👥 Team Management**: Individual and team-level insights
+- **👥 Multi Layer Signals**: Individual and team-level insights
+- **📊 Interactive Dashboard**: Visual  and AI-powered burnout risk analysis
 - **📈 Real-time Analysis**: Progress tracking during data processing
-- **🔄 Analysis History**: Access previous assessments
-- **📱 Responsive Design**: Works on desktop and mobile
-
-## 🏗️ Architecture
-
-### Tech Stack
-- **Frontend**: React.js + TypeScript (Vercel)
-- **Backend**: FastAPI + Python (Railway)
-- **Database**: PostgreSQL (Railway)
-- **Authentication**: OAuth (Google/GitHub) + JWT
-
-### Project Structure
-```
-rootly-burnout-detector-web/
-├── backend/                 # FastAPI application
-│   ├── app/
-│   │   ├── main.py         # FastAPI entry point
-│   │   ├── core/           # Business logic & config
-│   │   ├── models/         # Database models
-│   │   ├── auth/           # Authentication
-│   │   └── api/            # API endpoints
-│   └── requirements.txt
-├── frontend/               # Next.js application  
-└── README.md
-```
+- **🔄 Tailor to Your organization**: Ability to customize tool integration and signal weights
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 - Python 3.11+
 - Node.js 18+ (for frontend)
-- Rootly API token
+- Rootly or PagerDuty API token
 
 ### Backend Setup
 ```bash
@@ -93,52 +71,24 @@ ROOTLY_API_BASE_URL=https://api.rootly.com
 FRONTEND_URL=http://localhost:3000
 ```
 
-## 🧪 Testing
+Once running, visit `http://localhost:8000/docs` for interactive API documentation.
 
-```bash
-cd backend
-python -m pytest
-```
+## 📊 Signals Analysis
 
-## 📊 Burnout Analysis
+The On-call Burnout Detector takes inspiration from the [Copenhagen Burnout Inventory](https://nfa.dk/media/hl5nbers/cbi-first-edition.pdf) (CBI), a scientifically validated approach to measuring burnout risk in professional settings. The Burnout Detector isn’t a medical tool and doesn’t provide a diagnosis; it is designed to help identify patterns and trends that may suggest overwork.
 
-The Burnout Detector takes inspiration from the **Copenhagen Burnout Inventory (CBI)** methodology - a scientifically validated approach to measuring burnout risk in professional settings. The Burnout Detector isn’t a medical tool and doesn’t provide a diagnosis; it is designed to help identify patterns and trends that may suggest overwork.
+### Methodology
+Our implementation uses the two core CBI dimensions:
 
-### CBI Methodology
-Our implementation uses the two core CBI dimensions specifically validated for software engineering teams:
-
-1. **Personal Burnout** (50% weight)
+1. **Personal Burnout**
    - Physical and psychological fatigue from workload
    - Work-life boundary violations (after-hours/weekend work)
    - Temporal stress patterns and recovery time deficits
 
-2. **Work-Related Burnout** (50% weight)
+2. **Work-Related Burnout** 
    - Fatigue specifically tied to work processes
    - Response time pressure and incident load
    - Team collaboration stress and communication quality
-
-### Scoring System
-- **0-24**: Low risk (sustainable workload)
-- **25-49**: Moderate risk (monitor closely)
-- **50-74**: High risk (intervention recommended)
-- **75-100**: Critical risk (immediate action required)
-
-### Enhanced Analysis (Optional)
-- **GitHub Integration**: Development patterns and code review stress
-- **Slack Integration**: Communication sentiment and after-hours activity
-- **PagerDuty Integration**: Multi-platform incident correlation
-
-## 🚢 Deployment
-
-### Railway (Backend)
-1. Connect GitHub repository
-2. Set environment variables
-3. Deploy automatically
-
-### Vercel (Frontend)
-1. Connect GitHub repository
-2. Configure build settings
-3. Deploy automatically
 
 ## 🔐 Security
 
@@ -148,27 +98,16 @@ Our implementation uses the two core CBI dimensions specifically validated for s
 - HTTPS enforcement
 - Input validation and sanitization
 
-## 📝 API Documentation
+## Integrations ⚒️
+* [Rootly](https://rootly.com/): For incident management and on-call data
+* [PagerDuty](https://www.pagerduty.com/): For incident management and on-call data
+* [GitHub](https://github.com/): For commit activity
+* [Slack](http://slack.com/): For communication patterns and collect self-reported data
 
-Once running, visit `http://localhost:8000/docs` for interactive API documentation.
+If you are interested in integrating with the On-call Burnout Detector, [get in touch](mailto:sylvain@rootly.com)!
 
-## 🤝 Contributing
+## 🔗 About the Rootly AI Labs
+Built with ❤️ by the [Rootly AI Labs](https://rootly.com/ai-labs) for engineering teams everywhere. The Rootly AI Labs is a fellow-led community designed to redefine reliability engineering. We develop innovative prototypes, create open-source tools, and produce research that's shared to advance the standards of operational excellence. Thank you Anthropic, Google Cloud and Google Deepmind for supporting us.
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
+This project is licensed under the Apache License 2.0.
 
-## 📄 License
-
-This project is licensed under the MIT License.
-
-## 🔗 Related Projects
-
-- [Rootly CLI Burnout Detector](https://github.com/your-org/rootly-burnout-detector) - Command-line version
-- [Rootly MCP Server](https://github.com/Rootly-AI-Labs/Rootly-MCP-server) - Model Context Protocol integration
-
----
-
-Built with ❤️ by the [Rootly AI Labs](https://rootly.com/ai-labs) for engineering teams everywhere.
