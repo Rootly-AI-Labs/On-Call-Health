@@ -2443,7 +2443,12 @@ async def run_analysis_task(
     from datetime import datetime
     import logging
     import os
-    
+    import sys
+
+    # Force output to stderr to ensure we see it
+    sys.stderr.write(f"\n🔥🔥🔥 BACKGROUND TASK STARTED: Analysis {analysis_id} 🔥🔥🔥\n")
+    sys.stderr.flush()
+
     logger = logging.getLogger(__name__)
     logger.info(f"BACKGROUND_TASK: Starting analysis {analysis_id} with timeout mechanism")
     logger.info(f"BACKGROUND_TASK: GitHub/Slack params - include_github: {include_github}, include_slack: {include_slack}")
@@ -2596,28 +2601,35 @@ async def run_analysis_task(
             # Ensure analyzer_service is properly initialized
             if not analyzer_service:
                 raise Exception("Analyzer service is None - initialization failed")
-            
+
             # Log analyzer type for debugging
             logger.info(f"BACKGROUND_TASK: Using analyzer type: {type(analyzer_service).__name__}")
-            
+
             # Call UnifiedBurnoutAnalyzer
             logger.info(f"BACKGROUND_TASK: Calling UnifiedBurnoutAnalyzer.analyze_burnout()")
             logger.info(f"BACKGROUND_TASK: Analysis parameters - time_range_days={time_range}, include_weekends={include_weekends}, user_id={user_id}, analysis_id={analysis_id}")
-            
-            # Add progress tracking
-            logger.info(f"BACKGROUND_TASK: Starting analysis execution at {datetime.now()}")
-            
-            results = await asyncio.wait_for(
-                analyzer_service.analyze_burnout(
-                    time_range_days=time_range,
-                    include_weekends=include_weekends,
-                    user_id=user_id,
-                    analysis_id=analysis_id
-                ),
-                timeout=480.0  # 8 minutes - aggressive timeout to fail faster
-            )
-            
-            logger.info(f"BACKGROUND_TASK: Analysis execution completed at {datetime.now()}")
+
+            logger.info(f"⏳ Analysis {analysis_id}: Starting analyze_burnout()")
+            try:
+                results = await asyncio.wait_for(
+                    analyzer_service.analyze_burnout(
+                        time_range_days=time_range,
+                        include_weekends=include_weekends,
+                        user_id=user_id,
+                        analysis_id=analysis_id
+                    ),
+                    timeout=900.0  # 15 minutes timeout
+                )
+                logger.info(f"✅ Analysis {analysis_id}: analyze_burnout() completed")
+            except Exception as analyze_error:
+                logger.error(f"❌ Analysis {analysis_id} failed: {str(analyze_error)}")
+                raise
+
+            # Check if analysis was deleted during execution
+            analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
+            if not analysis:
+                logger.info(f"BACKGROUND_TASK: Analysis {analysis_id} was deleted during execution, stopping")
+                return
             
             # Validate results
             if not results:
@@ -2649,15 +2661,17 @@ async def run_analysis_task(
                 logger.warning(f"A/B testing monitoring failed: {monitoring_error}")
             
             # Update analysis with results
+            logger.info(f"💾 Analysis {analysis_id}: Saving results to database")
             analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
             if analysis:
                 analysis.status = "completed"
                 analysis.results = results
                 analysis.completed_at = datetime.now()
+                logger.info(f"💾 Analysis {analysis_id}: Committing to database")
                 db.commit()
-                logger.info(f"BACKGROUND_TASK: Successfully saved results for analysis {analysis_id}")
+                logger.info(f"✅ Analysis {analysis_id}: Successfully saved and committed")
             else:
-                logger.error(f"BACKGROUND_TASK: Analysis {analysis_id} not found when trying to save results")
+                logger.error(f"❌ Analysis {analysis_id}: Not found when trying to save results")
                 
         except asyncio.TimeoutError:
             # Handle timeout
@@ -2665,20 +2679,27 @@ async def run_analysis_task(
             logger.error(f"BACKGROUND_TASK: Timeout occurred at {datetime.now()}")
             logger.error(f"BACKGROUND_TASK: Analysis was stuck - likely during incident data collection phase (causing 85% progress hang)")
             logger.error(f"BACKGROUND_TASK: This typically happens when Rootly API pagination takes too long")
-            
+
             analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
-            if analysis:
-                analysis.status = "failed"
-                analysis.error_message = "Analysis timed out after 8 minutes - likely stuck during incident data collection (85% progress hang). Try with a shorter time range or check Rootly API connectivity."
-                analysis.completed_at = datetime.now()
-                db.commit()
-                logger.info(f"BACKGROUND_TASK: Updated analysis {analysis_id} status to failed due to timeout")
+            if not analysis:
+                logger.info(f"BACKGROUND_TASK: Analysis {analysis_id} was deleted, not updating status")
+                return
+
+            analysis.status = "failed"
+            analysis.error_message = "Analysis timed out after 8 minutes - likely stuck during incident data collection (85% progress hang). Try with a shorter time range or check Rootly API connectivity."
+            analysis.completed_at = datetime.now()
+            db.commit()
+            logger.info(f"BACKGROUND_TASK: Updated analysis {analysis_id} status to failed due to timeout")
                 
         except Exception as analysis_error:
             # Handle analysis-specific errors
             logger.error(f"BACKGROUND_TASK: Analysis {analysis_id} failed: {analysis_error}")
-            
+
             analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
+            if not analysis:
+                logger.info(f"BACKGROUND_TASK: Analysis {analysis_id} was deleted, not updating status")
+                return
+
             if analysis:
                 # Check if this is a permission error - if so, fail immediately
                 error_message = str(analysis_error)

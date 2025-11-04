@@ -1,7 +1,7 @@
 import Image from "next/image"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Key, Calendar, Building, Clock, Users, TestTube, Trash2, Loader2, CheckCircle } from "lucide-react"
+import { Key, Calendar, Building, Clock, Users, TestTube, Trash2, Loader2, CheckCircle, Zap } from "lucide-react"
 import { GitHubIntegration } from "../types"
 
 interface GitHubConnectedCardProps {
@@ -71,8 +71,9 @@ export function GitHubConnectedCard({
                 size="sm"
                 variant="outline"
                 onClick={onTest}
+                className="bg-white text-purple-700 border-purple-200 hover:bg-purple-50 hover:text-purple-800 hover:border-purple-300"
               >
-                <TestTube className="w-4 h-4 mr-1" />
+                <Zap className="w-4 h-4 mr-2" />
                 Test Connection
               </Button>
             ) : (

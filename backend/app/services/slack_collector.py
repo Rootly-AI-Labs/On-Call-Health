@@ -29,43 +29,10 @@ class SlackCollector:
         # Initialize VADER sentiment analyzer
         self.sentiment_analyzer = SentimentIntensityAnalyzer()
         
-        # Manual name mappings (based on user names from Rootly)
-        # For demo purposes, map all names to themselves for bot message matching
-        self.name_to_slack_mappings = {
-            "Spencer Cheng": "Spencer Cheng",  # Name-based matching
-            "Jasmeet Singh": "Jasmeet Singh",  # Name-based matching
-            "Sylvain Kalache": "Sylvain Kalache",  # Name-based matching
-            "Christo Mitov": "Christo Mitov",  # Name-based matching
-            "Ibrahim Elchami": "Ibrahim Elchami",  # Name-based matching
-            "Weihan Li": "Weihan Li",  # Name-based matching
-            "Alex Mingoia": "Alex Mingoia",  # Name-based matching
-            "Quentin Rousseau": "Quentin Rousseau",  # Name-based matching
-            # Add more mappings as needed based on actual Slack users
-        }
-        
-        # Keep email mappings as fallback for backward compatibility
-        self.email_to_slack_mappings = {
-            "spencer.cheng@rootly.com": "U093A3G69GC",
-            "jasmeet.singh@rootly.com": "U002JASMEET", 
-            "sylvain@rootly.com": "U003SYLVAIN",
-            "christo.mitov@rootly.com": "U004CHRISTO",
-            "ibrahim@rootly.com": "U005IBRAHIM",
-            "weihan@rootly.com": "U006WEIHAN",
-            "alex.mingoia@rootly.com": "U007ALEX",
-            "quentin@rootly.com": "U008QUENTIN",
-            "gideon@rootly.com": "U009GIDEON",
-            "dan@rootly.com": "U010DAN",
-            "nicholas@rootly.com": "U0929P29NQ1",
-            "kumbi@rootly.com": "U011KUMBI",
-            "andre@rootly.com": "U012ANDRE",
-            "jj@rootly.com": "U013JJ",
-            "jp@rootly.com": "U014JP",
-            "ryan@rootly.com": "U015RYAN",
-            "john@rootly.com": "U016JOHN",
-            "nicole@rootly.com": "U017NICOLE",
-            "shadab@rootly.com": "U018SHADAB",
-            "dinesh.panda@bigbinary.com": "U019DINESH"
-        }
+        # REMOVED: Hardcoded mappings - now use UserCorrelation table from "Sync Members" feature
+        # All Slack user correlation is now done via UserCorrelation.slack_user_id
+        self.name_to_slack_mappings = {}  # Deprecated - kept for backward compatibility only
+        self.email_to_slack_mappings = {}  # Deprecated - kept for backward compatibility only
         
     def _extract_name_from_slack_message(self, message_text: str) -> Optional[str]:
         """
@@ -134,44 +101,56 @@ class SlackCollector:
             return self.name_to_slack_mappings.get(name)
         return None
         
-    async def _correlate_user_to_slack(self, user_identifier: str, token: str = None, is_name: bool = False) -> Optional[str]:
+    async def _correlate_user_to_slack(self, user_identifier: str, token: str = None, is_name: bool = False, user_id: Optional[int] = None) -> Optional[str]:
         """
         Correlate a user identifier (email or name) to a Slack user ID.
-        For names, we use the name directly for matching bot messages.
-        
+
+        Strategy:
+        1. Query UserCorrelation table for synced Slack IDs (from "Sync Members" feature)
+
+        IMPORTANT: No fallback matching during analysis!
+        All Slack user correlations should be done via "Sync Members" on integrations page.
+        This keeps analysis fast and predictable.
+
         Args:
             user_identifier: Email or name to correlate
-            token: Slack API token
+            token: Slack API token (not used during analysis)
             is_name: True if user_identifier is a name, False if email
+            user_id: User ID for querying UserCorrelation table
         """
-        logger.info(f"Slack correlation attempt for {user_identifier} (is_name: {is_name}), token={'present' if token else 'missing'}")
-        
-        # For names, just return the name as the "user ID" for bot message matching
-        if is_name:
-            logger.info(f"Using name-based matching for {user_identifier}")
-            return user_identifier  # Return the name itself as the "user ID"
-        else:
-            # For emails, check mappings and API discovery
-            logger.info(f"Checking email mappings for {user_identifier}")
-            slack_user_id = self.email_to_slack_mappings.get(user_identifier)
-            if slack_user_id:
-                logger.info(f"Found Slack correlation via email mapping: {user_identifier} -> {slack_user_id}")
-                return slack_user_id
-            else:
-                logger.warning(f"No email mapping found for {user_identifier}")
-            
-            # If we have a token, try API-based discovery
-            if token:
-                try:
-                    logger.info(f"Attempting API-based discovery for {user_identifier}")
-                    slack_user_id = await self._discover_slack_user_by_email(user_identifier, token)
-                    if slack_user_id:
-                        logger.info(f"Found Slack correlation via API: {user_identifier} -> {slack_user_id}")
-                        return slack_user_id
-                except Exception as e:
-                    logger.error(f"Error discovering Slack user for {user_identifier}: {e}")
-        
-        logger.warning(f"No Slack correlation found for {user_identifier}")
+        # Check UserCorrelation table for synced Slack IDs
+        # Query by name/email WITHOUT user_id filter for cross-user lookups
+        try:
+            from ..models import SessionLocal, UserCorrelation
+            db = SessionLocal()
+            try:
+                # Query by name or email depending on is_name flag
+                # Don't filter by user_id - allow lookups across the organization
+                if is_name:
+                    correlation = db.query(UserCorrelation).filter(
+                        UserCorrelation.name == user_identifier,
+                        UserCorrelation.slack_user_id.isnot(None)
+                    ).first()
+                else:
+                    correlation = db.query(UserCorrelation).filter(
+                        UserCorrelation.email == user_identifier,
+                        UserCorrelation.slack_user_id.isnot(None)
+                    ).first()
+
+                if correlation and correlation.slack_user_id:
+                    logger.info(f"✅ Found synced Slack member: {user_identifier} -> {correlation.slack_user_id}")
+                    return correlation.slack_user_id
+                else:
+                    return None
+            finally:
+                db.close()
+        except Exception as e:
+            logger.warning(f"Error querying UserCorrelation for Slack ID: {e}")
+
+        # IMPORTANT: No fallback matching during analysis!
+        # All Slack username correlations should be done via "Sync Members" on integrations page.
+        # This keeps analysis fast and predictable.
+        logger.info(f"⚠️ No synced Slack user found for {user_identifier}. Use 'Sync Members' to add Slack users.")
         return None
 
     async def _correlate_email_to_slack(self, email: str, token: str = None) -> Optional[str]:
@@ -851,22 +830,23 @@ class SlackCollector:
             # Fall back to mock data
             return self._generate_mock_slack_data(user_id, email, start_date, end_date)
         
-    async def collect_slack_data_for_user(self, user_identifier: str, days: int = 30, slack_token: str = None, mock_mode: bool = False, is_name: bool = False) -> Optional[Dict]:
+    async def collect_slack_data_for_user(self, user_identifier: str, days: int = 30, slack_token: str = None, mock_mode: bool = False, is_name: bool = False, user_id: Optional[int] = None) -> Optional[Dict]:
         """
         Collect Slack activity data for a single user using email or name correlation.
-        
+
         Args:
             user_identifier: User's email or name to correlate with Slack
             days: Number of days to analyze
             slack_token: Slack API token for authentication
             mock_mode: Whether to use mock data (like original detector)
             is_name: True if user_identifier is a name, False if email
-            
+            user_id: User ID for querying UserCorrelation table
+
         Returns:
             Slack activity data or None if no correlation found
         """
-        # Use correlation to find Slack user ID
-        slack_user_id = await self._correlate_user_to_slack(user_identifier, slack_token, is_name)
+        # Use correlation to find Slack user ID (now queries UserCorrelation first)
+        slack_user_id = await self._correlate_user_to_slack(user_identifier, slack_token, is_name, user_id)
         
         if not slack_user_id:
             logger.warning(f"No Slack user ID found for {'name' if is_name else 'email'} {user_identifier}")
@@ -974,61 +954,62 @@ class SlackCollector:
         )
 
 
-async def collect_team_slack_data(team_identifiers: List[str], days: int = 30, slack_token: str = None, mock_mode: bool = False, use_names: bool = False) -> Dict[str, Dict]:
+async def collect_team_slack_data(team_identifiers: List[str], days: int = 30, slack_token: str = None, mock_mode: bool = False, use_names: bool = False, user_id: Optional[int] = None) -> Dict[str, Dict]:
     """
     Collect Slack data for all team members efficiently by fetching messages once.
-    
+
     Args:
         team_identifiers: List of team member emails or names
         days: Number of days to analyze
         slack_token: Slack API token for real data collection
         mock_mode: Whether to use mock data from files (like original detector)
         use_names: True if team_identifiers contains names, False if emails
-        
+        user_id: User ID for querying UserCorrelation table
+
     Returns:
         Dict mapping identifier -> slack_activity_data
     """
     collector = SlackCollector()
     slack_data = {}
-    
+
     if not slack_token:
         logger.warning("No Slack token provided, using mock data for all users")
         # Fall back to individual processing for mock data
         for identifier in team_identifiers:
             try:
-                user_data = await collector.collect_slack_data_for_user(identifier, days, slack_token, mock_mode, use_names)
+                user_data = await collector.collect_slack_data_for_user(identifier, days, slack_token, mock_mode, use_names, user_id)
                 if user_data:
                     slack_data[identifier] = user_data
             except Exception as e:
                 logger.error(f"Failed to collect Slack data for {identifier}: {e}")
         return slack_data
-    
+
     # Fetch all messages once
     end_date = datetime.now()
     start_date = end_date - timedelta(days=days)
-    
+
     logger.info(f"Fetching all Slack messages once for {len(team_identifiers)} users")
     fetch_result = await collector._fetch_all_slack_messages(slack_token, start_date, end_date)
-    
+
     all_messages = fetch_result.get("messages", {})
     rate_limited_channels = fetch_result.get("rate_limited_channels", [])
     errors = fetch_result.get("errors", [])
-    
+
     # Log rate limiting issues
     if rate_limited_channels:
         logger.warning(f"Rate limited channels: {rate_limited_channels}")
     if errors:
         logger.error(f"Slack fetch errors: {errors}")
-    
+
     # Process each user against the cached messages
     for identifier in team_identifiers:
         try:
-            # Get user ID for this identifier
-            user_id = await collector._correlate_user_to_slack(identifier, slack_token, use_names)
-            
-            if user_id:
-                logger.info(f"Processing {identifier} -> {user_id}")
-                user_data = collector._process_user_messages(user_id, identifier, start_date, end_date, all_messages)
+            # Get user ID for this identifier (now queries UserCorrelation first)
+            slack_user_id = await collector._correlate_user_to_slack(identifier, slack_token, use_names, user_id)
+
+            if slack_user_id:
+                logger.info(f"Processing {identifier} -> {slack_user_id}")
+                user_data = collector._process_user_messages(slack_user_id, identifier, start_date, end_date, all_messages)
                 
                 # Add error information to user data
                 user_data["fetch_errors"] = {

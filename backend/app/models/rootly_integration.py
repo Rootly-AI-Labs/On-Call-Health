@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey, JSON
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.models.base import Base
@@ -6,7 +6,7 @@ from app.models.base import Base
 
 class RootlyIntegration(Base):
     __tablename__ = "rootly_integrations"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     name = Column(String(255), nullable=False)  # User-defined name or auto-generated
@@ -16,6 +16,7 @@ class RootlyIntegration(Base):
     total_users = Column(Integer, nullable=True)  # From API metadata
     is_default = Column(Boolean, default=False, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
+    survey_recipients = Column(JSON, nullable=True)  # Array of UserCorrelation IDs who should receive surveys
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     last_used_at = Column(DateTime(timezone=True), nullable=True)
     

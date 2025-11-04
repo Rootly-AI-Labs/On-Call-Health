@@ -1,15 +1,15 @@
 """
 Rootly integration API endpoints.
 """
-from typing import Dict, Any
+from typing import Dict, Any, List
 from datetime import datetime, timedelta
 import logging
 import os
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Body
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from ...models import get_db, User, RootlyIntegration, UserCorrelation
+from ...models import get_db, User, RootlyIntegration, UserCorrelation, GitHubIntegration
 from ...auth.dependencies import get_current_active_user
 from ...core.rootly_client import RootlyAPIClient
 from ...core.rate_limiting import integration_rate_limit
@@ -227,15 +227,23 @@ async def list_integrations(
     db: Session = Depends(get_db)
 ):
     """List all Rootly integrations for the current user with permissions."""
+    import time
+    start_time = time.time()
+    logger.info(f"🔍 [ROOTLY] Starting list_integrations for user {current_user.id}")
+
     integrations = db.query(RootlyIntegration).filter(
         RootlyIntegration.user_id == current_user.id,
         RootlyIntegration.is_active == True,
         RootlyIntegration.platform == "rootly"
     ).order_by(RootlyIntegration.created_at.desc()).all()
-    
+
+    logger.info(f"🔍 [ROOTLY] DB query took {time.time() - start_time:.2f}s, found {len(integrations)} integrations")
+
+    # Prepare base integration data first (fast, no API calls)
     result_integrations = []
-    
-    for integration in integrations:
+    permission_tasks = []
+
+    for idx, integration in enumerate(integrations):
         integration_data = {
             "id": integration.id,
             "name": integration.name,
@@ -246,32 +254,87 @@ async def list_integrations(
             "last_used_at": integration.last_used_at.isoformat() if integration.last_used_at else None,
             "token_suffix": f"****{integration.api_token[-4:]}" if integration.api_token and len(integration.api_token) >= 4 else "****"
         }
-        
-        # Check permissions for each integration
-        if integration.api_token:
-            try:
-                client = RootlyAPIClient(integration.api_token)
-                permissions = await client.check_permissions()
-                integration_data["permissions"] = permissions
-            except Exception as e:
-                # If we can't check permissions, include a note
-                integration_data["permissions"] = {
-                    "users": {"access": False, "error": f"Permission check failed: {str(e)}"},
-                    "incidents": {"access": False, "error": f"Permission check failed: {str(e)}"}
-                }
-        
         result_integrations.append(integration_data)
+
+        # Queue permission check task if token exists
+        if integration.api_token:
+            client = RootlyAPIClient(integration.api_token)
+            permission_tasks.append((idx, client.check_permissions()))
+        else:
+            # No token - set immediately
+            integration_data["permissions"] = {
+                "users": {"access": None, "error": "No API token configured"},
+                "incidents": {"access": None, "error": "No API token configured"}
+            }
+
+    # Run all permission checks in parallel with 5s timeout each
+    if permission_tasks:
+        import asyncio
+        logger.info(f"🔍 [ROOTLY] Checking permissions for {len(permission_tasks)} integrations in parallel...")
+        perm_start = time.time()
+
+        async def check_with_timeout(idx, task):
+            try:
+                result = await asyncio.wait_for(task, timeout=5.0)
+                return (idx, result, None)
+            except asyncio.TimeoutError:
+                return (idx, None, "timeout")
+            except Exception as e:
+                return (idx, None, str(e))
+
+        # Run all checks concurrently
+        results = await asyncio.gather(*[check_with_timeout(idx, task) for idx, task in permission_tasks])
+
+        # Apply results
+        for idx, permissions, error in results:
+            if error == "timeout":
+                result_integrations[idx]["permissions"] = {
+                    "users": {"access": None, "error": "Rootly API timeout - check back later"},
+                    "incidents": {"access": None, "error": "Rootly API timeout - check back later"}
+                }
+            elif error:
+                result_integrations[idx]["permissions"] = {
+                    "users": {"access": None, "error": f"Rootly API unavailable: {error}"},
+                    "incidents": {"access": None, "error": f"Rootly API unavailable: {error}"}
+                }
+            else:
+                result_integrations[idx]["permissions"] = permissions
+
+        logger.info(f"🔍 [ROOTLY] All permission checks completed in {time.time() - perm_start:.2f}s")
     
     # Add beta fallback integration if available
+    beta_start = time.time()
     beta_rootly_token = os.getenv('ROOTLY_API_TOKEN')
-    logger.info(f"Beta Rootly token check: exists={beta_rootly_token is not None}, length={len(beta_rootly_token) if beta_rootly_token else 0}")
+    logger.info(f"🔍 [ROOTLY] Beta token check: exists={beta_rootly_token is not None}, length={len(beta_rootly_token) if beta_rootly_token else 0}")
     if beta_rootly_token:
         try:
             # Test the beta token and get organization info
-            logger.info(f"Testing beta Rootly token: {beta_rootly_token[:10]}...")
+            logger.info(f"🔍 [ROOTLY] Testing beta token: {beta_rootly_token[:10]}...")
             client = RootlyAPIClient(beta_rootly_token)
-            test_result = await client.test_connection()
-            permissions = await client.check_permissions()
+
+            # Run test_connection and check_permissions in parallel
+            logger.info(f"🔍 [ROOTLY] Running test_connection() and check_permissions() in parallel...")
+
+            async def test_with_timeout():
+                try:
+                    return await asyncio.wait_for(client.test_connection(), timeout=5.0)
+                except asyncio.TimeoutError:
+                    return {"status": "timeout", "account_info": {}}
+
+            async def perms_with_timeout():
+                try:
+                    return await asyncio.wait_for(client.check_permissions(), timeout=5.0)
+                except asyncio.TimeoutError:
+                    return {
+                        "users": {"access": None, "error": "Rootly API timeout"},
+                        "incidents": {"access": None, "error": "Rootly API timeout"}
+                    }
+
+            test_result, permissions = await asyncio.gather(
+                test_with_timeout(),
+                perms_with_timeout()
+            )
+            logger.info(f"🔍 [ROOTLY] Beta checks completed in {time.time() - beta_start:.2f}s")
             
             logger.info(f"Beta Rootly test_result: {test_result}")
             account_info = test_result.get("account_info", {})
@@ -312,9 +375,9 @@ async def list_integrations(
                     "permissions": permissions
                 }
                 result_integrations.insert(0, beta_integration)
-                logger.info(f"Added fallback beta Rootly integration for user {current_user.id}")
+                logger.info(f"🔍 [ROOTLY] Added fallback beta Rootly integration for user {current_user.id}")
         except Exception as e:
-            logger.warning(f"Failed to add beta Rootly integration: {str(e)}")
+            logger.error(f"🔍 [ROOTLY] Failed to add beta integration after {time.time() - beta_start:.2f}s: {str(e)}")
             # Add fallback integration even on exception
             beta_integration = {
                 "id": "beta-rootly",
@@ -329,8 +392,10 @@ async def list_integrations(
                 "permissions": {}
             }
             result_integrations.insert(0, beta_integration)
-            logger.info(f"Added exception fallback beta Rootly integration for user {current_user.id}")
-    
+            logger.info(f"🔍 [ROOTLY] Added exception fallback beta Rootly integration for user {current_user.id}")
+
+    total_time = time.time() - start_time
+    logger.info(f"🔍 [ROOTLY] COMPLETE: Returning {len(result_integrations)} integrations, total time: {total_time:.2f}s")
     return {
         "integrations": result_integrations
     }
@@ -1060,6 +1125,16 @@ async def sync_integration_users(
                 integration_id=integration_id
             )
 
+            # After syncing, try to match GitHub usernames
+            github_stats = await sync_service._match_github_usernames(current_user)
+            if github_stats:
+                stats['github_matched'] = github_stats['matched']
+                stats['github_skipped'] = github_stats['skipped']
+                logger.info(
+                    f"GitHub matching: {github_stats['matched']} users matched, "
+                    f"{github_stats['skipped']} skipped"
+                )
+
             return {
                 "success": True,
                 "message": f"Successfully synced {stats['total']} users from beta integration",
@@ -1077,14 +1152,23 @@ async def sync_integration_users(
 
         # Sync users from database integration
         sync_service = UserSyncService(db)
+
+        # Perform sync - GitHub matching is handled internally by _match_github_usernames()
         stats = await sync_service.sync_integration_users(
             integration_id=numeric_id,
             current_user=current_user
         )
 
+        # Build detailed message
+        message_parts = [f"Successfully synced {stats['total']} users from integration"]
+        if stats.get('github_matched'):
+            message_parts.append(f"GitHub: {stats['github_matched']} users matched")
+        if stats.get('github_skipped'):
+            message_parts.append(f"({stats['github_skipped']} skipped)")
+
         return {
             "success": True,
-            "message": f"Successfully synced {stats['total']} users from integration",
+            "message": ". ".join(message_parts),
             "stats": stats
         }
         
@@ -1097,9 +1181,100 @@ async def sync_integration_users(
             detail=f"Failed to sync users: {str(e)}"
         )
 
+@router.get("/integrations/{integration_id}/oncall-users")
+async def get_oncall_users(
+    integration_id: str,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get list of users currently on-call from a Rootly/PagerDuty integration.
+    Returns emails of users who are currently on-call.
+    Used to highlight on-call users when selecting survey recipients.
+    """
+    try:
+        from datetime import datetime, timedelta
+        from app.core.rootly_client import RootlyAPIClient
+        from app.core.pagerduty_client import PagerDutyAPIClient
+
+        # Handle beta integrations
+        if integration_id in ["beta-rootly", "beta-pagerduty"]:
+            if integration_id == "beta-rootly":
+                beta_token = os.getenv('ROOTLY_API_TOKEN')
+                if not beta_token:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail="Beta Rootly token not configured"
+                    )
+                client = RootlyAPIClient(beta_token)
+            else:  # beta-pagerduty
+                beta_token = os.getenv('PAGERDUTY_API_TOKEN')
+                if not beta_token:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail="Beta PagerDuty token not configured"
+                    )
+                client = PagerDutyAPIClient(beta_token)
+        else:
+            # Regular integration
+            try:
+                numeric_id = int(integration_id)
+            except ValueError:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Invalid integration ID: {integration_id}"
+                )
+
+            integration = db.query(RootlyIntegration).filter(
+                RootlyIntegration.id == numeric_id,
+                RootlyIntegration.user_id == current_user.id
+            ).first()
+
+            if not integration:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Integration not found"
+                )
+
+            if integration.platform == "rootly":
+                client = RootlyAPIClient(integration.api_token)
+            elif integration.platform == "pagerduty":
+                from app.core.pagerduty_client import PagerDutyAPIClient
+                client = PagerDutyAPIClient(integration.api_token)
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Platform {integration.platform} not supported"
+                )
+
+        # Get current on-call shifts (last 24 hours to current + 1 hour)
+        end_date = datetime.now() + timedelta(hours=1)
+        start_date = datetime.now() - timedelta(hours=24)
+
+        on_call_shifts = await client.get_on_call_shifts(start_date, end_date)
+        on_call_emails = await client.extract_on_call_users_from_shifts(on_call_shifts)
+
+        return {
+            "integration_id": integration_id,
+            "total_oncall": len(on_call_emails),
+            "oncall_emails": list(on_call_emails),
+            "checked_at": datetime.now().isoformat()
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching on-call users: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch on-call users: {str(e)}"
+        )
+
+
 @router.get("/synced-users")
 async def get_synced_users(
     integration_id: str = None,
+    include_oncall_status: bool = True,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
@@ -1107,6 +1282,7 @@ async def get_synced_users(
     Get all synced users from UserCorrelation table for the current user.
     These are team members who can submit burnout surveys via Slack.
     Optionally filter by integration_id to show only users from a specific organization.
+    Optionally include on-call status for each user (default: true).
     """
     try:
         from sqlalchemy import func, cast, String
@@ -1130,6 +1306,67 @@ async def get_synced_users(
                     filtered_correlations.append(corr)
             correlations = filtered_correlations
 
+        # Fetch on-call emails if requested
+        oncall_emails = set()
+        if include_oncall_status and integration_id:
+            try:
+                from datetime import datetime, timedelta
+                from app.core.rootly_client import RootlyAPIClient
+                from app.core.pagerduty_client import PagerDutyAPIClient
+
+                client = None
+
+                # Get the integration to determine platform
+                if integration_id in ["beta-rootly", "beta-pagerduty"]:
+                    logger.info(f"📞 Fetching on-call status for beta integration: {integration_id}")
+                    if integration_id == "beta-rootly":
+                        beta_token = os.getenv('ROOTLY_API_TOKEN')
+                        if beta_token:
+                            client = RootlyAPIClient(beta_token)
+                            logger.info("✅ Created Rootly client for beta integration")
+                    else:
+                        beta_token = os.getenv('PAGERDUTY_API_TOKEN')
+                        if beta_token:
+                            client = PagerDutyAPIClient(beta_token)
+                            logger.info("✅ Created PagerDuty client for beta integration")
+                else:
+                    try:
+                        numeric_id = int(integration_id)
+                        logger.info(f"📞 Fetching on-call status for integration_id: {numeric_id}")
+                        integration = db.query(RootlyIntegration).filter(
+                            RootlyIntegration.id == numeric_id,
+                            RootlyIntegration.user_id == current_user.id
+                        ).first()
+
+                        if integration:
+                            logger.info(f"✅ Found integration: {integration.name} (platform: {integration.platform})")
+                            if integration.platform == "rootly":
+                                client = RootlyAPIClient(integration.api_token)
+                                logger.info("✅ Created Rootly API client")
+                            elif integration.platform == "pagerduty":
+                                client = PagerDutyAPIClient(integration.api_token)
+                                logger.info("✅ Created PagerDuty API client")
+                        else:
+                            logger.warning(f"⚠️  No integration found with id {numeric_id} for user {current_user.id}")
+                    except ValueError:
+                        logger.warning(f"⚠️  Invalid integration_id format: {integration_id}")
+
+                # Fetch on-call shifts
+                if client:
+                    logger.info("🔍 Fetching on-call shifts...")
+                    end_date = datetime.now() + timedelta(hours=1)
+                    start_date = datetime.now() - timedelta(hours=24)
+                    on_call_shifts = await client.get_on_call_shifts(start_date, end_date)
+                    oncall_emails = await client.extract_on_call_users_from_shifts(on_call_shifts)
+                    logger.info(f"✅ Found {len(oncall_emails)} on-call users: {list(oncall_emails)}")
+                else:
+                    logger.warning("⚠️  No client created, skipping on-call status fetch")
+            except Exception as e:
+                logger.error(f"❌ Failed to fetch on-call status: {str(e)}")
+                import traceback
+                logger.error(traceback.format_exc())
+                # Continue without on-call status
+
         # Format the response
         synced_users = []
         for corr in correlations:
@@ -1144,6 +1381,9 @@ async def get_synced_users(
             if corr.slack_user_id:
                 platforms.append("slack")
 
+            # Check if user is currently on-call
+            is_oncall = corr.email.lower() in {email.lower() for email in oncall_emails}
+
             synced_users.append({
                 "id": corr.id,
                 "name": corr.name,
@@ -1151,12 +1391,14 @@ async def get_synced_users(
                 "platforms": platforms,
                 "github_username": corr.github_username,
                 "slack_user_id": corr.slack_user_id,
+                "is_oncall": is_oncall,
                 "created_at": corr.created_at.isoformat() if corr.created_at else None
             })
 
         return {
             "total": len(synced_users),
-            "users": synced_users
+            "users": synced_users,
+            "oncall_status_included": include_oncall_status
         }
 
     except Exception as e:
@@ -1164,4 +1406,237 @@ async def get_synced_users(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to fetch synced users: {str(e)}"
+        )
+
+
+@router.put("/integrations/{integration_id}/survey-recipients")
+async def update_survey_recipients(
+    integration_id: str,
+    recipient_ids: List[int] = Body(...),
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Save selected survey recipients for an integration.
+    These users will receive automated burnout survey invitations via Slack.
+
+    If recipient_ids is empty, this will RESET to default behavior (send to all users).
+    """
+    try:
+        # Handle beta integrations - they can't save recipients (no database row)
+        if integration_id in ["beta-rootly", "beta-pagerduty"]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot save recipients for beta integrations. Please add a personal integration."
+            )
+
+        # Convert to numeric ID
+        try:
+            numeric_id = int(integration_id)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid integration ID: {integration_id}"
+            )
+
+        # Get the integration
+        integration = db.query(RootlyIntegration).filter(
+            RootlyIntegration.id == numeric_id,
+            RootlyIntegration.user_id == current_user.id
+        ).first()
+
+        if not integration:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Integration not found"
+            )
+
+        # If empty list, set to None to revert to default behavior
+        if len(recipient_ids) == 0:
+            integration.survey_recipients = None
+            db.commit()
+            logger.info(
+                f"User {current_user.id} cleared survey recipients for integration {integration_id} - "
+                f"reverting to default (all users)"
+            )
+            return {
+                "success": True,
+                "message": "Survey recipients cleared. All users with Slack will receive surveys (default behavior).",
+                "integration_id": integration_id,
+                "recipient_count": 0,
+                "is_default": True
+            }
+
+        # Validate that all recipient IDs belong to this user's correlations
+        valid_ids = db.query(UserCorrelation.id).filter(
+            UserCorrelation.user_id == current_user.id,
+            UserCorrelation.id.in_(recipient_ids)
+        ).all()
+        valid_id_set = {row[0] for row in valid_ids}
+
+        invalid_ids = [rid for rid in recipient_ids if rid not in valid_id_set]
+        if invalid_ids:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid recipient IDs: {invalid_ids}"
+            )
+
+        # Update the integration with new recipients
+        integration.survey_recipients = recipient_ids
+        db.commit()
+
+        logger.info(
+            f"User {current_user.id} updated survey recipients for integration {integration_id}: "
+            f"{len(recipient_ids)} recipients selected"
+        )
+
+        return {
+            "success": True,
+            "message": f"Survey recipients updated: {len(recipient_ids)} users selected",
+            "integration_id": integration_id,
+            "recipient_count": len(recipient_ids),
+            "is_default": False
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Failed to update survey recipients: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update survey recipients: {str(e)}"
+        )
+
+
+@router.get("/integrations/{integration_id}/survey-recipients")
+async def get_survey_recipients(
+    integration_id: str,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get saved survey recipients for an integration.
+    Returns list of UserCorrelation IDs that should receive surveys.
+    """
+    try:
+        # Handle beta integrations
+        if integration_id in ["beta-rootly", "beta-pagerduty"]:
+            return {
+                "integration_id": integration_id,
+                "recipient_ids": [],
+                "recipient_count": 0,
+                "is_beta": True,
+                "message": "Beta integrations use default recipient settings"
+            }
+
+        # Convert to numeric ID
+        try:
+            numeric_id = int(integration_id)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid integration ID: {integration_id}"
+            )
+
+        # Get the integration
+        integration = db.query(RootlyIntegration).filter(
+            RootlyIntegration.id == numeric_id,
+            RootlyIntegration.user_id == current_user.id
+        ).first()
+
+        if not integration:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Integration not found"
+            )
+
+        recipient_ids = integration.survey_recipients or []
+
+        return {
+            "integration_id": integration_id,
+            "recipient_ids": recipient_ids,
+            "recipient_count": len(recipient_ids),
+            "is_beta": False
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get survey recipients: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get survey recipients: {str(e)}"
+        )
+
+
+@router.patch("/user-correlation/{correlation_id}/github-username")
+async def update_user_correlation_github_username(
+    correlation_id: int,
+    github_username: str,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Manually update GitHub username for a UserCorrelation.
+    Used when automatic correlation fails and user needs to manually map.
+    """
+    try:
+        # Fetch the correlation - ensure it belongs to current user
+        correlation = db.query(UserCorrelation).filter(
+            UserCorrelation.id == correlation_id,
+            UserCorrelation.user_id == current_user.id
+        ).first()
+
+        if not correlation:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User correlation not found or doesn't belong to you"
+            )
+
+        # Validate and process GitHub username
+        github_username = github_username.strip()
+
+        # Update the GitHub username (allow empty string to clear mapping)
+        old_username = correlation.github_username
+
+        if github_username == "":
+            # Clear the mapping
+            correlation.github_username = None
+            db.commit()
+            logger.info(
+                f"User {current_user.id} cleared GitHub username for {correlation.email} "
+                f"(was: {old_username})"
+            )
+            message = "GitHub username mapping cleared"
+        else:
+            # Set the mapping
+            correlation.github_username = github_username
+            db.commit()
+            logger.info(
+                f"User {current_user.id} manually updated GitHub username for {correlation.email}: "
+                f"{old_username} → {github_username}"
+            )
+            message = f"GitHub username updated to {github_username}"
+
+        return {
+            "success": True,
+            "message": message,
+            "correlation": {
+                "id": correlation.id,
+                "email": correlation.email,
+                "name": correlation.name,
+                "github_username": correlation.github_username,
+                "slack_user_id": correlation.slack_user_id
+            }
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Failed to update GitHub username: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update GitHub username: {str(e)}"
         )

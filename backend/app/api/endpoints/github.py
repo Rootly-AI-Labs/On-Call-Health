@@ -557,13 +557,13 @@ async def disconnect_github(
     integration = db.query(GitHubIntegration).filter(
         GitHubIntegration.user_id == current_user.id
     ).first()
-    
+
     if not integration:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="GitHub integration not found"
         )
-    
+
     try:
         # Remove GitHub data from user correlations (organization-scoped)
         correlations = db.query(UserCorrelation).filter(
@@ -572,19 +572,117 @@ async def disconnect_github(
 
         for correlation in correlations:
             correlation.github_username = None
-        
+
         # Delete the integration
         db.delete(integration)
         db.commit()
-        
+
         return {
             "success": True,
             "message": "GitHub integration disconnected successfully"
         }
-        
+
     except Exception as e:
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to disconnect GitHub integration: {str(e)}"
+        )
+
+@router.get("/org-members")
+async def get_org_members(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get all GitHub organization members for the current user's integration.
+    Supports both personal integrations and beta token.
+    """
+    # Check for personal integration first
+    integration = db.query(GitHubIntegration).filter(
+        GitHubIntegration.user_id == current_user.id
+    ).first()
+
+    access_token = None
+    organizations = []
+
+    if integration and integration.github_token:
+        # User has personal integration
+        try:
+            access_token = decrypt_token(integration.github_token)
+            organizations = integration.organizations or []
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to decrypt token: {str(e)}"
+            )
+    else:
+        # Check for beta GitHub token from Railway
+        beta_github_token = os.getenv('GITHUB_TOKEN')
+        if beta_github_token:
+            access_token = beta_github_token
+            # Default organizations for beta
+            organizations = ['rootlyhq', 'Rootly-AI-Labs']
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No GitHub integration found"
+            )
+
+    if not organizations:
+        return {
+            "members": [],
+            "total_members": 0,
+            "organizations": []
+        }
+
+    try:
+        # Fetch members from all organizations
+        import httpx
+        headers = {
+            "Authorization": f"token {access_token}",
+            "Accept": "application/json"
+        }
+
+        all_members = set()
+
+        async with httpx.AsyncClient() as client:
+            for org in organizations:
+                page = 1
+                while True:
+                    response = await client.get(
+                        f"https://api.github.com/orgs/{org}/members?per_page=100&page={page}",
+                        headers=headers
+                    )
+
+                    if response.status_code != 200:
+                        logger.warning(f"Failed to fetch members for {org}: {response.status_code}")
+                        break
+
+                    members_data = response.json()
+                    if not members_data:
+                        break
+
+                    for member in members_data:
+                        all_members.add(member.get("login"))
+
+                    # Check if there are more pages
+                    if len(members_data) < 100:
+                        break
+                    page += 1
+
+        # Sort alphabetically
+        sorted_members = sorted(list(all_members))
+
+        return {
+            "members": sorted_members,
+            "total_members": len(sorted_members),
+            "organizations": organizations
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to fetch org members: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch organization members: {str(e)}"
         )

@@ -265,6 +265,7 @@ class SurveyScheduler:
         """
         Get list of users who should receive surveys.
         Returns users with Slack correlation and survey opt-in.
+        Filters by saved recipient selections if configured.
 
         Args:
             organization_id: Organization ID
@@ -272,6 +273,33 @@ class SurveyScheduler:
             is_reminder: If True, also check reminder preferences
         """
         from app.models.user import User
+        from app.models.rootly_integration import RootlyIntegration
+
+        # Get saved recipient selections for this organization
+        # SIMPLE APPROACH: Find any integration owned by a user in this organization
+        # that has survey_recipients configured
+        saved_recipient_ids = None
+
+        # First, get any user from this organization
+        org_user = db.query(User).filter(
+            User.organization_id == organization_id
+        ).first()
+
+        if org_user:
+            # Find their integration with saved recipients
+            integration = db.query(RootlyIntegration).filter(
+                RootlyIntegration.user_id == org_user.id,
+                RootlyIntegration.is_active == True,
+                RootlyIntegration.survey_recipients.isnot(None)
+            ).first()
+
+            if integration and integration.survey_recipients:
+                saved_recipient_ids = set(integration.survey_recipients)
+                logger.info(f"Using saved recipient list for org {organization_id}: {len(saved_recipient_ids)} users selected")
+            else:
+                logger.debug(f"No saved recipient list found for org {organization_id}, using default (all users)")
+        else:
+            logger.warning(f"No users found for organization {organization_id}")
 
         # Query users with preferences
         users = db.query(User, UserCorrelation, UserSurveyPreference).join(
@@ -288,6 +316,11 @@ class SurveyScheduler:
         for user, correlation, preference in users:
             # Skip if we already processed this user
             if user.id in recipients_dict:
+                continue
+
+            # NEW: Filter by saved recipient selections if configured
+            if saved_recipient_ids is not None and correlation.id not in saved_recipient_ids:
+                logger.debug(f"Skipping user {user.id} (correlation {correlation.id}) - not in saved recipients")
                 continue
 
             # Check if user opted out (default is opted-in)

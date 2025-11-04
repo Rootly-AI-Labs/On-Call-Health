@@ -145,20 +145,25 @@ async def get_llm_token_info(
     db: Session = Depends(get_db)
 ):
     """Get information about system LLM token (Railway deployment uses shared token)."""
-    
-    # Always use Railway system token for all users - no individual user tokens
-    import os
-    system_api_key = os.getenv('ANTHROPIC_API_KEY')
-    if system_api_key:
-        # Return system token info (all users use Railway token)
-        return LLMTokenResponse(
-            has_token=True,
-            provider='anthropic',
-            token_suffix=f"****{system_api_key[-4:]}",
-            created_at=None  # System token doesn't have creation date
-        )
-    else:
-        # Railway token not configured
+
+    try:
+        # Always use Railway system token for all users - no individual user tokens
+        import os
+        system_api_key = os.getenv('ANTHROPIC_API_KEY')
+        if system_api_key:
+            # Return system token info (all users use Railway token)
+            return LLMTokenResponse(
+                has_token=True,
+                provider='anthropic',
+                token_suffix=f"****{system_api_key[-4:] if len(system_api_key) > 4 else '****'}",
+                created_at=None  # System token doesn't have creation date
+            )
+        else:
+            # Railway token not configured
+            return LLMTokenResponse(has_token=False)
+    except Exception as e:
+        logger.error(f"Failed to get LLM token info: {e}")
+        # Return no token rather than crashing
         return LLMTokenResponse(has_token=False)
 
 @router.delete("/token")

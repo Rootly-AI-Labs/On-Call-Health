@@ -1541,6 +1541,10 @@ export default function Dashboard() {
                                     <path d="M32.2996 78.2003C32.2996 71.7003 37.3996 66.6003 43.8996 66.6003C50.3996 66.6003 55.4996 71.7003 55.4996 78.2003V109.2C55.4996 115.7 50.3996 120.8 43.8996 120.8C37.3996 120.8 32.2996 115.7 32.2996 109.2V78.2003Z" />
                                     <path d="M43.8996 26.4003C37.3996 26.4003 32.2996 21.3003 32.2996 14.8003C32.2996 8.30026 37.3996 3.20026 43.8996 3.20026C50.3996 3.20026 55.4996 8.30026 55.4996 14.8003V26.4003H43.8996Z" />
                                     <path d="M43.8996 32.3003C50.3996 32.3003 55.4996 37.4003 55.4996 43.9003C55.4996 50.4003 50.3996 55.5003 43.8996 55.5003H12.8996C6.39961 55.5003 1.29961 50.4003 1.29961 43.9003C1.29961 37.4003 6.39961 32.3003 12.8996 32.3003H43.8996Z" />
+                                    <path d="M97.5996 43.9003C97.5996 37.4003 102.7 32.3003 109.2 32.3003C115.7 32.3003 120.8 37.4003 120.8 43.9003C120.8 50.4003 115.7 55.5003 109.2 55.5003H97.5996V43.9003Z" />
+                                    <path d="M91.6996 43.9003C91.6996 50.4003 86.5996 55.5003 80.0996 55.5003C73.5996 55.5003 68.4996 50.4003 68.4996 43.9003V12.9003C68.4996 6.40026 73.5996 1.30026 80.0996 1.30026C86.5996 1.30026 91.6996 6.40026 91.6996 12.9003V43.9003Z" />
+                                    <path d="M80.0996 97.7003C86.5996 97.7003 91.6996 102.8 91.6996 109.3C91.6996 115.8 86.5996 120.9 80.0996 120.9C73.5996 120.9 68.4996 115.8 68.4996 109.3V97.7003H80.0996Z" />
+                                    <path d="M80.0996 91.8003C73.5996 91.8003 68.4996 86.7003 68.4996 80.2003C68.4996 73.7003 73.5996 68.6003 80.0996 68.6003H111.1C117.6 68.6003 122.7 73.7003 122.7 80.2003C122.7 86.7003 117.6 91.8003 111.1 91.8003H80.0996Z" />
                                   </svg>
                                 </div>
                                 <h3 className="text-lg font-medium text-gray-900 mb-2">No Slack Data Available</h3>
@@ -1916,9 +1920,26 @@ export default function Dashboard() {
               
               // Only check permissions for Rootly integrations, not PagerDuty
               if (selectedIntegration?.platform === 'rootly') {
+                // Check if permissions have been loaded (undefined = not loaded yet, false/true = loaded)
+                const permissionsLoaded = selectedIntegration?.permissions !== undefined;
                 const hasUserPermission = selectedIntegration?.permissions?.users?.access;
                 const hasIncidentPermission = selectedIntegration?.permissions?.incidents?.access;
-                
+
+                // Show loader if permissions haven't been loaded yet
+                if (!permissionsLoaded || loadingIntegrations) {
+                  return (
+                    <Alert className="border-blue-200 bg-blue-50 py-2 px-3">
+                      <div className="flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                        <AlertDescription className="text-blue-800 text-sm">
+                          Checking permissions...
+                        </AlertDescription>
+                      </div>
+                    </Alert>
+                  );
+                }
+
+                // Show error only if permissions are loaded but missing
                 if (!hasUserPermission || !hasIncidentPermission) {
                   return (
                     <Alert className="border-red-200 bg-red-50 py-2 px-3">
@@ -1926,10 +1947,10 @@ export default function Dashboard() {
                       <AlertDescription className="text-red-800 text-sm">
                         <strong>Missing Required Permissions</strong>
                         <span className="block mt-1">
-                          {!hasUserPermission && !hasIncidentPermission 
-                            ? "User and incident read access required" 
-                            : !hasUserPermission 
-                            ? "User read access required" 
+                          {!hasUserPermission && !hasIncidentPermission
+                            ? "User and incident read access required"
+                            : !hasUserPermission
+                            ? "User read access required"
                             : "Incident read access required"}
                         </span>
                         <span className="text-xs opacity-75">Update API token permissions in Rootly settings</span>

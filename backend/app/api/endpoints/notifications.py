@@ -67,6 +67,21 @@ async def mark_all_notifications_read(
         "count": count
     }
 
+@router.delete("/clear-all")
+async def clear_all_notifications(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+) -> Dict[str, Any]:
+    """Clear all notifications for the current user."""
+
+    notification_service = NotificationService(db)
+    count = notification_service.clear_all_notifications(current_user)
+
+    return {
+        "message": f"Cleared {count} notifications",
+        "count": count
+    }
+
 @router.delete("/{notification_id}")
 async def dismiss_notification(
     notification_id: int,
