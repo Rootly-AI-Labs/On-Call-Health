@@ -203,6 +203,7 @@ class UnifiedBurnoutAnalyzer:
                 raise Exception("Failed to fetch data from API")
 
             # Extract users and incidents
+            extraction_start = datetime.now()
             users = data.get("users", []) if data else []
 
             # create map with user time zones
