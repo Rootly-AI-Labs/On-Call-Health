@@ -433,9 +433,31 @@ class MigrationRunner:
                     """
                 ]
             },
+            {
+                "name": "013_create_oauth_temp_codes_table",
+                "description": "Create oauth_temp_codes table for multi-instance OAuth support",
+                "sql": [
+                    """
+                    CREATE TABLE IF NOT EXISTS oauth_temp_codes (
+                        id SERIAL PRIMARY KEY,
+                        code VARCHAR(100) UNIQUE NOT NULL,
+                        jwt_token TEXT NOT NULL,
+                        user_id INTEGER REFERENCES users(id),
+                        expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+                        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                    )
+                    """,
+                    """
+                    CREATE INDEX IF NOT EXISTS idx_oauth_temp_codes_code ON oauth_temp_codes(code)
+                    """,
+                    """
+                    CREATE INDEX IF NOT EXISTS idx_oauth_temp_codes_expires_at ON oauth_temp_codes(expires_at)
+                    """
+                ]
+            },
             # Add future migrations here with incrementing numbers
             # {
-            #     "name": "011_add_user_preferences",
+            #     "name": "014_add_user_preferences",
             #     "description": "Add user preferences table",
             #     "sql": ["CREATE TABLE IF NOT EXISTS user_preferences (...)"]
             # }
