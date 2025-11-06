@@ -80,7 +80,7 @@ export function RootlyIntegrationForm({
                   <ol className="space-y-2 text-sm">
                     <li><strong>1.</strong> Log in to your Rootly account</li>
                     <li><strong>2.</strong> Navigate to <code className="bg-purple-100 px-1 rounded">Settings → API Keys</code></li>
-                    <li><strong>3.</strong> Click <strong>"Create API Key"</strong></li>
+                    <li><strong>3.</strong> Click <strong>Create API Key</strong> and select <strong>Global API key</strong> </li>
                     <li><strong>4.</strong> Give it a name (e.g., <strong>"Burnout Detector"</strong>)</li>
                     <li><strong>5.</strong> Select appropriate permissions (<strong>required:</strong> read access to incidents and users)</li>
                     <li><strong>6.</strong> Copy the generated token (starts with <strong>"rootly_"</strong>)</li>
