@@ -1,7 +1,7 @@
 """
-Unit tests for Copenhagen Burnout Inventory (CBI) calculations.
+Unit tests for On-Call Burnout (OCB) calculations.
 
-Tests all CBI calculation functions, validation, and edge cases.
+Tests all OCB calculation functions, validation, and edge cases.
 """
 
 import unittest
@@ -12,25 +12,25 @@ import os
 # Add the app directory to the Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'app'))
 
-from core.cbi_config import (
-    CBIConfig,
-    CBIDimension,
+from core.ocb_config import (
+    ocbConfig,
+    ocbDimension,
     calculate_personal_burnout,
     calculate_work_related_burnout,
-    calculate_composite_cbi_score,
-    get_cbi_interpretation,
-    validate_cbi_config,
-    get_cbi_recommendations,
-    DEFAULT_CBI_CONFIG
+    calculate_composite_ocb_score,
+    get_ocb_interpretation,
+    validate_ocb_config,
+    get_ocb_recommendations,
+    DEFAULT_ocb_CONFIG
 )
 
 
-class TestCBIConfig(unittest.TestCase):
-    """Test CBI configuration and validation."""
+class TestocbConfig(unittest.TestCase):
+    """Test ocb configuration and validation."""
     
     def setUp(self):
         """Set up test fixtures."""
-        self.config = CBIConfig()
+        self.config = ocbConfig()
     
     def test_dimension_weights_sum_to_one(self):
         """Test that dimension weights sum to 1.0."""
@@ -47,9 +47,9 @@ class TestCBIConfig(unittest.TestCase):
         factors_sum = sum(factor['weight'] for factor in self.config.WORK_RELATED_BURNOUT_FACTORS.values())
         self.assertAlmostEqual(factors_sum, 1.0, places=3)
     
-    def test_cbi_score_ranges_coverage(self):
-        """Test that CBI score ranges cover 0-100 without gaps."""
-        ranges = self.config.CBI_SCORE_RANGES
+    def test_ocb_score_ranges_coverage(self):
+        """Test that ocb score ranges cover 0-100 without gaps."""
+        ranges = self.config.ocb_SCORE_RANGES
         self.assertEqual(ranges['low'][0], 0)
         self.assertEqual(ranges['high'][1], 100)
         
@@ -72,7 +72,7 @@ class TestPersonalBurnoutCalculation(unittest.TestCase):
     
     def setUp(self):
         """Set up test fixtures."""
-        self.config = CBIConfig()
+        self.config = ocbConfig()
     
     def test_calculate_personal_burnout_all_metrics(self):
         """Test personal burnout calculation with all metrics present."""
@@ -99,7 +99,7 @@ class TestPersonalBurnoutCalculation(unittest.TestCase):
         self.assertEqual(len(result['components']), 5)
         
         # Dimension should be correct
-        self.assertEqual(result['dimension'], CBIDimension.PERSONAL.value)
+        self.assertEqual(result['dimension'], ocbDimension.PERSONAL.value)
     
     def test_calculate_personal_burnout_partial_metrics(self):
         """Test personal burnout calculation with only some metrics."""
@@ -155,7 +155,7 @@ class TestWorkRelatedBurnoutCalculation(unittest.TestCase):
     
     def setUp(self):
         """Set up test fixtures."""
-        self.config = CBIConfig()
+        self.config = ocbConfig()
     
     def test_calculate_work_related_burnout_all_metrics(self):
         """Test work-related burnout calculation with all metrics present."""
@@ -183,7 +183,7 @@ class TestWorkRelatedBurnoutCalculation(unittest.TestCase):
         self.assertEqual(len(result['components']), 6)
         
         # Dimension should be correct
-        self.assertEqual(result['dimension'], CBIDimension.WORK_RELATED.value)
+        self.assertEqual(result['dimension'], ocbDimension.WORK_RELATED.value)
     
     def test_calculate_work_related_burnout_high_stress(self):
         """Test work-related burnout calculation with high stress indicators."""
@@ -203,19 +203,19 @@ class TestWorkRelatedBurnoutCalculation(unittest.TestCase):
         self.assertIn(result['interpretation'], ['moderate', 'high'])
 
 
-class TestCompositeCBIScore(unittest.TestCase):
-    """Test composite CBI score calculation."""
+class TestCompositeocbScore(unittest.TestCase):
+    """Test composite ocb score calculation."""
     
     def setUp(self):
         """Set up test fixtures."""
-        self.config = CBIConfig()
+        self.config = ocbConfig()
     
-    def test_calculate_composite_cbi_score(self):
-        """Test composite CBI score calculation."""
+    def test_calculate_composite_ocb_score(self):
+        """Test composite ocb score calculation."""
         personal_score = 60.0
         work_related_score = 40.0
         
-        result = calculate_composite_cbi_score(personal_score, work_related_score, self.config)
+        result = calculate_composite_ocb_score(personal_score, work_related_score, self.config)
         
         self.assertIn('composite_score', result)
         self.assertIn('personal_score', result)
@@ -250,19 +250,19 @@ class TestCompositeCBIScore(unittest.TestCase):
         ]
         
         for personal, work_related, expected_interpretation in test_cases:
-            result = calculate_composite_cbi_score(personal, work_related, self.config)
+            result = calculate_composite_ocb_score(personal, work_related, self.config)
             self.assertEqual(result['interpretation'], expected_interpretation)
 
 
-class TestCBIInterpretation(unittest.TestCase):
-    """Test CBI score interpretation functions."""
+class TestocbInterpretation(unittest.TestCase):
+    """Test ocb score interpretation functions."""
     
     def setUp(self):
         """Set up test fixtures."""
-        self.config = CBIConfig()
+        self.config = ocbConfig()
     
-    def test_get_cbi_interpretation_ranges(self):
-        """Test CBI interpretation for different score ranges."""
+    def test_get_ocb_interpretation_ranges(self):
+        """Test ocb interpretation for different score ranges."""
         test_cases = [
             (0.0, 'low'),
             (12.5, 'low'),
@@ -279,17 +279,17 @@ class TestCBIInterpretation(unittest.TestCase):
         ]
         
         for score, expected_interpretation in test_cases:
-            result = get_cbi_interpretation(score, self.config)
+            result = get_ocb_interpretation(score, self.config)
             self.assertEqual(result, expected_interpretation, 
                            f"Score {score} should be '{expected_interpretation}', got '{result}'")
 
 
-class TestCBIValidation(unittest.TestCase):
-    """Test CBI configuration validation."""
+class TestocbValidation(unittest.TestCase):
+    """Test ocb configuration validation."""
     
     def test_validate_default_config(self):
-        """Test validation of default CBI configuration."""
-        validation = validate_cbi_config()
+        """Test validation of default ocb configuration."""
+        validation = validate_ocb_config()
         
         self.assertIn('dimension_weights_sum', validation)
         self.assertIn('personal_factors_sum', validation)
@@ -303,29 +303,29 @@ class TestCBIValidation(unittest.TestCase):
     
     def test_validate_custom_config(self):
         """Test validation of custom configuration."""
-        config = CBIConfig()
+        config = ocbConfig()
         
         # Modify weights to create invalid configuration
-        config.DIMENSION_WEIGHTS[CBIDimension.PERSONAL] = 0.6
-        config.DIMENSION_WEIGHTS[CBIDimension.WORK_RELATED] = 0.5  # Sum > 1.0
+        config.DIMENSION_WEIGHTS[ocbDimension.PERSONAL] = 0.6
+        config.DIMENSION_WEIGHTS[ocbDimension.WORK_RELATED] = 0.5  # Sum > 1.0
         
-        validation = validate_cbi_config(config)
+        validation = validate_ocb_config(config)
         self.assertFalse(validation['dimension_weights_sum'])
 
 
-class TestCBIRecommendations(unittest.TestCase):
-    """Test CBI-based recommendations."""
+class TestocbRecommendations(unittest.TestCase):
+    """Test ocb-based recommendations."""
     
     def test_get_recommendations_high_composite(self):
         """Test recommendations for high composite score."""
-        cbi_result = {
+        ocb_result = {
             'composite_score': 80.0,
             'personal_score': 75.0,
             'work_related_score': 85.0,
             'interpretation': 'high'
         }
         
-        recommendations = get_cbi_recommendations(cbi_result)
+        recommendations = get_ocb_recommendations(ocb_result)
         
         self.assertGreater(len(recommendations), 0)
         self.assertTrue(any('time off' in rec.lower() for rec in recommendations))
@@ -333,51 +333,51 @@ class TestCBIRecommendations(unittest.TestCase):
     
     def test_get_recommendations_personal_dominant(self):
         """Test recommendations when personal burnout is dominant."""
-        cbi_result = {
+        ocb_result = {
             'composite_score': 55.0,
             'personal_score': 70.0,  # 15+ points higher
             'work_related_score': 40.0,
             'interpretation': 'moderate'
         }
         
-        recommendations = get_cbi_recommendations(cbi_result)
+        recommendations = get_ocb_recommendations(ocb_result)
         
         self.assertTrue(any('personal recovery' in rec.lower() for rec in recommendations))
         self.assertTrue(any('sleep' in rec.lower() or 'exercise' in rec.lower() for rec in recommendations))
     
     def test_get_recommendations_work_dominant(self):
         """Test recommendations when work-related burnout is dominant."""
-        cbi_result = {
+        ocb_result = {
             'composite_score': 55.0,
             'personal_score': 40.0,
             'work_related_score': 70.0,  # 30+ points higher
             'interpretation': 'moderate'
         }
         
-        recommendations = get_cbi_recommendations(cbi_result)
+        recommendations = get_ocb_recommendations(ocb_result)
         
         self.assertTrue(any('work-specific' in rec.lower() for rec in recommendations))
         self.assertTrue(any('team' in rec.lower() for rec in recommendations))
     
     def test_get_recommendations_low_score(self):
         """Test recommendations for low burnout score."""
-        cbi_result = {
+        ocb_result = {
             'composite_score': 15.0,
             'personal_score': 12.0,
             'work_related_score': 18.0,
             'interpretation': 'low'
         }
         
-        recommendations = get_cbi_recommendations(cbi_result)
+        recommendations = get_ocb_recommendations(ocb_result)
         
         self.assertTrue(any('work-life balance' in rec.lower() for rec in recommendations))
 
 
-class TestCBIEdgeCases(unittest.TestCase):
-    """Test CBI calculations with edge cases."""
+class TestocbEdgeCases(unittest.TestCase):
+    """Test ocb calculations with edge cases."""
     
     def test_zero_values(self):
-        """Test CBI calculations with zero values."""
+        """Test ocb calculations with zero values."""
         metrics = {
             'work_hours_trend': 0.0,
             'weekend_work': 0.0,
@@ -390,7 +390,7 @@ class TestCBIEdgeCases(unittest.TestCase):
         self.assertEqual(result['score'], 0.0)
     
     def test_negative_values(self):
-        """Test CBI calculations with negative values (should be treated as zero)."""
+        """Test ocb calculations with negative values (should be treated as zero)."""
         metrics = {
             'work_hours_trend': -10.0,
             'weekend_work': -5.0,
@@ -402,7 +402,7 @@ class TestCBIEdgeCases(unittest.TestCase):
         self.assertGreaterEqual(result['score'], 0.0)
     
     def test_missing_config(self):
-        """Test CBI calculations with None config (should use default)."""
+        """Test ocb calculations with None config (should use default)."""
         metrics = {
             'work_hours_trend': 50.0,
             'weekend_work': 20.0,
@@ -419,14 +419,14 @@ if __name__ == '__main__':
     
     # Add test classes
     test_classes = [
-        TestCBIConfig,
+        TestocbConfig,
         TestPersonalBurnoutCalculation,
         TestWorkRelatedBurnoutCalculation,
-        TestCompositeCBIScore,
-        TestCBIInterpretation,
-        TestCBIValidation,
-        TestCBIRecommendations,
-        TestCBIEdgeCases
+        TestCompositeocbScore,
+        TestocbInterpretation,
+        TestocbValidation,
+        TestocbRecommendations,
+        TestocbEdgeCases
     ]
     
     for test_class in test_classes:

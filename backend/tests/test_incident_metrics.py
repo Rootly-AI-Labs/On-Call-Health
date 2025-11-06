@@ -349,12 +349,12 @@ class TestSeverityWeighting(unittest.TestCase):
         self.assertEqual(severity_weighted_per_week, expected)
 
 
-class TestCBIMetricMapping(unittest.TestCase):
-    """Test mapping of incident metrics to CBI metrics."""
+class TestOCBMetricMapping(unittest.TestCase):
+    """Test mapping of incident metrics to OCB metrics."""
 
-    def test_cbi_metric_names(self):
-        """Test that CBI metric names are correct."""
-        cbi_metrics = {
+    def test_ocb_metric_names(self):
+        """Test that OCB metric names are correct."""
+        ocb_metrics = {
             'work_hours_trend': 0,
             'weekend_work': 0,
             'after_hours_activity': 0,
@@ -368,7 +368,7 @@ class TestCBIMetricMapping(unittest.TestCase):
             'oncall_burden': 0
         }
 
-        # Verify all expected CBI metrics are present
+        # Verify all expected OCB metrics are present
         expected_metrics = [
             'work_hours_trend', 'weekend_work', 'after_hours_activity',
             'vacation_usage', 'sleep_quality_proxy', 'sprint_completion',
@@ -377,10 +377,10 @@ class TestCBIMetricMapping(unittest.TestCase):
         ]
 
         for metric in expected_metrics:
-            self.assertIn(metric, cbi_metrics)
+            self.assertIn(metric, ocb_metrics)
 
-    def test_cbi_personal_burnout_factors(self):
-        """Test CBI personal burnout factor mapping."""
+    def test_ocb_personal_burnout_factors(self):
+        """Test OCB personal burnout factor mapping."""
         # Personal burnout factors derived from incidents:
         # - work_hours_trend: incidents_per_week
         # - weekend_work: after_hours_percentage
@@ -405,8 +405,8 @@ class TestCBIMetricMapping(unittest.TestCase):
         self.assertGreater(personal_factors['weekend_work'], 0)
         self.assertGreater(personal_factors['after_hours_activity'], 0)
 
-    def test_cbi_work_related_factors(self):
-        """Test CBI work-related burnout factor mapping."""
+    def test_ocb_work_related_factors(self):
+        """Test OCB work-related burnout factor mapping."""
         # Work-related factors derived from incidents:
         # - sprint_completion: avg_response_time_minutes
         # - code_review_speed: avg_response_time_minutes

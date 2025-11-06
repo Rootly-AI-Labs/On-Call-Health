@@ -8,11 +8,11 @@ interface BurnoutFactor {
 }
 
 interface BurnoutFactorsV0Props {
-  cbiReasoning: string[];
+  ocbReasoning: string[];
 }
 
-export function BurnoutFactorsV0({ cbiReasoning }: BurnoutFactorsV0Props) {
-  // Parse factors from CBI reasoning
+export function BurnoutFactorsV0({ ocbReasoning }: BurnoutFactorsV0Props) {
+  // Parse factors from OCB reasoning
   let currentSection = 'personal';
   let personalPoints = 0;
   let workRelatedPoints = 0;
@@ -20,7 +20,7 @@ export function BurnoutFactorsV0({ cbiReasoning }: BurnoutFactorsV0Props) {
   let workRelatedFactors: BurnoutFactor[] = [];
   let currentFactors = personalFactors;
 
-  cbiReasoning.slice(1).forEach((reason: string) => {
+  ocbReasoning.slice(1).forEach((reason: string) => {
     const cleanReason = reason.replace(/^[\s]*[•·\-*]\s*/, '').trim();
     if (cleanReason === 'PERSONAL:') {
       currentSection = 'personal';

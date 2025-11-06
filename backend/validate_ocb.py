@@ -1,26 +1,26 @@
 #!/usr/bin/env python3
 """
-Simple validation script for CBI calculations.
+Simple validation script for OCB calculations.
 """
 
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'app'))
 
-from core.cbi_config import (
-    CBIConfig,
+from core.ocb_config import (
+    OCBConfig,
     calculate_personal_burnout,
     calculate_work_related_burnout,
-    calculate_composite_cbi_score,
-    validate_cbi_config
+    calculate_composite_ocb_score,
+    validate_ocb_config
 )
 
 def main():
-    print("=== CBI Configuration Validation ===")
+    print("=== OCB Configuration Validation ===")
     
     # Test configuration validation
-    config = CBIConfig()
-    validation = validate_cbi_config(config)
+    config = OCBConfig()
+    validation = validate_ocb_config(config)
     
     print(f"Configuration validation results:")
     for key, result in validation.items():
@@ -33,7 +33,7 @@ def main():
     if not all_passed:
         return 1
     
-    print("\n=== CBI Calculation Tests ===")
+    print("\n=== OCB Calculation Tests ===")
     
     # Test personal burnout calculation
     personal_metrics = {
@@ -67,12 +67,12 @@ def main():
     print(f"  Components: {len(work_result['components'])}")
     
     # Test composite score calculation
-    composite_result = calculate_composite_cbi_score(
+    composite_result = calculate_composite_ocb_score(
         personal_result['score'], 
         work_result['score']
     )
     
-    print(f"\nComposite CBI Score Test:")
+    print(f"\nComposite OCB Score Test:")
     print(f"  Composite Score: {composite_result['composite_score']}")
     print(f"  Interpretation: {composite_result['interpretation']}")
     print(f"  Risk Level: {composite_result['risk_level']}")
@@ -94,7 +94,7 @@ def main():
     print(f"\nEmpty Metrics Test:")
     print(f"  Score: {empty_result['score']} (should be 0)")
     
-    print("\n=== All CBI Tests Completed Successfully ===")
+    print("\n=== All OCB Tests Completed Successfully ===")
     return 0
 
 if __name__ == '__main__':

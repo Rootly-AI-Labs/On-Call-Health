@@ -208,7 +208,7 @@ export default function LandingPage() {
                 </div>
                 <h3 className="text-xl font-semibold text-slate-900 mb-4">See who’s at risk, backed by research.</h3>
                 <p className="text-slate-600 leading-relaxed mb-4">
-                  The burnout detector calculates individual risk scores using the Copenhagen Burnout Inventory (CBI) the most widely used research framework for assessing burnout.
+                  The burnout detector calculates individual risk scores using our On-Call Burnout (OCB) score.
                 </p>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center space-x-2">

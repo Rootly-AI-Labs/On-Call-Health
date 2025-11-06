@@ -342,18 +342,18 @@ export function MemberDetailModal({
                         <CardContent className="p-4 text-center">
                           <p className="text-sm text-gray-600 mb-2">Overall Risk Level</p>
                           {(() => {
-                            const getCBIRiskLevel = () => {
-                              if (memberData?.cbi_score !== undefined && memberData?.cbi_score !== null) {
-                                if (memberData.cbi_score < 25) return { level: 'healthy', label: 'Healthy' };
-                                if (memberData.cbi_score < 50) return { level: 'fair', label: 'Fair' };
-                                if (memberData.cbi_score < 75) return { level: 'poor', label: 'Poor' };
+                            const getOCBRiskLevel = () => {
+                              if (memberData?.ocb_score !== undefined && memberData?.ocb_score !== null) {
+                                if (memberData.ocb_score < 25) return { level: 'healthy', label: 'Healthy' };
+                                if (memberData.ocb_score < 50) return { level: 'fair', label: 'Fair' };
+                                if (memberData.ocb_score < 75) return { level: 'poor', label: 'Poor' };
                                 return { level: 'critical', label: 'Critical' };
                               }
                               return { level: 'unknown', label: 'Unknown Risk' };
                             };
 
-                            const riskInfo = getCBIRiskLevel();
-                            const getCBIColor = (level: string) => {
+                            const riskInfo = getOCBRiskLevel();
+                            const getOCBColor = (level: string) => {
                               switch (level) {
                                 case 'critical': return 'bg-red-100 text-red-800 border-red-300';
                                 case 'poor': return 'bg-red-50 text-red-600 border-red-200';
@@ -364,15 +364,15 @@ export function MemberDetailModal({
                             };
 
                             return (
-                              <Badge className={`px-3 py-1 ${getCBIColor(riskInfo.level)}`}>
+                              <Badge className={`px-3 py-1 ${getOCBColor(riskInfo.level)}`}>
                                 {riskInfo.label}
                               </Badge>
                             );
                           })()}
                           <div className="mt-3">
                             <div className={`text-2xl font-bold ${(() => {
-                              if (memberData?.cbi_score !== undefined) {
-                                const score = memberData.cbi_score;
+                              if (memberData?.ocb_score !== undefined) {
+                                const score = memberData.ocb_score;
                                 if (score < 25) return 'text-green-600';
                                 if (score < 50) return 'text-yellow-600';
                                 if (score < 75) return 'text-orange-600';
@@ -380,13 +380,13 @@ export function MemberDetailModal({
                               }
                               return 'text-gray-900';
                             })()}`}>
-                              {memberData?.cbi_score !== undefined ?
-                                `${memberData.cbi_score.toFixed(0)}/100` :
+                              {memberData?.ocb_score !== undefined ?
+                                `${memberData.ocb_score.toFixed(0)}/100` :
                                 'No Score Available'
                               }
                             </div>
                             <p className="text-xs text-gray-500">
-                              {memberData?.cbi_score !== undefined ? 'CBI Score' : 'No Score Available'}
+                              {memberData?.ocb_score !== undefined ? 'OCB Score' : 'No Score Available'}
                             </p>
                           </div>
                         </CardContent>
@@ -403,25 +403,25 @@ export function MemberDetailModal({
                       </Card>
                     </div>
 
-                    {/* CBI Scores */}
-                    {memberData?.cbi_personal_score !== undefined && memberData?.cbi_work_score !== undefined && (
+                    {/* OCB Scores */}
+                    {memberData?.ocb_personal_score !== undefined && memberData?.ocb_work_score !== undefined && (
                       <Card>
                         <CardHeader>
-                          <CardTitle className="text-base">CBI Scores</CardTitle>
+                          <CardTitle className="text-base">OCB Scores</CardTitle>
                           <CardDescription>Copenhagen Burnout Inventory dimensional assessment</CardDescription>
                         </CardHeader>
                         <CardContent>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="text-center p-3 rounded-lg bg-blue-50 border border-blue-100">
                               <div className="text-lg font-bold text-blue-600">
-                                {memberData.cbi_personal_score.toFixed(1)}/100
+                                {memberData.ocb_personal_score.toFixed(1)}/100
                               </div>
                               <p className="text-sm font-medium text-blue-800">Personal Burnout</p>
                               <p className="text-xs text-blue-600 mt-1">Physical and psychological fatigue</p>
                             </div>
                             <div className="text-center p-3 rounded-lg bg-orange-50 border border-orange-100">
                               <div className="text-lg font-bold text-orange-600">
-                                {memberData.cbi_work_score.toFixed(1)}/100
+                                {memberData.ocb_work_score.toFixed(1)}/100
                               </div>
                               <p className="text-sm font-medium text-orange-800">Work-Related Burnout</p>
                               <p className="text-xs text-orange-600 mt-1">Work-specific exhaustion and cynicism</p>
@@ -429,9 +429,9 @@ export function MemberDetailModal({
                           </div>
                           <div className="mt-4 text-center">
                             <div className="text-2xl font-bold text-gray-900">
-                              {memberData.cbi_score.toFixed(1)}/100
+                              {memberData.ocb_score.toFixed(1)}/100
                             </div>
-                            <p className="text-sm text-gray-600">Composite CBI Score</p>
+                            <p className="text-sm text-gray-600">Composite OCB Score</p>
                           </div>
                         </CardContent>
                       </Card>
@@ -677,7 +677,7 @@ export function MemberDetailModal({
                     <Card>
                       <CardContent className="p-4">
                         <h4 className="font-semibold text-gray-900 mb-2">Burnout Analysis</h4>
-                        {memberData?.cbi_reasoning ? (
+                        {memberData?.ocb_reasoning ? (
                           <div className="space-y-6">
                             {/* Contributing Factors */}
                             <div className="space-y-3">
@@ -685,7 +685,7 @@ export function MemberDetailModal({
                                 Factors
                               </h5>
                               <div className="space-y-2">
-                                {memberData.cbi_reasoning.slice(1).map((reason: string, index: number) => {
+                                {memberData.ocb_reasoning.slice(1).map((reason: string, index: number) => {
                                   const cleanReason = reason.replace(/^[\s]*[•·\-*]\s*/, '').trim();
                                   const isSectionHeader = cleanReason.endsWith(':');
                                   if (isSectionHeader) return null;
@@ -700,7 +700,7 @@ export function MemberDetailModal({
                             </div>
 
                             {/* Dimensional Breakdown */}
-                            {memberData.cbi_breakdown && (
+                            {memberData.ocb_breakdown && (
                               <div className="grid grid-cols-2 gap-4">
                                 <div className="bg-green-50 rounded-lg p-3">
                                   <div className="flex items-center space-x-1 mb-1">
@@ -715,7 +715,7 @@ export function MemberDetailModal({
                                     </div>
                                   </div>
                                   <div className="text-lg font-bold text-green-700">
-                                    {memberData.cbi_breakdown.personal?.toFixed(0)}/100
+                                    {memberData.ocb_breakdown.personal?.toFixed(0)}/100
                                   </div>
                                 </div>
                                 <div className="bg-blue-50 rounded-lg p-3">
@@ -731,7 +731,7 @@ export function MemberDetailModal({
                                     </div>
                                   </div>
                                   <div className="text-lg font-bold text-blue-700">
-                                    {memberData.cbi_breakdown.work_related?.toFixed(0)}/100
+                                    {memberData.ocb_breakdown.work_related?.toFixed(0)}/100
                                   </div>
                                 </div>
                               </div>
@@ -739,7 +739,7 @@ export function MemberDetailModal({
                           </div>
                         ) : (
                           <p className="text-sm text-gray-500 italic">
-                            CBI burnout analysis not available. Run a new analysis to see detailed burnout factors.
+                            OCB burnout analysis not available. Run a new analysis to see detailed burnout factors.
                           </p>
                         )}
                       </CardContent>

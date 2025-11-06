@@ -75,10 +75,10 @@ Once running, visit `http://localhost:8000/docs` for interactive API documentati
 
 ## 📊 Signals Analysis
 
-The On-call Burnout Detector takes inspiration from the [Copenhagen Burnout Inventory](https://nfa.dk/media/hl5nbers/cbi-first-edition.pdf) (CBI), a scientifically validated approach to measuring burnout risk in professional settings. The Burnout Detector isn’t a medical tool and doesn’t provide a diagnosis; it is designed to help identify patterns and trends that may suggest overwork.
+The On-call Burnout Detector (OCB) takes inspiration from the [Copenhagen Burnout Inventory](https://nfa.dk/media/hl5nbers/cbi-first-edition.pdf) (CBI), a scientifically validated approach to measuring burnout risk in professional settings. The Burnout Detector isn’t a medical tool and doesn’t provide a diagnosis; it is designed to help identify patterns and trends that may suggest overwork.
 
 ### Methodology
-Our implementation uses the two core CBI dimensions:
+Our implementation uses the two core OCB dimensions:
 
 1. **Personal Burnout**
    - Physical and psychological fatigue from workload

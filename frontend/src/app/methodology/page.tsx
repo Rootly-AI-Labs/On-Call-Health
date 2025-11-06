@@ -52,16 +52,20 @@ export default function MethodologyPage() {
           <CardHeader>
             <CardTitle>The Science Behind Our Scoring</CardTitle>
             <CardDescription>
-              Based on the Copenhagen Burnout Inventory (CBI), a scientifically validated framework for measuring burnout
+              Powered by the On-Call Burnout (OCB) Score — inspired by the Copenhagen Burnout Inventory (CBI)
             </CardDescription>
           </CardHeader>
+
           <CardContent>
             <p className="text-gray-700 mb-4">
-              Our burnout detection system analyzes incident response data from PagerDuty and Rootly to calculate
-              burnout risk using the Copenhagen Burnout Inventory (CBI), enhanced with 2024 research on incident
-              response burnout. The CBI is a scientifically validated psychological assessment tool that measures
-              burnout across personal and work-related dimensions, now enhanced with compound trauma analysis,
-              time impact multipliers, and recovery deficit tracking.
+              Our burnout detection system uses the <strong>On-Call Burnout (OCB) Score</strong>, a model designed specifically for 
+              engineering on-call work and incident response environments. The OCB framework is 
+              inspired by the Copenhagen Burnout Inventory (CBI), a scientifically validated tool for measuring personal and 
+              work-related burnout, but adapts those principles to operational data rather than survey responses.
+              <br /><br />
+              The OCB Score incorporates factors such as severity-weighted incident load, after-hours and weekend work,
+              response-time pressure, recovery gaps between incidents, and compound-trauma effects from repeated critical events.
+              This produces a real-time, practical burnout indicator tailored for modern DevOps and SRE teams.
             </p>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-sm text-blue-800">
@@ -318,7 +322,7 @@ export default function MethodologyPage() {
         {/* Three Dimensions */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>Copenhagen Burnout Inventory Dimensions</CardTitle>
+            <CardTitle>On-Call Burnout Dimensions</CardTitle>
             <CardDescription>
               How the five factors map to the three scientifically validated burnout dimensions
             </CardDescription>

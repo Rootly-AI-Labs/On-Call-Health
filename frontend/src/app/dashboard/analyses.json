@@ -37,7 +37,7 @@
         },
         "team_health": {
             "overall_score": 0,
-            "scoring_method": "CBI",
+            "scoring_method": "OCB",
             "risk_distribution": {
                 "low": 36,
                 "medium": 4,
@@ -55,7 +55,7 @@
                     "user_name": "Iain MacKenzie",
                     "user_email": "iain@rootly.com",
                     "burnout_score": 5.85,
-                    "cbi_score": 0,
+                    "ocb_score": 0,
                     "risk_level": "high",
                     "incident_count": 7,
                     "factors": {
@@ -69,13 +69,13 @@
                         "work_related_burnout": 4.5,
                         "accomplishment_burnout": 6.25
                     },
-                    "cbi_breakdown": {
+                    "ocb_breakdown": {
                         "personal": 0,
                         "work_related": 0,
                         "interpretation": "low"
                     },
-                    "cbi_reasoning": [
-                        "Low burnout risk (CBI: 0/100) - healthy stress levels",
+                    "ocb_reasoning": [
+                        "Low burnout risk (OBC: 0/100) - healthy stress levels",
                         "On-call baseline stress from handling 7 total incidents"
                     ],
                     "metrics": {
@@ -205,7 +205,7 @@
                     "user_name": "Dan Sadler",
                     "user_email": "dan@rootly.com",
                     "burnout_score": 5.29,
-                    "cbi_score": 0,
+                    "ocb_score": 0,
                     "risk_level": "medium",
                     "incident_count": 4,
                     "factors": {
@@ -219,13 +219,13 @@
                         "work_related_burnout": 4.5,
                         "accomplishment_burnout": 6.25
                     },
-                    "cbi_breakdown": {
+                    "ocb_breakdown": {
                         "personal": 0,
                         "work_related": 0,
                         "interpretation": "low"
                     },
-                    "cbi_reasoning": [
-                        "Low burnout risk (CBI: 0/100) - healthy stress levels",
+                    "ocb_reasoning": [
+                        "Low burnout risk (OBC: 0/100) - healthy stress levels",
                         "On-call baseline stress from handling 4 total incidents"
                     ],
                     "metrics": {
@@ -356,7 +356,7 @@
                     "user_name": "Anandha Krishnan",
                     "user_email": "anandha.krishnan@rootly.com",
                     "burnout_score": 4.85,
-                    "cbi_score": 0,
+                    "ocb_score": 0,
                     "risk_level": "medium",
                     "incident_count": 2,
                     "factors": {
@@ -370,13 +370,13 @@
                         "work_related_burnout": 4.5,
                         "accomplishment_burnout": 6.25
                     },
-                    "cbi_breakdown": {
+                    "ocb_breakdown": {
                         "personal": 0,
                         "work_related": 0,
                         "interpretation": "low"
                     },
-                    "cbi_reasoning": [
-                        "Low burnout risk (CBI: 0/100) - healthy stress levels",
+                    "ocb_reasoning": [
+                        "Low burnout risk (OBC: 0/100) - healthy stress levels",
                         "On-call baseline stress from handling 2 total incidents"
                     ],
                     "metrics": {
@@ -506,7 +506,7 @@
                     "user_name": "Jasmeet Singh",
                     "user_email": "jasmeet.singh@rootly.com",
                     "burnout_score": 4.19,
-                    "cbi_score": 0,
+                    "ocb_score": 0,
                     "risk_level": "medium",
                     "incident_count": 2,
                     "factors": {
@@ -520,13 +520,13 @@
                         "work_related_burnout": 4.5,
                         "accomplishment_burnout": 6.25
                     },
-                    "cbi_breakdown": {
+                    "ocb_breakdown": {
                         "personal": 0,
                         "work_related": 0,
                         "interpretation": "low"
                     },
-                    "cbi_reasoning": [
-                        "Low burnout risk (CBI: 0/100) - healthy stress levels",
+                    "ocb_reasoning": [
+                        "Low burnout risk (OCB: 0/100) - healthy stress levels",
                         "On-call baseline stress from handling 2 total incidents"
                     ],
                     "metrics": {
@@ -656,7 +656,7 @@
                     "user_name": "Purvai Nanda",
                     "user_email": "purvai@rootly.com",
                     "burnout_score": 4.17,
-                    "cbi_score": 0,
+                    "ocb_score": 0,
                     "risk_level": "medium",
                     "incident_count": 11,
                     "factors": {
@@ -670,13 +670,13 @@
                         "work_related_burnout": 2,
                         "accomplishment_burnout": 3.75
                     },
-                    "cbi_breakdown": {
+                    "ocb_breakdown": {
                         "personal": 0,
                         "work_related": 0,
                         "interpretation": "low"
                     },
-                    "cbi_reasoning": [
-                        "Low burnout risk (CBI: 0/100) - healthy stress levels",
+                    "ocb_reasoning": [
+                        "Low burnout risk (OCB: 0/100) - healthy stress levels",
                         "On-call baseline stress from handling 11 total incidents"
                     ],
                     "metrics": {
@@ -8669,18 +8669,18 @@
                 "executive_summary": {
                     "urgency_level": "Critical",
                     "overall_health_score": 100,
-                    "primary_concern": "1 team member(s) showing severe CBI burnout symptoms (>75/100) requiring immediate intervention",
+                    "primary_concern": "1 team member(s) showing severe OCB burnout symptoms (>75/100) requiring immediate intervention",
                     "key_metrics": {
                         "total_team_incidents": 0,
                         "average_burnout_score": 0,
-                        "scoring_methodology": "CBI (0-100)",
+                        "scoring_methodology": "OCB (0-100)",
                         "high_risk_percentage": 2.4390243902439024,
                         "data_completeness": 1
                     },
                     "immediate_actions_needed": true,
                     "team_trajectory": "Healthy"
                 },
-                "llm_team_analysis": "**Summary**\nThe remarkably low burnout score of 0.0 on the CBI scale immediately stands out as unusual - not merely positive, but potentially masking underlying dynamics that warrant closer examination. This 41-member team presents an intriguing structural imbalance: while overall stress indicators appear minimal, the concentration of incident response duties among just 5 team members (12.2%) creates potential vulnerability points that could rapidly escalate if not proactively addressed.\n\nThe data reveals a team that appears healthy on the surface but shows early warning signs in its operational structure. With Purvai Nanda handling 42% of all incidents while 36 team members have zero incident involvement, we're seeing a concerning \"skills island\" pattern that could impact long-term sustainability. The after-hours work pattern (8.8% of commits) remains within acceptable ranges, but the weekend activity from five specific members suggests emerging schedule pressure points.\n\n**Key Observations**\n\n1. **Concentrated Expertise Risk**\nThe dramatic disparity between Purvai Nanda's incident handling load (42%) and the zero-incident majority (36 members) indicates a dangerous knowledge concentration. While current burnout scores show no immediate crisis, this structure creates single points of failure and could lead to sudden system instability if key responders become unavailable. Recommendation: Implement a \"shadow rotation\" system where non-incident handlers pair with current responders to gradually distribute expertise.\n\n2. **Weekend Work Pattern Analysis**\nThe identified weekend workers (Ahammed Nafih, Dinesh Panda, Jagannath Bhat among others) show a consistent pattern that, while modest in volume (3.7% of commits), suggests potential timezone or project deadline misalignment. The concentration of weekend work among specific individuals rather than rotating teams indicates this isn't driven by planned maintenance windows but rather individual work habits that could evolve into burnout risks.\n\n3. **Hidden Knowledge Transfer Gaps**\nThe high ratio of commits (352) to pull request reviews (87) suggests possible gaps in code collaboration and knowledge sharing. With an average of only 2.1 reviews per PR, the team may be missing opportunities for broader technical knowledge distribution. This becomes particularly critical given the concentrated incident response pattern already identified.\n\n4. **Preventive Action Framework**\n- Establish incident response rotation including current non-responders\n- Create explicit knowledge transfer sessions focusing on incident handling procedures\n- Review project timeline planning to better distribute weekend work requirements\n- Implement paired review protocols to increase knowledge sharing velocity\n- Consider team structure reorganization to better balance operational responsibilities\n\nThe current zero burnout score provides an ideal window for implementing these changes before stress patterns emerge. The team's size (41 members) offers ample opportunity for redistributing responsibilities while maintaining operational efficiency.",
+                "llm_team_analysis": "**Summary**\nThe remarkably low burnout score of 0.0 on the OCB scale immediately stands out as unusual - not merely positive, but potentially masking underlying dynamics that warrant closer examination. This 41-member team presents an intriguing structural imbalance: while overall stress indicators appear minimal, the concentration of incident response duties among just 5 team members (12.2%) creates potential vulnerability points that could rapidly escalate if not proactively addressed.\n\nThe data reveals a team that appears healthy on the surface but shows early warning signs in its operational structure. With Purvai Nanda handling 42% of all incidents while 36 team members have zero incident involvement, we're seeing a concerning \"skills island\" pattern that could impact long-term sustainability. The after-hours work pattern (8.8% of commits) remains within acceptable ranges, but the weekend activity from five specific members suggests emerging schedule pressure points.\n\n**Key Observations**\n\n1. **Concentrated Expertise Risk**\nThe dramatic disparity between Purvai Nanda's incident handling load (42%) and the zero-incident majority (36 members) indicates a dangerous knowledge concentration. While current burnout scores show no immediate crisis, this structure creates single points of failure and could lead to sudden system instability if key responders become unavailable. Recommendation: Implement a \"shadow rotation\" system where non-incident handlers pair with current responders to gradually distribute expertise.\n\n2. **Weekend Work Pattern Analysis**\nThe identified weekend workers (Ahammed Nafih, Dinesh Panda, Jagannath Bhat among others) show a consistent pattern that, while modest in volume (3.7% of commits), suggests potential timezone or project deadline misalignment. The concentration of weekend work among specific individuals rather than rotating teams indicates this isn't driven by planned maintenance windows but rather individual work habits that could evolve into burnout risks.\n\n3. **Hidden Knowledge Transfer Gaps**\nThe high ratio of commits (352) to pull request reviews (87) suggests possible gaps in code collaboration and knowledge sharing. With an average of only 2.1 reviews per PR, the team may be missing opportunities for broader technical knowledge distribution. This becomes particularly critical given the concentrated incident response pattern already identified.\n\n4. **Preventive Action Framework**\n- Establish incident response rotation including current non-responders\n- Create explicit knowledge transfer sessions focusing on incident handling procedures\n- Review project timeline planning to better distribute weekend work requirements\n- Implement paired review protocols to increase knowledge sharing velocity\n- Consider team structure reorganization to better balance operational responsibilities\n\nThe current zero burnout score provides an ideal window for implementing these changes before stress patterns emerge. The team's size (41 members) offers ample opportunity for redistributing responsibilities while maintaining operational efficiency.",
                 "risk_distribution": {
                     "distribution": {
                         "low": 36,
@@ -8985,7 +8985,7 @@
                                 "email": "dan@rootly.com",
                                 "user_id": "PSR120H",
                                 "burnout_score": 0,
-                                "scoring_type": "CBI",
+                                "scoring_type": "OCB",
                                 "incident_count": 0
                             },
                             {
@@ -8993,7 +8993,7 @@
                                 "email": "anandha.krishnan@rootly.com",
                                 "user_id": "POSXO0H",
                                 "burnout_score": 0,
-                                "scoring_type": "CBI",
+                                "scoring_type": "OCB",
                                 "incident_count": 0
                             },
                             {
@@ -9001,7 +9001,7 @@
                                 "email": "jasmeet.singh@rootly.com",
                                 "user_id": "PL52CU9",
                                 "burnout_score": 0,
-                                "scoring_type": "CBI",
+                                "scoring_type": "OCB",
                                 "incident_count": 0
                             },
                             {
@@ -9009,7 +9009,7 @@
                                 "email": "purvai@rootly.com",
                                 "user_id": "P86TYQO",
                                 "burnout_score": 0,
-                                "scoring_type": "CBI",
+                                "scoring_type": "OCB",
                                 "incident_count": 0
                             }
                         ],
@@ -9019,7 +9019,7 @@
                                 "email": "iain@rootly.com",
                                 "user_id": "PA9DDDJ",
                                 "burnout_score": 0,
-                                "scoring_type": "CBI",
+                                "scoring_type": "OCB",
                                 "incident_count": 0
                             }
                         ],

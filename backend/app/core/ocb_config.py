@@ -1,10 +1,10 @@
 """
-Copenhagen Burnout Inventory (CBI) Configuration Module
+On-Call Burnout (OCB) Configuration Module
 
-This module implements the Copenhagen Burnout Inventory methodology for burnout assessment.
-CBI is scientifically validated and more applicable to software engineers than the Maslach approach.
+This module implements the On-Call Burnout methodology for burnout assessment.
+OCB is inspired by the Copenhagen Burnout Inventory (CBI) which is scientifically validated and more applicable to software engineers than the Maslach approach.
 
-CBI uses two dimensions for software engineers:
+OCB uses two dimensions for software engineers:
 1. Personal Burnout (6 items) - Physical and psychological fatigue/exhaustion
 2. Work-Related Burnout (7 items) - Fatigue/exhaustion specifically tied to work
 
@@ -16,25 +16,25 @@ from dataclasses import dataclass
 from enum import Enum
 
 
-class CBIDimension(Enum):
-    """CBI Burnout Dimensions"""
+class OCBDimension(Enum):
+    """OCB Burnout Dimensions"""
     PERSONAL = "personal_burnout"
     WORK_RELATED = "work_related_burnout"
 
 
 @dataclass
-class CBIConfig:
+class OCBConfig:
     """Copenhagen Burnout Inventory Configuration"""
     
-    # CBI Dimension Weights (must sum to 1.0)
-    # Based on CBI research - equal weighting for software engineers
+    # OCB Dimension Weights (must sum to 1.0)
+    # Based on OCB research - equal weighting for software engineers
     DIMENSION_WEIGHTS = {
-        CBIDimension.PERSONAL: 0.50,        # Physical/psychological fatigue
-        CBIDimension.WORK_RELATED: 0.50     # Work-specific fatigue
+        OCBDimension.PERSONAL: 0.50,        # Physical/psychological fatigue
+        OCBDimension.WORK_RELATED: 0.50     # Work-specific fatigue
     }
     
     # Personal Burnout Factor Mappings
-    # Maps current metrics to CBI Personal Burnout items (0-100 scale)
+    # Maps current metrics to OCB Personal Burnout items (0-100 scale)
     PERSONAL_BURNOUT_FACTORS = {
         'work_hours_trend': {
             'weight': 0.20,
@@ -69,7 +69,7 @@ class CBIConfig:
     }
     
     # Work-Related Burnout Factor Mappings
-    # Maps current metrics to CBI Work-Related Burnout items (0-100 scale)
+    # Maps current metrics to OCB Work-Related Burnout items (0-100 scale)
     WORK_RELATED_BURNOUT_FACTORS = {
         'sprint_completion': {
             'weight': 0.15,  # Restored to reasonable level
@@ -109,8 +109,8 @@ class CBIConfig:
         }
     }
     
-    # CBI Score Interpretation Ranges (0-100 scale, sum of Personal + Work-Related points capped at 100)
-    CBI_SCORE_RANGES = {
+    # OCB Score Interpretation Ranges (0-100 scale, sum of Personal + Work-Related points capped at 100)
+    OCB_SCORE_RANGES = {
         'low': (0, 25),           # Minimal burnout (0-25 total points)
         'mild': (25, 50),         # Some burnout symptoms (25-50 total points)
         'moderate': (50, 75),     # Significant burnout (50-75 total points)
@@ -119,16 +119,16 @@ class CBIConfig:
     
     # Risk Level Mapping (for compatibility with existing system)
     RISK_LEVEL_MAPPING = {
-        'low': 'low',           # 0-25 CBI -> low risk
-        'mild': 'medium',       # 25-50 CBI -> medium risk  
-        'moderate': 'high',     # 50-75 CBI -> high risk
-        'high': 'critical'      # 75-100 CBI -> critical risk
+        'low': 'low',           # 0-25 OCB -> low risk
+        'mild': 'medium',       # 25-50 OCB -> medium risk  
+        'moderate': 'high',     # 50-75 OCB -> high risk
+        'high': 'critical'      # 75-100 OCB -> critical risk
     }
 
 
-def calculate_personal_burnout(metrics: Dict[str, float], config: CBIConfig = None) -> Dict[str, Any]:
+def calculate_personal_burnout(metrics: Dict[str, float], config: OCBConfig = None) -> Dict[str, Any]:
     """
-    Calculate Personal Burnout score using CBI methodology.
+    Calculate Personal Burnout score using OCB methodology.
     
     Args:
         metrics: Dict of metric values
@@ -138,7 +138,7 @@ def calculate_personal_burnout(metrics: Dict[str, float], config: CBIConfig = No
         Dict with score, components, and details
     """
     if config is None:
-        config = CBIConfig()
+        config = OCBConfig()
     
     factors = config.PERSONAL_BURNOUT_FACTORS
     component_scores = {}
@@ -174,15 +174,15 @@ def calculate_personal_burnout(metrics: Dict[str, float], config: CBIConfig = No
     return {
         'score': round(final_score, 2),
         'components': component_scores,
-        'dimension': CBIDimension.PERSONAL.value,
-        'interpretation': get_cbi_interpretation(final_score, config),
+        'dimension': OCBDimension.PERSONAL.value,
+        'interpretation': get_ocb_interpretation(final_score, config),
         'data_completeness': total_weight
     }
 
 
-def calculate_work_related_burnout(metrics: Dict[str, float], config: CBIConfig = None) -> Dict[str, Any]:
+def calculate_work_related_burnout(metrics: Dict[str, float], config: OCBConfig = None) -> Dict[str, Any]:
     """
-    Calculate Work-Related Burnout score using CBI methodology.
+    Calculate Work-Related Burnout score using OCB methodology.
     
     Args:
         metrics: Dict of metric values
@@ -192,7 +192,7 @@ def calculate_work_related_burnout(metrics: Dict[str, float], config: CBIConfig 
         Dict with score, components, and details
     """
     if config is None:
-        config = CBIConfig()
+        config = OCBConfig()
     
     factors = config.WORK_RELATED_BURNOUT_FACTORS
     component_scores = {}
@@ -228,16 +228,16 @@ def calculate_work_related_burnout(metrics: Dict[str, float], config: CBIConfig 
     return {
         'score': round(final_score, 2),
         'components': component_scores,
-        'dimension': CBIDimension.WORK_RELATED.value,
-        'interpretation': get_cbi_interpretation(final_score, config),
+        'dimension': OCBDimension.WORK_RELATED.value,
+        'interpretation': get_ocb_interpretation(final_score, config),
         'data_completeness': total_weight
     }
 
 
-def calculate_composite_cbi_score(personal_score: float, work_related_score: float, 
-                                config: CBIConfig = None) -> Dict[str, Any]:
+def calculate_composite_ocb_score(personal_score: float, work_related_score: float, 
+                                config: OCBConfig = None) -> Dict[str, Any]:
     """
-    Calculate composite CBI score from dimension scores.
+    Calculate composite OCB score from dimension scores.
     
     Args:
         personal_score: Personal Burnout score (0-100)
@@ -248,17 +248,17 @@ def calculate_composite_cbi_score(personal_score: float, work_related_score: flo
         Dict with composite score and analysis
     """
     if config is None:
-        config = CBIConfig()
+        config = OCBConfig()
     
     weights = config.DIMENSION_WEIGHTS
     
-    # Calculate weighted average as per CBI methodology
+    # Calculate weighted average as per OCB methodology
     composite_score = (
-        personal_score * weights[CBIDimension.PERSONAL] +
-        work_related_score * weights[CBIDimension.WORK_RELATED]
+        personal_score * weights[OCBDimension.PERSONAL] +
+        work_related_score * weights[OCBDimension.WORK_RELATED]
     )
     
-    interpretation = get_cbi_interpretation(composite_score, config)
+    interpretation = get_ocb_interpretation(composite_score, config)
     risk_level = config.RISK_LEVEL_MAPPING[interpretation]
     
     return {
@@ -269,27 +269,27 @@ def calculate_composite_cbi_score(personal_score: float, work_related_score: flo
         'risk_level': risk_level,
         'dimension_weights': dict(weights),
         'score_breakdown': {
-            'personal_contribution': round(personal_score * weights[CBIDimension.PERSONAL], 2),
-            'work_related_contribution': round(work_related_score * weights[CBIDimension.WORK_RELATED], 2)
+            'personal_contribution': round(personal_score * weights[OCBDimension.PERSONAL], 2),
+            'work_related_contribution': round(work_related_score * weights[OCBDimension.WORK_RELATED], 2)
         }
     }
 
 
-def get_cbi_interpretation(score: float, config: CBIConfig = None) -> str:
+def get_ocb_interpretation(score: float, config: OCBConfig = None) -> str:
     """
-    Get CBI score interpretation based on standard ranges.
+    Get OCB score interpretation based on standard ranges.
 
     Args:
-        score: CBI score (0-100)
+        score: OCB score (0-100)
         config: Optional config override
         
     Returns:
         Interpretation string: 'low', 'mild', 'moderate', or 'high'
     """
     if config is None:
-        config = CBIConfig()
+        config = OCBConfig()
     
-    ranges = config.CBI_SCORE_RANGES
+    ranges = config.OCB_SCORE_RANGES
     
     for level, (min_score, max_score) in ranges.items():
         if min_score <= score < max_score:
@@ -302,9 +302,9 @@ def get_cbi_interpretation(score: float, config: CBIConfig = None) -> str:
     return 'low'
 
 
-def validate_cbi_config(config: CBIConfig = None) -> Dict[str, bool]:
+def validate_ocb_config(config: OCBConfig = None) -> Dict[str, bool]:
     """
-    Validate CBI configuration for mathematical consistency.
+    Validate OCB configuration for mathematical consistency.
     
     Args:
         config: Config to validate
@@ -313,7 +313,7 @@ def validate_cbi_config(config: CBIConfig = None) -> Dict[str, bool]:
         Dict of validation results
     """
     if config is None:
-        config = CBIConfig()
+        config = OCBConfig()
     
     results = {}
     
@@ -330,7 +330,7 @@ def validate_cbi_config(config: CBIConfig = None) -> Dict[str, bool]:
     results['work_related_factors_sum'] = abs(work_sum - 1.0) < 0.001
     
     # Check score ranges are properly ordered and cover 0-100
-    ranges = config.CBI_SCORE_RANGES
+    ranges = config.OCB_SCORE_RANGES
     results['score_ranges_valid'] = (
         ranges['low'][0] == 0 and
         ranges['low'][1] == ranges['mild'][0] and
@@ -353,19 +353,19 @@ def validate_cbi_config(config: CBIConfig = None) -> Dict[str, bool]:
     return results
 
 
-def generate_cbi_score_reasoning(
+def generate_ocb_score_reasoning(
     personal_result: Dict[str, Any], 
     work_result: Dict[str, Any], 
     composite_result: Dict[str, Any],
     raw_metrics: Dict[str, Any] = None
 ) -> List[str]:
     """
-    Generate human-readable explanations for why someone has their CBI score.
+    Generate human-readable explanations for why someone has their OCB score.
     
     Args:
         personal_result: Personal burnout calculation result
         work_result: Work-related burnout calculation result
-        composite_result: Composite CBI score result
+        composite_result: Composite OCB score result
         raw_metrics: Original metrics data for context
         
     Returns:
@@ -378,13 +378,13 @@ def generate_cbi_score_reasoning(
     
     # Overall score context
     if composite_score >= 75:
-        reasons.append(f"Critical burnout risk (CBI: {composite_score:.0f}/100) - immediate attention needed")
+        reasons.append(f"Critical burnout risk (OCB: {composite_score:.0f}/100) - immediate attention needed")
     elif composite_score >= 50:
-        reasons.append(f"High burnout risk (CBI: {composite_score:.0f}/100) - monitor closely")
+        reasons.append(f"High burnout risk (OCB: {composite_score:.0f}/100) - monitor closely")
     elif composite_score >= 25:
-        reasons.append(f"Moderate stress levels (CBI: {composite_score:.0f}/100) - manageable with care")
+        reasons.append(f"Moderate stress levels (OCB: {composite_score:.0f}/100) - manageable with care")
     else:
-        reasons.append(f"Low burnout risk (CBI: {composite_score:.0f}/100) - healthy stress levels")
+        reasons.append(f"Low burnout risk (OCB: {composite_score:.0f}/100) - healthy stress levels")
     
     # Organize factors by dimension with clean separation and avoid redundancy
     personal_factors = []
@@ -557,20 +557,20 @@ def generate_cbi_score_reasoning(
     return reasons
 
 
-def get_cbi_recommendations(cbi_result: Dict[str, Any]) -> List[str]:
+def get_ocb_recommendations(ocb_result: Dict[str, Any]) -> List[str]:
     """
-    Generate actionable recommendations based on CBI scores.
+    Generate actionable recommendations based on OCB scores.
     
     Args:
-        cbi_result: Result from calculate_composite_cbi_score
+        ocb_result: Result from calculate_composite_ocb_score
         
     Returns:
         List of recommendation strings
     """
     recommendations = []
-    composite_score = cbi_result['composite_score']
-    personal_score = cbi_result['personal_score']
-    work_related_score = cbi_result['work_related_score']
+    composite_score = ocb_result['composite_score']
+    personal_score = ocb_result['personal_score']
+    work_related_score = ocb_result['work_related_score']
     
     # General recommendations based on composite score
     if composite_score >= 75:
@@ -599,7 +599,7 @@ def get_cbi_recommendations(cbi_result: Dict[str, Any]) -> List[str]:
 
 def validate_factor_consistency(personal_result: Dict, work_result: Dict, raw_metrics: Dict) -> Dict[str, Any]:
     """
-    Validate that CBI factors don't double count underlying data sources.
+    Validate that OCB factors don't double count underlying data sources.
 
     Args:
         personal_result: Personal burnout calculation result
@@ -648,4 +648,4 @@ def validate_factor_consistency(personal_result: Dict, work_result: Dict, raw_me
 
 
 # Global singleton instance
-DEFAULT_CBI_CONFIG = CBIConfig()
+DEFAULT_OCB_CONFIG = OCBConfig()

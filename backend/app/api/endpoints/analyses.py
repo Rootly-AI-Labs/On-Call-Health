@@ -2193,7 +2193,7 @@ async def get_member_daily_health(
                         day_incident_count = min(random.randint(1, 4), remaining_incidents)
                         incidents_distributed += day_incident_count
                         has_data = True
-                        # Calculate burnout score based on incident count (CONSISTENT with CBI)
+                        # Calculate burnout score based on incident count (CONSISTENT with OBC)
                         # Higher incidents = higher burnout score
                         health_score = min(70, day_incident_count * 15)
                 
@@ -2202,7 +2202,7 @@ async def get_member_daily_health(
                     day_incident_count = min(random.randint(1, 4), remaining_incidents)
                     incidents_distributed += day_incident_count  
                     has_data = True
-                    # Calculate burnout score based on incident count (CONSISTENT with CBI)  
+                    # Calculate burnout score based on incident count (CONSISTENT with OBC)  
                     # Higher incidents = higher burnout score
                     health_score = min(70, day_incident_count * 15)
             
@@ -2300,7 +2300,7 @@ async def get_member_daily_health(
             else:
                 # NO FAKE DATA: Only use real incident data
                 # If no incidents, use baseline low burnout score (no randomization)
-                # CONSISTENT with CBI methodology: higher = more burnout
+                # CONSISTENT with OBC methodology: higher = more burnout
                 health_score = 0
                 logger.error(f"🚨 FALLBACK_SCORE: {member_email} on {date_str} - no incidents, using score 0")
                 
