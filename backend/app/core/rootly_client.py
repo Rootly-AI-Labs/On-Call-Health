@@ -39,7 +39,7 @@ class RootlyAPIClient:
                         f"{self.base_url}/v1/users",
                         headers=self.headers,
                         params={"page[size]": 1},
-                        timeout=10.0
+                        timeout=30.0  # Increased from 10s to match other API calls
                     )
                     
                     if response.status_code == 200:
@@ -62,7 +62,7 @@ class RootlyAPIClient:
                         f"{self.base_url}/v1/incidents",
                         headers=self.headers,
                         params={"page[size]": 1},
-                        timeout=10.0
+                        timeout=30.0  # Increased from 10s to match other API calls
                     )
                     
                     if response.status_code == 200:
