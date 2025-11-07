@@ -97,60 +97,18 @@ async def run_burnout_analysis(
         logger.info(f"ENDPOINT_DEBUG: Entered run_burnout_analysis for integration {request.integration_id}")
         logger.info(f"ENDPOINT_DEBUG: Request params - include_github: {request.include_github}, include_slack: {request.include_slack}")
         
-        # Handle beta integrations vs regular integrations
-        integration = None
-        if isinstance(request.integration_id, str) and request.integration_id.startswith("beta-"):
-            # Handle beta integration
-            beta_rootly_token = os.getenv('ROOTLY_API_TOKEN')
-            beta_pagerduty_token = os.getenv('PAGERDUTY_API_TOKEN')
-            
-            if request.integration_id == "beta-rootly" and beta_rootly_token:
-                # Use EXACT same name as /rootly/integrations endpoint - do NOT override with API call
-                from types import SimpleNamespace
-                
-                # Use the exact same hardcoded name that appears in the integrations dropdown
-                integration_display_name = "Rootly (Beta Access)"
-                
-                integration = SimpleNamespace(
-                    id="beta-rootly",
-                    api_token=beta_rootly_token,
-                    platform="rootly",
-                    name=integration_display_name,  # Use exact same name as frontend
-                    organization_name=integration_display_name
-                )
-            elif request.integration_id == "beta-pagerduty" and beta_pagerduty_token:
-                # Use EXACT same name as /pagerduty/integrations endpoint - do NOT override with API call
-                from types import SimpleNamespace
-                
-                # Use the exact same hardcoded name that appears in the integrations dropdown
-                integration_display_name = "PagerDuty (Beta Access)"
-                
-                integration = SimpleNamespace(
-                    id="beta-pagerduty",
-                    api_token=beta_pagerduty_token,
-                    platform="pagerduty",
-                    name=integration_display_name,  # Use exact same name as frontend
-                    organization_name=integration_display_name
-                )
-            
-            if not integration:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Beta integration not available"
-                )
-        else:
-            # Handle regular database integration
-            integration = db.query(RootlyIntegration).filter(
-                RootlyIntegration.id == request.integration_id,
-                RootlyIntegration.user_id == current_user.id,
-                RootlyIntegration.is_active == True
-            ).first()
-            
-            if not integration:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Integration not found or not active"
-                )
+        # Get the integration from database
+        integration = db.query(RootlyIntegration).filter(
+            RootlyIntegration.id == request.integration_id,
+            RootlyIntegration.user_id == current_user.id,
+            RootlyIntegration.is_active == True
+        ).first()
+
+        if not integration:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Integration not found or not active"
+            )
         
         # Check API permissions before starting analysis using customer's token
         check_token = integration.api_token
@@ -186,23 +144,20 @@ async def run_burnout_analysis(
             permission_warnings = [f"Permission check failed: {str(e)}"]
         
         # Create new analysis record
-        # For beta integrations, store a special marker in the integration_id field
-        db_integration_id = None if isinstance(integration.id, str) else integration.id
-        
         # DEBUG: Log what integration data we're storing
         logger.info(f"🔍 STORING INTEGRATION DATA: name='{integration.name}', platform='{integration.platform}', id='{integration.id}'")
         logger.info(f"🔍 Integration object type: {type(integration)}, has organization_name: {hasattr(integration, 'organization_name')}")
         if hasattr(integration, 'organization_name'):
             logger.info(f"🔍 Integration organization_name: '{integration.organization_name}'")
-        
+
         analysis = Analysis(
             user_id=current_user.id,
             organization_id=current_user.organization_id,  # Add organization_id for multi-tenancy
-            rootly_integration_id=db_integration_id,  # Null for beta integrations
+            rootly_integration_id=integration.id,
 
-            # NEW: Store integration details directly for simple frontend display
-            integration_name=integration.name,  # "PagerDuty (Beta Access)", "Failwhale Tales", etc.
-            platform=integration.platform,      # "rootly", "pagerduty"
+            # Store integration details directly for simple frontend display
+            integration_name=integration.name,
+            platform=integration.platform,
 
             time_range=request.time_range,
             status="pending",
@@ -211,7 +166,6 @@ async def run_burnout_analysis(
                 "include_github": request.include_github,
                 "include_slack": request.include_slack,
                 "permission_warnings": permission_warnings,
-                "beta_integration_id": integration.id if isinstance(integration.id, str) else None,
                 "organization_name": integration.organization_name if hasattr(integration, 'organization_name') else integration.name
             }
         )

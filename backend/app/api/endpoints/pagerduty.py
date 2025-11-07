@@ -133,82 +133,7 @@ async def get_pagerduty_integrations(
                 }
         
         result_integrations.append(integration_data)
-    
-    # Add beta fallback integration if available
-    beta_pagerduty_token = os.getenv('PAGERDUTY_API_TOKEN')
-    logger.info(f"Beta PagerDuty token check: exists={beta_pagerduty_token is not None}, length={len(beta_pagerduty_token) if beta_pagerduty_token else 0}")
-    if beta_pagerduty_token:
-        try:
-            # Test the beta token and get organization info
-            logger.info(f"Testing beta PagerDuty token: {beta_pagerduty_token[:10]}...")
-            client = PagerDutyAPIClient(beta_pagerduty_token)
-            test_result = await client.test_connection()
-            logger.info(f"Beta PagerDuty test_result: {test_result}")
-            
-            if test_result.get("valid"):
-                account_info = test_result.get("account_info", {})
-                logger.info(f"Beta PagerDuty account_info: {account_info}")
-                
-                # Check permissions for the beta token
-                try:
-                    permissions = await client.check_permissions()
-                    logger.info(f"Beta PagerDuty permissions: {permissions}")
-                except Exception as e:
-                    logger.warning(f"Failed to check beta PagerDuty permissions: {e}")
-                    permissions = {}
-                
-                beta_integration = {
-                    "id": "beta-pagerduty",  # Special ID for beta integration
-                    "name": "PagerDuty (Beta Access)",
-                    "organization_name": account_info.get("organization_name") or "Beta Organization",
-                    "total_users": account_info.get("total_users", 0),
-                    "is_default": True,
-                    "is_beta": True,  # Special flag to indicate beta integration
-                    "created_at": datetime.now().isoformat(),
-                    "last_used_at": None,
-                    "token_suffix": f"***{beta_pagerduty_token[-4:]}",
-                    "platform": "pagerduty",
-                    "permissions": permissions  # Add permission info for frontend display
-                }
-                
-                # Add beta integration at the beginning of the list
-                result_integrations.insert(0, beta_integration)
-                logger.info(f"Added beta PagerDuty integration for user {current_user.id}")
-            else:
-                logger.warning(f"Beta PagerDuty test_connection failed: {test_result}")
-                # Add fallback integration with limited info
-                beta_integration = {
-                    "id": "beta-pagerduty",
-                    "name": "PagerDuty (Beta Access)",
-                    "organization_name": "Beta Organization", 
-                    "total_users": 0,
-                    "is_default": True,
-                    "is_beta": True,
-                    "created_at": datetime.now().isoformat(),
-                    "last_used_at": None,
-                    "token_suffix": f"***{beta_pagerduty_token[-4:]}",
-                    "platform": "pagerduty"
-                }
-                result_integrations.insert(0, beta_integration)
-                logger.info(f"Added fallback beta PagerDuty integration for user {current_user.id}")
-        except Exception as e:
-            logger.warning(f"Failed to add beta PagerDuty integration: {str(e)}")
-            # Add fallback integration even on exception
-            beta_integration = {
-                "id": "beta-pagerduty",
-                "name": "PagerDuty (Beta Access)",
-                "organization_name": "Beta Organization",
-                "total_users": 0,
-                "is_default": True,
-                "is_beta": True,
-                "created_at": datetime.now().isoformat(),
-                "last_used_at": None,
-                "token_suffix": "***BETA",
-                "platform": "pagerduty"
-            }
-            result_integrations.insert(0, beta_integration)
-            logger.info(f"Added exception fallback beta PagerDuty integration for user {current_user.id}")
-    
+
     return {
         "integrations": result_integrations,
         "total": len(result_integrations)
@@ -337,85 +262,38 @@ def update_pagerduty_integration(
 
 @router.delete("/integrations/{integration_id}")
 def delete_pagerduty_integration(
-    integration_id: str,  # accept string to support "beta-pagerduty"
+    integration_id: int,
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db)
 ):
-    """Delete a PagerDuty integration or hide the virtual beta card."""
-    # Handle virtual/demo card
-    if integration_id == "beta-pagerduty":
-        return {"status": "success", "message": "Removed demo integration from view"}
-        
-    # Real DB row
-    try:
-        numeric_id = int(integration_id)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid integration ID")
-
+    """Delete a PagerDuty integration."""
     integration = db.query(RootlyIntegration).filter(
-        RootlyIntegration.id == numeric_id,
-        RootlyIntegration.user_id == current_user.id,
-        RootlyIntegration.platform == "pagerduty",
+        and_(
+            RootlyIntegration.id == integration_id,
+            RootlyIntegration.user_id == current_user.id,
+            RootlyIntegration.platform == "pagerduty"
+        )
     ).first()
-
+    
     if not integration:
-        raise HTTPException(status_code=404, detail="Integration not found")
-
-    try:
-        if hasattr(integration, "is_active"):
-            integration.is_active = False
-            if getattr(integration, "is_default", False):
-                other = db.query(RootlyIntegration).filter(
-                    RootlyIntegration.user_id == current_user.id,
-                    RootlyIntegration.id != numeric_id,
-                    RootlyIntegration.platform == "pagerduty",
-                    getattr(RootlyIntegration, "is_active", True) == True,
-                ).first()
-                if other and hasattr(other, "is_default"):
-                    other.is_default = True
-        else:
-            db.delete(integration)
-
-        db.commit()
-        return {"status": "success", "message": "Integration deleted successfully"}
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to delete integration: {e}")
-
-# @router.delete("/integrations/{integration_id}")
-# def delete_pagerduty_integration(
-#     integration_id: int,
-#     current_user: User = Depends(get_current_active_user),
-#     db: Session = Depends(get_db)
-# ):
-#     """Delete a PagerDuty integration."""
-#     integration = db.query(RootlyIntegration).filter(
-#         and_(
-#             RootlyIntegration.id == integration_id,
-#             RootlyIntegration.user_id == current_user.id,
-#             RootlyIntegration.platform == "pagerduty"
-#         )
-#     ).first()
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Integration not found"
+        )
     
-#     if not integration:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail="Integration not found"
-#         )
-    
-#     # If this was default, make another one default
-#     if integration.is_default:
-#         other_integration = db.query(RootlyIntegration).filter(
-#             and_(
-#                 RootlyIntegration.user_id == current_user.id,
-#                 RootlyIntegration.id != integration_id
-#             )
-#         ).first()
+    # If this was default, make another one default
+    if integration.is_default:
+        other_integration = db.query(RootlyIntegration).filter(
+            and_(
+                RootlyIntegration.user_id == current_user.id,
+                RootlyIntegration.id != integration_id
+            )
+        ).first()
         
-#         if other_integration:
-#             other_integration.is_default = True
+        if other_integration:
+            other_integration.is_default = True
     
-#     db.delete(integration)
-#     db.commit()
+    db.delete(integration)
+    db.commit()
     
-#     return {"status": "success", "message": "Integration deleted successfully"}
+    return {"status": "success", "message": "Integration deleted successfully"}
