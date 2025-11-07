@@ -2043,7 +2043,7 @@ export default function IntegrationsPage() {
                           </div>
 
                           {/* Permissions for Rootly and PagerDuty */}
-                          {integration.permissions && (
+                          {integration.permissions?.users && integration.permissions?.incidents && (
                             <>
                               <div className="mt-3 flex items-center space-x-4 text-sm">
                                 <span className="text-gray-500">Read permissions:</span>
@@ -2072,7 +2072,7 @@ export default function IntegrationsPage() {
                                   <span>Incidents</span>
                                 </div>
                               </div>
-                              
+
                               {/* Error message for insufficient permissions */}
                               {(!integration.permissions.users.access || !integration.permissions.incidents.access) && (
                                 <div className="mt-3">
