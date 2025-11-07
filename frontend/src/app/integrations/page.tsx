@@ -1457,19 +1457,6 @@ export default function IntegrationsPage() {
                   <span className="text-xs text-blue-600 font-medium">Refreshing...</span>
                 </div>
               )}
-
-              {/* Sync integrations button */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => loadAllIntegrationsOptimized(true)}
-                disabled={loadingRootly || loadingPagerDuty || refreshingInBackground}
-                className="flex items-center space-x-2 text-slate-600 hover:text-slate-900"
-                title="Sync integrations from source"
-              >
-                <RefreshCw className={`w-4 h-4 ${(loadingRootly || loadingPagerDuty || refreshingInBackground) ? 'animate-spin' : ''}`} />
-                <span className="text-sm">Sync</span>
-              </Button>
             </div>
           </div>
 
