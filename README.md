@@ -1,4 +1,3 @@
-
 # On-call Burnout Detector
 
 An application that detects signs of overwork in incident responders by analyzing operational, behavioral signals, and self-reported data. It integrates with Rootly, PagerDuty, GitHub, and Slack to compute a per-responder risk score highlighting potential burnout trends.
@@ -19,6 +18,46 @@ The On-call Burnout Detector measures and tracks signals over time that may indi
 - **🔄 Tailor to Your organization**: Ability to customize tool integration and signal weights
 
 ## 🚀 Quick Start
+### Environment Variables
+For ling purpiose, you **must** setup environement variables for either Google or GitHub OAuth.
+
+Start with creating a `.env` file.
+```cp backend/.env.example backend/.env```
+
+In that file, you'll need to configure either the Google OAuth or GitHub OAuth:
+
+<details>
+<summary>Instruction to get token for Google Auth</summary>
+1. **Enable [Google People API](https://console.cloud.google.com/marketplace/product/google/people.googleapis.com)**
+2. **Visit [https://console.cloud.google.com/](https://console.cloud.google.com/)**
+	* Create a new project (or select existing)
+	* Create OAuth 2.0 credentials
+	* Callback URL**: http://localhost:8000/auth/github/callback
+3. **Fill out the variable `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in your `backend/.env` file**
+4. **Restart backend:**
+</details>
+
+<details>
+<summary>Instruction to get token for GitHub Auth</summary>
+1. **Visit [https://github.com/settings/developers](https://github.com/settings/developers)**
+	*  Click **OAuth Apps** → **New OAuth App**
+	* **Application name**: On-Call Burnout Detector
+	- **Homepage URL**: http://localhost:3000
+	- **Authorization callback URL**: http://localhost:8000/auth/github/callback
+2. **Create the app:**
+	* Click **Register application**
+	* You'll see your **Client ID**
+	* Click **Generate a new client secret** to get your **Client Secret**
+3. **Add to backend/.env:**
+4. **Restart backend:**
+</details>
+
+### Docker Compose
+The easiest way is to get started is with our [Docker Compose file](https://github.com/Rootly-AI-Labs/On-Call-Burnout-Detector/blob/main/docker-compose.yml).
+```docker compose up -d```
+
+### Manual setup
+<details><summary>You can also set it up manually, but this method isn't activelly supported.</summary>
 
 ### Prerequisites
 - Python 3.11+
@@ -50,28 +89,7 @@ npm run dev
 ```
 
 The frontend will be available at `http://localhost:3000`
-
-## 🔧 Configuration
-
-### Environment Variables
-```bash
-# Required
-DEBUG=True
-SECRET_KEY=your-secret-key
-DATABASE_URL=sqlite:///./test.db
-
-# OAuth (optional for development)
-GOOGLE_CLIENT_ID=your-google-client-id
-GOOGLE_CLIENT_SECRET=your-google-client-secret
-GITHUB_CLIENT_ID=your-github-client-id
-GITHUB_CLIENT_SECRET=your-github-client-secret
-
-# Rootly Integration
-ROOTLY_API_BASE_URL=https://api.rootly.com
-FRONTEND_URL=http://localhost:3000
-```
-
-Once running, visit `http://localhost:8000/docs` for interactive API documentation.
+</details>
 
 ## 📊 Signals Analysis
 
@@ -110,4 +128,3 @@ If you are interested in integrating with the On-call Burnout Detector, [get in 
 Built with ❤️ by the [Rootly AI Labs](https://rootly.com/ai-labs) for engineering teams everywhere. The Rootly AI Labs is a fellow-led community designed to redefine reliability engineering. We develop innovative prototypes, create open-source tools, and produce research that's shared to advance the standards of operational excellence. Thank you Anthropic, Google Cloud and Google Deepmind for supporting us.
 
 This project is licensed under the Apache License 2.0.
-
