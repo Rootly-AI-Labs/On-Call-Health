@@ -1206,9 +1206,14 @@ export default function IntegrationsPage() {
             i.id === integration.id ? updatedIntegration : i
           ))
           toast.success('Permissions refreshed')
+        } else {
+          console.error('Integration not found in response:', integration.id, data)
+          toast.error('Integration not found in response')
         }
       } else {
-        toast.error('Failed to refresh permissions')
+        const errorText = await response.text()
+        console.error('Failed to refresh permissions:', response.status, errorText)
+        toast.error(`Failed to refresh permissions: ${response.status}`)
       }
     } catch (error) {
       console.error('Error refreshing permissions:', error)
