@@ -27,18 +27,20 @@ Start with creating a `.env` file.
 In that file, you'll need to configure either the Google OAuth or GitHub OAuth:
 
 <details>
-<summary>Instruction to get token for Google Auth</summary>
+<summary><b>Instruction to get token for Google Auth</b></summary>
+
 1. **Enable [Google People API](https://console.cloud.google.com/marketplace/product/google/people.googleapis.com)**
-2. **Visit [https://console.cloud.google.com/](https://console.cloud.google.com/)**
+	2. **Visit [https://console.cloud.google.com/](https://console.cloud.google.com/)**
 	* Create a new project (or select existing)
 	* Create OAuth 2.0 credentials
 	* Callback URL**: http://localhost:8000/auth/github/callback
-3. **Fill out the variable `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in your `backend/.env` file**
+	3. **Fill out the variable `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in your `backend/.env` file**
 4. **Restart backend:**
 </details>
 
 <details>
-<summary>Instruction to get token for GitHub Auth</summary>
+<summary><b>Instruction to get token for GitHub Auth</b></summary>
+
 1. **Visit [https://github.com/settings/developers](https://github.com/settings/developers)**
 	*  Click **OAuth Apps** → **New OAuth App**
 	* **Application name**: On-Call Burnout Detector
@@ -51,6 +53,7 @@ In that file, you'll need to configure either the Google OAuth or GitHub OAuth:
 3. **Add to backend/.env:**
 4. **Restart backend:**
 </details>
+
 
 ### Docker Compose
 The easiest way is to get started is with our [Docker Compose file](https://github.com/Rootly-AI-Labs/On-Call-Burnout-Detector/blob/main/docker-compose.yml).
