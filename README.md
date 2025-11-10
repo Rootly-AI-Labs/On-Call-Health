@@ -31,11 +31,11 @@ cp backend/.env.example backend/.env
 <summary><b>📝 Instructions to get token for Google Auth</b></summary>
 
 1. **Enable [Google People API](https://console.cloud.google.com/marketplace/product/google/people.googleapis.com)**
-	2. **Visit [https://console.cloud.google.com/](https://console.cloud.google.com/)**
+2. **Visit [https://console.cloud.google.com/](https://console.cloud.google.com/)**
 	* Create a new project
 	* Create OAuth 2.0 credentials
 	* Callback URL**: http://localhost:8000/auth/github/callback
-	3. **Fill out the variable `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in your `backend/.env` file**
+3. **Fill out the variable `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in your `backend/.env` file**
 4. **Restart backend:**
 </details>
 
