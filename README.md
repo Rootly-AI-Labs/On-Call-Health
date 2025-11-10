@@ -1,12 +1,12 @@
 
 # On-call Burnout Detector
 
-Detects potential signs of overwork in incident responders which could lead to burnout. To compute a per-responder risk score, it integrates with Rootly, PagerDuty, GitHub, and Slack.
+Detects potential signs of overwork in incident responders, which could lead to burnout. To compute a per-responder risk score, it integrates with Rootly, PagerDuty, GitHub, and Slack.
 
 ![Rootly AI Labs On-call Burnout Detector screenshot](assets/rootly-burnout-detector.png)
 
 Two ways to get started:
-* Use our hosted version [www.oncallburnout.com](https://www.oncallburnout.com/) (contains mock data if you just want to test it out)
+* Use our hosted version [www.oncallburnout.com](https://www.oncallburnout.com/) (contains mock data to easily test it out)
 * Host it [locally](#Installation)
 
 ## Installation
@@ -95,14 +95,13 @@ The frontend will be available at `http://localhost:3000`
 
 ##  Features
 
-- ** Multi Layer Signals**: Individual and team-level insights
-- ** Interactive Dashboard**: Visual  and AI-powered burnout risk analysis
-- ** Real-time Analysis**: Progress tracking during data processing
-- ** Tailor to Your organization**: Ability to customize tool integration and signal weights
+- **Multi Layer Signals**: Individual and team-level insights
+- **Interactive Dashboard**: Visual and AI-powered burnout risk analysis
+- **Tailor to Your organization**: Customize tool integration and signal weights
 
 ##  Methodology
 
-The On-call Burnout Detector (OCB) takes inspiration from the [Copenhagen Burnout Inventory](https://nfa.dk/media/hl5nbers/cbi-first-edition.pdf) (CBI), a scientifically validated approach to measuring burnout risk in professional settings. The Burnout Detector isn’t a medical tool and doesn’t provide a diagnosis; it is designed to help identify patterns and trends that may suggest overwork.
+The On-call Burnout Detector takes inspiration from the [Copenhagen Burnout Inventory](https://nfa.dk/media/hl5nbers/cbi-first-edition.pdf) (CBI), a scientifically validated approach to measuring burnout risk in professional settings. The Burnout Detector isn’t a medical tool and doesn’t provide a diagnosis; it is designed to help identify patterns and trends that may suggest overwork.
 
 ### Methodology breakdown
 Our implementation uses the two core dimensions:
@@ -134,6 +133,6 @@ Our implementation uses the two core dimensions:
 If you are interested in integrating with the On-call Burnout Detector, [get in touch](mailto:sylvain@rootly.com)!
 
 ## 🔗 About the Rootly AI Labs
-Built with ❤️ by the [Rootly AI Labs](https://rootly.com/ai-labs) for engineering teams everywhere. The Rootly AI Labs is a fellow-led community designed to redefine reliability engineering. We develop innovative prototypes, create open-source tools, and produce research that's shared to advance the standards of operational excellence. We would like to thank Anthropic, Google Cloud, and Google DeepMind for their support.
+The On-call Burnout Detector is built with ❤️ by the [Rootly AI Labs](https://rootly.com/ai-labs) for engineering teams everywhere. The Rootly AI Labs is a fellow-led community designed to redefine reliability engineering. We develop innovative prototypes, create open-source tools, and produce research that's shared to advance the standards of operational excellence. We want to thank Anthropic, Google Cloud, and Google DeepMind for their support.
 
 This project is licensed under the Apache License 2.0.
