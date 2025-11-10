@@ -109,3 +109,6 @@ query_db.sh
 # Frontend
 frontend/.env.local
 frontend/.next/
+
+# Emacs
+*~
