@@ -58,6 +58,7 @@ import { AIInsightsCard } from "@/components/dashboard/insights/AIInsightsCard"
 import { DeleteAnalysisDialog } from "@/components/dashboard/dialogs/DeleteAnalysisDialog"
 import Image from "next/image"
 import useDashboard from "@/hooks/useDashboard"
+import { TopPanel } from "@/components/TopPanel"
 
 export default function Dashboard() {
   const {
@@ -228,11 +229,13 @@ export default function Dashboard() {
   }
   
   return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
-      <div
-        className={`${sidebarCollapsed ? "w-16" : "w-60"} bg-gray-900 text-white transition-all duration-300 flex flex-col`}
-      >
+    <div className="flex flex-col h-screen bg-gray-50">
+      <TopPanel />
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <div
+          className={`${sidebarCollapsed ? "w-16" : "w-60"} bg-gray-900 text-white transition-all duration-300 flex flex-col`}
+        >
         {/* Header */}
         <div className="relative h-12">
           <Button
@@ -252,15 +255,15 @@ export default function Dashboard() {
               <Button
                 onClick={startAnalysis}
                 disabled={analysisRunning}
-                className="w-full justify-start bg-purple-600 hover:bg-purple-700 text-white"
+                className="w-full justify-start bg-purple-600 hover:bg-purple-700 text-white text-base"
               >
-                <Play className="w-4 h-4 mr-2" />
+                <Play className="w-5 h-5 mr-2" />
                 New Analysis
               </Button>
 
             <div className="space-y-1">
               {!sidebarCollapsed && previousAnalyses.length > 0 && (
-                <p className="text-xs text-gray-400 uppercase tracking-wide px-2 py-1 mt-4">Recent</p>
+                <p className="text-sm text-gray-400 uppercase tracking-wide px-2 py-1 mt-4">Recent</p>
               )}
               <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
                 {!initialDataLoaded && previousAnalyses.length === 0 ? (
@@ -269,7 +272,7 @@ export default function Dashboard() {
                     <div className="flex items-center space-x-2">
                       <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
                       {!sidebarCollapsed && (
-                        <span className="text-xs text-gray-400">Loading analyses...</span>
+                        <span className="text-sm text-gray-400">Loading analyses...</span>
                       )}
                     </div>
                   </div>
@@ -277,8 +280,8 @@ export default function Dashboard() {
                   // Show empty state
                   !sidebarCollapsed && (
                     <div className="text-center py-8 text-gray-400">
-                      <p className="text-xs">No analyses yet</p>
-                      <p className="text-xs mt-1">Start your first analysis above</p>
+                      <p className="text-sm">No analyses yet</p>
+                      <p className="text-sm mt-1">Start your first analysis above</p>
                     </div>
                   )
                 ) : (
@@ -367,14 +370,14 @@ export default function Dashboard() {
                       }}
                     >
                       {sidebarCollapsed ? (
-                        <Clock className="w-4 h-4" />
+                        <Clock className="w-5 h-5" />
                       ) : (
-                        <div className="flex flex-col items-start w-full text-xs pr-8">
+                        <div className="flex flex-col items-start w-full text-sm pr-8">
                           <div className="flex justify-between items-center w-full mb-1">
                             <div className="flex items-center space-x-2">
                               {/* Always show platform dot if we have a color */}
                               {platformColor !== 'bg-gray-500' && (
-                                <div className={`w-2 h-2 rounded-full ${platformColor}`}></div>
+                                <div className={`w-2.5 h-2.5 rounded-full ${platformColor}`}></div>
                               )}
                               <span className="font-medium">{organizationName}</span>
                             </div>
@@ -411,7 +414,7 @@ export default function Dashboard() {
                       size="sm"
                       onClick={() => loadPreviousAnalyses(true)}
                       disabled={loadingMoreAnalyses || analysisRunning}
-                      className="w-full border-gray-500 bg-gray-800 text-gray-200 hover:bg-gray-700 hover:text-white hover:border-gray-400 text-xs"
+                      className="w-full border-gray-500 bg-gray-800 text-gray-200 hover:bg-gray-700 hover:text-white hover:border-gray-400 text-sm"
                     >
                       {(loadingMoreAnalyses || (!initialDataLoaded && previousAnalyses.length === 0)) ? (
                         <>
@@ -436,62 +439,10 @@ export default function Dashboard() {
                 className="w-full bg-purple-600 hover:bg-purple-700 text-white p-2"
                 title="New Analysis"
               >
-                <Play className="w-4 h-4" />
+                <Play className="w-5 h-5" />
               </Button>
             </div>
           )}
-
-          <div className="space-y-2">
-            <Separator className="bg-gray-700" />
-            <Button 
-              variant="ghost" 
-              className={`w-full ${sidebarCollapsed ? 'p-2' : ''} justify-start text-gray-300 hover:text-white hover:bg-gray-800`}
-              onClick={() => router.push('/methodology')}
-              title="Methodology"
-            >
-              <BookOpen className={`w-4 h-4 ${sidebarCollapsed ? '' : 'mr-2'}`} />
-              {!sidebarCollapsed && "Methodology"}
-            </Button>
-            <Button 
-              variant="ghost" 
-              className={`w-full ${sidebarCollapsed ? 'p-2' : ''} justify-start text-gray-300 hover:text-white hover:bg-gray-800`}
-              onClick={handleManageIntegrations}
-              title="Manage Integrations"
-            >
-              <Settings className={`w-4 h-4 ${sidebarCollapsed ? '' : 'mr-2'}`} />
-              {!sidebarCollapsed && "Manage Integrations"}
-            </Button>
-            <Button 
-              variant="ghost" 
-              className={`w-full ${sidebarCollapsed ? 'p-2' : ''} justify-start text-gray-300 hover:text-white hover:bg-gray-800`}
-              onClick={handleSignOut}
-              title="Sign Out"
-            >
-              <LogOut className={`w-4 h-4 ${sidebarCollapsed ? '' : 'mr-2'}`} />
-              {!sidebarCollapsed && "Sign Out"}
-            </Button>
-            
-            {/* Powered by Rootly */}
-            {!sidebarCollapsed && (
-              <div className="mt-4 pt-4 border-t border-gray-700">
-                <a 
-                  href="https://rootly.com" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="flex flex-col items-center -space-y-1 hover:opacity-80 transition-opacity"
-                >
-                  <span className="text-sm text-slate-300">powered by</span>
-                  <Image 
-                    src="/images/rootly-ai-logo.png" 
-                    alt="Rootly AI" 
-                    width={160} 
-                    height={64} 
-                    className="h-8 w-auto ml-3 brightness-0 invert filter drop-shadow-sm"
-                  />
-                </a>
-              </div>
-            )}
-          </div>
         </div>
       </div>
 
@@ -502,8 +453,8 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center justify-between w-full">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Analysis Dashboard</h1>
-                <p className="text-gray-600">
+                <h1 className="text-4xl font-bold text-black">Analysis Dashboard</h1>
+                <p className="text-lg text-gray-600">
                   {(() => {
                     if (currentAnalysis) {
                       // Find the integration for this specific analysis
@@ -533,49 +484,39 @@ export default function Dashboard() {
                 </p>
               </div>
               <div className="flex items-center space-x-4">
-                <div className="flex flex-col items-center">
-                  <span className="text-xs text-gray-400">powered by</span>
-                  <Image 
-                    src="/images/rootly-ai-logo.png" 
-                    alt="Rootly AI" 
-                    width={120} 
-                    height={48}
-                    className="h-6 w-auto"
-                  />
-                </div>
                 {/* Export Dropdown */}
                 {!shouldShowInsufficientDataCard() && currentAnalysis && currentAnalysis.analysis_data && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         className="flex items-center space-x-2 border-gray-300 hover:bg-gray-50"
                         title="Export analysis data"
                       >
-                        <Download className="w-4 h-4" />
+                        <Download className="w-5 h-5" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-56">
                       <DropdownMenuItem onClick={exportAsJSON} className="flex items-center space-x-2">
-                        <Download className="w-4 h-4" />
+                        <Download className="w-5 h-5" />
                         <div className="flex flex-col">
-                          <span className="font-medium">Export as JSON</span>
-                          <span className="text-xs text-gray-500">Complete analysis data</span>
+                          <span className="font-medium text-base">Export as JSON</span>
+                          <span className="text-sm text-gray-500">Complete analysis data</span>
                         </div>
                       </DropdownMenuItem>
                       <DropdownMenuItem disabled className="flex items-center space-x-2 opacity-50">
-                        <Download className="w-4 h-4" />
+                        <Download className="w-5 h-5" />
                         <div className="flex flex-col">
-                          <span className="font-medium">Export as CSV</span>
-                          <span className="text-xs text-gray-500">Organization member scores</span>
+                          <span className="font-medium text-base">Export as CSV</span>
+                          <span className="text-sm text-gray-500">Organization member scores</span>
                         </div>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem disabled className="flex items-center space-x-2 opacity-50">
-                        <FileText className="w-4 h-4" />
+                        <FileText className="w-5 h-5" />
                         <div className="flex flex-col">
-                          <span className="font-medium">Generate PDF Report</span>
-                          <span className="text-xs text-gray-500">Executive summary</span>
+                          <span className="font-medium text-base">Generate PDF Report</span>
+                          <span className="text-sm text-gray-500">Executive summary</span>
                         </div>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -2182,6 +2123,7 @@ export default function Dashboard() {
         platform={mappingDrawerPlatform}
         onRefresh={fetchPlatformMappings}
       />
+      </div>
     </div>
   )
 }

@@ -96,6 +96,7 @@ import { MappingDrawer } from "@/components/mapping-drawer"
 import { NotificationDrawer } from "@/components/notifications"
 import ManualSurveyDeliveryModal from "@/components/ManualSurveyDeliveryModal"
 import { SlackSurveyTabs } from "@/components/SlackSurveyTabs"
+import { TopPanel } from "@/components/TopPanel"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
@@ -1166,106 +1167,54 @@ export default function IntegrationsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <h1 className="text-2xl font-bold text-slate-900">Manage Integrations</h1>
-
-            {/* ✨ PHASE 1: Background refresh indicator */}
-            {refreshingInBackground && (
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                <span className="text-xs text-blue-600 font-medium">Refreshing...</span>
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center space-x-4">
-            {/* Notifications */}
-            <NotificationDrawer />
-
-            {/* User Account Indicator */}
-            {userInfo ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <div className="flex items-center space-x-3 px-3 py-1 bg-slate-50/80 rounded-full border border-slate-200 hover:bg-slate-100 cursor-pointer transition-colors">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={userInfo.avatar} alt={userInfo.name} />
-                      <AvatarFallback className="bg-purple-600 text-white text-xs">
-                        {userInfo.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="hidden sm:block text-left">
-                      <div className="text-sm font-medium text-slate-900">{userInfo.name}</div>
-                      <div className="text-xs text-slate-500">{userInfo.email}</div>
-                    </div>
-                  </div>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem disabled className="px-2 py-1.5">
-                    <div>
-                      <div className="font-medium text-gray-900">{userInfo.name}</div>
-                      <div className="text-xs text-gray-500">{userInfo.email}</div>
-                      <div className="text-xs text-gray-400 mt-1 capitalize">
-                        {userInfo.role?.replace('_', ' ') || 'Member'}
-                      </div>
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  {/* Temporarily hidden for beta - everyone is an org admin */}
-                  {/* {(userInfo.role === 'org_admin' || userInfo.role === 'super_admin') && (
-                    <>
-                      <DropdownMenuItem
-                        className="px-2 py-1.5 cursor-pointer"
-                        onClick={() => setShowInviteModal(true)}
-                      >
-                        <UserPlus className="w-4 h-4 mr-2" />
-                        Org Management
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                    </>
-                  )} */}
-                  <DropdownMenuItem
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50 px-2 py-1.5 cursor-pointer"
-                    onClick={() => {
-                      // Clear all user data
-                      localStorage.clear();
-                      // Redirect to home page
-                      window.location.href = '/';
-                    }}
-                  >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Sign Out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <div className="flex items-center space-x-2 px-3 py-1 bg-slate-50/80 rounded-full border border-slate-200">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-gray-400 text-white text-xs">
-                    ?
-                  </AvatarFallback>
-                </Avatar>
-                <div className="hidden sm:block text-left">
-                  <div className="text-sm font-medium text-slate-900">Loading...</div>
-                  <div className="text-xs text-slate-500">User info</div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
+      <TopPanel />
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         {/* Introduction Text */}
         <div className="text-center mb-6 max-w-2xl mx-auto">
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">Connect Your Platform</h2>
-          <p className="text-slate-600">
+          <h2 className="text-4xl font-bold text-black mb-2">Connect Your Platform</h2>
+          <p className="text-lg text-slate-600">
             Integrate with Rootly or PagerDuty to analyze team burnout patterns
           </p>
         </div>
+
+        {/* No integrations message - Show right below intro */}
+        {integrations.length === 0 && !loadingRootly && !loadingPagerDuty && (
+          <div className="text-center py-8 mb-6 max-w-2xl mx-auto">
+            <Shield className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+            <p className="text-lg font-medium mb-2 text-gray-700">No integrations yet</p>
+            <p className="text-sm text-gray-500">Add a Rootly or PagerDuty integration to get started!</p>
+          </div>
+        )}
+
+        {/* Ready for Analysis CTA - Always visible when integrations exist */}
+        {(loadingRootly || loadingPagerDuty) ? (
+          <div className="bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-6 mb-8 max-w-2xl mx-auto animate-pulse">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-gray-300 rounded-full mx-auto mb-4"></div>
+              <div className="h-6 bg-gray-300 rounded w-80 mx-auto mb-2"></div>
+              <div className="h-4 bg-gray-300 rounded w-96 mx-auto mb-2"></div>
+              <div className="h-4 bg-gray-300 rounded w-72 mx-auto mb-4"></div>
+              <div className="h-10 bg-gray-300 rounded w-40 mx-auto"></div>
+            </div>
+          </div>
+        ) : integrations.length > 0 && (
+          <div className="bg-gradient-to-r from-purple-50 to-green-50 border border-purple-200 rounded-lg p-6 mb-8 max-w-2xl mx-auto">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold text-slate-900 mb-2">
+                Ready to analyze your team's burnout risk!
+              </h3>
+              <p className="text-slate-600">
+                You have {integrations.length} integration{integrations.length > 1 ? 's' : ''} connected.
+                Run your first analysis to identify burnout patterns across your team.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Dashboard Organization Selector */}
         {integrations.length > 0 && (
@@ -1273,8 +1222,8 @@ export default function IntegrationsPage() {
             <div className="bg-white border-2 border-slate-200 rounded-lg p-4 shadow-sm">
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2 text-slate-700 flex-shrink-0">
-                  <Settings className="w-5 h-5 text-purple-600" />
-                  <span className="font-semibold">Active Organization</span>
+                  <Settings className="w-6 h-6 text-purple-600" />
+                  <span className="font-semibold text-lg">Active Organization</span>
                 </div>
                 <Select
                   value={selectedOrganization}
@@ -1300,12 +1249,12 @@ export default function IntegrationsPage() {
                           return (
                             <div className="flex items-center justify-between w-full">
                               <div className="flex items-center gap-2">
-                                <div className={`w-2.5 h-2.5 rounded-full ${
+                                <div className={`w-3 h-3 rounded-full ${
                                   selected.platform === 'rootly' ? 'bg-purple-500' : 'bg-green-500'
                                 }`}></div>
-                                <span className="font-medium">{selected.name}</span>
+                                <span className="font-medium text-base">{selected.name}</span>
                               </div>
-                              <Star className="w-4 h-4 text-yellow-500 fill-yellow-500 flex-shrink-0" />
+                              <Star className="w-5 h-5 text-yellow-500 fill-yellow-500 flex-shrink-0" />
                             </div>
                           )
                         }
@@ -1324,9 +1273,9 @@ export default function IntegrationsPage() {
                           {/* Rootly Organizations */}
                           {rootlyIntegrations.length > 0 && (
                             <>
-                              <div className="px-3 py-2 text-xs font-semibold text-slate-600 bg-slate-50 border-b border-slate-200">
+                              <div className="px-3 py-2 text-sm font-semibold text-slate-600 bg-slate-50 border-b border-slate-200">
                                 <div className="flex items-center gap-2">
-                                  <div className="w-2.5 h-2.5 bg-purple-500 rounded-full"></div>
+                                  <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
                                   Rootly Organizations
                                 </div>
                               </div>
@@ -1338,11 +1287,11 @@ export default function IntegrationsPage() {
                                 >
                                   <div className="flex items-center justify-between w-full gap-2">
                                     <div className="flex items-center gap-2">
-                                      <div className="w-2.5 h-2.5 bg-purple-500 rounded-full"></div>
-                                      <span className="font-medium">{integration.name}</span>
+                                      <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                                      <span className="font-medium text-base">{integration.name}</span>
                                     </div>
                                     {selectedOrganization === integration.id.toString() && (
-                                      <Star className="w-4 h-4 text-yellow-500 fill-yellow-500 flex-shrink-0" />
+                                      <Star className="w-5 h-5 text-yellow-500 fill-yellow-500 flex-shrink-0" />
                                     )}
                                   </div>
                                 </SelectItem>
@@ -1356,9 +1305,9 @@ export default function IntegrationsPage() {
                               {rootlyIntegrations.length > 0 && (
                                 <div className="my-1 border-t border-slate-200"></div>
                               )}
-                              <div className="px-3 py-2 text-xs font-semibold text-slate-600 bg-slate-50 border-b border-slate-200">
+                              <div className="px-3 py-2 text-sm font-semibold text-slate-600 bg-slate-50 border-b border-slate-200">
                                 <div className="flex items-center gap-2">
-                                  <div className="w-2.5 h-2.5 bg-green-500 rounded-full"></div>
+                                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                                   PagerDuty Organizations
                                 </div>
                               </div>
@@ -1370,11 +1319,11 @@ export default function IntegrationsPage() {
                                 >
                                   <div className="flex items-center justify-between w-full gap-2">
                                     <div className="flex items-center gap-2">
-                                      <div className="w-2.5 h-2.5 bg-green-500 rounded-full"></div>
-                                      <span className="font-medium">{integration.name}</span>
+                                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                                      <span className="font-medium text-base">{integration.name}</span>
                                     </div>
                                     {selectedOrganization === integration.id.toString() && (
-                                      <Star className="w-4 h-4 text-yellow-500 fill-yellow-500 flex-shrink-0" />
+                                      <Star className="w-5 h-5 text-yellow-500 fill-yellow-500 flex-shrink-0" />
                                     )}
                                   </div>
                                 </SelectItem>
@@ -1387,54 +1336,6 @@ export default function IntegrationsPage() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* Ready for Analysis CTA - Always visible when integrations exist */}
-        {(loadingRootly || loadingPagerDuty) ? (
-          <div className="bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-6 mb-8 max-w-2xl mx-auto animate-pulse">
-            <div className="text-center">
-              <div className="w-12 h-12 bg-gray-300 rounded-full mx-auto mb-4"></div>
-              <div className="h-6 bg-gray-300 rounded w-80 mx-auto mb-2"></div>
-              <div className="h-4 bg-gray-300 rounded w-96 mx-auto mb-2"></div>
-              <div className="h-4 bg-gray-300 rounded w-72 mx-auto mb-4"></div>
-              <div className="h-10 bg-gray-300 rounded w-40 mx-auto"></div>
-            </div>
-          </div>
-        ) : integrations.length > 0 && (
-          <div className="bg-gradient-to-r from-purple-50 to-green-50 border border-purple-200 rounded-lg p-6 mb-8 max-w-2xl mx-auto">
-            <div className="text-center">
-              <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-6 h-6 text-white" />
-              </div>
-              <h3 className="text-xl font-semibold text-slate-900 mb-2">
-                Ready to analyze your team's burnout risk!
-              </h3>
-              <p className="text-slate-600 mb-4">
-                You have {integrations.length} integration{integrations.length > 1 ? 's' : ''} connected.
-                Run your first analysis to identify burnout patterns across your team.
-              </p>
-              <Button
-                className="bg-purple-600 hover:bg-purple-700 text-white"
-                onClick={() => {
-                  setNavigatingToDashboard(true)
-                  router.push('/dashboard')
-                }}
-                disabled={navigatingToDashboard}
-              >
-                {navigatingToDashboard ? (
-                  <>
-                    <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Loading Dashboard...
-                  </>
-                ) : (
-                  <>
-                    <Activity className="w-4 h-4 mr-2" />
-                    Go to Dashboard
-                  </>
-                )}
-              </Button>
             </div>
           </div>
         )}
@@ -1857,13 +1758,7 @@ export default function IntegrationsPage() {
                   )}
                 </CardContent>
               </Card>
-            ) : (
-              <div className="text-center py-12 text-gray-500">
-                <Shield className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                <p className="text-lg font-medium mb-2">No integrations yet</p>
-                <p className="text-sm">Add a Rootly or PagerDuty integration to get started!</p>
-              </div>
-            )}
+            ) : null}
         </div>
 
         {/* Enhanced Integrations Section */}
