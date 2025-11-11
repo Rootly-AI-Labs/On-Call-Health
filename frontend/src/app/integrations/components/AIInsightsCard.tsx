@@ -89,8 +89,28 @@ export function AIInsightsCard({
       return
     }
 
-    // Case 3: Not connected - just toggle UI and show appropriate message
+    // Case 3: Not connected - toggle UI and persist preference
     setUseCustomToken(checked)
+
+    // Persist the preference to backend
+    const preferenceSource = checked ? 'custom' : 'system'
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/llm/token/preference`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        },
+        body: JSON.stringify({ token_source: preferenceSource })
+      })
+
+      if (!response.ok) {
+        console.error('Failed to save token preference')
+      }
+    } catch (error) {
+      console.error('Error saving preference:', error)
+    }
+
     if (!isInitialMount.current) {
       if (checked) {
         toast.info("Enter your custom API token below")

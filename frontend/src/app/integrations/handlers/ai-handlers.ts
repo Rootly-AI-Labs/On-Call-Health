@@ -140,6 +140,41 @@ export async function handleConnectAI(
 }
 
 /**
+ * Update user's token source preference
+ */
+export async function updateTokenPreference(
+  tokenSource: 'system' | 'custom'
+): Promise<boolean> {
+  try {
+    const authToken = localStorage.getItem('auth_token')
+    if (!authToken) {
+      throw new Error('No authentication token found')
+    }
+
+    const response = await fetch(`${API_BASE}/llm/token/preference`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({
+        token_source: tokenSource
+      })
+    })
+
+    if (response.ok) {
+      return true
+    } else {
+      console.error('Failed to update token preference')
+      return false
+    }
+  } catch (error) {
+    console.error('Failed to update token preference:', error)
+    return false
+  }
+}
+
+/**
  * Disconnect AI/LLM provider
  */
 export async function handleDisconnectAI(

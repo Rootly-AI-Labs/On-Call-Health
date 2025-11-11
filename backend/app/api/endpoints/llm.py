@@ -259,19 +259,53 @@ async def get_llm_token_info(
     # No token available at all
     return LLMTokenResponse(has_token=False, token_source='system')
 
+@router.patch("/token/preference")
+async def update_token_preference(
+    preference: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update user's preferred token source (system or custom)."""
+
+    token_source = preference.get('token_source')
+    if token_source not in ['system', 'custom']:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid token_source. Must be 'system' or 'custom'"
+        )
+
+    try:
+        # Update preference
+        current_user.active_llm_token_source = token_source
+        current_user.updated_at = datetime.now()
+
+        db.commit()
+        db.refresh(current_user)
+
+        logger.info(f"User {current_user.id} updated token preference to: {token_source}")
+
+        return {"message": f"Token preference updated to {token_source}", "token_source": token_source}
+
+    except Exception as e:
+        logger.error(f"Failed to update token preference for user {current_user.id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update token preference"
+        )
+
 @router.delete("/token")
 async def delete_llm_token(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Delete user's custom LLM token and revert to system token."""
-    
+
     if not current_user.has_llm_token():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="No LLM token found"
         )
-    
+
     try:
         # Clear the custom token and switch back to system
         current_user.llm_token = None
