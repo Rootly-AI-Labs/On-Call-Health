@@ -49,10 +49,12 @@ export async function handleConnectAI(
   setTokenError: (error: string | null) => void,
   setLlmConfig: (config: any) => void,
   setLlmToken: (token: string) => void,
-  useSystemToken: boolean = false
+  useSystemToken: boolean = false,
+  switchToCustom: boolean = false
 ): Promise<void> {
+  // If switching to stored custom token, no validation needed
   // If using system token, no token input validation needed
-  if (!useSystemToken && !llmToken.trim()) {
+  if (!switchToCustom && !useSystemToken && !llmToken.trim()) {
     setTokenError("Please enter your LLM API token")
     toast.error("Please enter your LLM API token")
     return
@@ -73,9 +75,10 @@ export async function handleConnectAI(
         'Authorization': `Bearer ${authToken}`
       },
       body: JSON.stringify({
-        token: useSystemToken ? '' : llmToken,  // Empty token when using system
+        token: useSystemToken || switchToCustom ? '' : llmToken,
         provider: llmProvider,
-        use_system_token: useSystemToken
+        use_system_token: useSystemToken,
+        switch_to_custom: switchToCustom
       })
     })
 

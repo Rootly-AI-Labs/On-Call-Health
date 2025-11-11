@@ -37,9 +37,10 @@ def decrypt_token(encrypted_token: str) -> str:
     return fernet.decrypt(encrypted_token.encode()).decode()
 
 class LLMTokenRequest(BaseModel):
-    token: str
-    provider: str  # 'anthropic', 'openai', etc.
+    token: str = ""
+    provider: str = "anthropic"  # 'anthropic', 'openai', etc.
     use_system_token: bool = False  # If True, use Railway system token instead
+    switch_to_custom: bool = False  # If True, switch to stored custom token
 
 class LLMTokenResponse(BaseModel):
     has_token: bool
@@ -55,6 +56,39 @@ async def store_llm_token(
     db: Session = Depends(get_db)
 ):
     """Store or update user's LLM API token, or enable system token."""
+
+    # If user wants to switch to their stored custom token
+    if request.switch_to_custom:
+        if not current_user.has_llm_token():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No custom token found. Please add a custom token first."
+            )
+
+        # Switch to custom token
+        current_user.active_llm_token_source = 'custom'
+        current_user.updated_at = datetime.now()
+
+        db.commit()
+        db.refresh(current_user)
+
+        logger.info(f"User {current_user.id} switched to custom LLM token")
+
+        # Get token info to return
+        try:
+            decrypted_token = decrypt_token(current_user.llm_token)
+            token_suffix = decrypted_token[-4:] if len(decrypted_token) > 4 else "****"
+        except Exception as e:
+            logger.error(f"Failed to decrypt token: {e}")
+            token_suffix = "****"
+
+        return LLMTokenResponse(
+            has_token=True,
+            provider=current_user.llm_provider,
+            token_suffix=token_suffix,
+            token_source='custom',
+            created_at=current_user.updated_at
+        )
 
     # If user wants to use system token
     if request.use_system_token:

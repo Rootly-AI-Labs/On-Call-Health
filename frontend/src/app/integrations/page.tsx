@@ -1922,7 +1922,7 @@ export default function IntegrationsPage() {
         <div className="mt-16 space-y-8">
           <AIInsightsCard
             llmConfig={llmConfig}
-            onConnect={async (token, provider, useSystemToken) => {
+            onConnect={async (token, provider, useSystemToken, switchToCustom = false) => {
               await AIHandlers.handleConnectAI(
                 token,
                 provider,
@@ -1931,7 +1931,8 @@ export default function IntegrationsPage() {
                 setTokenError,
                 setLlmConfig,
                 setLlmToken,
-                useSystemToken  // Pass the useSystemToken parameter
+                useSystemToken,
+                switchToCustom
               )
             }}
             onDisconnect={async () => {

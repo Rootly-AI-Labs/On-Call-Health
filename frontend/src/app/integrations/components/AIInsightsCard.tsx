@@ -8,7 +8,7 @@ import { toast } from "sonner"
 
 interface AIInsightsCardProps {
   llmConfig: { has_token: boolean; provider?: string; token_suffix?: string; token_source?: string } | null
-  onConnect: (token: string, provider: string, useSystemToken: boolean) => Promise<void>
+  onConnect: (token: string, provider: string, useSystemToken: boolean, switchToCustom?: boolean) => Promise<void>
   onDisconnect: () => Promise<void>
   isConnecting: boolean
 }
@@ -46,12 +46,13 @@ export function AIInsightsCard({
     isUserInitiatedRef.current = true
     const wasConnected = llmConfig?.has_token
     const wasCustom = llmConfig?.token_source === 'custom'
+    const hasStoredCustomToken = llmConfig?.has_token && llmConfig?.token_source === 'custom'
 
     // Switching from custom to system while connected - just switch (no deletion)
     if (wasConnected && wasCustom && !checked) {
       setIsSwitching(true)
       try {
-        await onConnect('', 'anthropic', true)
+        await onConnect('', 'anthropic', true, false)
         setUseCustomToken(false)
         toast.success("Switched to system token")
       } catch (error) {
@@ -62,10 +63,25 @@ export function AIInsightsCard({
       return
     }
 
-    // Switching from system to custom while connected - show form if no custom token yet
+    // Switching from system to custom while connected - activate stored custom token if it exists
     if (wasConnected && !wasCustom && checked) {
-      setUseCustomToken(checked)
-      toast.info("Enter your custom API token below to switch providers.")
+      setIsSwitching(true)
+      try {
+        // Try to switch to stored custom token
+        await onConnect('', provider, false, true)
+        setUseCustomToken(true)
+        toast.success("Switched to custom token")
+      } catch (error: any) {
+        // If no stored token exists, show form
+        if (error?.message?.includes('No custom token found')) {
+          setUseCustomToken(checked)
+          toast.info("Enter your custom API token below to get started.")
+        } else {
+          toast.error("Failed to switch to custom token")
+        }
+      } finally {
+        setIsSwitching(false)
+      }
       return
     }
 
