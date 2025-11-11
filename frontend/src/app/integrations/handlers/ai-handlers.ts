@@ -90,7 +90,7 @@ export async function handleConnectAI(
       setLlmToken('')
       setTokenError(null) // Clear any errors on success
 
-      const sourceLabel = result.token_source === 'system' ? 'system token' : 'self-provided token'
+      const sourceLabel = result.token_source === 'system' ? 'system token' : 'custom token'
       toast.success(`Successfully connected ${result.provider} using ${sourceLabel}`)
     } else {
       const error = await response.json()

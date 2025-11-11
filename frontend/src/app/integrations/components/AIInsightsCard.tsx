@@ -29,8 +29,8 @@ export function AIInsightsCard({
   onDisconnect,
   isConnecting
 }: AIInsightsCardProps) {
-  const [useSelfProvidedToken, setUseSelfProvidedToken] = useState(false)
-  const [selfProvidedToken, setSelfProvidedToken] = useState('')
+  const [useCustomToken, setUseCustomToken] = useState(false)
+  const [customToken, setCustomToken] = useState('')
   const [provider, setProvider] = useState<'anthropic' | 'openai'>('anthropic')
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [isSwitching, setIsSwitching] = useState(false)
@@ -43,39 +43,39 @@ export function AIInsightsCard({
   useEffect(() => {
     if (llmConfig?.has_token) {
       // Sync toggle with actual token source from backend
-      const shouldUseSelfProvided = llmConfig.token_source === 'self-provided'
-      setUseSelfProvidedToken(shouldUseSelfProvided)
+      const shouldUseCustom = llmConfig.token_source === 'custom'
+      setUseCustomToken(shouldUseCustom)
     } else {
       // Not connected - default to system token
-      setUseSelfProvidedToken(false)
+      setUseCustomToken(false)
     }
   }, [llmConfig])
 
-  const handleTokenSourceChange = async (source: 'system' | 'self-provided') => {
-    const checked = source === 'self-provided'
+  const handleTokenSourceChange = async (source: 'system' | 'custom') => {
+    const checked = source === 'custom'
 
     isUserInitiatedRef.current = true
     const wasConnected = llmConfig?.has_token
-    const wasSelfProvided = llmConfig?.token_source === 'self-provided'
+    const wasCustom = llmConfig?.token_source === 'custom'
 
-    // Switching from self-provided to system while connected - needs confirmation
-    if (wasConnected && wasSelfProvided && !checked) {
+    // Switching from custom to system while connected - needs confirmation
+    if (wasConnected && wasCustom && !checked) {
       setShowConfirmDialog(true)
       return
     }
 
-    // Switching from system to self-provided while connected - just show form
-    if (wasConnected && !wasSelfProvided && checked) {
-      setUseSelfProvidedToken(checked)
-      toast.info("Enter your self-provided API token below to switch providers.")
+    // Switching from system to custom while connected - just show form
+    if (wasConnected && !wasCustom && checked) {
+      setUseCustomToken(checked)
+      toast.info("Enter your custom API token below to switch providers.")
       return
     }
 
     // Not connected - just toggle and show appropriate message
-    setUseSelfProvidedToken(checked)
+    setUseCustomToken(checked)
     if (!isInitialMount.current) {
       if (checked) {
-        toast.info("Switched to self-provided token mode. Enter your own API token below.")
+        toast.info("Switched to custom token mode. Enter your own API token below.")
       } else {
         toast.info("Switched to system token mode. Use our provided Anthropic API.")
       }
@@ -88,10 +88,10 @@ export function AIInsightsCard({
     setIsSwitching(true)
 
     try {
-      // Disconnect self-provided token and switch to system
+      // Disconnect custom token and switch to system
       await onDisconnect()
       await onConnect('', 'anthropic', true)
-      setUseSelfProvidedToken(false)
+      setUseCustomToken(false)
       toast.success("Switched to system token successfully")
     } catch (error) {
       toast.error("Failed to switch to system token")
@@ -102,10 +102,10 @@ export function AIInsightsCard({
 
   const handleConnect = async () => {
     try {
-      if (useSelfProvidedToken) {
-        // Use self-provided token
-        await onConnect(selfProvidedToken, provider, false)
-        setSelfProvidedToken('') // Clear input after successful connection
+      if (useCustomToken) {
+        // Use custom token
+        await onConnect(customToken, provider, false)
+        setCustomToken('') // Clear input after successful connection
       } else {
         // Use system token - send empty string as token
         await onConnect('', 'anthropic', true)
@@ -140,10 +140,10 @@ export function AIInsightsCard({
             <button
               type="button"
               role="radio"
-              aria-checked={!useSelfProvidedToken}
+              aria-checked={!useCustomToken}
               onClick={() => handleTokenSourceChange('system')}
               className={`px-3 py-1.5 rounded text-xs font-semibold transition-all duration-150 ${
-                !useSelfProvidedToken
+                !useCustomToken
                   ? 'bg-white text-slate-900 shadow-md border border-slate-200'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
@@ -151,19 +151,19 @@ export function AIInsightsCard({
               System
             </button>
 
-            {/* Self-Provided Token Button */}
+            {/* Custom Token Button */}
             <button
               type="button"
               role="radio"
-              aria-checked={useSelfProvidedToken}
-              onClick={() => handleTokenSourceChange('self-provided')}
+              aria-checked={useCustomToken}
+              onClick={() => handleTokenSourceChange('custom')}
               className={`px-3 py-1.5 rounded text-xs font-semibold transition-all duration-150 ${
-                useSelfProvidedToken
+                useCustomToken
                   ? 'bg-white text-slate-900 shadow-md border border-slate-200'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
             >
-              Self-Provided
+              Custom
             </button>
           </div>
         </div>
@@ -171,7 +171,7 @@ export function AIInsightsCard({
 
       <CardContent className="space-y-4">
         {/* Show current connection status if connected with system token */}
-        {isConnected && !useSelfProvidedToken && (
+        {isConnected && !useCustomToken && (
           <div className="p-5 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl">
             <div className="flex items-start justify-between">
               <div className="flex-1">
@@ -192,8 +192,8 @@ export function AIInsightsCard({
           </div>
         )}
 
-        {/* Show self-provided token connected state */}
-        {isConnected && useSelfProvidedToken && llmConfig.token_source === 'self-provided' && (
+        {/* Show custom token connected state */}
+        {isConnected && useCustomToken && llmConfig.token_source === 'custom' && (
           <div className="p-5 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl">
             <div className="flex items-start justify-between">
               <div className="flex-1">
@@ -229,7 +229,7 @@ export function AIInsightsCard({
         )}
 
         {/* Show system token info when toggle is OFF and not connected */}
-        {!isConnected && !useSelfProvidedToken && (
+        {!isConnected && !useCustomToken && (
           <div className="p-5 bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl">
             <div className="flex items-start gap-3">
               <div className="mt-0.5">
@@ -239,7 +239,7 @@ export function AIInsightsCard({
                 <div className="flex items-center gap-2 mb-1">
                   <h4 className="font-semibold text-slate-900">System Token</h4>
                   <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 border border-purple-200">
-                    INCLUDED
+                    PROVIDED
                   </span>
                 </div>
                 <p className="text-sm text-slate-600">
@@ -250,11 +250,11 @@ export function AIInsightsCard({
           </div>
         )}
 
-        {/* Show self-provided token input form when toggle is ON */}
-        {useSelfProvidedToken && (!isConnected || llmConfig.token_source !== 'self-provided') && (
+        {/* Show custom token input form when toggle is ON */}
+        {useCustomToken && (!isConnected || llmConfig.token_source !== 'custom') && (
           <div className="space-y-4 p-5 bg-white border-2 border-slate-200 rounded-xl">
             <div className="pb-3 border-b border-slate-200">
-              <h4 className="font-semibold text-slate-900 mb-1">Self-Provided Token</h4>
+              <h4 className="font-semibold text-slate-900 mb-1">Custom Token</h4>
               <p className="text-xs text-slate-500">
                 Use your own API key • Your billing applies • Advanced users
               </p>
@@ -297,8 +297,8 @@ export function AIInsightsCard({
                 id="api-token"
                 type="password"
                 placeholder={provider === 'anthropic' ? 'sk-ant-api03-...' : 'sk-proj-...'}
-                value={selfProvidedToken}
-                onChange={(e) => setSelfProvidedToken(e.target.value)}
+                value={customToken}
+                onChange={(e) => setCustomToken(e.target.value)}
                 className="font-mono text-sm h-11 border-slate-300"
               />
               <div className="flex items-center gap-1.5 text-xs text-slate-600">
@@ -320,11 +320,11 @@ export function AIInsightsCard({
           </div>
         )}
 
-        {/* Show Connect button when not connected or switching to self-provided token */}
-        {(!isConnected || (useSelfProvidedToken && llmConfig.token_source !== 'self-provided')) && (
+        {/* Show Connect button when not connected or switching to custom token */}
+        {(!isConnected || (useCustomToken && llmConfig.token_source !== 'custom')) && (
           <Button
             onClick={handleConnect}
-            disabled={isConnecting || isSwitching || (useSelfProvidedToken && !selfProvidedToken.trim())}
+            disabled={isConnecting || isSwitching || (useCustomToken && !customToken.trim())}
             className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-md h-11 text-base font-semibold"
           >
             {isConnecting || isSwitching ? (
@@ -342,7 +342,7 @@ export function AIInsightsCard({
         )}
       </CardContent>
 
-      {/* Confirmation Dialog for switching from self-provided to system token */}
+      {/* Confirmation Dialog for switching from custom to system token */}
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -351,9 +351,9 @@ export function AIInsightsCard({
               Switch to System Token?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Your self-provided {llmConfig?.provider === 'anthropic' ? 'Anthropic' : 'OpenAI'} API token will be removed and you'll switch to using our free system-provided Anthropic Claude API.
+              Your custom {llmConfig?.provider === 'anthropic' ? 'Anthropic' : 'OpenAI'} API token will be removed and you'll switch to using our free system-provided Anthropic Claude API.
               <br /><br />
-              You can switch back to your self-provided token at any time.
+              You can switch back to your custom token at any time.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
