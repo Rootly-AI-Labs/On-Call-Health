@@ -44,7 +44,7 @@ export default function useDashboard() {
   const [historicalTrends, setHistoricalTrends] = useState<any>(null)
   const [loadingTrends, setLoadingTrends] = useState(false)
   const [initialDataLoaded, setInitialDataLoaded] = useState(false)
-  const [loadingAnalyses, setLoadingAnalyses] = useState(true)
+  const [loadingAnalyses, setLoadingAnalyses] = useState(false)  // Start false to prevent hydration mismatch
   const [analysisMappings, setAnalysisMappings] = useState<any>(null)
   const [hasDataFromCache, setHasDataFromCache] = useState(false)
 
