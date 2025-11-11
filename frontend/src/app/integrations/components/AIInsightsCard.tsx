@@ -2,17 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { Brain, Sparkles, Trash2, Loader2, ExternalLink, CheckCircle2, AlertTriangle } from "lucide-react"
+import { Brain, Sparkles, Trash2, Loader2, ExternalLink, CheckCircle2 } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import { toast } from "sonner"
 
@@ -32,7 +22,6 @@ export function AIInsightsCard({
   const [useCustomToken, setUseCustomToken] = useState(false)
   const [customToken, setCustomToken] = useState('')
   const [provider, setProvider] = useState<'anthropic' | 'openai'>('anthropic')
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [isSwitching, setIsSwitching] = useState(false)
 
   // Track if toggle change is user-initiated to prevent toast spam
@@ -58,13 +47,22 @@ export function AIInsightsCard({
     const wasConnected = llmConfig?.has_token
     const wasCustom = llmConfig?.token_source === 'custom'
 
-    // Switching from custom to system while connected - needs confirmation
+    // Switching from custom to system while connected - just switch (no deletion)
     if (wasConnected && wasCustom && !checked) {
-      setShowConfirmDialog(true)
+      setIsSwitching(true)
+      try {
+        await onConnect('', 'anthropic', true)
+        setUseCustomToken(false)
+        toast.success("Switched to system token")
+      } catch (error) {
+        toast.error("Failed to switch to system token")
+      } finally {
+        setIsSwitching(false)
+      }
       return
     }
 
-    // Switching from system to custom while connected - just show form
+    // Switching from system to custom while connected - show form if no custom token yet
     if (wasConnected && !wasCustom && checked) {
       setUseCustomToken(checked)
       toast.info("Enter your custom API token below to switch providers.")
@@ -81,23 +79,6 @@ export function AIInsightsCard({
       }
     }
     isInitialMount.current = false
-  }
-
-  const handleConfirmSwitch = async () => {
-    setShowConfirmDialog(false)
-    setIsSwitching(true)
-
-    try {
-      // Disconnect custom token and switch to system
-      await onDisconnect()
-      await onConnect('', 'anthropic', true)
-      setUseCustomToken(false)
-      toast.success("Switched to system token successfully")
-    } catch (error) {
-      toast.error("Failed to switch to system token")
-    } finally {
-      setIsSwitching(false)
-    }
   }
 
   const handleConnect = async () => {
@@ -342,39 +323,6 @@ export function AIInsightsCard({
         )}
       </CardContent>
 
-      {/* Confirmation Dialog for switching from custom to system token */}
-      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-orange-600" />
-              Switch to System Token?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Your custom {llmConfig?.provider === 'anthropic' ? 'Anthropic' : 'OpenAI'} API token will be removed and you'll switch to using our free system-provided Anthropic Claude API.
-              <br /><br />
-              You can switch back to your custom token at any time.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmSwitch}
-              disabled={isSwitching}
-              className="bg-purple-600 hover:bg-purple-700"
-            >
-              {isSwitching ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Switching...
-                </>
-              ) : (
-                'Switch to System Token'
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </Card>
   )
 }

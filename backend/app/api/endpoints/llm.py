@@ -66,15 +66,14 @@ async def store_llm_token(
                 detail="System LLM token not configured"
             )
 
-        # Clear any custom token and mark as using system token
-        current_user.llm_token = None
-        current_user.llm_provider = 'anthropic'  # System token is Anthropic
+        # Switch to system token (keep custom token stored)
+        current_user.active_llm_token_source = 'system'
         current_user.updated_at = datetime.now()
 
         db.commit()
         db.refresh(current_user)
 
-        logger.info(f"User {current_user.id} enabled system LLM token")
+        logger.info(f"User {current_user.id} switched to system LLM token")
 
         return LLMTokenResponse(
             has_token=True,
@@ -137,15 +136,16 @@ async def store_llm_token(
         # Encrypt the token
         encrypted_token = encrypt_token(request.token)
         
-        # Update user record
+        # Update user record and switch to custom token
         current_user.llm_token = encrypted_token
         current_user.llm_provider = request.provider
+        current_user.active_llm_token_source = 'custom'
         current_user.updated_at = datetime.now()
-        
+
         db.commit()
         db.refresh(current_user)
-        
-        logger.info(f"LLM token stored for user {current_user.id} (provider: {request.provider})")
+
+        logger.info(f"LLM token stored and activated for user {current_user.id} (provider: {request.provider})")
         
         # Return response with masked token
         token_suffix = request.token[-4:] if len(request.token) > 4 else "****"
@@ -170,11 +170,13 @@ async def get_llm_token_info(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Get information about user's LLM token (system or custom)."""
+    """Get information about user's active LLM token (system or custom)."""
 
-    # Check if user has a custom token
-    if current_user.has_llm_token():
-        # User has custom token
+    # Determine which token is active (default to 'system' if not set)
+    active_source = getattr(current_user, 'active_llm_token_source', 'system') or 'system'
+
+    # If custom token is active and user has one stored
+    if active_source == 'custom' and current_user.has_llm_token():
         try:
             decrypted_token = decrypt_token(current_user.llm_token)
             token_suffix = decrypted_token[-4:] if len(decrypted_token) > 4 else "****"
@@ -188,13 +190,12 @@ async def get_llm_token_info(
             )
         except Exception as e:
             logger.error(f"Failed to decrypt token for user {current_user.id}: {e}")
-            # Fall through to system token check
+            # Fall through to system token
 
-    # Check if system token is available (default for all users)
+    # Return system token info (default)
     import os
     system_api_key = os.getenv('ANTHROPIC_API_KEY')
     if system_api_key:
-        # Return system token info (default for users without custom token)
         return LLMTokenResponse(
             has_token=True,
             provider='anthropic',
@@ -203,7 +204,7 @@ async def get_llm_token_info(
             created_at=None
         )
 
-    # No token available
+    # No token available at all
     return LLMTokenResponse(has_token=False, token_source='system')
 
 @router.delete("/token")
@@ -220,16 +221,17 @@ async def delete_llm_token(
         )
     
     try:
-        # Clear the token fields
+        # Clear the custom token and switch back to system
         current_user.llm_token = None
         current_user.llm_provider = None
+        current_user.active_llm_token_source = 'system'
         current_user.updated_at = datetime.now()
-        
+
         db.commit()
-        
-        logger.info(f"LLM token deleted for user {current_user.id}")
-        
-        return {"message": "LLM token deleted successfully"}
+
+        logger.info(f"Custom LLM token deleted for user {current_user.id}, switched to system token")
+
+        return {"message": "Custom LLM token deleted successfully, switched to system token"}
         
     except Exception as e:
         logger.error(f"Failed to delete LLM token for user {current_user.id}: {e}")

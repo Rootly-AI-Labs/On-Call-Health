@@ -208,7 +208,7 @@ export default function LandingPage() {
                 </div>
                 <h3 className="text-xl font-semibold text-slate-900 mb-4">See who’s at risk, backed by research.</h3>
                 <p className="text-slate-600 leading-relaxed mb-4">
-                  The burnout detector calculates individual risk scores using the Copenhagen Burnout Inventory (CBI) the most widely used research framework for assessing burnout.
+                  The burnout detector calculates individual risk scores using our On-Call Burnout (OCB) score.
                 </p>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center space-x-2">
@@ -329,7 +329,7 @@ Skip the UI and pull results directly into your CLI via MCP, or fork the code to
                   Get started
                 </a>
                 <a
-                  href="https://github.com/Rootly-AI-Labs/rootly-burnout-detector-web/tree/main"
+                  href="https://github.com/Rootly-AI-Labs/On-Call-Burnout-Detector"
                   target="_blank"
                   className="w-full rounded-full sm:w-auto border-slate-300 px-8 py-4 text-lg hover:bg-slate-50 bg-transparent border border-input bg-background hover:bg-accent hover:text-accent-foreground"
                 >

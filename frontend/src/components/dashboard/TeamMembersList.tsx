@@ -26,8 +26,8 @@ export function TeamMembersList({
   const isLoading = !currentAnalysis || !currentAnalysis.analysis_data;
 
 
-  // Official CBI 4-color system for progress bars (0-100 scale, higher = more burnout)
-  const getCBIProgressColor = (score: number) => {
+  // Official OCB 4-color system for progress bars (0-100 scale, higher = more burnout)
+  const getOCBProgressColor = (score: number) => {
     const clampedScore = Math.max(0, Math.min(100, score));
     
     if (clampedScore < 25) return '#10b981';      // Green - Low/minimal burnout (0-24)
@@ -36,8 +36,8 @@ export function TeamMembersList({
     return '#dc2626';                             // Red - High/severe burnout (75-100)
   };
 
-  // Official CBI 4-color system for text/badges
-  const getCBITextColor = (score: number) => {
+  // Official OCB 4-color system for text/badges
+  const getOCBTextColor = (score: number) => {
     if (score < 25) return '#10b981';       // Green - Low/minimal burnout
     if (score < 50) return '#eab308';       // Yellow - Mild burnout symptoms
     if (score < 75) return '#f97316';       // Orange - Moderate/significant burnout  
@@ -52,7 +52,7 @@ export function TeamMembersList({
         id: member.user_id || '',
         name: member.user_name || 'Unknown',
         email: member.user_email || '',
-        burnoutScore: member.cbi_score || 0, // Use CBI score directly
+        burnoutScore: member.ocb_score || 0, // Use OCB score directly
         riskLevel: (member.risk_level || 'low') as 'high' | 'medium' | 'low',
         trend: 'stable' as const,
         incidentsHandled: member.incident_count || 0,
@@ -87,20 +87,20 @@ export function TeamMembersList({
           </div>
           <div className="flex items-center space-x-2">
             {(() => {
-              // Calculate risk level based on CBI score when available
-              const getCBIRiskLevel = (member: any) => {
-                if (member.cbi_score !== undefined && member.cbi_score !== null) {
-                  // Use CBI scoring (0-100, higher = more burnout)
-                  if (member.cbi_score < 25) return 'healthy';      // 0-24: Low/minimal burnout
-                  if (member.cbi_score < 50) return 'fair';         // 25-49: Mild burnout symptoms
-                  if (member.cbi_score < 75) return 'poor';         // 50-74: Moderate burnout risk  
+              // Calculate risk level based on OCB score when available
+              const getOCBRiskLevel = (member: any) => {
+                if (member.ocb_score !== undefined && member.ocb_score !== null) {
+                  // Use OCB scoring (0-100, higher = more burnout)
+                  if (member.ocb_score < 25) return 'healthy';      // 0-24: Low/minimal burnout
+                  if (member.ocb_score < 50) return 'fair';         // 25-49: Mild burnout symptoms
+                  if (member.ocb_score < 75) return 'poor';         // 50-74: Moderate burnout risk  
                   return 'critical';                                // 75-100: High/severe burnout
                 }
-                // No CBI score available - default to low risk
+                // No OCB score available - default to low risk
                 return 'low';
               };
               
-              const riskLevel = getCBIRiskLevel(member);
+              const riskLevel = getOCBRiskLevel(member);
               const displayLabel = riskLevel === 'healthy' ? 'HEALTHY' :
                                  riskLevel === 'fair' ? 'FAIR' :
                                  riskLevel === 'poor' ? 'POOR' :
@@ -141,16 +141,16 @@ export function TeamMembersList({
           )}
         </div>
         <div className="space-y-2">
-          {member?.cbi_score !== undefined ? (
+          {member?.ocb_score !== undefined ? (
             <div className="flex justify-between text-sm">
               <span>Burnout Score</span>
               <span className="font-bold text-black">
-                {member.cbi_score.toFixed(1)}/100
+                {member.ocb_score.toFixed(1)}/100
               </span>
             </div>
           ) : (
             <div className="flex justify-between text-sm">
-              <span>No CBI Score Available</span>
+              <span>No OCB Score Available</span>
               <span className="font-medium text-gray-500">-</span>
             </div>
           )}
@@ -158,9 +158,9 @@ export function TeamMembersList({
             <div 
               className="h-full transition-all"
               style={{ 
-                width: `${member?.cbi_score || 0}%`,
-                backgroundColor: member?.cbi_score !== undefined 
-                  ? getCBIProgressColor(member.cbi_score)
+                width: `${member?.ocb_score || 0}%`,
+                backgroundColor: member?.ocb_score !== undefined 
+                  ? getOCBProgressColor(member.ocb_score)
                   : undefined
               }}
             />
@@ -206,7 +206,7 @@ export function TeamMembersList({
             
             // Filter members with valid scores
             const validMembers = allMembers.filter((member) => {
-              return member.cbi_score !== undefined && member.cbi_score !== null
+              return member.ocb_score !== undefined && member.ocb_score !== null
             })
             
             // Separate members with and without incidents
@@ -216,8 +216,8 @@ export function TeamMembersList({
             
             // Sort members by score (highest risk first)
             const sortMembers = (members: any[]) => members.sort((a, b) => {
-              // Sort by CBI score only (higher score = higher risk)
-              return (b.cbi_score || 0) - (a.cbi_score || 0);
+              // Sort by OCB score only (higher score = higher risk)
+              return (b.ocb_score || 0) - (a.ocb_score || 0);
             })
 
             return (

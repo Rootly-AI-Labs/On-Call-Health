@@ -96,6 +96,7 @@ import { MappingDrawer } from "@/components/mapping-drawer"
 import { NotificationDrawer } from "@/components/notifications"
 import ManualSurveyDeliveryModal from "@/components/ManualSurveyDeliveryModal"
 import { SlackSurveyTabs } from "@/components/SlackSurveyTabs"
+import { TopPanel } from "@/components/TopPanel"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
@@ -240,196 +241,8 @@ export default function IntegrationsPage() {
   const [showSyncedUsers, setShowSyncedUsers] = useState(false)
   const [teamMembersDrawerOpen, setTeamMembersDrawerOpen] = useState(false)
 
-  // GitHub username editing state
-  const [editingUserId, setEditingUserId] = useState<number | null>(null)
-  const [editingUsername, setEditingUsername] = useState<string>('')
-  const [githubOrgMembers, setGithubOrgMembers] = useState<string[]>([])
-  const [loadingOrgMembers, setLoadingOrgMembers] = useState(false)
-  const [savingUsername, setSavingUsername] = useState(false)
-
   // Manual survey delivery modal state
   const [showManualSurveyModal, setShowManualSurveyModal] = useState(false)
-
-  // Survey recipient selection state
-  const [selectedRecipients, setSelectedRecipients] = useState<Set<number>>(new Set())
-  const [savedRecipients, setSavedRecipients] = useState<Set<number>>(new Set()) // Track what's saved in DB
-  const [savingRecipients, setSavingRecipients] = useState(false)
-
-  // Check if there are unsaved changes
-  const hasUnsavedChanges = () => {
-    if (selectedRecipients.size !== savedRecipients.size) return true
-    for (const id of Array.from(selectedRecipients)) {
-      if (!savedRecipients.has(id)) return true
-    }
-    return false
-  }
-
-  // GitHub org members handlers
-  const fetchGitHubOrgMembers = async () => {
-    if (!githubIntegration) return
-
-    setLoadingOrgMembers(true)
-    try {
-      const authToken = localStorage.getItem('auth_token')
-      if (!authToken) {
-        toast.error('Please log in to load GitHub members')
-        return
-      }
-
-      const response = await fetch(`${API_BASE}/integrations/github/org-members`, {
-        headers: {
-          'Authorization': `Bearer ${authToken}`
-        }
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        setGithubOrgMembers(data.members || [])
-      } else {
-        const error = await response.json()
-        console.error('Failed to load GitHub org members:', error)
-      }
-    } catch (error) {
-      console.error('Error fetching GitHub org members:', error)
-    } finally {
-      setLoadingOrgMembers(false)
-    }
-  }
-
-  const startEditingGitHubUsername = (userId: number, currentUsername: string | null) => {
-    setEditingUserId(userId)
-    setEditingUsername(currentUsername || '')
-  }
-
-  const cancelEditingGitHubUsername = () => {
-    setEditingUserId(null)
-    setEditingUsername('')
-  }
-
-  const saveGitHubUsername = async (userId: number) => {
-    setSavingUsername(true)
-    try {
-      const authToken = localStorage.getItem('auth_token')
-      if (!authToken) {
-        toast.error('Please log in to update GitHub username')
-        return
-      }
-
-      // Convert __clear__ sentinel to empty string
-      const usernameToSave = editingUsername === '__clear__' ? '' : editingUsername
-
-      const response = await fetch(
-        `${API_BASE}/rootly/user-correlation/${userId}/github-username?github_username=${encodeURIComponent(usernameToSave)}`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${authToken}`
-          }
-        }
-      )
-
-      if (response.ok) {
-        const data = await response.json()
-        if (usernameToSave === '') {
-          toast.success('GitHub username mapping cleared')
-        } else {
-          toast.success(`GitHub username updated to ${usernameToSave}`)
-        }
-
-        // Refresh synced users list - simple re-fetch
-        const selectedOrg = selectedOrganization || integrations.find(i => i.is_default)?.id?.toString()
-        if (selectedOrg) {
-          setLoadingSyncedUsers(true)
-          try {
-            const authToken = localStorage.getItem('auth_token')
-            const response = await fetch(`${API_BASE}/rootly/synced-users?integration_id=${selectedOrg}`, {
-              headers: {
-                'Authorization': `Bearer ${authToken}`
-              }
-            })
-            if (response.ok) {
-              const data = await response.json()
-              setSyncedUsers(data.users || [])
-            }
-          } catch (error) {
-            console.error('Error refreshing synced users:', error)
-          } finally {
-            setLoadingSyncedUsers(false)
-          }
-        }
-
-        cancelEditingGitHubUsername()
-      } else {
-        const error = await response.json()
-        toast.error(error.detail || 'Failed to update GitHub username')
-      }
-    } catch (error) {
-      console.error('Error updating GitHub username:', error)
-      toast.error('Failed to update GitHub username')
-    } finally {
-      setSavingUsername(false)
-    }
-  }
-
-  // Survey recipient handlers
-  const saveSurveyRecipients = async () => {
-    if (!selectedOrganization) {
-      toast.error('No organization selected')
-      return
-    }
-
-    setSavingRecipients(true)
-    try {
-      const authToken = localStorage.getItem('auth_token')
-      if (!authToken) {
-        toast.error('Please log in to save recipients')
-        return
-      }
-
-      const recipientIds = Array.from(selectedRecipients)
-      const response = await fetch(
-        `${API_BASE}/rootly/integrations/${selectedOrganization}/survey-recipients`,
-        {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${authToken}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(recipientIds)
-        }
-      )
-
-      if (response.ok) {
-        const data = await response.json()
-        // Update savedRecipients to match what was just saved
-        setSavedRecipients(new Set(selectedRecipients))
-        toast.success(data.message || 'Survey recipients saved successfully')
-      } else {
-        const error = await response.json()
-        toast.error(error.detail || 'Failed to save recipients')
-      }
-    } catch (error) {
-      console.error('Error saving recipients:', error)
-      toast.error('Failed to save recipients')
-    } finally {
-      setSavingRecipients(false)
-    }
-  }
-
-  // Discard changes and revert to saved state
-  const discardRecipientChanges = () => {
-    setSelectedRecipients(new Set(savedRecipients))
-    toast.info('Changes discarded')
-  }
-
-  // Handle drawer close - reset selections if there are unsaved changes
-  const handleDrawerClose = (open: boolean) => {
-    if (!open && hasUnsavedChanges()) {
-      // Reset to saved state when closing with unsaved changes
-      setSelectedRecipients(new Set(savedRecipients))
-    }
-    setTeamMembersDrawerOpen(open)
-  }
 
   // AI Integration state
   const [llmToken, setLlmToken] = useState('')
@@ -495,13 +308,13 @@ export default function IntegrationsPage() {
   useEffect(() => {
     // ✨ PHASE 1 OPTIMIZATION: Re-enabled with API endpoint fixes
     loadAllIntegrationsOptimized()
-
+    
     // 🚨 ROLLBACK: Individual loading functions (fallback disabled)
     // loadRootlyIntegrations()
-    // loadPagerDutyIntegrations()
+    // loadPagerDutyIntegrations() 
     // loadGitHubIntegration()
     // loadSlackIntegration()
-    // loadLlmConfig() // Disabled - AI is always enabled with system token
+    loadLlmConfig()
     
     // Load saved organization preference
     const savedOrg = localStorage.getItem('selected_organization')
@@ -604,44 +417,6 @@ export default function IntegrationsPage() {
       loadOrganizationData()
     }
   }, [showInviteModal])
-
-  // Fetch GitHub org members when GitHub is connected
-  useEffect(() => {
-    if (githubIntegration && teamMembersDrawerOpen && showSyncedUsers) {
-      fetchGitHubOrgMembers()
-    }
-  }, [githubIntegration, teamMembersDrawerOpen, showSyncedUsers])
-
-  // Load saved survey recipients when drawer opens (only if no unsaved changes)
-  useEffect(() => {
-    const loadSavedRecipients = async () => {
-      if (!teamMembersDrawerOpen || !selectedOrganization) return
-
-      try {
-        const authToken = localStorage.getItem('auth_token')
-        if (!authToken) return
-
-        const response = await fetch(
-          `${API_BASE}/rootly/integrations/${selectedOrganization}/survey-recipients`,
-          {
-            headers: { 'Authorization': `Bearer ${authToken}` }
-          }
-        )
-
-        if (response.ok) {
-          const data = await response.json()
-          const recipientIds = new Set<number>(data.recipient_ids || [])
-          // Update both current and saved state
-          setSelectedRecipients(recipientIds)
-          setSavedRecipients(recipientIds)
-        }
-      } catch (error) {
-        console.error('Error loading saved recipients:', error)
-      }
-    }
-
-    loadSavedRecipients()
-  }, [teamMembersDrawerOpen, selectedOrganization])
 
   // Handle Slack OAuth success redirect
   useEffect(() => {
@@ -824,7 +599,6 @@ export default function IntegrationsPage() {
 
   // ✨ PHASE 1 OPTIMIZATION: Instant cache loading with background refresh
   const [refreshingInBackground, setRefreshingInBackground] = useState(false)
-  const isLoadingRef = useRef(false)
   
   // Synchronous cache reading for instant display
   const loadFromCacheSync = () => {
@@ -926,27 +700,22 @@ export default function IntegrationsPage() {
       ])
 
       // Update state silently
-      const rootlyIntegrations = (rootlyData.integrations || []).map((i: any) => ({ ...i, platform: 'rootly' }))
-      const pagerdutyIntegrations = (pagerdutyData.integrations || []).map((i: any) => ({ ...i, platform: 'pagerduty' }))
-      const allIntegrations = [...rootlyIntegrations, ...pagerdutyIntegrations]
+      const allIntegrations = [
+        ...rootlyData.integrations.map((i: any) => ({ ...i, platform: 'rootly' })),
+        ...pagerdutyData.integrations.map((i: any) => ({ ...i, platform: 'pagerduty' }))
+      ]
 
-      // Only skip update if requests failed - otherwise update even if empty (which is valid)
-      if (!rootlyResponse.ok && !pagerdutyResponse.ok) {
-        // Both requests failed, keep existing data
-      } else {
-        setIntegrations(allIntegrations)
-        setGithubIntegration(githubData.connected ? githubData.integration : null)
-        setSlackIntegration(slackData.integration)
+      setIntegrations(allIntegrations)
+      setGithubIntegration(githubData.connected ? githubData.integration : null)
+      setSlackIntegration(slackData.integration)
 
-        // Update cache with fresh data
-        localStorage.setItem('all_integrations', JSON.stringify(allIntegrations))
-        localStorage.setItem('all_integrations_timestamp', Date.now().toString())
-        localStorage.setItem('github_integration', JSON.stringify(githubData))
-        localStorage.setItem('slack_integration', JSON.stringify(slackData))
-      }
+      // Update cache with fresh data
+      localStorage.setItem('all_integrations', JSON.stringify(allIntegrations))
+      localStorage.setItem('all_integrations_timestamp', Date.now().toString())
+      localStorage.setItem('github_integration', JSON.stringify(githubData))
+      localStorage.setItem('slack_integration', JSON.stringify(slackData))
 
     } catch (error) {
-      console.error('Background refresh error:', error)
     }
   }
   
@@ -990,13 +759,6 @@ export default function IntegrationsPage() {
   
   // Original API loading logic (extracted for reuse)
   const loadAllIntegrationsAPI = async () => {
-    // Prevent concurrent calls using a ref (not state, since state starts as true)
-    if (isLoadingRef.current) {
-      return
-    }
-
-    isLoadingRef.current = true
-
     // Set individual loading states to true
     setLoadingRootly(true)
     setLoadingPagerDuty(true)
@@ -1005,69 +767,34 @@ export default function IntegrationsPage() {
     try {
       const authToken = localStorage.getItem('auth_token')
       if (!authToken) {
-        isLoadingRef.current = false
         router.push('/auth/success')
         return
       }
 
-      // Add 15 second timeout to prevent hanging (increased for parallel permission checks)
-      const fetchWithTimeout = (url: string, options: any, timeout = 15000) => {
-        return Promise.race([
-          fetch(url, options),
-          new Promise<Response>((_, reject) =>
-            setTimeout(() => reject(new Error('Request timeout')), timeout)
-          )
-        ])
-      }
-
       const [rootlyResponse, pagerdutyResponse, githubResponse, slackResponse] = await Promise.all([
-        fetchWithTimeout(`${API_BASE}/rootly/integrations`, {
+        fetch(`${API_BASE}/rootly/integrations`, {
           headers: { 'Authorization': `Bearer ${authToken}` }
-        }).catch((error) => {
-          console.error('Rootly API request failed:', error.message)
-          return { ok: false, error: error.message }
         }),
-        fetchWithTimeout(`${API_BASE}/pagerduty/integrations`, {
+        fetch(`${API_BASE}/pagerduty/integrations`, {
           headers: { 'Authorization': `Bearer ${authToken}` }
-        }).catch((error) => {
-          console.error('PagerDuty API request failed:', error.message)
-          return { ok: false, error: error.message }
         }),
-        fetchWithTimeout(`${API_BASE}/integrations/github/status`, {
+        fetch(`${API_BASE}/integrations/github/status`, {
           headers: { 'Authorization': `Bearer ${authToken}` }
-        }).catch(() => {
-          return { ok: false }
-        }),
-        fetchWithTimeout(`${API_BASE}/integrations/slack/status`, {
+        }).catch(() => ({ ok: false })),
+        fetch(`${API_BASE}/integrations/slack/status`, {
           headers: { 'Authorization': `Bearer ${authToken}` }
-        }).catch(() => {
-          return { ok: false }
-        })
+        }).catch(() => ({ ok: false }))
       ])
 
-      const rootlyData = (rootlyResponse as any).ok && (rootlyResponse as Response).json ? await (rootlyResponse as Response).json() : { integrations: [] }
-      const pagerdutyData = (pagerdutyResponse as any).ok && (pagerdutyResponse as Response).json ? await (pagerdutyResponse as Response).json() : { integrations: [] }
-      const githubData = (githubResponse as any).ok && (githubResponse as Response).json ? await (githubResponse as Response).json() : { connected: false, integration: null }
-      const slackData = (slackResponse as any).ok && (slackResponse as Response).json ? await (slackResponse as Response).json() : { integration: null }
+      const rootlyData = rootlyResponse.ok ? await rootlyResponse.json() : { integrations: [] }
+      const pagerdutyData = pagerdutyResponse.ok ? await pagerdutyResponse.json() : { integrations: [] }
+      const githubData = (githubResponse as Response).ok ? await (githubResponse as Response).json() : { connected: false, integration: null }
+      const slackData = (slackResponse as Response).ok ? await (slackResponse as Response).json() : { integration: null }
 
-      const rootlyIntegrations = (rootlyData.integrations || []).map((i: Integration) => ({ ...i, platform: 'rootly' }))
-      const pagerdutyIntegrations = (pagerdutyData.integrations || []).map((i: Integration) => ({ ...i, platform: 'pagerduty' }))
+      const rootlyIntegrations = rootlyData.integrations.map((i: Integration) => ({ ...i, platform: 'rootly' }))
+      const pagerdutyIntegrations = pagerdutyData.integrations || []
 
       const allIntegrations = [...rootlyIntegrations, ...pagerdutyIntegrations]
-
-      // Don't overwrite existing good data with empty responses from failed requests
-      // Only update if we got successful responses OR if we currently have no data
-      const shouldUpdate = (rootlyResponse as any).ok || (pagerdutyResponse as any).ok || integrations.length === 0
-
-      if (!shouldUpdate) {
-        isLoadingRef.current = false
-        setLoadingRootly(false)
-        setLoadingPagerDuty(false)
-        setLoadingGitHub(false)
-        setLoadingSlack(false)
-        return
-      }
-
       setIntegrations(allIntegrations)
       setGithubIntegration(githubData.connected ? githubData.integration : null)
       setSlackIntegration(slackData.integration)
@@ -1097,7 +824,6 @@ export default function IntegrationsPage() {
       setLoadingPagerDuty(false)
       setLoadingGitHub(false)
       setLoadingSlack(false)
-      isLoadingRef.current = false
     }
   }
 
@@ -1291,9 +1017,7 @@ export default function IntegrationsPage() {
       setTeamMembersDrawerOpen,
       syncUsersToCorrelation,
       showToast,
-      autoSync,
-      setSelectedRecipients,
-      setSavedRecipients
+      autoSync
     )
   }
 
@@ -1444,121 +1168,54 @@ export default function IntegrationsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-3">
-              <h1 className="text-2xl font-bold text-slate-900">Manage Integrations</h1>
-
-              {/* ✨ PHASE 1: Background refresh indicator */}
-              {refreshingInBackground && (
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                  <span className="text-xs text-blue-600 font-medium">Refreshing...</span>
-                </div>
-              )}
-
-              {/* Sync integrations button */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => loadAllIntegrationsOptimized(true)}
-                disabled={loadingRootly || loadingPagerDuty || refreshingInBackground}
-                className="flex items-center space-x-2 text-slate-600 hover:text-slate-900"
-                title="Sync integrations from source"
-              >
-                <RefreshCw className={`w-4 h-4 ${(loadingRootly || loadingPagerDuty || refreshingInBackground) ? 'animate-spin' : ''}`} />
-                <span className="text-sm">Sync</span>
-              </Button>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-4">
-            {/* Notifications */}
-            <NotificationDrawer />
-
-            {/* User Account Indicator */}
-            {userInfo ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <div className="flex items-center space-x-3 px-3 py-1 bg-slate-50/80 rounded-full border border-slate-200 hover:bg-slate-100 cursor-pointer transition-colors">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={userInfo.avatar} alt={userInfo.name} />
-                      <AvatarFallback className="bg-purple-600 text-white text-xs">
-                        {userInfo.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="hidden sm:block text-left">
-                      <div className="text-sm font-medium text-slate-900">{userInfo.name}</div>
-                      <div className="text-xs text-slate-500">{userInfo.email}</div>
-                    </div>
-                  </div>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem disabled className="px-2 py-1.5">
-                    <div>
-                      <div className="font-medium text-gray-900">{userInfo.name}</div>
-                      <div className="text-xs text-gray-500">{userInfo.email}</div>
-                      <div className="text-xs text-gray-400 mt-1 capitalize">
-                        {userInfo.role?.replace('_', ' ') || 'Member'}
-                      </div>
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  {/* Temporarily hidden for beta - everyone is an org admin */}
-                  {/* {(userInfo.role === 'org_admin' || userInfo.role === 'super_admin') && (
-                    <>
-                      <DropdownMenuItem
-                        className="px-2 py-1.5 cursor-pointer"
-                        onClick={() => setShowInviteModal(true)}
-                      >
-                        <UserPlus className="w-4 h-4 mr-2" />
-                        Org Management
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                    </>
-                  )} */}
-                  <DropdownMenuItem
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50 px-2 py-1.5 cursor-pointer"
-                    onClick={() => {
-                      // Clear all user data
-                      localStorage.clear();
-                      // Redirect to home page
-                      window.location.href = '/';
-                    }}
-                  >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Sign Out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <div className="flex items-center space-x-2 px-3 py-1 bg-slate-50/80 rounded-full border border-slate-200">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-gray-400 text-white text-xs">
-                    ?
-                  </AvatarFallback>
-                </Avatar>
-                <div className="hidden sm:block text-left">
-                  <div className="text-sm font-medium text-slate-900">Loading...</div>
-                  <div className="text-xs text-slate-500">User info</div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
+      <TopPanel />
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         {/* Introduction Text */}
         <div className="text-center mb-6 max-w-2xl mx-auto">
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">Connect Your Platform</h2>
-          <p className="text-slate-600">
+          <h2 className="text-4xl font-bold text-black mb-2">Connect Your Platform</h2>
+          <p className="text-lg text-slate-600">
             Integrate with Rootly or PagerDuty to analyze team burnout patterns
           </p>
         </div>
+
+        {/* No integrations message - Show right below intro */}
+        {integrations.length === 0 && !loadingRootly && !loadingPagerDuty && (
+          <div className="text-center py-8 mb-6 max-w-2xl mx-auto">
+            <Shield className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+            <p className="text-lg font-medium mb-2 text-gray-700">No integrations yet</p>
+            <p className="text-sm text-gray-500">Add a Rootly or PagerDuty integration to get started!</p>
+          </div>
+        )}
+
+        {/* Ready for Analysis CTA - Always visible when integrations exist */}
+        {(loadingRootly || loadingPagerDuty) ? (
+          <div className="bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-6 mb-8 max-w-2xl mx-auto animate-pulse">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-gray-300 rounded-full mx-auto mb-4"></div>
+              <div className="h-6 bg-gray-300 rounded w-80 mx-auto mb-2"></div>
+              <div className="h-4 bg-gray-300 rounded w-96 mx-auto mb-2"></div>
+              <div className="h-4 bg-gray-300 rounded w-72 mx-auto mb-4"></div>
+              <div className="h-10 bg-gray-300 rounded w-40 mx-auto"></div>
+            </div>
+          </div>
+        ) : integrations.length > 0 && (
+          <div className="bg-gradient-to-r from-purple-50 to-green-50 border border-purple-200 rounded-lg p-6 mb-8 max-w-2xl mx-auto">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold text-slate-900 mb-2">
+                Ready to analyze your team's burnout risk!
+              </h3>
+              <p className="text-slate-600">
+                You have {integrations.length} integration{integrations.length > 1 ? 's' : ''} connected.
+                Run your first analysis to identify burnout patterns across your team.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Dashboard Organization Selector */}
         {integrations.length > 0 && (
@@ -1566,8 +1223,8 @@ export default function IntegrationsPage() {
             <div className="bg-white border-2 border-slate-200 rounded-lg p-4 shadow-sm">
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2 text-slate-700 flex-shrink-0">
-                  <Settings className="w-5 h-5 text-purple-600" />
-                  <span className="font-semibold">Active Organization</span>
+                  <Settings className="w-6 h-6 text-purple-600" />
+                  <span className="font-semibold text-lg">Active Organization</span>
                 </div>
                 <Select
                   value={selectedOrganization}
@@ -1593,12 +1250,12 @@ export default function IntegrationsPage() {
                           return (
                             <div className="flex items-center justify-between w-full">
                               <div className="flex items-center gap-2">
-                                <div className={`w-2.5 h-2.5 rounded-full ${
+                                <div className={`w-3 h-3 rounded-full ${
                                   selected.platform === 'rootly' ? 'bg-purple-500' : 'bg-green-500'
                                 }`}></div>
-                                <span className="font-medium">{selected.name}</span>
+                                <span className="font-medium text-base">{selected.name}</span>
                               </div>
-                              <Star className="w-4 h-4 text-yellow-500 fill-yellow-500 flex-shrink-0" />
+                              <Star className="w-5 h-5 text-yellow-500 fill-yellow-500 flex-shrink-0" />
                             </div>
                           )
                         }
@@ -1617,9 +1274,9 @@ export default function IntegrationsPage() {
                           {/* Rootly Organizations */}
                           {rootlyIntegrations.length > 0 && (
                             <>
-                              <div className="px-3 py-2 text-xs font-semibold text-slate-600 bg-slate-50 border-b border-slate-200">
+                              <div className="px-3 py-2 text-sm font-semibold text-slate-600 bg-slate-50 border-b border-slate-200">
                                 <div className="flex items-center gap-2">
-                                  <div className="w-2.5 h-2.5 bg-purple-500 rounded-full"></div>
+                                  <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
                                   Rootly Organizations
                                 </div>
                               </div>
@@ -1631,11 +1288,11 @@ export default function IntegrationsPage() {
                                 >
                                   <div className="flex items-center justify-between w-full gap-2">
                                     <div className="flex items-center gap-2">
-                                      <div className="w-2.5 h-2.5 bg-purple-500 rounded-full"></div>
-                                      <span className="font-medium">{integration.name}</span>
+                                      <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                                      <span className="font-medium text-base">{integration.name}</span>
                                     </div>
                                     {selectedOrganization === integration.id.toString() && (
-                                      <Star className="w-4 h-4 text-yellow-500 fill-yellow-500 flex-shrink-0" />
+                                      <Star className="w-5 h-5 text-yellow-500 fill-yellow-500 flex-shrink-0" />
                                     )}
                                   </div>
                                 </SelectItem>
@@ -1649,9 +1306,9 @@ export default function IntegrationsPage() {
                               {rootlyIntegrations.length > 0 && (
                                 <div className="my-1 border-t border-slate-200"></div>
                               )}
-                              <div className="px-3 py-2 text-xs font-semibold text-slate-600 bg-slate-50 border-b border-slate-200">
+                              <div className="px-3 py-2 text-sm font-semibold text-slate-600 bg-slate-50 border-b border-slate-200">
                                 <div className="flex items-center gap-2">
-                                  <div className="w-2.5 h-2.5 bg-green-500 rounded-full"></div>
+                                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                                   PagerDuty Organizations
                                 </div>
                               </div>
@@ -1663,11 +1320,11 @@ export default function IntegrationsPage() {
                                 >
                                   <div className="flex items-center justify-between w-full gap-2">
                                     <div className="flex items-center gap-2">
-                                      <div className="w-2.5 h-2.5 bg-green-500 rounded-full"></div>
-                                      <span className="font-medium">{integration.name}</span>
+                                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                                      <span className="font-medium text-base">{integration.name}</span>
                                     </div>
                                     {selectedOrganization === integration.id.toString() && (
-                                      <Star className="w-4 h-4 text-yellow-500 fill-yellow-500 flex-shrink-0" />
+                                      <Star className="w-5 h-5 text-yellow-500 fill-yellow-500 flex-shrink-0" />
                                     )}
                                   </div>
                                 </SelectItem>
@@ -1680,54 +1337,6 @@ export default function IntegrationsPage() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* Ready for Analysis CTA - Always visible when integrations exist */}
-        {(loadingRootly || loadingPagerDuty) ? (
-          <div className="bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-6 mb-8 max-w-2xl mx-auto animate-pulse">
-            <div className="text-center">
-              <div className="w-12 h-12 bg-gray-300 rounded-full mx-auto mb-4"></div>
-              <div className="h-6 bg-gray-300 rounded w-80 mx-auto mb-2"></div>
-              <div className="h-4 bg-gray-300 rounded w-96 mx-auto mb-2"></div>
-              <div className="h-4 bg-gray-300 rounded w-72 mx-auto mb-4"></div>
-              <div className="h-10 bg-gray-300 rounded w-40 mx-auto"></div>
-            </div>
-          </div>
-        ) : integrations.length > 0 && (
-          <div className="bg-gradient-to-r from-purple-50 to-green-50 border border-purple-200 rounded-lg p-6 mb-8 max-w-2xl mx-auto">
-            <div className="text-center">
-              <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-6 h-6 text-white" />
-              </div>
-              <h3 className="text-xl font-semibold text-slate-900 mb-2">
-                Ready to analyze your team's burnout risk!
-              </h3>
-              <p className="text-slate-600 mb-4">
-                You have {integrations.length} integration{integrations.length > 1 ? 's' : ''} connected.
-                Run your first analysis to identify burnout patterns across your team.
-              </p>
-              <Button
-                className="bg-purple-600 hover:bg-purple-700 text-white"
-                onClick={() => {
-                  setNavigatingToDashboard(true)
-                  router.push('/dashboard')
-                }}
-                disabled={navigatingToDashboard}
-              >
-                {navigatingToDashboard ? (
-                  <>
-                    <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Loading Dashboard...
-                  </>
-                ) : (
-                  <>
-                    <Activity className="w-4 h-4 mr-2" />
-                    Go to Dashboard
-                  </>
-                )}
-              </Button>
             </div>
           </div>
         )}
@@ -2150,13 +1759,7 @@ export default function IntegrationsPage() {
                   )}
                 </CardContent>
               </Card>
-            ) : (
-              <div className="text-center py-12 text-gray-500">
-                <Shield className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                <p className="text-lg font-medium mb-2">No integrations yet</p>
-                <p className="text-sm">Add a Rootly or PagerDuty integration to get started!</p>
-              </div>
-            )}
+            ) : null}
         </div>
 
         {/* Enhanced Integrations Section */}
@@ -2169,45 +1772,6 @@ export default function IntegrationsPage() {
             <p className="text-slate-500">
               Analyze code patterns, team communication, and collect direct feedback
             </p>
-          </div>
-
-          {/* Sync Members Card */}
-          <div className="max-w-2xl mx-auto">
-            <Card className={`border-2 ${selectedOrganization ? 'border-purple-200 bg-purple-50' : 'border-gray-200 bg-gray-50'}`}>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${selectedOrganization ? 'bg-purple-600' : 'bg-gray-300'}`}>
-                      <Users className={`w-6 h-6 ${selectedOrganization ? 'text-white' : 'text-gray-500'}`} />
-                    </div>
-                    <div>
-                      <h3 className={`text-lg font-semibold ${selectedOrganization ? 'text-slate-900' : 'text-gray-900'}`}>
-                        Team Members
-                      </h3>
-                      <p className={`text-sm ${selectedOrganization ? 'text-slate-600' : 'text-gray-600'}`}>
-                        {selectedOrganization ? (
-                          <>View and manage synced team members {syncedUsers.length > 0 && `(${syncedUsers.length} synced)`}</>
-                        ) : (
-                          'Select an organization above to view team members'
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    onClick={() => {
-                      setLoadingSyncedUsers(true)
-                      setTeamMembersDrawerOpen(true)
-                      fetchSyncedUsers(false, false)
-                    }}
-                    disabled={!selectedOrganization}
-                    className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
-                  >
-                    <Users className="w-4 h-4 mr-2" />
-                    View Members
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 mb-8 max-w-2xl mx-auto">
@@ -3418,318 +2982,90 @@ export default function IntegrationsPage() {
       </div>
 
       {/* Team Members Drawer */}
-      <Sheet open={teamMembersDrawerOpen} onOpenChange={handleDrawerClose}>
-        <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto flex flex-col">
+      <Sheet open={teamMembersDrawerOpen} onOpenChange={setTeamMembersDrawerOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
           <SheetHeader>
-            <div className="flex items-start justify-between pr-10 gap-4">
-              <div>
-                <SheetTitle>Team Members ({syncedUsers.length})</SheetTitle>
-                <SheetDescription>
-                  Sync will match {integrations.find(i => i.id.toString() === selectedOrganization)?.name || 'organization'} users with GitHub and Slack accounts
-                </SheetDescription>
-              </div>
-              <div className="flex items-center gap-3 flex-shrink-0">
-                <Button
-                  onClick={async () => {
-                    await syncUsersToCorrelation()
-                    if (slackIntegration?.workspace_id) {
-                      await syncSlackUserIds()
-                    }
-                  }}
-                  disabled={loadingTeamMembers}
-                  className="bg-purple-600 hover:bg-purple-700 text-white"
-                  size="default"
-                >
-                  {loadingTeamMembers ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Syncing...
-                    </>
-                  ) : (
-                    <>
-                      <Users className="w-4 h-4 mr-2" />
-                      Sync Members
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
+            <SheetTitle>Team Members</SheetTitle>
+            <SheetDescription>
+              Users from {integrations.find(i => i.id.toString() === selectedOrganization)?.name || 'your organization'} who can submit burnout surveys
+            </SheetDescription>
           </SheetHeader>
 
           <div className="mt-6 space-y-4">
             {/* Show synced users only */}
-            {loadingSyncedUsers ? (
-              <div className="flex flex-col items-center justify-center py-12 space-y-4">
-                <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
-                <p className="text-sm text-gray-600">Loading team members...</p>
-              </div>
-            ) : syncedUsers.length > 0 ? (
+            {syncedUsers.length > 0 ? (
               <div>
-                <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs text-blue-900 font-medium">
-                      ✓ Check users to send them automated burnout survey invitations via Slack
-                    </p>
-                    <div className="text-xs font-semibold text-blue-900 bg-blue-100 px-2 py-1 rounded">
-                      {selectedRecipients.size || 0} / {syncedUsers.length} will receive surveys
-                    </div>
-                  </div>
-                  {selectedOrganization && ['beta-rootly', 'beta-pagerduty'].includes(selectedOrganization) ? (
-                    <p className="text-xs text-amber-700 mt-2 font-medium">
-                      ℹ️ Beta integrations send surveys to all synced users. Add a personal integration to customize recipients.
-                    </p>
-                  ) : hasUnsavedChanges() && (
-                    <p className="text-xs text-orange-600 mt-2 font-medium">
-                      ⚠️ You have unsaved changes. Click "Save Changes" to apply.
-                    </p>
-                  )}
-                </div>
-
-                {/* Quick filter buttons */}
-                <div className="flex items-center gap-2 mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                  <span className="text-xs font-medium text-gray-600">Quick Actions:</span>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      const oncallUserIds = syncedUsers
-                        .filter(u => u.is_oncall)
-                        .map(u => u.id)
-                      setSelectedRecipients(new Set(oncallUserIds))
-                      toast.success(`Selected ${oncallUserIds.length} on-call users`)
-                    }}
-                    className="h-7 text-xs"
-                  >
-                    Select On-Call ({syncedUsers.filter(u => u.is_oncall).length})
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      const slackConnectedUserIds = syncedUsers
-                        .filter(u => u.platforms?.some((p: string) => p.toLowerCase() === 'slack'))
-                        .map(u => u.id)
-                      setSelectedRecipients(new Set(slackConnectedUserIds))
-                      toast.success(`Selected ${slackConnectedUserIds.length} Slack-connected users`)
-                    }}
-                    className="h-7 text-xs"
-                  >
-                    Select All
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setSelectedRecipients(new Set())
-                      toast.success('Deselected all users')
-                    }}
-                    className="h-7 text-xs"
-                  >
-                    Deselect All
-                  </Button>
-                </div>
-                <div className="space-y-2 pb-20">
-                  {syncedUsers.map((user: any) => {
-                    const isSelected = selectedRecipients.has(user.id)
-                    return (
-                      <div
-                        key={user.id}
-                        onClick={() => {
-                          const newSelected = new Set(selectedRecipients)
-                          if (isSelected) {
-                            newSelected.delete(user.id)
-                          } else {
-                            newSelected.add(user.id)
-                          }
-                          setSelectedRecipients(newSelected)
-                        }}
-                        className={`bg-white border rounded-lg p-3 transition-all cursor-pointer ${
-                          isSelected
-                            ? 'border-purple-400 bg-purple-50'
-                            : 'border-gray-200 hover:border-purple-300'
-                        }`}
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-gray-900">
+                    Team Members ({syncedUsers.length})
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    {slackIntegration?.workspace_id && (
+                      <Button
+                        onClick={syncSlackUserIds}
+                        disabled={loadingTeamMembers}
+                        size="sm"
+                        variant="outline"
+                        className="flex items-center space-x-2 border-green-300 text-green-700 hover:bg-green-50"
                       >
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center space-x-3">
-                            {/* Checkbox */}
-                            <div className="relative">
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={() => {}} // Handled by parent div onClick
-                                className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
-                              />
+                        {loadingTeamMembers ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>Syncing...</span>
+                          </>
+                        ) : (
+                          <>
+                            <MessageSquare className="w-4 h-4" />
+                            <span>Sync Slack IDs</span>
+                          </>
+                        )}
+                      </Button>
+                    )}
+                    <Badge className="text-xs bg-green-100 text-green-700 border-green-300">
+                      Can Submit Surveys
+                    </Badge>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-600 mb-3">
+                  These users can submit burnout surveys via Slack /burnout-survey command
+                </p>
+                <div className="space-y-2 max-h-[600px] overflow-y-auto">
+                  {syncedUsers.map((user: any) => (
+                    <div
+                      key={user.id}
+                      className="bg-white border border-gray-200 rounded-lg p-3 hover:border-purple-300 transition-colors"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-3">
+                          <Avatar className="h-10 w-10">
+                            <AvatarFallback className="bg-purple-100 text-purple-700 text-sm font-medium">
+                              {user.name?.substring(0, 2).toUpperCase() || user.email?.substring(0, 2).toUpperCase() || '??'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {user.name || 'Unknown'}
                             </div>
-
-                            {/* Avatar with on-call indicator */}
-                            <div className="relative">
-                              <Avatar className="h-10 w-10">
-                                <AvatarFallback className="bg-purple-100 text-purple-700 text-sm font-medium">
-                                  {user.name?.substring(0, 2).toUpperCase() || user.email?.substring(0, 2).toUpperCase() || '??'}
-                                </AvatarFallback>
-                              </Avatar>
-                              {user.is_oncall && (
-                                <div
-                                  className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"
-                                  title="Currently on-call"
-                                />
-                              )}
+                            <div className="text-xs text-gray-600">
+                              {user.email}
                             </div>
-
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-gray-900">
-                                  {user.name || 'Unknown'}
-                                </span>
-                                {/* GitHub and Slack logos */}
-                                {user.platforms?.map((platform: string) => {
-                                  const platformLower = platform.toLowerCase()
-                                  const isGitHub = platformLower === 'github'
-                                  const isSlack = platformLower === 'slack'
-
-                                  if (isGitHub || isSlack) {
-                                    return (
-                                      <div
-                                        key={platform}
-                                        className="flex items-center justify-center w-4 h-4"
-                                        title={platform}
-                                      >
-                                        <Image
-                                          src={isGitHub ? '/images/github-logo.png' : '/images/slack-logo.png'}
-                                          alt={platform}
-                                          width={14}
-                                          height={14}
-                                          className="object-contain"
-                                        />
-                                      </div>
-                                    )
-                                  }
-                                  return null
-                                })}
-                                {user.is_oncall && (
-                                  <Badge className="text-xs bg-green-100 text-green-700 border-green-300">
-                                    On-Call
-                                  </Badge>
-                                )}
-                              </div>
-                              <div className="text-xs text-gray-600">
-                                {user.email}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            {/* Rootly and PagerDuty badges */}
-                            {user.platforms?.map((platform: string) => {
-                              const platformLower = platform.toLowerCase()
-                              const isPagerDuty = platformLower === 'pagerduty'
-                              const isRootly = platformLower === 'rootly'
-
-                              if (isPagerDuty || isRootly) {
-                                return (
-                                  <Badge
-                                    key={platform}
-                                    variant="secondary"
-                                    className={`text-xs ${
-                                      isPagerDuty ? 'bg-green-100 text-green-700 border-green-300' :
-                                      isRootly ? 'bg-purple-100 text-purple-700 border-purple-300' :
-                                      ''
-                                    }`}
-                                  >
-                                    {platform}
-                                  </Badge>
-                                )
-                              }
-                              return null
-                            })}
                           </div>
                         </div>
-                      {/* GitHub username section - always show, with edit capability */}
-                      <div className="pl-13 mt-2" onClick={(e) => e.stopPropagation()}>
-                        {editingUserId === user.id ? (
-                          // Edit mode
-                          <div className="flex items-center space-x-2">
-                            <Select
-                              value={editingUsername}
-                              onValueChange={setEditingUsername}
-                              disabled={savingUsername}
-                            >
-                              <SelectTrigger className="h-8 text-xs flex-1">
-                                <SelectValue placeholder="Select GitHub username..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="__clear__">
-                                  <span className="text-gray-400 italic">Clear mapping</span>
-                                </SelectItem>
-                                {githubOrgMembers.length > 0 ? (
-                                  githubOrgMembers.map(username => (
-                                    <SelectItem key={username} value={username}>
-                                      {username}
-                                    </SelectItem>
-                                  ))
-                                ) : (
-                                  <div className="text-xs text-gray-400 p-2">
-                                    {loadingOrgMembers ? 'Loading...' : 'No GitHub members found'}
-                                  </div>
-                                )}
-                              </SelectContent>
-                            </Select>
-                            <Button
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                saveGitHubUsername(user.id)
-                              }}
-                              disabled={savingUsername}
-                              className="h-8 px-2"
-                            >
-                              {savingUsername ? (
-                                <Loader2 className="w-3 h-3 animate-spin" />
-                              ) : (
-                                <Check className="w-3 h-3" />
-                              )}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                cancelEditingGitHubUsername()
-                              }}
-                              disabled={savingUsername}
-                              className="h-8 px-2"
-                            >
-                              <X className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        ) : (
-                          // Display mode
-                          <div className="flex items-center justify-between text-xs">
-                            <div className="text-gray-500">
-                              GitHub: {user.github_username ? (
-                                <span className="font-mono text-gray-700">{user.github_username}</span>
-                              ) : (
-                                <span className="text-gray-400 italic">Not mapped</span>
-                              )}
-                            </div>
-                            {githubIntegration && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  startEditingGitHubUsername(user.id, user.github_username)
-                                }}
-                                className="h-6 px-2 text-gray-400 hover:text-gray-700"
-                              >
-                                <Edit3 className="w-3 h-3" />
-                              </Button>
-                            )}
-                          </div>
-                        )}
+                        <div className="flex items-center space-x-1">
+                          {user.platforms?.map((platform: string) => (
+                            <Badge key={platform} variant="secondary" className="text-xs">
+                              {platform}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
+                      {user.github_username && (
+                        <div className="pl-13 text-xs text-gray-500">
+                          GitHub: <span className="font-mono">{user.github_username}</span>
+                        </div>
+                      )}
                     </div>
-                    )
-                  })}
+                  ))}
                 </div>
               </div>
             ) : (
@@ -3740,48 +3076,6 @@ export default function IntegrationsPage() {
               </div>
             )}
           </div>
-
-          {/* Sticky Footer with Save/Cancel buttons */}
-          {selectedOrganization && !['beta-rootly', 'beta-pagerduty'].includes(selectedOrganization) && hasUnsavedChanges() && (
-            <div className="sticky bottom-0 left-0 right-0 border-t bg-white p-4 mt-auto">
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-sm text-orange-600 flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4" />
-                  <span>You have unsaved changes</span>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={discardRecipientChanges}
-                    disabled={savingRecipients}
-                    variant="outline"
-                    size="default"
-                  >
-                    <X className="w-4 h-4 mr-2" />
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={saveSurveyRecipients}
-                    disabled={savingRecipients}
-                    variant="default"
-                    size="default"
-                    className="bg-purple-600 hover:bg-purple-700"
-                  >
-                    {savingRecipients ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Check className="w-4 h-4 mr-2" />
-                        Save Changes
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
         </SheetContent>
       </Sheet>
 

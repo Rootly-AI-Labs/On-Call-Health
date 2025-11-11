@@ -1616,7 +1616,7 @@ export default function useDashboard() {
 
   const getRiskColor = (riskLevel: string) => {
     switch (riskLevel) {
-      // CBI 4-tier system
+      // OCB 4-tier system
       case "critical":
         return "text-red-800 bg-red-100 border-red-300"    // Critical (75-100): Dark red
       case "poor": 
@@ -1726,17 +1726,17 @@ export default function useDashboard() {
     const members = Array.isArray(teamAnalysis) ? teamAnalysis : teamAnalysis?.members
     return members
       ?.filter((member) => {
-        // Only include members with CBI scores
-        const memberWithCbi = member as any;
-        return memberWithCbi.cbi_score !== undefined && memberWithCbi.cbi_score !== null && memberWithCbi.cbi_score > 0
+        // Only include members with OCB scores
+        const memberWithOcb = member as any;
+        return memberWithOcb.ocb_score !== undefined && memberWithOcb.ocb_score !== null && memberWithOcb.ocb_score > 0
       })
       ?.map((member) => {
-        // Use CBI scoring system (0-100 scale, higher = more burnout)
-        const score = (member as any).cbi_score || 0
+        // Use OCB scoring system (0-100 scale, higher = more burnout)
+        const score = (member as any).ocb_score || 0
         
         const burnoutScore = Math.max(0, score);
         
-        // Official CBI 4-color system based on burnout score (higher = worse)
+        // Official OCB 4-color system based on burnout score (higher = worse)
         const getRiskFromBurnoutScore = (burnoutScore: number) => {
           if (burnoutScore < 25) return { level: 'low', color: '#10b981' };      // Green - Low/minimal burnout (0-24)
           if (burnoutScore < 50) return { level: 'mild', color: '#eab308' };     // Yellow - Mild burnout symptoms (25-49)  
@@ -1752,7 +1752,7 @@ export default function useDashboard() {
           score: burnoutScore,
           riskLevel: riskInfo.level,
           backendRiskLevel: member.risk_level, // Keep original for reference
-          scoreType: 'CBI',
+          scoreType: 'OCB',
           fill: riskInfo.color,
         }
       })
@@ -1794,9 +1794,9 @@ export default function useDashboard() {
   // NO FALLBACK DATA: Only show burnout factors if we have REAL API data
   // Include ALL members with burnout scores, not just those with incidents
   // Members with high GitHub activity but no incidents should still be included
-  // Filter members with CBI scores only
-  const membersWithCbiScores = members.filter((m: any) =>
-    m?.cbi_score !== undefined && m?.cbi_score !== null && m?.cbi_score > 0
+  // Filter members with OCB scores only
+  const membersWithOcbScores = members.filter((m: any) =>
+    m?.ocb_score !== undefined && m?.ocb_score !== null && m?.ocb_score > 0
   );
   
   // For backward compatibility, keep membersWithIncidents for other parts of the code
@@ -1815,7 +1815,7 @@ export default function useDashboard() {
   // Backend provides pre-calculated factors - frontend should ONLY display, never recalculate
   const membersWithGitHubData = members.filter((m: any) => 
     m?.github_activity && (m.github_activity.commits_count > 0 || m.github_activity.commits_per_week > 0));
-  const allActiveMembers = membersWithCbiScores; // Only include members with CBI scores
+  const allActiveMembers = membersWithOcbScores; // Only include members with OCB scores
 
   const burnoutFactors = (allActiveMembers.length > 0) ? [
     { 
@@ -1832,7 +1832,7 @@ export default function useDashboard() {
         
         const sum = workloadScores.reduce((total, score) => total + score, 0);
         const average = sum / workloadScores.length;
-        // Convert 0-10 scale to CBI 0-100 scale (whole integer)
+        // Convert 0-10 scale to OCB 0-100 scale (whole integer)
         return Math.round(average * 10);
       })(),
       metrics: `Average workload factor from ${allActiveMembers.length} active team members`
@@ -1851,7 +1851,7 @@ export default function useDashboard() {
         
         const sum = afterHoursScores.reduce((total, score) => total + score, 0);
         const average = sum / afterHoursScores.length;
-        // Convert 0-10 scale to CBI 0-100 scale (whole integer)
+        // Convert 0-10 scale to OCB 0-100 scale (whole integer)
         return Math.round(average * 10);
       })(),
       metrics: `Average after-hours factor from ${allActiveMembers.length} active team members`
@@ -1870,7 +1870,7 @@ export default function useDashboard() {
         
         const sum = weekendScores.reduce((total, score) => total + score, 0);
         const average = sum / weekendScores.length;
-        // Convert 0-10 scale to CBI 0-100 scale (whole integer)
+        // Convert 0-10 scale to OCB 0-100 scale (whole integer)
         return Math.round(average * 10);
       })(),
       metrics: `Average weekend work factor from ${allActiveMembers.length} active team members`
@@ -1889,7 +1889,7 @@ export default function useDashboard() {
         
         const sum = responseScores.reduce((total, score) => total + score, 0);
         const average = sum / responseScores.length;
-        // Convert 0-10 scale to CBI 0-100 scale (whole integer)
+        // Convert 0-10 scale to OCB 0-100 scale (whole integer)
         return Math.round(average * 10);
       })(),
       metrics: `Average response time factor from ${allActiveMembers.length} active team members`
@@ -1908,7 +1908,7 @@ export default function useDashboard() {
         
         const sum = incidentLoadScores.reduce((a: number, b: number) => a + b, 0);
         const average = sum / incidentLoadScores.length;
-        // Convert 0-10 scale to CBI 0-100 scale (whole integer)
+        // Convert 0-10 scale to OCB 0-100 scale (whole integer)
         return Math.round(average * 10);
       })(),
       metrics: `Average incident load factor from ${allActiveMembers.length} active team members`
@@ -1920,7 +1920,7 @@ export default function useDashboard() {
     severity: factor.value! >= 70 ? 'Critical' : factor.value! >= 50 ? 'Poor' : factor.value! >= 30 ? 'Fair' : 'Good'
   })) : [];
   
-  // Get high-risk factors for emphasis (CBI scale 0-100)
+  // Get high-risk factors for emphasis (OCB scale 0-100)
   const highRiskFactors = burnoutFactors.filter(f => f.value >= 50).sort((a, b) => b.value - a.value);
 
   // sort descending for RiskFactors 
