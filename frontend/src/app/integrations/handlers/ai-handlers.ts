@@ -39,7 +39,7 @@ export async function loadLlmConfig(
 }
 
 /**
- * Connect AI/LLM provider with API token
+ * Connect AI/LLM provider with API token or system token
  */
 export async function handleConnectAI(
   llmToken: string,
@@ -48,9 +48,11 @@ export async function handleConnectAI(
   setIsConnectingAI: (loading: boolean) => void,
   setTokenError: (error: string | null) => void,
   setLlmConfig: (config: any) => void,
-  setLlmToken: (token: string) => void
+  setLlmToken: (token: string) => void,
+  useSystemToken: boolean = false
 ): Promise<void> {
-  if (!llmToken.trim()) {
+  // If using system token, no token input validation needed
+  if (!useSystemToken && !llmToken.trim()) {
     setTokenError("Please enter your LLM API token")
     toast.error("Please enter your LLM API token")
     return
@@ -71,8 +73,9 @@ export async function handleConnectAI(
         'Authorization': `Bearer ${authToken}`
       },
       body: JSON.stringify({
-        token: llmToken,
-        provider: llmProvider
+        token: useSystemToken ? '' : llmToken,  // Empty token when using system
+        provider: llmProvider,
+        use_system_token: useSystemToken
       })
     })
 
@@ -81,11 +84,14 @@ export async function handleConnectAI(
       setLlmConfig({
         has_token: true,
         provider: result.provider,
-        token_suffix: result.token_suffix
+        token_suffix: result.token_suffix,
+        token_source: result.token_source
       })
       setLlmToken('')
       setTokenError(null) // Clear any errors on success
-      toast.success(`Successfully connected ${result.provider} ${llmModel}`)
+
+      const sourceLabel = result.token_source === 'system' ? 'system token' : 'custom token'
+      toast.success(`Successfully connected ${result.provider} using ${sourceLabel}`)
     } else {
       const error = await response.json()
       const errorDetail = error.detail || 'Failed to connect AI'

@@ -126,6 +126,7 @@ import * as AIHandlers from "./handlers/ai-handlers"
 import * as MappingHandlers from "./handlers/mapping-handlers"
 import * as Utils from "./utils"
 import { GitHubIntegrationCard } from "./components/GitHubIntegrationCard"
+import { AIInsightsCard } from "./components/AIInsightsCard"
 import { GitHubConnectedCard } from "./components/GitHubConnectedCard"
 import { RootlyIntegrationForm } from "./components/RootlyIntegrationForm"
 import { SurveyFeedbackSection } from "./components/SurveyFeedbackSection"
@@ -2353,7 +2354,30 @@ export default function IntegrationsPage() {
           </div>
         </div>
 
-        {/* AI Insights Section - Hidden for Railway deployment (AI always enabled) */}
+        {/* AI Insights Section */}
+        <div className="mt-16 space-y-8">
+          <AIInsightsCard
+            llmConfig={llmConfig}
+            onConnect={async (token, provider, useSystemToken) => {
+              await AIHandlers.handleConnectAI(
+                token,
+                provider,
+                llmModel,
+                setIsConnectingAI,
+                setTokenError,
+                setLlmConfig,
+                setLlmToken,
+                useSystemToken  // Pass the useSystemToken parameter
+              )
+            }}
+            onDisconnect={async () => {
+              await AIHandlers.handleDisconnectAI(setLlmConfig)
+            }}
+            isConnecting={isConnectingAI}
+          />
+        </div>
+
+        {/* OLD AI Section - Remove after testing */}
         {false && (
           <div className="mt-16 space-y-8">
             <div className="text-center">
