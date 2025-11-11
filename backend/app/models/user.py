@@ -22,8 +22,9 @@ class User(Base):
     rootly_token = Column(Text, nullable=True)  # Encrypted Rootly API token
     
     # LLM Integration fields
-    llm_token = Column(Text, nullable=True)  # Encrypted LLM API token
+    llm_token = Column(Text, nullable=True)  # Encrypted custom LLM API token
     llm_provider = Column(String(50), nullable=True)  # 'openai', 'anthropic', etc.
+    active_llm_token_source = Column(String(20), default='system')  # 'system' or 'custom' - which token is currently active
 
     # Organization and role management
     organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True)

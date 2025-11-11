@@ -399,9 +399,22 @@ class MigrationRunner:
                     """
                 ]
             },
+            {
+                "name": "009_add_active_llm_token_source",
+                "description": "Add active_llm_token_source field to track which token (system or custom) is active",
+                "sql": [
+                    """
+                    ALTER TABLE users
+                    ADD COLUMN IF NOT EXISTS active_llm_token_source VARCHAR(20) DEFAULT 'system'
+                    """,
+                    """
+                    COMMENT ON COLUMN users.active_llm_token_source IS 'Which LLM token is currently active: system or custom'
+                    """
+                ]
+            },
             # Add future migrations here with incrementing numbers
             # {
-            #     "name": "009_add_user_preferences",
+            #     "name": "010_add_user_preferences",
             #     "description": "Add user preferences table",
             #     "sql": ["CREATE TABLE IF NOT EXISTS user_preferences (...)"]
             # }
