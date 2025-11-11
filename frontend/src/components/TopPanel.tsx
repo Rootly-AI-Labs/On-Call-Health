@@ -40,51 +40,51 @@ export function TopPanel() {
   const isActive = (path: string) => pathname === path
 
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-      <div className="px-6">
-        <div className="flex h-24 items-center justify-between">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200/60">
+      <div className="px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between">
           {/* Left: brand + nav */}
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-10">
             {/* Powered by Rootly AI */}
-            <div className="flex flex-col items-start">
-              <span className="text-sm leading-none text-gray-400">powered by</span>
+            <div className="flex flex-col items-start gap-0.5">
+              <span className="text-[10px] uppercase tracking-wide leading-none text-gray-400 font-medium">powered by</span>
               <Image
                 src="/images/rootly-ai-logo.png"
                 alt="Rootly AI"
                 width={112}
                 height={44}
-                className="h-9 w-auto"
+                className="h-7 w-auto mt-0.5"
                 priority
               />
             </div>
 
-            <nav className="flex items-center gap-2">
+            <nav className="hidden md:flex items-center gap-1">
               <Link
                 href="/dashboard"
-                className={`px-4 py-2 text-lg font-medium rounded-md transition-colors ${
+                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 ${
                   isActive("/dashboard")
-                    ? "text-black bg-gray-300"
-                    : "text-black hover:text-black hover:bg-gray-50"
+                    ? "text-purple-700 bg-purple-50 shadow-sm"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                 }`}
               >
                 Dashboard
               </Link>
               <Link
                 href="/integrations"
-                className={`px-4 py-2 text-lg font-medium rounded-md transition-colors ${
+                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 ${
                   isActive("/integrations")
-                    ? "text-black bg-gray-300"
-                    : "text-black hover:text-black hover:bg-gray-50"
+                    ? "text-purple-700 bg-purple-50 shadow-sm"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                 }`}
               >
                 Integrations
               </Link>
               <Link
                 href="/methodology"
-                className={`px-4 py-2 text-lg font-medium rounded-md transition-colors ${
+                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 ${
                   isActive("/methodology")
-                    ? "text-black bg-gray-300"
-                    : "text-black hover:text-black hover:bg-gray-50"
+                    ? "text-purple-700 bg-purple-50 shadow-sm"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                 }`}
               >
                 Methodology
@@ -93,15 +93,15 @@ export function TopPanel() {
           </div>
 
           {/* Right: notifications + user */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <NotificationDrawer />
             {userInfo && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-4 px-2 py-2 rounded-full border border-slate-200 bg-slate-50/80 hover:bg-slate-100 transition-colors">
-                    <Avatar className="h-9 w-9">
+                  <button className="flex items-center gap-3 px-2.5 py-1.5 rounded-full border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 shadow-sm hover:shadow">
+                    <Avatar className="h-8 w-8 ring-2 ring-white">
                       <AvatarImage src={userInfo.avatar} alt={userInfo.name} />
-                      <AvatarFallback className="bg-purple-600 text-white text-base font-medium">
+                      <AvatarFallback className="bg-gradient-to-br from-purple-600 to-purple-700 text-white text-sm font-semibold">
                         {userInfo.name
                           .split(" ")
                           .map((n) => n[0])
@@ -110,15 +110,15 @@ export function TopPanel() {
                           .toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="hidden sm:block text-base font-medium text-black">
+                    <span className="hidden sm:block text-sm font-semibold text-gray-700 pr-1">
                       {userInfo.name.split(" ")[0]}
                     </span>
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <div className="px-2 py-2">
-                    <p className="text-base font-medium text-gray-900">{userInfo.name}</p>
-                    <p className="text-sm text-gray-500">{userInfo.email}</p>
+                <DropdownMenuContent align="end" className="w-56 shadow-lg">
+                  <div className="px-3 py-2.5">
+                    <p className="text-sm font-semibold text-gray-900">{userInfo.name}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{userInfo.email}</p>
                   </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
