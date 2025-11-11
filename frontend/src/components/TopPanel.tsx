@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { NotificationDrawer } from "@/components/notifications"
-import { LogOut } from "lucide-react"
+import { LogOut, BookOpen } from "lucide-react"
 
 interface UserInfo {
   name: string
@@ -79,16 +79,6 @@ export function TopPanel() {
               >
                 Integrations
               </Link>
-              <Link
-                href="/methodology"
-                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 ${
-                  isActive("/methodology")
-                    ? "text-purple-700 bg-purple-50 shadow-sm"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                }`}
-              >
-                Methodology
-              </Link>
             </nav>
           </div>
 
@@ -120,6 +110,14 @@ export function TopPanel() {
                     <p className="text-sm font-semibold text-gray-900">{userInfo.name}</p>
                     <p className="text-xs text-gray-500 mt-0.5">{userInfo.email}</p>
                   </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => router.push("/methodology")}
+                    className="cursor-pointer"
+                  >
+                    <BookOpen className="w-4 h-4 mr-2" />
+                    Methodology
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={handleSignOut}
