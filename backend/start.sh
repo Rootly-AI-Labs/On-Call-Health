@@ -61,5 +61,11 @@ print('✅ Database tables verified')
 echo "🎉 Pre-deployment setup completed successfully!"
 echo "🚀 Starting FastAPI application..."
 
-# Start the FastAPI application
-exec uvicorn app.main:app --host 0.0.0.0 --port 8000
+# Start the FastAPI application with New Relic if configured
+if [ -n "$NEW_RELIC_LICENSE_KEY" ]; then
+    echo "📊 New Relic monitoring enabled"
+    export NEW_RELIC_CONFIG_FILE=newrelic.ini
+    exec newrelic-admin run-program uvicorn app.main:app --host 0.0.0.0 --port 8000
+else
+    exec uvicorn app.main:app --host 0.0.0.0 --port 8000
+fi
