@@ -23,7 +23,6 @@ export async function initNewRelic() {
 
   // Only initialize if all required config is present
   if (!accountId || !trustKey || !agentId || !licenseKey || !applicationId) {
-    console.log('New Relic Browser Agent: Configuration not found, skipping initialization')
     return null
   }
 
@@ -54,10 +53,9 @@ export async function initNewRelic() {
       }
     })
 
-    console.log('✅ New Relic Browser Agent initialized')
     return agent
   } catch (error) {
-    console.error('Failed to initialize New Relic Browser Agent:', error)
+    // Silently fail - monitoring is optional
     return null
   }
 }
