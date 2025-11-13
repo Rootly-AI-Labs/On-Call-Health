@@ -2082,8 +2082,10 @@ export default function IntegrationsPage() {
                   </div>
                   <Button
                     onClick={() => {
-                      setLoadingSyncedUsers(true)
-                      setTeamMembersDrawerOpen(true)
+                      // Open drawer immediately if we have cached data
+                      if (selectedOrganization && syncedUsersCache.current.has(selectedOrganization)) {
+                        setTeamMembersDrawerOpen(true)
+                      }
                       fetchSyncedUsers(false, false)
                     }}
                     disabled={!selectedOrganization}
