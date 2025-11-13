@@ -215,6 +215,11 @@ export default function IntegrationsPage() {
 
   // Sync confirmation modal state
   const [showSyncConfirmModal, setShowSyncConfirmModal] = useState(false)
+  const [syncProgress, setSyncProgress] = useState<{
+    stage: string
+    details: string
+    isLoading: boolean
+  } | null>(null)
   const [editingMapping, setEditingMapping] = useState<ManualMapping | null>(null)
   const [newMappingForm, setNewMappingForm] = useState({
     source_platform: 'rootly' as string,
@@ -3680,44 +3685,95 @@ export default function IntegrationsPage() {
       />
 
       {/* Sync Confirmation Modal */}
-      <AlertDialog open={showSyncConfirmModal} onOpenChange={setShowSyncConfirmModal}>
+      <AlertDialog open={showSyncConfirmModal} onOpenChange={(open) => {
+        if (!syncProgress?.isLoading) {
+          setShowSyncConfirmModal(open)
+        }
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Sync Team Members?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {syncProgress?.isLoading ? 'Syncing Team Members...' : 'Sync Team Members?'}
+            </AlertDialogTitle>
             <AlertDialogDescription className="space-y-3 text-left">
-              <p>This will sync your team members from {integrations.find(i => i.id.toString() === selectedOrganization)?.name || 'your integration'}.</p>
+              {!syncProgress?.isLoading ? (
+                <>
+                  <p>This will sync your team members from {integrations.find(i => i.id.toString() === selectedOrganization)?.name || 'your integration'}.</p>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-md p-3 space-y-2">
-                <p className="font-medium text-blue-900">What happens during sync:</p>
-                <ul className="list-disc list-inside space-y-1 text-sm text-blue-800">
-                  <li><strong>Incident Responders Only:</strong> For Rootly, only users with Incident Response (IR) roles will be synced (admin, owner, user). Observers and users without IR access are excluded.</li>
-                  <li><strong>Clean Sync:</strong> All existing users from this integration will be removed and replaced with the fresh list.</li>
-                  <li><strong>Used in Analysis:</strong> These synced users will be used when running burnout analysis.</li>
-                  <li><strong>Cross-Platform Matching:</strong> Users will be matched across GitHub and Slack accounts when possible.</li>
-                </ul>
-              </div>
+                  <div className="bg-blue-50 border border-blue-200 rounded-md p-3 space-y-2">
+                    <p className="font-medium text-blue-900">What happens during sync:</p>
+                    <ul className="list-disc list-inside space-y-1 text-sm text-blue-800">
+                      <li><strong>Incident Responders Only:</strong> For Rootly, only users with Incident Response (IR) roles will be synced (admin, owner, user). Observers and users without IR access are excluded.</li>
+                      <li><strong>Clean Sync:</strong> All existing users from this integration will be removed and replaced with the fresh list.</li>
+                      <li><strong>Used in Analysis:</strong> These synced users will be used when running burnout analysis.</li>
+                      <li><strong>Cross-Platform Matching:</strong> Users will be matched across GitHub and Slack accounts when possible.</li>
+                    </ul>
+                  </div>
 
-              <p className="text-sm text-gray-600">
-                {syncedUsers.length > 0
-                  ? `This will replace your current ${syncedUsers.length} synced users.`
-                  : 'This is your first sync for this integration.'}
-              </p>
+                  <p className="text-sm text-gray-600">
+                    {syncedUsers.length > 0
+                      ? `This will replace your current ${syncedUsers.length} synced users.`
+                      : 'This is your first sync for this integration.'}
+                  </p>
+                </>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <Loader2 className="w-5 h-5 animate-spin text-purple-600" />
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900">{syncProgress.stage}</p>
+                      <p className="text-sm text-gray-600">{syncProgress.details}</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-purple-50 border border-purple-200 rounded-md p-3">
+                    <p className="text-sm text-purple-800">Please wait while we sync your team members. This may take a few moments...</p>
+                  </div>
+                </div>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={async () => {
-                setShowSyncConfirmModal(false)
-                await syncUsersToCorrelation()
-                if (slackIntegration?.workspace_id) {
-                  await syncSlackUserIds()
-                }
-              }}
-              className="bg-purple-600 hover:bg-purple-700"
-            >
-              Sync Now
-            </AlertDialogAction>
+            {!syncProgress?.isLoading && (
+              <>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={async () => {
+                    setSyncProgress({ stage: 'Starting sync...', details: 'Preparing to sync users', isLoading: true })
+
+                    try {
+                      setSyncProgress({ stage: 'Deleting old users...', details: 'Removing existing users from database', isLoading: true })
+
+                      setSyncProgress({ stage: 'Fetching users...', details: 'Retrieving users from API with IR role filtering', isLoading: true })
+
+                      await syncUsersToCorrelation()
+
+                      if (slackIntegration?.workspace_id) {
+                        setSyncProgress({ stage: 'Syncing Slack...', details: 'Matching Slack user IDs', isLoading: true })
+                        await syncSlackUserIds()
+                      }
+
+                      setSyncProgress({ stage: 'Complete!', details: 'Team members synced successfully', isLoading: false })
+
+                      // Close modal after brief delay
+                      setTimeout(() => {
+                        setShowSyncConfirmModal(false)
+                        setSyncProgress(null)
+                      }, 1500)
+                    } catch (error) {
+                      setSyncProgress({ stage: 'Error', details: 'Failed to sync. Please try again.', isLoading: false })
+                      setTimeout(() => {
+                        setShowSyncConfirmModal(false)
+                        setSyncProgress(null)
+                      }, 2000)
+                    }
+                  }}
+                  className="bg-purple-600 hover:bg-purple-700"
+                >
+                  Sync Now
+                </AlertDialogAction>
+              </>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
