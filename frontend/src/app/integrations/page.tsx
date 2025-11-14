@@ -17,16 +17,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import {
   Sheet,
   SheetContent,
   SheetDescription,
@@ -221,6 +211,13 @@ export default function IntegrationsPage() {
     stage: string
     details: string
     isLoading: boolean
+    results?: {
+      created?: number
+      updated?: number
+      github_matched?: number
+      slack_synced?: number
+      slack_skipped?: number
+    }
   } | null>(null)
   const [editingMapping, setEditingMapping] = useState<ManualMapping | null>(null)
   const [newMappingForm, setNewMappingForm] = useState({
@@ -1317,18 +1314,19 @@ export default function IntegrationsPage() {
   }
 
   // Fetch team members from selected organization
-  const fetchTeamMembers = async () => {
+  const fetchTeamMembers = async (suppressToast?: boolean) => {
     return TeamHandlers.fetchTeamMembers(
       selectedOrganization,
       setLoadingTeamMembers,
       setTeamMembersError,
       setTeamMembers,
-      setTeamMembersDrawerOpen
+      setTeamMembersDrawerOpen,
+      suppressToast
     )
   }
 
   // Sync users to UserCorrelation table
-  const syncUsersToCorrelation = async () => {
+  const syncUsersToCorrelation = async (suppressToast?: boolean) => {
     // Clear cache for this integration before syncing
     if (selectedOrganization) {
       syncedUsersCache.current.delete(selectedOrganization)
@@ -1338,14 +1336,16 @@ export default function IntegrationsPage() {
       selectedOrganization,
       setLoadingTeamMembers,
       setTeamMembersError,
-      fetchTeamMembers,
-      () => fetchSyncedUsers(true, true, true) // Force refresh after sync
+      () => fetchTeamMembers(suppressToast),
+      () => fetchSyncedUsers(true, true, true), // Force refresh after sync
+      undefined,
+      suppressToast
     )
   }
 
   // Sync Slack user IDs to UserCorrelation records
-  const syncSlackUserIds = async () => {
-    return TeamHandlers.syncSlackUserIds(setLoadingTeamMembers, fetchSyncedUsers)
+  const syncSlackUserIds = async (suppressToast?: boolean) => {
+    return TeamHandlers.syncSlackUserIds(setLoadingTeamMembers, fetchSyncedUsers, suppressToast)
   }
 
   // Fetch synced users from database
@@ -3826,6 +3826,61 @@ export default function IntegrationsPage() {
                         : 'This is your first sync for this integration.'}
                     </span>
                   </>
+                ) : syncProgress.results ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-6 h-6 text-green-600" />
+                      <div className="flex-1">
+                        <div className="text-lg font-semibold text-gray-900">{syncProgress.stage}</div>
+                        <div className="text-sm text-gray-600">{syncProgress.details}</div>
+                      </div>
+                    </div>
+
+                    <div className="bg-green-50 border border-green-200 rounded-md p-4 space-y-3">
+                      <div className="font-semibold text-green-900 text-base">Sync Results</div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between py-2 border-b border-green-200">
+                          <span className="text-sm text-green-800">New users synced</span>
+                          <span className="font-semibold text-green-900">{syncProgress.results.created}</span>
+                        </div>
+                        <div className="flex items-center justify-between py-2 border-b border-green-200">
+                          <span className="text-sm text-green-800">Existing users updated</span>
+                          <span className="font-semibold text-green-900">{syncProgress.results.updated}</span>
+                        </div>
+                        {syncProgress.results.github_matched !== undefined && (
+                          <div className="flex items-center justify-between py-2 border-b border-green-200">
+                            <span className="text-sm text-green-800">GitHub accounts matched</span>
+                            <span className="font-semibold text-green-900">{syncProgress.results.github_matched}</span>
+                          </div>
+                        )}
+                        {syncProgress.results.slack_synced !== undefined && (
+                          <div className="flex items-center justify-between py-2 border-b border-green-200">
+                            <span className="text-sm text-green-800">Slack accounts matched</span>
+                            <span className="font-semibold text-green-900">{syncProgress.results.slack_synced}</span>
+                          </div>
+                        )}
+                        {syncProgress.results.slack_skipped !== undefined && syncProgress.results.slack_skipped > 0 && (
+                          <div className="flex items-center justify-between py-2">
+                            <span className="text-sm text-green-800">Users without Slack match</span>
+                            <span className="font-semibold text-green-900">{syncProgress.results.slack_skipped}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end">
+                      <Button
+                        onClick={() => {
+                          setShowSyncConfirmModal(false)
+                          setSyncProgress(null)
+                        }}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        Done
+                      </Button>
+                    </div>
+                  </div>
                 ) : (
                   <div className="space-y-4">
                     <div className="flex items-center gap-3">
@@ -3857,20 +3912,34 @@ export default function IntegrationsPage() {
                       await new Promise(resolve => setTimeout(resolve, 300))
 
                       setSyncProgress({ stage: 'Fetching users...', details: 'Retrieving users from API with IR role filtering', isLoading: true })
-                      await syncUsersToCorrelation()
+                      const syncResults = await TeamHandlers.syncUsersToCorrelation(
+                        selectedOrganization,
+                        setLoadingTeamMembers,
+                        setTeamMembersError,
+                        fetchTeamMembers,
+                        () => fetchSyncedUsers(false, false, true),
+                        undefined,
+                        true // suppressToast
+                      )
 
+                      let slackResults
                       if (slackIntegration?.workspace_id) {
                         setSyncProgress({ stage: 'Syncing Slack...', details: 'Matching Slack user IDs', isLoading: true })
-                        await syncSlackUserIds()
+                        slackResults = await TeamHandlers.syncSlackUserIds(setLoadingTeamMembers, fetchSyncedUsers, true)
                       }
 
-                      setSyncProgress({ stage: 'Complete!', details: 'Team members synced successfully', isLoading: false })
-
-                      // Close modal after brief delay
-                      setTimeout(() => {
-                        setShowSyncConfirmModal(false)
-                        setSyncProgress(null)
-                      }, 1500)
+                      setSyncProgress({
+                        stage: 'Sync Complete!',
+                        details: 'Your team members have been successfully synced',
+                        isLoading: false,
+                        results: {
+                          created: syncResults.created,
+                          updated: syncResults.updated,
+                          github_matched: syncResults.github_matched,
+                          slack_synced: slackResults?.updated,
+                          slack_skipped: slackResults?.skipped
+                        }
+                      })
                     } catch (error) {
                       setSyncProgress({ stage: 'Error', details: 'Failed to sync. Please try again.', isLoading: false })
                       setTimeout(() => {

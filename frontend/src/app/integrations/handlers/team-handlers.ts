@@ -9,7 +9,8 @@ export async function fetchTeamMembers(
   setLoadingTeamMembers: (loading: boolean) => void,
   setTeamMembersError: (error: string | null) => void,
   setTeamMembers: (members: any[]) => void,
-  setTeamMembersDrawerOpen: (open: boolean) => void
+  setTeamMembersDrawerOpen: (open: boolean) => void,
+  suppressToast?: boolean
 ): Promise<void> {
   if (!selectedOrganization) {
     toast.error('Please select an organization first')
@@ -36,7 +37,9 @@ export async function fetchTeamMembers(
       const data = await response.json()
       setTeamMembers(data.users || [])
       setTeamMembersDrawerOpen(true)
-      toast.success(`Loaded ${data.total_users} team members from ${data.integration_name}`)
+      if (!suppressToast) {
+        toast.success(`Loaded ${data.total_users} team members from ${data.integration_name}`)
+      }
     } else {
       const errorData = await response.json()
       throw new Error(errorData.detail || 'Failed to fetch team members')
@@ -58,10 +61,11 @@ export async function syncUsersToCorrelation(
   selectedOrganization: string,
   setLoadingTeamMembers: (loading: boolean) => void,
   setTeamMembersError: (error: string | null) => void,
-  fetchTeamMembers: () => Promise<void>,
+  fetchTeamMembers: (suppressToast?: boolean) => Promise<void>,
   fetchSyncedUsers: (showToast?: boolean, autoSync?: boolean) => Promise<void>,
-  onProgress?: (message: string) => void
-): Promise<void> {
+  onProgress?: (message: string) => void,
+  suppressToast?: boolean
+): Promise<{ created: number; updated: number; github_matched?: number }> {
   if (!selectedOrganization) {
     toast.error('Please select an organization first')
     return
@@ -105,12 +109,20 @@ export async function syncUsersToCorrelation(
       }
       message += ` All team members can now submit burnout surveys via Slack!`
 
-      toast.success(message)
+      if (!suppressToast) {
+        toast.success(message)
+      }
       onProgress?.('🔄 Reloading team members...')
       // Reload the members list and fetch synced users (without showing another toast or auto-syncing again)
-      await fetchTeamMembers()
+      await fetchTeamMembers(suppressToast)
       await fetchSyncedUsers(false, false)
       onProgress?.('✅ Sync completed successfully!')
+
+      return {
+        created: stats.created,
+        updated: stats.updated,
+        github_matched: stats.github_matched
+      }
     } else {
       const errorData = await response.json()
       throw new Error(errorData.detail || 'Failed to sync users')
@@ -121,6 +133,7 @@ export async function syncUsersToCorrelation(
     const errorMsg = error instanceof Error ? error.message : 'Failed to sync users'
     setTeamMembersError(errorMsg)
     toast.error(errorMsg)
+    throw error
   } finally {
     setLoadingTeamMembers(false)
   }
@@ -131,8 +144,9 @@ export async function syncUsersToCorrelation(
  */
 export async function syncSlackUserIds(
   setLoadingTeamMembers: (loading: boolean) => void,
-  fetchSyncedUsers: (showToast?: boolean, autoSync?: boolean) => Promise<void>
-): Promise<void> {
+  fetchSyncedUsers: (showToast?: boolean, autoSync?: boolean) => Promise<void>,
+  suppressToast?: boolean
+): Promise<{ updated: number; skipped: number }> {
   setLoadingTeamMembers(true)
 
   try {
@@ -153,12 +167,19 @@ export async function syncSlackUserIds(
     if (response.ok) {
       const data = await response.json()
       const stats = data.stats || {}
-      toast.success(
-        `Synced Slack IDs for ${stats.updated} users! ` +
-        `${stats.skipped} users skipped (no matching Slack account).`
-      )
+      if (!suppressToast) {
+        toast.success(
+          `Synced Slack IDs for ${stats.updated} users! ` +
+          `${stats.skipped} users skipped (no matching Slack account).`
+        )
+      }
       // Refresh synced users list
       await fetchSyncedUsers(false)
+
+      return {
+        updated: stats.updated,
+        skipped: stats.skipped
+      }
     } else {
       const errorData = await response.json()
       throw new Error(errorData.detail || 'Failed to sync Slack user IDs')
@@ -167,6 +188,7 @@ export async function syncSlackUserIds(
     console.error('Error syncing Slack user IDs:', error)
     const errorMsg = error instanceof Error ? error.message : 'Failed to sync Slack user IDs'
     toast.error(errorMsg)
+    throw error
   } finally {
     setLoadingTeamMembers(false)
   }
