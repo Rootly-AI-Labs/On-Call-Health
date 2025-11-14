@@ -1793,6 +1793,9 @@ export default function Dashboard() {
         <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Start New Analysis</DialogTitle>
+            <DialogDescription>
+              Configure your burnout analysis settings and data sources
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
