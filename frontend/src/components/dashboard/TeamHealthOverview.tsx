@@ -32,14 +32,14 @@ export function TeamHealthOverview({
 }: TeamHealthOverviewProps) {
   return (
     <>
-      {/* CBI Score Tooltip Portal */}
+      {/* OCB Score Tooltip Portal */}
       <div className="fixed z-[99999] invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gray-900 text-white text-xs rounded-lg p-3 w-72 shadow-lg pointer-events-none"
-        id="cbi-score-tooltip"
+        id="ocb-score-tooltip"
         style={{ top: '-200px', left: '-200px' }}>
         <div className="space-y-2">
-          <div className="text-purple-300 font-semibold mb-2">Copenhagen Burnout Inventory (CBI)</div>
+          <div className="text-purple-300 font-semibold mb-2">On-Call Burnout (OCB)</div>
           <div className="text-gray-300 text-sm">
-            CBI scores range from <strong>0 to 100</strong>, where higher scores indicate more burnout risk.
+            OCB scores range from <strong>0 to 100</strong>, where higher scores indicate more burnout risk.
           </div>
           <div className="text-gray-300 text-xs mt-2 pt-2 border-t border-gray-600">
             Scientifically validated burnout assessment methodology
@@ -53,7 +53,7 @@ export function TeamHealthOverview({
         id="health-rubric-tooltip"
         style={{ top: '-200px', left: '-200px' }}>
         <div className="space-y-3">
-          <div className="text-purple-300 font-semibold text-sm mb-3">CBI Risk Level Scale</div>
+          <div className="text-purple-300 font-semibold text-sm mb-3">OCB Risk Level Scale</div>
 
           <div className="space-y-3">
             <div>
@@ -123,37 +123,37 @@ export function TeamHealthOverview({
                 <div className="flex items-start space-x-3">
                   <div>
                     <div className="text-2xl font-bold text-gray-900">{(() => {
-                      // Helper function to calculate CBI score from team data - FORCE FRONTEND CALCULATION
-                      const calculateCBIFromTeam = () => {
+                      // Helper function to calculate OCB score from team data - FORCE FRONTEND CALCULATION
+                      const calculateOCBFromTeam = () => {
                         const teamAnalysis = currentAnalysis?.analysis_data?.team_analysis;
                         const members = Array.isArray(teamAnalysis) ? teamAnalysis : teamAnalysis?.members;
 
                         if (!members || members.length === 0) return null;
 
-                        // ALWAYS calculate from individual member CBI scores first
-                        const cbiScores = members
-                          .map((m: any) => m.cbi_score)
+                        // ALWAYS calculate from individual member OCB scores first
+                        const ocbScores = members
+                          .map((m: any) => m.ocb_score)
                           .filter((s: any) => s !== undefined && s !== null && s > 0);
 
-                        if (cbiScores.length > 0) {
-                          const avgCbiScore = cbiScores.reduce((a: number, b: number) => a + b, 0) / cbiScores.length;
-                          return Math.round(avgCbiScore); // Round to whole integer
+                        if (ocbScores.length > 0) {
+                          const avgOcbScore = ocbScores.reduce((a: number, b: number) => a + b, 0) / ocbScores.length;
+                          return Math.round(avgOcbScore); // Round to whole integer
                         }
 
-                        // No CBI scores available - return null
+                        // No OCB scores available - return null
                         return null;
                       };
 
-                      // FORCE FRONTEND CBI CALCULATION FIRST - Don't trust backend at all!
-                      const teamCbiScore = calculateCBIFromTeam();
-                      if (teamCbiScore !== null) {
+                      // FORCE FRONTEND OCB CALCULATION FIRST - Don't trust backend at all!
+                      const teamOcbScore = calculateOCBFromTeam();
+                      if (teamOcbScore !== null) {
                         return (
                           <>
-                            <span>{teamCbiScore}</span>
+                            <span>{teamOcbScore}</span>
                             <span
                               className="text-xs text-gray-500 cursor-help ml-1"
                               onMouseEnter={(e) => {
-                                const tooltip = document.getElementById('cbi-score-tooltip')
+                                const tooltip = document.getElementById('ocb-score-tooltip')
                                 if (tooltip) {
                                   const rect = e.currentTarget.getBoundingClientRect()
                                   tooltip.style.top = `${rect.top - 180}px`
@@ -163,14 +163,14 @@ export function TeamHealthOverview({
                                 }
                               }}
                               onMouseLeave={() => {
-                                const tooltip = document.getElementById('cbi-score-tooltip')
+                                const tooltip = document.getElementById('ocb-score-tooltip')
                                 if (tooltip) {
                                   tooltip.classList.add('invisible', 'opacity-0')
                                   tooltip.classList.remove('visible', 'opacity-100')
                                 }
                               }}
                             >
-                              CBI
+                              OCB
                             </span>
                           </>
                         );
@@ -201,10 +201,10 @@ export function TeamHealthOverview({
                     <div className="text-xs text-gray-500">Current</div>
                   </div>
                   {(() => {
-                    // Show average if we have either historical data OR CBI scores (since we can compute meaningful averages from CBI)
+                    // Show average if we have either historical data OR OCB scores (since we can compute meaningful averages from OCB)
                     const teamAnalysis = currentAnalysis?.analysis_data?.team_analysis;
                     const members = Array.isArray(teamAnalysis) ? teamAnalysis : teamAnalysis?.members;
-                    const hasCBIScores = members && members.some((m: any) => m.cbi_score !== undefined && m.cbi_score !== null);
+                    const hasOCBScores = members && members.some((m: any) => m.ocb_score !== undefined && m.ocb_score !== null);
                     const hasHistoricalData = (historicalTrends?.daily_trends?.length > 0) ||
                       (currentAnalysis?.analysis_data?.daily_trends?.length > 0);
 
@@ -213,7 +213,7 @@ export function TeamHealthOverview({
                   })() && (
                       <div className="hidden">
                         <div className="text-2xl font-bold text-gray-900 flex items-baseline space-x-1">{(() => {
-                          // PRIORITY 1: Use CBI scores for meaningful 30-day average (same as current calculation)
+                          // PRIORITY 1: Use OCB scores for meaningful 30-day average (same as current calculation)
                           const teamAnalysis = currentAnalysis?.analysis_data?.team_analysis;
                           const members = Array.isArray(teamAnalysis) ? teamAnalysis : teamAnalysis?.members;
 
@@ -221,13 +221,13 @@ export function TeamHealthOverview({
                             // Only include on-call members (those with incidents during the analysis period)
                             const onCallMembers = members.filter((m: any) => m.incident_count > 0);
                             
-                            const cbiScores = onCallMembers
-                              .map((m: any) => m.cbi_score)
+                            const ocbScores = onCallMembers
+                              .map((m: any) => m.ocb_score)
                               .filter((s: any) => s !== undefined && s !== null && s > 0);
 
-                            if (cbiScores.length > 0) {
-                              const avgCbiScore = cbiScores.reduce((a: number, b: number) => a + b, 0) / cbiScores.length;
-                              const roundedScore = Math.round(avgCbiScore * 10) / 10;
+                            if (ocbScores.length > 0) {
+                              const avgOcbScore = ocbScores.reduce((a: number, b: number) => a + b, 0) / ocbScores.length;
+                              const roundedScore = Math.round(avgOcbScore * 10) / 10;
 
                               return (
                                 <>
@@ -235,7 +235,7 @@ export function TeamHealthOverview({
                                   <span
                                     className="text-xs text-gray-500 cursor-help ml-1"
                                     onMouseEnter={(e) => {
-                                      const tooltip = document.getElementById('cbi-score-tooltip')
+                                      const tooltip = document.getElementById('ocb-score-tooltip')
                                       if (tooltip) {
                                         const rect = e.currentTarget.getBoundingClientRect()
                                         tooltip.style.top = `${rect.top - 180}px`
@@ -245,21 +245,21 @@ export function TeamHealthOverview({
                                       }
                                     }}
                                     onMouseLeave={() => {
-                                      const tooltip = document.getElementById('cbi-score-tooltip')
+                                      const tooltip = document.getElementById('ocb-score-tooltip')
                                       if (tooltip) {
                                         tooltip.classList.add('invisible', 'opacity-0')
                                         tooltip.classList.remove('visible', 'opacity-100')
                                       }
                                     }}
                                   >
-                                    CBI
+                                    OCB
                                   </span>
                                 </>
                               );
                             }
                           }
 
-                          // PRIORITY 2: Fallback to backend historical data if no CBI scores
+                          // PRIORITY 2: Fallback to backend historical data if no OCB scores
 
                           // Calculate average from Health Trends chart data (legacy method)
                           if (historicalTrends?.daily_trends?.length > 0) {
@@ -300,16 +300,16 @@ export function TeamHealthOverview({
                         const onCallMembers = members.filter((m: any) => m.incident_count > 0);
                         
                         if (onCallMembers.length > 0) {
-                          const cbiScores = onCallMembers.map((m: any) => m.cbi_score).filter((s: any) => s !== undefined && s !== null);
+                          const ocbScores = onCallMembers.map((m: any) => m.ocb_score).filter((s: any) => s !== undefined && s !== null);
                           
-                          if (cbiScores.length > 0) {
-                            const avgCbiScore = cbiScores.reduce((a: number, b: number) => a + b, 0) / cbiScores.length;
-                            // CBI: Return raw CBI score (0-100 where higher = more burnout)
-                            return avgCbiScore;
+                          if (ocbScores.length > 0) {
+                            const avgOcbScore = ocbScores.reduce((a: number, b: number) => a + b, 0) / ocbScores.length;
+                            // OCB: Return raw OCB score (0-100 where higher = more burnout)
+                            return avgOcbScore;
                           }
                         }
 
-                        // No CBI scores - no health percentage available
+                        // No OCB scores - no health percentage available
                       }
 
                       // Fallback to existing daily trends logic
@@ -328,14 +328,14 @@ export function TeamHealthOverview({
                       return 0;
                     };
 
-                    const cbiScore = getCurrentHealthPercentage();
+                    const ocbScore = getCurrentHealthPercentage();
 
-                    // Convert to health status based on raw CBI score (0-100, higher=worse burnout)
-                    // Match CBI ranges: Healthy (0-24), Fair (25-49), Poor (50-74), Critical (75-100)
-                    if (cbiScore < 25) return 'Healthy';      // CBI 0-24 - Low/minimal burnout risk
-                    if (cbiScore < 50) return 'Fair';         // CBI 25-49 - Mild burnout symptoms 
-                    if (cbiScore < 75) return 'Poor';         // CBI 50-74 - Moderate burnout risk
-                    return 'Critical';                        // CBI 75-100 - High/severe burnout risk
+                    // Convert to health status based on raw OCB score (0-100, higher=worse burnout)
+                    // Match OCB ranges: Healthy (0-24), Fair (25-49), Poor (50-74), Critical (75-100)
+                    if (ocbScore < 25) return 'Healthy';      // OCB 0-24 - Low/minimal burnout risk
+                    if (ocbScore < 50) return 'Fair';         // OCB 25-49 - Mild burnout symptoms 
+                    if (ocbScore < 75) return 'Poor';         // OCB 50-74 - Moderate burnout risk
+                    return 'Critical';                        // OCB 75-100 - High/severe burnout risk
                   })()}</div>
                   <Info className="w-3 h-3 text-purple-500"
                     onMouseEnter={(e) => {
@@ -368,15 +368,15 @@ export function TeamHealthOverview({
                         const onCallMembers = members.filter((m: any) => m.incident_count > 0);
                         
                         if (onCallMembers.length > 0) {
-                          const cbiScores = onCallMembers.map((m: any) => m.cbi_score).filter((s: any) => s !== undefined && s !== null);
+                          const ocbScores = onCallMembers.map((m: any) => m.ocb_score).filter((s: any) => s !== undefined && s !== null);
                           
-                          if (cbiScores.length > 0) {
-                            const avgCbiScore = cbiScores.reduce((a: number, b: number) => a + b, 0) / cbiScores.length;
-                            return avgCbiScore; // Return raw CBI score
+                          if (ocbScores.length > 0) {
+                            const avgOcbScore = ocbScores.reduce((a: number, b: number) => a + b, 0) / ocbScores.length;
+                            return avgOcbScore; // Return raw OCB score
                           }
                         }
 
-                        // No CBI scores - return null
+                        // No OCB scores - return null
                       }
 
                       // Fallback to legacy daily trends logic
@@ -391,14 +391,14 @@ export function TeamHealthOverview({
                       return 50; // Default middle value
                     };
 
-                    const cbiScore = getCurrentHealthPercentage();
+                    const ocbScore = getCurrentHealthPercentage();
 
-                    // Match CBI score ranges and descriptions (0-100, higher = more burnout)
-                    if (cbiScore < 25) {
+                    // Match OCB score ranges and descriptions (0-100, higher = more burnout)
+                    if (ocbScore < 25) {
                       return 'Low/minimal burnout risk, sustainable workload'  // Healthy
-                    } else if (cbiScore < 50) {
+                    } else if (ocbScore < 50) {
                       return 'Mild burnout symptoms, watch for trends'         // Fair
-                    } else if (cbiScore < 75) {
+                    } else if (ocbScore < 75) {
                       return 'Moderate burnout risk, intervention recommended' // Poor
                     } else {
                       return 'High/severe burnout risk, urgent action needed'  // Critical
@@ -426,7 +426,7 @@ export function TeamHealthOverview({
               <div>
                 <div className="space-y-1">
                   {(() => {
-                    // Calculate CBI-based risk distribution from team members
+                    // Calculate OCB-based risk distribution from team members
                     const teamAnalysis = currentAnalysis?.analysis_data?.team_analysis;
                     const members = Array.isArray(teamAnalysis) ? teamAnalysis : teamAnalysis?.members;
 
@@ -437,14 +437,14 @@ export function TeamHealthOverview({
                       const riskCounts = { critical: 0, high: 0, medium: 0, low: 0 };
 
                       onCallMembers.forEach((member: any) => {
-                        if (member.cbi_score !== undefined && member.cbi_score !== null) {
-                          // Use CBI scoring (0-100, higher = worse)
-                          if (member.cbi_score >= 75) riskCounts.critical++;
-                          else if (member.cbi_score >= 50) riskCounts.high++;
-                          else if (member.cbi_score >= 25) riskCounts.medium++;
+                        if (member.ocb_score !== undefined && member.ocb_score !== null) {
+                          // Use OCB scoring (0-100, higher = worse)
+                          if (member.ocb_score >= 75) riskCounts.critical++;
+                          else if (member.ocb_score >= 50) riskCounts.high++;
+                          else if (member.ocb_score >= 25) riskCounts.medium++;
                           else riskCounts.low++;
                         }
-                        // No fallback - only count members with CBI scores
+                        // No fallback - only count members with OCB scores
                       });
 
                       return (
@@ -452,26 +452,26 @@ export function TeamHealthOverview({
                           {riskCounts.critical > 0 && (
                             <div className="flex items-center space-x-2">
                               <div className="text-2xl font-bold text-red-800">{riskCounts.critical}</div>
-                              <span className="text-sm text-gray-600">Critical (CBI 75-100)</span>
+                              <span className="text-sm text-gray-600">Critical (OCB 75-100)</span>
                             </div>
                           )}
                           {riskCounts.high > 0 && (
                             <div className="flex items-center space-x-2">
                               <div className="text-2xl font-bold text-red-600">{riskCounts.high}</div>
-                              <span className="text-sm text-gray-600">High (CBI 50-74)</span>
+                              <span className="text-sm text-gray-600">High (OCB 50-74)</span>
                             </div>
                           )}
                           {riskCounts.medium > 0 && (
                             <div className="flex items-center space-x-2">
                               <div className="text-2xl font-bold text-orange-600">{riskCounts.medium}</div>
-                              <span className="text-sm text-gray-600">Medium (CBI 25-49)</span>
+                              <span className="text-sm text-gray-600">Medium (OCB 25-49)</span>
                             </div>
                           )}
                           {/* Only show low risk count if it's the majority or no other risks */}
                           {(riskCounts.low > 0 && (riskCounts.critical + riskCounts.high + riskCounts.medium === 0)) && (
                             <div className="flex items-center space-x-2">
                               <div className="text-2xl font-bold text-green-600">{riskCounts.low}</div>
-                              <span className="text-sm text-gray-600">Low (CBI 0-24)</span>
+                              <span className="text-sm text-gray-600">Low (OCB 0-24)</span>
                             </div>
                           )}
                           {/* Show "Everyone healthy" message if all low risk */}

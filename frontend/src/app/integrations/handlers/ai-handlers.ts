@@ -39,7 +39,7 @@ export async function loadLlmConfig(
 }
 
 /**
- * Connect AI/LLM provider with API token
+ * Connect AI/LLM provider with API token or system token
  */
 export async function handleConnectAI(
   llmToken: string,
@@ -48,9 +48,13 @@ export async function handleConnectAI(
   setIsConnectingAI: (loading: boolean) => void,
   setTokenError: (error: string | null) => void,
   setLlmConfig: (config: any) => void,
-  setLlmToken: (token: string) => void
+  setLlmToken: (token: string) => void,
+  useSystemToken: boolean = false,
+  switchToCustom: boolean = false
 ): Promise<void> {
-  if (!llmToken.trim()) {
+  // If switching to stored custom token, no validation needed
+  // If using system token, no token input validation needed
+  if (!switchToCustom && !useSystemToken && !llmToken.trim()) {
     setTokenError("Please enter your LLM API token")
     toast.error("Please enter your LLM API token")
     return
@@ -71,8 +75,10 @@ export async function handleConnectAI(
         'Authorization': `Bearer ${authToken}`
       },
       body: JSON.stringify({
-        token: llmToken,
-        provider: llmProvider
+        token: useSystemToken || switchToCustom ? '' : llmToken,
+        provider: llmProvider,
+        use_system_token: useSystemToken,
+        switch_to_custom: switchToCustom
       })
     })
 
@@ -81,11 +87,14 @@ export async function handleConnectAI(
       setLlmConfig({
         has_token: true,
         provider: result.provider,
-        token_suffix: result.token_suffix
+        token_suffix: result.token_suffix,
+        token_source: result.token_source
       })
       setLlmToken('')
       setTokenError(null) // Clear any errors on success
-      toast.success(`Successfully connected ${result.provider} ${llmModel}`)
+
+      const sourceLabel = result.token_source === 'system' ? 'system token' : 'custom token'
+      toast.success(`Successfully connected ${result.provider} using ${sourceLabel}`)
     } else {
       const error = await response.json()
       const errorDetail = error.detail || 'Failed to connect AI'
@@ -127,6 +136,41 @@ export async function handleConnectAI(
     toast.error(errorMessage)
   } finally {
     setIsConnectingAI(false)
+  }
+}
+
+/**
+ * Update user's token source preference
+ */
+export async function updateTokenPreference(
+  tokenSource: 'system' | 'custom'
+): Promise<boolean> {
+  try {
+    const authToken = localStorage.getItem('auth_token')
+    if (!authToken) {
+      throw new Error('No authentication token found')
+    }
+
+    const response = await fetch(`${API_BASE}/llm/token/preference`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({
+        token_source: tokenSource
+      })
+    })
+
+    if (response.ok) {
+      return true
+    } else {
+      console.error('Failed to update token preference')
+      return false
+    }
+  } catch (error) {
+    console.error('Failed to update token preference:', error)
+    return false
   }
 }
 

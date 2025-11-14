@@ -39,7 +39,7 @@ class RootlyAPIClient:
                         f"{self.base_url}/v1/users",
                         headers=self.headers,
                         params={"page[size]": 1},
-                        timeout=10.0
+                        timeout=30.0  # Increased from 10s to match other API calls
                     )
                     
                     if response.status_code == 200:
@@ -62,7 +62,7 @@ class RootlyAPIClient:
                         f"{self.base_url}/v1/incidents",
                         headers=self.headers,
                         params={"page[size]": 1},
-                        timeout=10.0
+                        timeout=30.0  # Increased from 10s to match other API calls
                     )
                     
                     if response.status_code == 200:
@@ -202,49 +202,40 @@ class RootlyAPIClient:
                         "page[number]": page,
                         "page[size]": page_size
                     })
-                    
-                    logger.info(f"Fetching users page {page} (page_size: {page_size})")
-                    
+
                     response = await client.get(
                         f"{self.base_url}/v1/users?{params_encoded}",
                         headers=self.headers,
                         timeout=30.0
                     )
-                    
+
                     if response.status_code != 200:
-                        logger.error(f"Rootly API request failed: {response.status_code} {response.text}")
-                        logger.error(f"Request URL: {self.base_url}/v1/users")
-                        logger.error(f"Request headers: Content-Type: {self.headers.get('Content-Type', 'N/A')}")
-                        raise Exception(f"API request failed: {response.status_code} {response.text}")
-                    
+                        logger.error(f"Rootly API request failed: {response.status_code}")
+                        raise Exception(f"API request failed: {response.status_code}")
+
                     data = response.json()
-                    
+
                     # Safety check for data
                     if data is None:
-                        logger.error("Users API response json() returned None")
+                        logger.error("Users API response returned None")
                         break
-                    
+
                     users = data.get("data", [])
-                    
+
                     if not users:
-                        logger.info(f"No more users found on page {page}")
                         break
-                    
+
                     all_users.extend(users)
-                    logger.info(f"Fetched {len(users)} users from page {page}, total: {len(all_users)}")
-                    
+
                     # Check if we have more pages
                     meta = data.get("meta", {})
                     total_pages = meta.get("total_pages", 1)
-                    logger.info(f"Page {page} of {total_pages}")
-                    
+
                     if page >= total_pages:
-                        logger.info(f"Reached last page ({page}/{total_pages})")
                         break
-                    
+
                     page += 1
-                
-                logger.info(f"Fetched {len(all_users)} users from Rootly")
+
                 return all_users[:limit]
                 
         except Exception as e:
@@ -253,60 +244,68 @@ class RootlyAPIClient:
     
     async def get_on_call_shifts(self, start_date: datetime, end_date: datetime) -> List[Dict[str, Any]]:
         """
-        Get on-call shifts for a specific time period.
-        Returns list of shifts with user information for the exact analysis timeframe.
-        
-        This handles historical schedules - if your analysis period is 30 days ago,
-        it will fetch who was on-call during that historical period.
+        Get on-call shifts for a specific time period from Rootly.
+
+        Rootly API structure:
+        1. First get all schedules via /v1/schedules
+        2. For each schedule, get shifts via /v1/schedules/{id}/shifts with date filters
         """
         try:
             # Format dates for API (Rootly expects ISO format)
             start_str = start_date.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
             end_str = end_date.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
-            
-            params = {
-                'filter[starts_at][gte]': start_str,
-                'filter[ends_at][lte]': end_str,
-                'include': 'user',  # Include user data in response
-                'page[size]': 100   # Get up to 100 shifts per request
-            }
-            
+
             all_shifts = []
-            page = 1
-            
+
             async with httpx.AsyncClient() as client:
-                while True:
-                    params['page[number]'] = page
-                    
-                    response = await client.get(
-                        f"{self.base_url}/v1/shifts",
+                # Step 1: Get all schedules
+                schedules_response = await client.get(
+                    f"{self.base_url}/v1/schedules",
+                    headers=self.headers,
+                    params={"page[size]": 100},
+                    timeout=30.0
+                )
+
+                if schedules_response.status_code != 200:
+                    logger.error(f"Failed to fetch on-call schedules: {schedules_response.status_code}")
+                    return []
+
+                schedules_data = schedules_response.json()
+                schedules = schedules_data.get('data', [])
+                logger.info(f"📅 Found {len(schedules)} on-call schedules")
+
+                # Step 2: For each schedule, get shifts in the time range
+                for schedule in schedules:
+                    schedule_id = schedule.get('id')
+                    schedule_name = schedule.get('attributes', {}).get('name', 'Unknown')
+                    logger.info(f"📅 Checking schedule '{schedule_name}' (id: {schedule_id}) for shifts between {start_str} and {end_str}")
+
+                    shifts_response = await client.get(
+                        f"{self.base_url}/v1/schedules/{schedule_id}/shifts",
                         headers=self.headers,
-                        params=params,
+                        params={
+                            'filter[starts_at][gte]': start_str,
+                            'filter[ends_at][lte]': end_str,
+                            'include': 'user',
+                            'page[size]': 100
+                        },
                         timeout=30.0
                     )
-                    
-                    if response.status_code == 200:
-                        data = response.json()
-                        shifts = data.get('data', [])
-                        
-                        if not shifts:
-                            break
-                            
+
+                    if shifts_response.status_code == 200:
+                        shifts_data = shifts_response.json()
+                        shifts = shifts_data.get('data', [])
+                        logger.info(f"✅ Schedule '{schedule_name}': Found {len(shifts)} shifts")
+                        if len(shifts) > 0:
+                            # Log first shift for debugging
+                            logger.info(f"📝 Sample shift data: {shifts[0]}")
                         all_shifts.extend(shifts)
-                        
-                        # Check if there are more pages
-                        links = data.get('links', {})
-                        if not links.get('next'):
-                            break
-                            
-                        page += 1
                     else:
-                        logger.error(f"Failed to fetch on-call shifts: {response.status_code} - {response.text}")
-                        break
-                
-                logger.info(f"Retrieved {len(all_shifts)} on-call shifts for period {start_str} to {end_str}")
+                        logger.warning(f"❌ Failed to fetch shifts for schedule {schedule_name}: {shifts_response.status_code}")
+
+                logger.info(f"📊 Total shifts found across all schedules: {len(all_shifts)}")
                 return all_shifts
-                    
+
         except Exception as e:
             logger.error(f"Error fetching on-call shifts: {e}")
             return []
@@ -317,35 +316,29 @@ class RootlyAPIClient:
         Returns set of user emails who were on-call during the period.
         """
         if not shifts or shifts is None:
-            logger.info(f"🗓️ ROOTLY ON_CALL: No shifts provided for user extraction")
             return set()
-            
+
         # Step 1: Extract unique user IDs from shifts
         user_ids = set()
         for shift in shifts:
             try:
                 if not shift or not isinstance(shift, dict):
-                    logger.warning(f"🗓️ ROOTLY ON_CALL: Invalid shift data: {type(shift)}")
                     continue
-                    
+
                 relationships = shift.get('relationships', {})
                 if not relationships:
-                    logger.debug(f"🗓️ ROOTLY ON_CALL: No relationships in shift")
                     continue
-                    
+
                 user_data = relationships.get('user', {}).get('data', {})
-                
+
                 if user_data and user_data.get('type') == 'users':
                     user_id = user_data.get('id')
                     if user_id:
                         user_ids.add(user_id)
-                        
+
             except Exception as e:
-                logger.warning(f"🗓️ ROOTLY ON_CALL: Error extracting user ID from shift: {e}")
-                logger.warning(f"🗓️ ROOTLY ON_CALL: Problematic shift data: {shift}")
+                logger.warning(f"Error extracting user from shift: {e}")
                 continue
-        
-        logger.info(f"Found {len(user_ids)} unique user IDs from {len(shifts)} shifts")
         
         # Step 2: Fetch user details to get emails
         on_call_user_emails = set()
@@ -360,11 +353,11 @@ class RootlyAPIClient:
                     for user_id in user_ids:
                         try:
                             response = await client.get(
-                                f"{self.base_url}/users/{user_id}",
+                                f"{self.base_url}/v1/users/{user_id}",
                                 headers=self.headers,
                                 timeout=10.0
                             )
-                            
+
                             if response.status_code == 200:
                                 user_data = response.json()
                                 if 'data' in user_data:
@@ -372,7 +365,7 @@ class RootlyAPIClient:
                                     email = attributes.get('email')
                                     if email:
                                         on_call_user_emails.add(email.lower().strip())
-                                        
+
                         except Exception as e:
                             logger.warning(f"Error fetching user {user_id}: {e}")
                             continue
@@ -380,7 +373,6 @@ class RootlyAPIClient:
             except Exception as e:
                 logger.error(f"Error fetching on-call user details: {e}")
         
-        logger.info(f"Successfully extracted {len(on_call_user_emails)} on-call user emails")
         return on_call_user_emails
     
     async def get_incidents(self, days_back: int = 30, limit: int = 1000) -> List[Dict[str, Any]]:
@@ -394,33 +386,24 @@ class RootlyAPIClient:
         # Calculate date range
         end_date = datetime.now()
         start_date = end_date - timedelta(days=days_back)
-        
-        logger.info(f"🔍 INCIDENT FETCH START: Fetching incidents for {days_back} days (from {start_date.date()} to {end_date.date()})")
-        logger.info(f"🔍 INCIDENT PARAMETERS: limit={limit}, initial_page_size={page_size}")
-        
+
         try:
             async with httpx.AsyncClient() as client:
-                # First test basic access to incidents endpoint
-                test_start = datetime.now()
-                logger.info(f"🔍 INCIDENT TEST: Testing basic endpoint access for {days_back}-day analysis")
+                # Test basic access to incidents endpoint
                 test_response = await client.get(
                     f"{self.base_url}/v1/incidents",
                     headers=self.headers,
                     params={"page[size]": 1},
                     timeout=30.0
                 )
-                test_duration = (datetime.now() - test_start).total_seconds()
                 api_calls_made += 1
-                
-                logger.info(f"🔍 INCIDENT TEST: Basic test completed in {test_duration:.2f}s - Status: {test_response.status_code}")
+
                 if test_response.status_code == 404:
-                    logger.error("🔍 INCIDENT TEST: FAILED - Permissions check failed")
+                    logger.error("Cannot access incidents endpoint - check API token permissions")
                     raise Exception("Cannot access incidents endpoint. Please verify your Rootly API token has 'incidents:read' permission.")
                 elif test_response.status_code != 200:
-                    logger.error(f"🔍 INCIDENT TEST: FAILED - Status {test_response.status_code}: {test_response.text}")
+                    logger.error(f"Incidents endpoint failed: {test_response.status_code}")
                     raise Exception(f"Basic incidents endpoint failed: {test_response.status_code}")
-                else:
-                    logger.info("🔍 INCIDENT TEST: PASSED - Endpoint accessible")
                 
                 pagination_start = datetime.now()
                 consecutive_failures = 0
@@ -429,20 +412,15 @@ class RootlyAPIClient:
                 
                 while len(all_incidents) < limit and consecutive_failures < max_consecutive_failures:
                     page_start_time = datetime.now()
-                    
-                    # Use adaptive page size based on time range to optimize performance
+
+                    # Use adaptive page size based on time range
                     if days_back >= 90:
-                        # Maximum page size for very long ranges
                         actual_page_size = min(page_size, 100)
-                        logger.info(f"🔍 INCIDENT OPTIMIZATION: Using maximum page size ({actual_page_size}) for {days_back}-day analysis")
                     elif days_back >= 30:
-                        # Larger pages for longer ranges to reduce total API calls
                         actual_page_size = min(page_size, 50)
-                        logger.info(f"🔍 INCIDENT OPTIMIZATION: Using larger page size ({actual_page_size}) for {days_back}-day analysis")
                     else:
-                        # Conservative page size for shorter ranges
                         actual_page_size = min(page_size, 20)
-                        logger.info(f"🔍 INCIDENT OPTIMIZATION: Using standard page size ({actual_page_size}) for {days_back}-day analysis")
+
                     params = {
                         "page[number]": page,
                         "page[size]": actual_page_size,
@@ -451,40 +429,32 @@ class RootlyAPIClient:
                         "include": "severity,user,started_by,resolved_by",
                         "fields[incidents]": "created_at,started_at,acknowledged_at,resolved_at,mitigated_at,severity,user,title,status"
                     }
-                    
-                    # URL encode the parameters manually since httpx doesn't encode brackets properly
+
                     params_encoded = urlencode(params)
-                    
-                    logger.info(f"🔍 INCIDENT PAGE {page}: Requesting {actual_page_size} incidents for {days_back}-day analysis")
-                    
+
                     try:
                         # Check if we've exceeded total pagination timeout
                         pagination_elapsed = (datetime.now() - pagination_start).total_seconds()
                         if pagination_elapsed > total_pagination_timeout:
-                            logger.error(f"🔍 PAGINATION TIMEOUT: Exceeded {total_pagination_timeout}s limit after {len(all_incidents)} incidents")
+                            logger.error(f"Pagination timeout exceeded after {len(all_incidents)} incidents")
                             break
-                        
+
                         response = await client.get(
                             f"{self.base_url}/v1/incidents?{params_encoded}",
                             headers=self.headers,
-                            timeout=15.0  # Reduce timeout to 15 seconds for faster failure
+                            timeout=15.0
                         )
                         api_calls_made += 1
-                        page_request_duration = (datetime.now() - page_start_time).total_seconds()
-                        logger.info(f"🔍 INCIDENT PAGE {page}: Request completed in {page_request_duration:.2f}s - Status: {response.status_code}")
                     except Exception as request_error:
                         consecutive_failures += 1
-                        page_request_duration = (datetime.now() - page_start_time).total_seconds()
-                        logger.error(f"🔍 INCIDENT PAGE {page}: REQUEST FAILED after {page_request_duration:.2f}s: {request_error} (failure {consecutive_failures}/{max_consecutive_failures})")
-                        logger.error(f"🔍 INCIDENT PAGE {page}: Exception type: {type(request_error).__name__}")
-                        
+                        logger.error(f"Incident request failed: {request_error} (failure {consecutive_failures}/{max_consecutive_failures})")
+
                         # If we have some incidents already, continue with partial data
                         if consecutive_failures >= max_consecutive_failures:
                             if all_incidents:
-                                logger.warning(f"🔍 INCIDENT FETCH: Stopping after {consecutive_failures} consecutive failures. Returning {len(all_incidents)} incidents collected so far.")
+                                logger.warning(f"Stopping after {consecutive_failures} consecutive failures. Returning {len(all_incidents)} incidents.")
                                 break
                             else:
-                                # No incidents collected, re-raise the error
                                 raise request_error
                         else:
                             # Wait before retrying
@@ -494,78 +464,57 @@ class RootlyAPIClient:
                     if response.status_code != 200:
                         consecutive_failures += 1
                         error_detail = response.text
-                        logger.error(f"🔍 INCIDENT PAGE {page}: API ERROR - {response.status_code}: {error_detail} (failure {consecutive_failures}/{max_consecutive_failures})")
-                        
+                        logger.error(f"API error: {response.status_code} (failure {consecutive_failures}/{max_consecutive_failures})")
+
                         # Handle specific error cases
                         if response.status_code == 404 and "not found or unauthorized" in error_detail.lower():
-                            raise Exception(f"Rootly API access denied. Please ensure your API token has 'incidents:read' permission and access to incident data. Error: {response.status_code} {error_detail}")
-                        elif response.status_code in [429, 502, 503, 504]:  # Rate limit or server errors
+                            raise Exception(f"Rootly API access denied. Check API token has 'incidents:read' permission.")
+                        elif response.status_code in [429, 502, 503, 504]:
                             if consecutive_failures >= max_consecutive_failures:
                                 if all_incidents:
-                                    logger.warning(f"🔍 INCIDENT FETCH: API errors after {consecutive_failures} attempts. Returning {len(all_incidents)} incidents collected so far.")
+                                    logger.warning(f"API errors after {consecutive_failures} attempts. Returning {len(all_incidents)} incidents.")
                                     break
                                 else:
-                                    raise Exception(f"API repeatedly failing: {response.status_code} {error_detail}")
+                                    raise Exception(f"API repeatedly failing: {response.status_code}")
                             else:
-                                # Wait before retrying
-                                await asyncio.sleep(5 * consecutive_failures)  # Linear backoff for server errors
+                                await asyncio.sleep(5 * consecutive_failures)
                                 continue
                         else:
-                            raise Exception(f"API request failed: {response.status_code} {error_detail}")
+                            raise Exception(f"API request failed: {response.status_code}")
                     else:
-                        # Reset failure counter on success
                         consecutive_failures = 0
-                    
+
                     data = response.json()
-                    
-                    # Safety check for data
+
                     if data is None:
-                        logger.error(f"🔍 INCIDENT PAGE {page}: API response returned None")
+                        logger.error("API response returned None")
                         break
-                    
+
                     incidents = data.get("data", [])
-                    
+
                     if not incidents:
-                        logger.info(f"🔍 INCIDENT PAGE {page}: No more incidents found - stopping pagination")
                         break
-                    
+
                     all_incidents.extend(incidents)
-                    page_duration = (datetime.now() - page_start_time).total_seconds()
-                    logger.info(f"🔍 INCIDENT PAGE {page}: Retrieved {len(incidents)} incidents in {page_duration:.2f}s (total: {len(all_incidents)})")
-                    
+
                     # Check if we have more pages
                     meta = data.get("meta", {})
                     total_pages = meta.get("total_pages", 1)
-                    logger.info(f"🔍 INCIDENT PAGE {page}: Page {page} of {total_pages}")
-                    
+
                     if page >= total_pages:
-                        logger.info(f"🔍 INCIDENT PAGINATION: Reached final page ({page}/{total_pages})")
                         break
-                    
+
                     page += 1
-                
-                # Calculate final metrics
+
                 total_fetch_duration = (datetime.now() - fetch_start_time).total_seconds()
-                pagination_duration = (datetime.now() - pagination_start).total_seconds()
-                avg_incidents_per_page = len(all_incidents) / (page - 1) if page > 1 else len(all_incidents)
-                avg_time_per_page = pagination_duration / (page - 1) if page > 1 else pagination_duration
-                incidents_per_second = len(all_incidents) / total_fetch_duration if total_fetch_duration > 0 else 0
-                
-                logger.info(f"🔍 INCIDENT FETCH COMPLETE: {days_back}-day analysis fetched {len(all_incidents)} incidents")
-                logger.info(f"🔍 INCIDENT METRICS: Total time: {total_fetch_duration:.2f}s, API calls: {api_calls_made}, Pages: {page-1}")
-                logger.info(f"🔍 INCIDENT PERFORMANCE: {incidents_per_second:.1f} incidents/sec, {avg_incidents_per_page:.1f} incidents/page, {avg_time_per_page:.2f}s/page")
-                
-                # Log performance concerns for longer analyses
-                if days_back >= 30 and total_fetch_duration > 300:  # 5 minutes
-                    logger.warning(f"🔍 PERFORMANCE WARNING: {days_back}-day incident fetch took {total_fetch_duration:.2f}s (>5min) - may impact analysis timeout")
-                elif days_back >= 30 and total_fetch_duration > 600:  # 10 minutes
-                    logger.error(f"🔍 PERFORMANCE CRITICAL: {days_back}-day incident fetch took {total_fetch_duration:.2f}s (>10min) - likely to cause timeout")
-                
+
+                if days_back >= 30 and total_fetch_duration > 600:
+                    logger.warning(f"Incident fetch took {total_fetch_duration:.2f}s - may cause timeout")
+
                 return all_incidents[:limit]
-                
+
         except Exception as e:
-            total_fetch_duration = (datetime.now() - fetch_start_time).total_seconds()
-            logger.error(f"🔍 INCIDENT FETCH FAILED: {days_back}-day analysis failed after {total_fetch_duration:.2f}s and {api_calls_made} API calls: {e}")
+            logger.error(f"Incident fetch failed: {e}")
             raise
     
     async def get_user_incident_roles(self, user_id: str, incident_ids: List[str]) -> List[Dict[str, Any]]:
@@ -577,90 +526,56 @@ class RootlyAPIClient:
     async def collect_analysis_data(self, days_back: int = 30) -> Dict[str, Any]:
         """Collect all data needed for burnout analysis."""
         start_time = datetime.now()
-        logger.info(f"🔍 PERFORMANCE ANALYSIS: Starting Rootly data collection for last {days_back} days...")
-        logger.info(f"🔍 TIME RANGE ANALYSIS: {days_back}-day analysis started at {start_time.isoformat()}")
-        
+
         try:
             # Test connection first
-            connection_start = datetime.now()
-            logger.info(f"🔍 CONNECTION TEST: Starting connection test for {days_back}-day analysis")
             connection_test = await self.test_connection()
-            connection_duration = (datetime.now() - connection_start).total_seconds()
-            logger.info(f"🔍 CONNECTION TEST: Completed in {connection_duration:.2f}s - Status: {connection_test['status']}")
-            
+
             if connection_test["status"] != "success":
                 raise Exception(f"Connection test failed: {connection_test['message']}")
-            
+
             # Log expected data volume based on time range
             expected_incident_multiplier = days_back / 7  # Relative to 7-day baseline
             logger.info(f"🔍 DATA VOLUME ESTIMATE: {days_back}-day analysis expected to fetch ~{expected_incident_multiplier:.1f}x more incidents than 7-day analysis")
-            
+
             # Collect users and incidents in parallel (no limits for complete data collection)
             users_start = datetime.now()
             incidents_start = datetime.now()
-            
+
             logger.info(f"🔍 USER FETCH: Starting user collection for {days_back}-day analysis (limit: 10000)")
             users_task = self.get_users(limit=10000)  # Get all users (increased from 1000)
-            
+
             # Use conservative incident limits to prevent timeout on longer analyses
             incident_limits_by_range = {
-                7: 1500,   # 7-day: up to 1500 incidents (reduced from 2000)
-                14: 2000,  # 14-day: up to 2000 incidents (reduced from 3000)  
-                30: 3000,  # 30-day: up to 3000 incidents (reduced from 5000)
-                60: 4000,  # 60-day: up to 4000 incidents (reduced from 7000)
-                90: 5000,  # 90-day: up to 5000 incidents (reduced from 10000)
-                180: 7500  # 180-day: up to 7500 incidents (reduced from 15000)
+                7: 1500,
+                14: 2000,
+                30: 3000,
+                60: 4000,
+                90: 5000,
+                180: 7500
             }
-            
-            # Find appropriate limit for the time range
-            incident_limit = 5000  # Conservative default fallback
+
+            incident_limit = 5000
             for range_days in sorted(incident_limits_by_range.keys()):
                 if days_back <= range_days:
                     incident_limit = incident_limits_by_range[range_days]
                     break
-            
-            logger.info(f"🔍 DATA VOLUME CONTROL: Using incident limit of {incident_limit} for {days_back}-day analysis")
-            logger.info(f"🔍 INCIDENT FETCH: Starting incident collection for {days_back}-day analysis (limit: {incident_limit})")
+
             incidents_task = self.get_incidents(days_back=days_back, limit=incident_limit)
-            
+
             # Collect users (required)
             users = await users_task
-            users_duration = (datetime.now() - users_start).total_seconds()
-            logger.info(f"🔍 USER FETCH: Completed in {users_duration:.2f}s - Retrieved {len(users)} users")
-            
+
             # Try to collect incidents but don't fail if permission denied
             incidents = []
             try:
                 incidents = await incidents_task
-                incidents_duration = (datetime.now() - incidents_start).total_seconds()
-                logger.info(f"🔍 INCIDENT FETCH: Completed in {incidents_duration:.2f}s - Retrieved {len(incidents)} incidents")
-                
-                # Log incident collection performance metrics
-                incidents_per_second = len(incidents) / incidents_duration if incidents_duration > 0 else 0
-                logger.info(f"🔍 INCIDENT PERFORMANCE: {incidents_per_second:.1f} incidents/second for {days_back}-day analysis")
-                
-                # Calculate incidents per day ratio
-                incidents_per_day = len(incidents) / days_back if days_back > 0 else 0
-                logger.info(f"🔍 INCIDENT DENSITY: {incidents_per_day:.1f} incidents/day for {days_back}-day analysis")
-                
             except Exception as e:
-                incidents_duration = (datetime.now() - incidents_start).total_seconds()
-                logger.error(f"🔍 INCIDENT FETCH: FAILED after {incidents_duration:.2f}s for {days_back}-day analysis: {e}")
                 logger.warning(f"Could not fetch incidents: {e}. Proceeding with user data only.")
-            
+
             # Validate data
             if not users:
                 raise Exception("No users found - check API permissions")
-            
-            # Calculate total collection time
-            total_duration = (datetime.now() - start_time).total_seconds()
-            logger.info(f"🔍 TOTAL PERFORMANCE: {days_back}-day analysis data collection completed in {total_duration:.2f}s")
-            
-            # Log performance comparison baseline
-            if days_back == 7:
-                logger.info(f"🔍 BASELINE: 7-day analysis completed - this is the baseline for comparison")
-            elif days_back == 30:
-                logger.info(f"🔍 COMPARISON: 30-day analysis completed - compare performance to 7-day baseline")
             
             # Count incidents by severity
             severity_counts = {
@@ -726,22 +641,13 @@ class RootlyAPIClient:
                         "start": (datetime.now() - timedelta(days=days_back)).isoformat(),
                         "end": datetime.now().isoformat()
                     },
-                    "performance_metrics": {
-                        "total_collection_time_seconds": total_duration,
-                        "users_collection_time_seconds": users_duration,
-                        "incidents_collection_time_seconds": incidents_duration if 'incidents_duration' in locals() else 0,
-                        "incidents_per_second": incidents_per_second if 'incidents_per_second' in locals() else 0,
-                        "incidents_per_day": incidents_per_day if 'incidents_per_day' in locals() else 0
-                    }
                 }
             }
-            
-            logger.info(f"🔍 FINAL RESULT: {days_back}-day analysis data collection completed: {len(users)} users, {len(incidents)} incidents")
+
             return processed_data
-            
+
         except Exception as e:
-            total_duration = (datetime.now() - start_time).total_seconds()
-            logger.error(f"🔍 DATA COLLECTION FAILED: {days_back}-day analysis failed after {total_duration:.2f}s: {e}")
+            logger.error(f"Data collection failed: {e}")
             # Return minimal data structure instead of failing completely
             return {
                 "users": [],

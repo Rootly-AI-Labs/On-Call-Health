@@ -58,6 +58,7 @@ import { AIInsightsCard } from "@/components/dashboard/insights/AIInsightsCard"
 import { DeleteAnalysisDialog } from "@/components/dashboard/dialogs/DeleteAnalysisDialog"
 import Image from "next/image"
 import useDashboard from "@/hooks/useDashboard"
+import { TopPanel } from "@/components/TopPanel"
 
 export default function Dashboard() {
   const {
@@ -69,6 +70,7 @@ export default function Dashboard() {
   loadingIntegrations,
   initialDataLoaded,
   hasDataFromCache,
+  loadingAnalyses,
   loadingTrends,
   analysisRunning,
   analysisStage,
@@ -197,42 +199,14 @@ export default function Dashboard() {
     return <Minus className={meta.className} />
   }
 
-
-  // Show full-screen loading when loading integrations
-  if (loadingIntegrations) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <Activity className="w-8 h-8 text-purple-600 animate-pulse mx-auto mb-4" />
-          <p className="text-gray-600">Loading dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show main page loader ONLY while initial data loads (and no cached data)
-  // Once data is loaded, show proper empty state or analysis content
-  const showLoader = !initialDataLoaded && !hasDataFromCache;
-  
-  if (showLoader) {
-    return (
-      <div className="flex h-screen bg-gray-50">
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading dashboard...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-  
   return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
-      <div
-        className={`${sidebarCollapsed ? "w-16" : "w-60"} bg-gray-900 text-white transition-all duration-300 flex flex-col`}
-      >
+    <div className="flex flex-col h-screen bg-gray-50">
+      <TopPanel />
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <div
+          className={`${sidebarCollapsed ? "w-16" : "w-60"} bg-gray-900 text-white transition-all duration-300 flex flex-col`}
+        >
         {/* Header */}
         <div className="relative h-12">
           <Button
@@ -252,24 +226,24 @@ export default function Dashboard() {
               <Button
                 onClick={startAnalysis}
                 disabled={analysisRunning}
-                className="w-full justify-start bg-purple-600 hover:bg-purple-700 text-white"
+                className="w-full justify-start bg-purple-600 hover:bg-purple-700 text-white text-base"
               >
-                <Play className="w-4 h-4 mr-2" />
+                <Play className="w-5 h-5 mr-2" />
                 New Analysis
               </Button>
 
             <div className="space-y-1">
               {!sidebarCollapsed && previousAnalyses.length > 0 && (
-                <p className="text-xs text-gray-400 uppercase tracking-wide px-2 py-1 mt-4">Recent</p>
+                <p className="text-sm text-gray-400 uppercase tracking-wide px-2 py-1 mt-4">Recent</p>
               )}
-              <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
-                {!initialDataLoaded && previousAnalyses.length === 0 ? (
+              <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800 relative">
+                {loadingAnalyses && previousAnalyses.length === 0 ? (
                   // Show loading state for analyses
                   <div className="flex items-center justify-center py-8">
                     <div className="flex items-center space-x-2">
                       <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
                       {!sidebarCollapsed && (
-                        <span className="text-xs text-gray-400">Loading analyses...</span>
+                        <span className="text-sm text-gray-400">Loading analyses...</span>
                       )}
                     </div>
                   </div>
@@ -277,8 +251,8 @@ export default function Dashboard() {
                   // Show empty state
                   !sidebarCollapsed && (
                     <div className="text-center py-8 text-gray-400">
-                      <p className="text-xs">No analyses yet</p>
-                      <p className="text-xs mt-1">Start your first analysis above</p>
+                      <p className="text-sm">No analyses yet</p>
+                      <p className="text-sm mt-1">Start your first analysis above</p>
                     </div>
                   )
                 ) : (
@@ -367,14 +341,14 @@ export default function Dashboard() {
                       }}
                     >
                       {sidebarCollapsed ? (
-                        <Clock className="w-4 h-4" />
+                        <Clock className="w-5 h-5" />
                       ) : (
-                        <div className="flex flex-col items-start w-full text-xs pr-8">
+                        <div className="flex flex-col items-start w-full text-sm pr-8">
                           <div className="flex justify-between items-center w-full mb-1">
                             <div className="flex items-center space-x-2">
                               {/* Always show platform dot if we have a color */}
                               {platformColor !== 'bg-gray-500' && (
-                                <div className={`w-2 h-2 rounded-full ${platformColor}`}></div>
+                                <div className={`w-2.5 h-2.5 rounded-full ${platformColor}`}></div>
                               )}
                               <span className="font-medium">{organizationName}</span>
                             </div>
@@ -411,9 +385,9 @@ export default function Dashboard() {
                       size="sm"
                       onClick={() => loadPreviousAnalyses(true)}
                       disabled={loadingMoreAnalyses || analysisRunning}
-                      className="w-full border-gray-500 bg-gray-800 text-gray-200 hover:bg-gray-700 hover:text-white hover:border-gray-400 text-xs"
+                      className="w-full border-gray-500 bg-gray-800 text-gray-200 hover:bg-gray-700 hover:text-white hover:border-gray-400 text-sm"
                     >
-                      {(loadingMoreAnalyses || (!initialDataLoaded && previousAnalyses.length === 0)) ? (
+                      {(loadingMoreAnalyses || (loadingAnalyses && previousAnalyses.length === 0)) ? (
                         <>
                           <div className="w-3 h-3 border border-gray-300 border-t-transparent rounded-full animate-spin mr-2" />
                           Loading...
@@ -436,62 +410,10 @@ export default function Dashboard() {
                 className="w-full bg-purple-600 hover:bg-purple-700 text-white p-2"
                 title="New Analysis"
               >
-                <Play className="w-4 h-4" />
+                <Play className="w-5 h-5" />
               </Button>
             </div>
           )}
-
-          <div className="space-y-2">
-            <Separator className="bg-gray-700" />
-            <Button 
-              variant="ghost" 
-              className={`w-full ${sidebarCollapsed ? 'p-2' : ''} justify-start text-gray-300 hover:text-white hover:bg-gray-800`}
-              onClick={() => router.push('/methodology')}
-              title="Methodology"
-            >
-              <BookOpen className={`w-4 h-4 ${sidebarCollapsed ? '' : 'mr-2'}`} />
-              {!sidebarCollapsed && "Methodology"}
-            </Button>
-            <Button 
-              variant="ghost" 
-              className={`w-full ${sidebarCollapsed ? 'p-2' : ''} justify-start text-gray-300 hover:text-white hover:bg-gray-800`}
-              onClick={handleManageIntegrations}
-              title="Manage Integrations"
-            >
-              <Settings className={`w-4 h-4 ${sidebarCollapsed ? '' : 'mr-2'}`} />
-              {!sidebarCollapsed && "Manage Integrations"}
-            </Button>
-            <Button 
-              variant="ghost" 
-              className={`w-full ${sidebarCollapsed ? 'p-2' : ''} justify-start text-gray-300 hover:text-white hover:bg-gray-800`}
-              onClick={handleSignOut}
-              title="Sign Out"
-            >
-              <LogOut className={`w-4 h-4 ${sidebarCollapsed ? '' : 'mr-2'}`} />
-              {!sidebarCollapsed && "Sign Out"}
-            </Button>
-            
-            {/* Powered by Rootly */}
-            {!sidebarCollapsed && (
-              <div className="mt-4 pt-4 border-t border-gray-700">
-                <a 
-                  href="https://rootly.com" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="flex flex-col items-center -space-y-1 hover:opacity-80 transition-opacity"
-                >
-                  <span className="text-sm text-slate-300">powered by</span>
-                  <Image 
-                    src="/images/rootly-ai-logo.png" 
-                    alt="Rootly AI" 
-                    width={160} 
-                    height={64} 
-                    className="h-8 w-auto ml-3 brightness-0 invert filter drop-shadow-sm"
-                  />
-                </a>
-              </div>
-            )}
-          </div>
         </div>
       </div>
 
@@ -502,8 +424,8 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center justify-between w-full">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Analysis Dashboard</h1>
-                <p className="text-gray-600">
+                <h1 className="text-4xl font-bold text-black">Analysis Dashboard</h1>
+                <p className="text-lg text-gray-600">
                   {(() => {
                     if (currentAnalysis) {
                       // Find the integration for this specific analysis
@@ -533,49 +455,39 @@ export default function Dashboard() {
                 </p>
               </div>
               <div className="flex items-center space-x-4">
-                <div className="flex flex-col items-center">
-                  <span className="text-xs text-gray-400">powered by</span>
-                  <Image 
-                    src="/images/rootly-ai-logo.png" 
-                    alt="Rootly AI" 
-                    width={120} 
-                    height={48}
-                    className="h-6 w-auto"
-                  />
-                </div>
                 {/* Export Dropdown */}
                 {!shouldShowInsufficientDataCard() && currentAnalysis && currentAnalysis.analysis_data && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         className="flex items-center space-x-2 border-gray-300 hover:bg-gray-50"
                         title="Export analysis data"
                       >
-                        <Download className="w-4 h-4" />
+                        <Download className="w-5 h-5" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-56">
                       <DropdownMenuItem onClick={exportAsJSON} className="flex items-center space-x-2">
-                        <Download className="w-4 h-4" />
+                        <Download className="w-5 h-5" />
                         <div className="flex flex-col">
-                          <span className="font-medium">Export as JSON</span>
-                          <span className="text-xs text-gray-500">Complete analysis data</span>
+                          <span className="font-medium text-base">Export as JSON</span>
+                          <span className="text-sm text-gray-500">Complete analysis data</span>
                         </div>
                       </DropdownMenuItem>
                       <DropdownMenuItem disabled className="flex items-center space-x-2 opacity-50">
-                        <Download className="w-4 h-4" />
+                        <Download className="w-5 h-5" />
                         <div className="flex flex-col">
-                          <span className="font-medium">Export as CSV</span>
-                          <span className="text-xs text-gray-500">Organization member scores</span>
+                          <span className="font-medium text-base">Export as CSV</span>
+                          <span className="text-sm text-gray-500">Organization member scores</span>
                         </div>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem disabled className="flex items-center space-x-2 opacity-50">
-                        <FileText className="w-4 h-4" />
+                        <FileText className="w-5 h-5" />
                         <div className="flex flex-col">
-                          <span className="font-medium">Generate PDF Report</span>
-                          <span className="text-xs text-gray-500">Executive summary</span>
+                          <span className="font-medium text-base">Generate PDF Report</span>
+                          <span className="text-sm text-gray-500">Executive summary</span>
                         </div>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -746,7 +658,7 @@ export default function Dashboard() {
                 setExpandedDataSources={setExpandedDataSources}
               />
 
-              {/* AI Insights Card */}
+              {/* Other Features */}
               <AIInsightsCard currentAnalysis={currentAnalysis} />
 
               {/* Partial Data Warning */}
@@ -821,7 +733,7 @@ export default function Dashboard() {
               <Card className="mb-6">
                 <CardHeader>
                   <CardTitle>Individual Burnout Scores</CardTitle>
-                  <CardDescription>Team member CBI burnout scores (higher = more burnout risk)</CardDescription>
+                  <CardDescription>Team member OCB burnout scores (higher = more burnout risk)</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {memberBarData.length > 0 ? (
@@ -948,8 +860,8 @@ export default function Dashboard() {
                           // Transform data and detect standout events (same logic as chart)
                           const chartData = dailyTrends.map((trend: any, index: number) => ({
                             date: trend.date,
-                            // Use CBI score methodology (0-100, where higher = more burnout)
-                            score: Math.round(trend.overall_score * 10), // Convert 0-10 to 0-100 CBI scale
+                            // Use OCB score methodology (0-100, where higher = more burnout)
+                            score: Math.round(trend.overall_score * 10), // Convert 0-10 to 0-100 OCB scale
                             membersAtRisk: trend.members_at_risk,
                             totalMembers: trend.total_members,
                             incidentCount: trend.incident_count || 0,
@@ -975,33 +887,33 @@ export default function Dashboard() {
                               // Detect peaks (local maxima)
                               if (prev && next && point.score > prev.score && point.score > next.score && point.score >= 75) {
                                 eventType = 'peak';
-                                // Convert health score to CBI score for display (100 - health_percentage = CBI score)
-                                const cbiScore = Math.round(100 - point.score);
-                                eventDescription = `Team wellness at peak (${cbiScore} CBI score) - ${point.incidentCount} incidents handled without stress signs`;
+                                // Convert health score to OCB score for display (100 - health_percentage = OCB score)
+                                const ocbScore = Math.round(100 - point.score);
+                                eventDescription = `Team wellness at peak (${ocbScore} OCB score) - ${point.incidentCount} incidents handled without stress signs`;
                                 significance = point.score >= 90 ? 3 : 2;
                               }
                               // Detect valleys (local minima)  
                               else if (prev && next && point.score < prev.score && point.score < next.score && point.score <= 60) {
                                 eventType = 'valley';
-                                // Convert health score to CBI score for display (100 - health_percentage = CBI score)
-                                const cbiScore = Math.round(100 - point.score);
-                                eventDescription = `Team showing signs of strain (${cbiScore} CBI score) - ${point.incidentCount} incidents, ${point.membersAtRisk} team members need support`;
+                                // Convert health score to OCB score for display (100 - health_percentage = OCB score)
+                                const ocbScore = Math.round(100 - point.score);
+                                eventDescription = `Team showing signs of strain (${ocbScore} OCB score) - ${point.incidentCount} incidents, ${point.membersAtRisk} team members need support`;
                                 significance = point.score <= 40 ? 3 : 2;
                               }
                               // Detect sharp improvements
                               else if (prevChange >= 20) {
                                 eventType = 'recovery';
-                                // For improvement, show it as CBI score reduction (health increase = CBI decrease)
-                                const cbiImprovement = Math.abs(prevChange);
-                                eventDescription = `Great turnaround! Team burnout reduced by ${cbiImprovement} CBI points - interventions working well`;
+                                // For improvement, show it as OCB score reduction (health increase = OCB decrease)
+                                const ocbImprovement = Math.abs(prevChange);
+                                eventDescription = `Great turnaround! Team burnout reduced by ${ocbImprovement} OCB points - interventions working well`;
                                 significance = prevChange >= 30 ? 3 : 2;
                               }
                               // Detect sharp declines
                               else if (prevChange <= -20) {
                                 eventType = 'decline';
-                                // For decline, show it as CBI score increase (health decrease = CBI increase)
-                                const cbiIncrease = Math.abs(prevChange);
-                                eventDescription = `Warning: Team burnout increased by ${cbiIncrease} CBI points - immediate attention recommended`;
+                                // For decline, show it as OCB score increase (health decrease = OCB increase)
+                                const ocbIncrease = Math.abs(prevChange);
+                                eventDescription = `Warning: Team burnout increased by ${ocbIncrease} OCB points - immediate attention recommended`;
                                 significance = prevChange <= -30 ? 3 : 2;
                               }
                               // Detect high incident volume days
@@ -1013,9 +925,9 @@ export default function Dashboard() {
                               // Detect critical health days
                               else if (point.score <= 45 && point.membersAtRisk >= 3) {
                                 eventType = 'critical';
-                                // Convert health score to CBI score for display (100 - health_percentage = CBI score)
-                                const cbiScore = Math.round(100 - point.score);
-                                eventDescription = `URGENT: Team at burnout risk (${cbiScore} CBI score) - ${point.membersAtRisk} members need immediate support`;
+                                // Convert health score to OCB score for display (100 - health_percentage = OCB score)
+                                const ocbScore = Math.round(100 - point.score);
+                                eventDescription = `URGENT: Team at burnout risk (${ocbScore} OCB score) - ${point.membersAtRisk} members need immediate support`;
                                 significance = 3;
                               }
                               
@@ -1207,7 +1119,6 @@ export default function Dashboard() {
                             tick={{ fontSize: 11, fill: '#6B7280' }}
                             tickCount={6}
                             angle={90}
-                            reversed={true}
                           />
                           <Radar 
                             dataKey="value" 
@@ -1249,7 +1160,6 @@ export default function Dashboard() {
                       <CardTitle className="flex items-center space-x-2">
                         {highRiskFactors.length > 0 ? (
                           <>
-                            <AlertTriangle className="w-5 h-5 text-red-500" />
                             <span>Risk Factors</span>
                           </>
                         ) : (
@@ -1268,52 +1178,80 @@ export default function Dashboard() {
                     </CardHeader>
                     
                     <CardContent>
-                      <div className="space-y-4">
-                        {sortedBurnoutFactors.map((factor, index) => (
-                          <div key={factor.factor} className="relative">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center space-x-2">
-                                <span className="font-medium text-gray-900">{factor.factor}</span>
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                  factor.severity === 'Critical' ? 'bg-red-100 text-red-800' :
-                                  factor.severity === 'Poor' ? 'bg-orange-100 text-orange-800' :
-                                  factor.severity === 'Fair' ? 'bg-yellow-100 text-yellow-800' :
-                                  'bg-green-100 text-green-800'
-                                }`}>
-                                  {factor.severity}
-                                </span>
-                              </div>
-                              <span className="text-lg font-bold" style={{ color: factor.color }}>
-                                {factor.value}/100
-                              </span>
-                            </div>
-                            <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-                              <div 
-                                className="h-2 rounded-full transition-all duration-500" 
-                                style={{ 
-                                  width: `${factor.value}%`,
-                                  backgroundColor: (() => {
-                                    // Standardize colors to match CBI burnout risk levels (0-100 scale)
-                                    if (factor.value < 30) return '#10B981'; // green-500 - Good
-                                    if (factor.value < 50) return '#F59E0B'; // yellow-500 - Fair
-                                    if (factor.value < 70) return '#F97316'; // orange-500 - Poor
-                                    return '#EF4444'; // red-500 - Critical
-                                  })()
-                                }}
-                              ></div>
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              <div>{factor.metrics}</div>
-                              {factor.value >= 5 && (
-                                <div className="mt-1 text-blue-600">
-                                  <strong>Action:</strong> {factor.recommendation}
+                      {(() => {
+                        // One source of truth for risk colors (severity preferred; fallback to value thresholds)
+                        const getRiskHex = (severity?: string, value?: number) => {
+                          if (severity) {
+                            if (severity === 'Critical') return '#EF4444' // red-500
+                            if (severity === 'Poor')     return '#F97316' // orange-500
+                            if (severity === 'Fair')     return '#F59E0B' // yellow-500
+                            return '#10B981'                               // green-500
+                          }
+                          const v = value ?? 0
+                          if (v < 30) return '#10B981'
+                          if (v < 50) return '#F59E0B'
+                          if (v < 70) return '#F97316'
+                          return '#EF4444'
+                        }
+
+                        return (
+                          <div className="space-y-4">
+                            {sortedBurnoutFactors.map((factor) => {
+                              const color = getRiskHex(factor.severity, factor.value)
+                              return (
+                                <div key={factor.factor} className="relative">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center space-x-2">
+                                      <span className="font-medium text-gray-900">{factor.factor}</span>
+                                      <span
+                                        className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                          factor.severity === 'Critical'
+                                            ? 'bg-red-100 text-red-800'
+                                            : factor.severity === 'Poor'
+                                            ? 'bg-orange-100 text-orange-800'
+                                            : factor.severity === 'Fair'
+                                            ? 'bg-yellow-100 text-yellow-800'
+                                            : 'bg-green-100 text-green-800'
+                                        }`}
+                                      >
+                                        {factor.severity}
+                                      </span>
+                                    </div>
+
+                                    {/* Unified text color */}
+                                    <span className="text-lg font-bold" style={{ color }}>
+                                      {factor.value}/100
+                                    </span>
+                                  </div>
+
+                                  <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                                    {/* Unified bar color */}
+                                    <div
+                                      className="h-2 rounded-full transition-all duration-500"
+                                      style={{
+                                        width: `${factor.value}%`,
+                                        backgroundColor: color,
+                                      }}
+                                    />
+                                  </div>
+
+                                  <div className="text-sm text-gray-600">
+                                    <div>{factor.metrics}</div>
+                                    {factor.value >= 5 && (
+                                      <div className="mt-1 text-blue-600">
+                                        <strong>Action:</strong> {factor.recommendation}
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
-                              )}
-                            </div>
+                              )
+                            })}
                           </div>
-                        ))}
-                      </div>
+                        )
+                      })()}
                     </CardContent>
+
+
                   </Card>
                 )}
               </div>
@@ -1369,10 +1307,7 @@ export default function Dashboard() {
                           
                           return (
                             <>
-
-
-
-                            
+          
                               {/* Commit Activity Timeline */}
                               <GitHubCommitsTimeline
                                 analysisId={currentAnalysis?.id ? parseInt(currentAnalysis.id) : 0}
@@ -1541,6 +1476,10 @@ export default function Dashboard() {
                                     <path d="M32.2996 78.2003C32.2996 71.7003 37.3996 66.6003 43.8996 66.6003C50.3996 66.6003 55.4996 71.7003 55.4996 78.2003V109.2C55.4996 115.7 50.3996 120.8 43.8996 120.8C37.3996 120.8 32.2996 115.7 32.2996 109.2V78.2003Z" />
                                     <path d="M43.8996 26.4003C37.3996 26.4003 32.2996 21.3003 32.2996 14.8003C32.2996 8.30026 37.3996 3.20026 43.8996 3.20026C50.3996 3.20026 55.4996 8.30026 55.4996 14.8003V26.4003H43.8996Z" />
                                     <path d="M43.8996 32.3003C50.3996 32.3003 55.4996 37.4003 55.4996 43.9003C55.4996 50.4003 50.3996 55.5003 43.8996 55.5003H12.8996C6.39961 55.5003 1.29961 50.4003 1.29961 43.9003C1.29961 37.4003 6.39961 32.3003 12.8996 32.3003H43.8996Z" />
+                                    <path d="M97.5996 43.9003C97.5996 37.4003 102.7 32.3003 109.2 32.3003C115.7 32.3003 120.8 37.4003 120.8 43.9003C120.8 50.4003 115.7 55.5003 109.2 55.5003H97.5996V43.9003Z" />
+                                    <path d="M91.6996 43.9003C91.6996 50.4003 86.5996 55.5003 80.0996 55.5003C73.5996 55.5003 68.4996 50.4003 68.4996 43.9003V12.9003C68.4996 6.40026 73.5996 1.30026 80.0996 1.30026C86.5996 1.30026 91.6996 6.40026 91.6996 12.9003V43.9003Z" />
+                                    <path d="M80.0996 97.7003C86.5996 97.7003 91.6996 102.8 91.6996 109.3C91.6996 115.8 86.5996 120.9 80.0996 120.9C73.5996 120.9 68.4996 115.8 68.4996 109.3V97.7003H80.0996Z" />
+                                    <path d="M80.0996 91.8003C73.5996 91.8003 68.4996 86.7003 68.4996 80.2003C68.4996 73.7003 73.5996 68.6003 80.0996 68.6003H111.1C117.6 68.6003 122.7 73.7003 122.7 80.2003C122.7 86.7003 117.6 91.8003 111.1 91.8003H80.0996Z" />
                                   </svg>
                                 </div>
                                 <h3 className="text-lg font-medium text-gray-900 mb-2">No Slack Data Available</h3>
@@ -1761,8 +1700,8 @@ export default function Dashboard() {
           {/* Empty State or Loading State */}
           {!analysisRunning && !currentAnalysis && !searchParams.get('analysis') && (
             <>
-              {/* Show loading state if initial data hasn't loaded yet OR if we have analyses but currentAnalysis isn't set */}
-              {!initialDataLoaded || (previousAnalyses.length > 0 && !currentAnalysis) ? (
+              {/* Show loading state while analyses are loading OR if we have analyses but currentAnalysis isn't set */}
+              {loadingAnalyses || (previousAnalyses.length > 0 && !currentAnalysis) ? (
                 <Card className="text-center p-8">
                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <div className="w-8 h-8 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
@@ -1854,9 +1793,6 @@ export default function Dashboard() {
         <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Start New Analysis</DialogTitle>
-            <DialogDescription>
-              Select a time range to analyze your team's incident data and burnout metrics
-            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -1916,9 +1852,26 @@ export default function Dashboard() {
               
               // Only check permissions for Rootly integrations, not PagerDuty
               if (selectedIntegration?.platform === 'rootly') {
+                // Check if permissions have been loaded (undefined = not loaded yet, false/true = loaded)
+                const permissionsLoaded = selectedIntegration?.permissions !== undefined;
                 const hasUserPermission = selectedIntegration?.permissions?.users?.access;
                 const hasIncidentPermission = selectedIntegration?.permissions?.incidents?.access;
-                
+
+                // Show loader if permissions haven't been loaded yet
+                if (!permissionsLoaded || loadingIntegrations) {
+                  return (
+                    <Alert className="border-blue-200 bg-blue-50 py-2 px-3">
+                      <div className="flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                        <AlertDescription className="text-blue-800 text-sm">
+                          Checking permissions...
+                        </AlertDescription>
+                      </div>
+                    </Alert>
+                  );
+                }
+
+                // Show error only if permissions are loaded but missing
                 if (!hasUserPermission || !hasIncidentPermission) {
                   return (
                     <Alert className="border-red-200 bg-red-50 py-2 px-3">
@@ -1926,10 +1879,10 @@ export default function Dashboard() {
                       <AlertDescription className="text-red-800 text-sm">
                         <strong>Missing Required Permissions</strong>
                         <span className="block mt-1">
-                          {!hasUserPermission && !hasIncidentPermission 
-                            ? "User and incident read access required" 
-                            : !hasUserPermission 
-                            ? "User read access required" 
+                          {!hasUserPermission && !hasIncidentPermission
+                            ? "User and incident read access required"
+                            : !hasUserPermission
+                            ? "User read access required"
                             : "Incident read access required"}
                         </span>
                         <span className="text-xs opacity-75">Update API token permissions in Rootly settings</span>
@@ -1941,7 +1894,7 @@ export default function Dashboard() {
               return null;
             })()}
 
-            {/* Additional Data Sources */}
+            {/* Data Sources */}
             {true && (
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-2 block">
@@ -2023,11 +1976,6 @@ export default function Dashboard() {
                             />
                           </div>
                           <p className="text-xs text-gray-600 mb-1">Communication patterns</p>
-                          <p className="text-xs text-gray-500">
-                            {!slackIntegration ? 'Not connected' :
-                             !slackIntegration.communication_patterns_enabled ? 'Connected (communication patterns disabled)' :
-                             slackIntegration.total_channels ? `${slackIntegration.total_channels} channels` : 'Connected'}
-                          </p>
                         </>
                       )}
                     </div>
@@ -2053,8 +2001,8 @@ export default function Dashboard() {
                       <div className="w-5 h-5 text-blue-600">🤖</div>
                     </div>
                     <div>
-                      <h3 className="text-sm font-medium text-gray-900">Enhanced AI Analysis</h3>
-                      <p className="text-xs text-gray-600">Natural language reasoning and insights</p>
+                      <h3 className="text-sm font-medium text-gray-900">Executive Summary</h3>
+                      <p className="text-xs text-gray-600">Analyze the data and generates a report</p>
                     </div>
                   </div>
                   <Switch
@@ -2069,12 +2017,6 @@ export default function Dashboard() {
                     <span className="text-xs font-medium text-green-700">
                       Anthropic Claude Connected (Railway)
                     </span>
-                  </div>
-                  <div className="text-xs text-gray-600">
-                    {enableAI ? 
-                      '✨ AI will provide intelligent analysis and recommendations' : 
-                      '⚡ Using traditional pattern analysis only'
-                    }
                   </div>
                 </div>
               </div>
@@ -2159,6 +2101,7 @@ export default function Dashboard() {
         platform={mappingDrawerPlatform}
         onRefresh={fetchPlatformMappings}
       />
+      </div>
     </div>
   )
 }

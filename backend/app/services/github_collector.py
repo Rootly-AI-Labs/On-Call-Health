@@ -33,105 +33,45 @@ class GitHubCollector:
         
         # GitHub organizations to search
         self.organizations = ["Rootly-AI-Labs", "rootlyhq"]
-        
-        # Predefined email mappings (from original config, to handle cases where GitHub email != Rootly email)
-        self.predefined_email_mappings = {
-            "spencer.cheng@rootly.com": "spencerhcheng",
-            "jasmeet.singh@rootly.com": "jasmeetluthra", 
-            "sylvain@rootly.com": "sylvainkalache",
-            "christo.mitov@rootly.com": "christomitov",
-            "ibrahim@rootly.com": "ibrahimelchami",
-            "weihan@rootly.com": "weihanli101",
-            "alex.mingoia@rootly.com": "alexmingoia",
-            "quentin@rootly.com": "kwent",
-            "gideon@rootly.com": "gid-rootly",
-            "dan@rootly.com": "dansadler1",
-            # Additional mappings for Integration ID 3 users
-            "nicholas@rootly.com": "nronas",
-            "kumbi@rootly.com": "kumbirai"
-        }
-        
+
         # Cache for email mapping
         self._email_mapping_cache = None
         
     async def _correlate_email_to_github(self, email: str, token: str, user_id: Optional[int] = None, full_name: Optional[str] = None) -> Optional[str]:
         """
         Correlate an email address to a GitHub username using multiple strategies.
-        
+
         This checks in order:
         1. Manual mappings from user_mappings table (highest priority)
-        2. Predefined mappings (hardcoded)
-        3. Enhanced matching algorithm with multiple strategies
-        4. Legacy discovered email mappings from organization members
+        2. Enhanced matching algorithm with multiple strategies
+        3. Legacy discovered email mappings from organization members
         """
         logger.info(f"GitHub correlation attempt for {email}, token={'present' if token else 'missing'}, user_id={user_id}")
-        
+
         if not token:
             logger.warning("No GitHub token provided for correlation")
             return None
-            
+
         try:
-            # FIRST: Check manual mappings from user_mappings table (highest priority)
+            # FIRST: Check user_correlations table for synced members (from "Sync Members" feature)
+            synced_username = await self._check_synced_members(email, user_id)
+            if synced_username:
+                logger.info(f"Found GitHub correlation via SYNCED MEMBER: {email} -> {synced_username}")
+                return synced_username
+
+            # SECOND: Check manual mappings from user_mappings table (mapping drawer)
             if user_id:
                 manual_username = await self._check_manual_mappings(email, user_id)
                 if manual_username:
                     logger.info(f"Found GitHub correlation via MANUAL mapping: {email} -> {manual_username}")
                     return manual_username
-            
-            # SECOND: Check predefined mappings (hardcoded)
-            logger.info(f"Checking predefined mappings for {email}. Available mappings: {list(self.predefined_email_mappings.keys())}")
-            username = self.predefined_email_mappings.get(email)
-            if username:
-                logger.info(f"Found GitHub correlation via predefined mapping: {email} -> {username}")
-                return username
-            else:
-                logger.warning(f"No predefined mapping found for {email}")
-            
-            # THIRD: Use enhanced matching algorithm with name-based fallback
-            try:
-                from .enhanced_github_matcher import EnhancedGitHubMatcher
-                matcher = EnhancedGitHubMatcher(token, self.organizations)
-                
-                # Try email-based matching first
-                username = await matcher.match_email_to_github(email, full_name)
-                if username:
-                    logger.info(f"Found GitHub correlation via ENHANCED email matching: {email} -> {username}")
-                    return username
-                
-                # If email matching failed and we have a name, try name-based matching
-                if not username and full_name:
-                    logger.info(f"Email matching failed for {email}, trying name-based matching for '{full_name}'")
-                    username = await matcher.match_name_to_github(full_name, fallback_email=email)
-                    if username:
-                        logger.info(f"Found GitHub correlation via ENHANCED name matching: '{full_name}' -> {username}")
-                        return username
-                
-            except Exception as e:
-                logger.warning(f"Enhanced matcher failed, falling back to legacy: {e}")
-                # Don't continue with expensive legacy approaches during analysis
-                logger.info(f"Skipping legacy approaches to improve analysis performance for {email}")
-                return None
-            
-            # OPTIMIZATION: Skip expensive legacy email mapping cache during analysis
-            logger.info(f"Skipping expensive legacy email mapping cache to improve analysis performance")
+
+            # IMPORTANT: No fallback matching during analysis!
+            # All GitHub username correlations should be done via "Sync Members" on integrations page.
+            # This keeps analysis fast and predictable.
+            logger.info(f"⚠️ No synced GitHub username found for {email}. Use 'Sync Members' to add GitHub usernames.")
             return None
-            
-            # FOURTH: Legacy approach - build email mapping if not cached (DISABLED for performance)
-            if False and self._email_mapping_cache is None:
-                logger.info("Building email mapping cache from GitHub API")
-                self._email_mapping_cache = await self._build_email_mapping(token)
-                
-            # Look up the email (case insensitive)
-            email_lower = email.lower()
-            username = self._email_mapping_cache.get(email_lower)
-            
-            if username:
-                logger.info(f"Found GitHub correlation via discovered mapping: {email} -> {username}")
-                return username
-            else:
-                logger.warning(f"No GitHub correlation found for {email}")
-                return None
-            
+
         except Exception as e:
             logger.error(f"Error correlating email {email} to GitHub: {e}")
             return None
@@ -188,7 +128,55 @@ class GitHubCollector:
         except Exception as e:
             logger.error(f"Error checking manual mappings: {e}")
             return None
-    
+
+    async def _check_synced_members(self, email: str, user_id: int) -> Optional[str]:
+        """
+        Check user_correlations table for synced GitHub usernames (from Sync Members feature).
+
+        Args:
+            email: The email address to look up
+            user_id: The user ID who owns the correlations
+
+        Returns:
+            GitHub username if found, None otherwise
+        """
+        try:
+            database_url = os.getenv('DATABASE_URL')
+            if not database_url:
+                return None
+
+            engine = create_engine(database_url)
+            conn = engine.connect()
+
+            # Query for synced member - match by email only (don't filter by user_id)
+            # This allows synced members to be shared across the organization
+            query = """
+                SELECT github_username
+                FROM user_correlations
+                WHERE email = :email
+                  AND github_username IS NOT NULL
+                  AND github_username != ''
+                LIMIT 1
+            """
+
+            result = conn.execute(
+                text(query),
+                {'email': email}
+            )
+            row = result.fetchone()
+            conn.close()
+
+            if row:
+                username = row[0]
+                logger.info(f"✅ Found synced GitHub member: {email} -> {username}")
+                return username
+            else:
+                return None
+
+        except Exception as e:
+            logger.error(f"❌ Error checking synced members for {email}: {e}")
+            return None
+
     async def _build_email_mapping(self, token: str) -> Dict[str, str]:
         """
         Build mapping of email addresses to GitHub usernames by discovering org members
@@ -293,19 +281,21 @@ class GitHubCollector:
         
     async def _fetch_real_github_data(self, username: str, email: str, start_date: datetime, end_date: datetime, token: str) -> Dict:
         """Fetch real GitHub data using the GitHub API with enterprise resilience."""
-        
+
+        logger.debug(f"Fetching GitHub data for {username} ({email}): {start_date.date()} to {end_date.date()}")
+
         headers = {
             'Authorization': f'token {token}',
             'Accept': 'application/vnd.github.v3+json',
             'User-Agent': 'Rootly-Burnout-Detector'
         }
-        
+
         since_iso = start_date.isoformat()
         until_iso = end_date.isoformat()
-        
+
         # Fetch user info
         user_url = f"https://api.github.com/users/{username}"
-        
+
         try:
             # Phase 2.3: Use API manager for resilient GitHub API calls
             from .github_api_manager import github_api_manager
@@ -347,11 +337,11 @@ class GitHubCollector:
             # Execute with enterprise resilience patterns
             commits_data = await github_api_manager.safe_api_call(fetch_commits, max_retries=3)
             total_commits = commits_data.get('total_count', 0) if commits_data else 0
-            
+
             prs_data = await github_api_manager.safe_api_call(fetch_prs, max_retries=3)
             total_prs = prs_data.get('total_count', 0) if prs_data else 0
-            
-            logger.info(f"📊 GitHub API calls completed - Commits: {total_commits}, PRs: {total_prs}")
+
+            logger.info(f"✅ GitHub data for {username}: {total_commits} commits, {total_prs} PRs")
             
             # For now, estimate other metrics based on commits/PRs
             # In a full implementation, we'd make additional API calls
@@ -547,36 +537,36 @@ class GitHubCollector:
     async def collect_github_data_for_user(self, user_email: str, days: int = 30, github_token: str = None, user_id: Optional[int] = None, full_name: Optional[str] = None) -> Optional[Dict]:
         """
         Collect GitHub activity data for a single user using email correlation.
-        
+
         Args:
             user_email: User's email to correlate with GitHub
             days: Number of days to analyze
             github_token: GitHub API token for authentication
             user_id: User ID for checking manual mappings
-            
+
         Returns:
             GitHub activity data or None if no correlation found
         """
+        logger.info(f"📊 [GITHUB_COLLECTION] Starting collection for email: {user_email}, user_id: {user_id}, days: {days}")
+        logger.info(f"📊 [GITHUB_COLLECTION] Token present: {bool(github_token)}, Full name: {full_name}")
+
         # Use email-based correlation to find GitHub username
         github_username = await self._correlate_email_to_github(user_email, github_token, user_id, full_name)
-        
+
         if not github_username:
-            logger.warning(f"No GitHub username found for email {user_email}")
             return None
-            
-        logger.info(f"Collecting GitHub data for {github_username} ({user_email})")
-        
+
         # Set up date range
         end_date = datetime.now()
         start_date = end_date - timedelta(days=days)
-        
+
         # Use real GitHub API if token provided
         if github_token:
-            logger.info(f"Using real GitHub API for {github_username} with token: {github_token[:10]}...")
-            return await self._fetch_real_github_data(github_username, user_email, start_date, end_date, github_token)
+            result = await self._fetch_real_github_data(github_username, user_email, start_date, end_date, github_token)
+            if not result:
+                logger.warning(f"Failed to fetch GitHub data for {github_username}")
+            return result
         else:
-            # No GitHub token available, use mock data for now
-            logger.warning(f"No GitHub token available for {github_username}, using mock data")
             return self._generate_mock_github_data(github_username, user_email, start_date, end_date)
     
     def _generate_mock_github_data(self, username: str, email: str, start_date: datetime, end_date: datetime) -> Dict:

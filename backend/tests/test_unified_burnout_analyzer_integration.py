@@ -353,7 +353,7 @@ class TestAnalyzeMemberBurnout:
         assert result["user_id"] == "1"
         assert result["incident_count"] == 2
         assert "burnout_score" in result
-        assert "cbi_score" in result
+        assert "ocb_score" in result
         assert "risk_level" in result
         assert "factors" in result
         assert "metrics" in result
@@ -412,9 +412,9 @@ class TestCalculationMethods:
         analyzer = UnifiedBurnoutAnalyzer(api_token="test_token", platform="rootly")
 
         member_analyses = [
-            {"burnout_score": 2.0, "cbi_score": 20, "risk_level": "low", "user_name": "John", "incident_count": 1},
-            {"burnout_score": 4.5, "cbi_score": 45, "risk_level": "medium", "user_name": "Jane", "incident_count": 3},
-            {"burnout_score": 7.0, "cbi_score": 70, "risk_level": "high", "user_name": "Bob", "incident_count": 5}
+            {"burnout_score": 2.0, "ocb_score": 20, "risk_level": "low", "user_name": "John", "incident_count": 1},
+            {"burnout_score": 4.5, "ocb_score": 45, "risk_level": "medium", "user_name": "Jane", "incident_count": 3},
+            {"burnout_score": 7.0, "ocb_score": 70, "risk_level": "high", "user_name": "Bob", "incident_count": 5}
         ]
 
         result = analyzer._calculate_team_health(member_analyses)
@@ -671,8 +671,8 @@ class TestCoreCalculationMethods:
         assert isinstance(result["work_related_burnout"], (int, float))
         assert isinstance(result["accomplishment_burnout"], (int, float))
 
-    def test_calculate_personal_burnout_cbi(self, mock_rootly_client):
-        """Test _calculate_personal_burnout_cbi"""
+    def test_calculate_personal_burnout_ocb(self, mock_rootly_client):
+        """Test _calculate_personal_burnout_ocb"""
         analyzer = UnifiedBurnoutAnalyzer(api_token="test_token", platform="rootly")
 
         metrics = {
@@ -681,14 +681,14 @@ class TestCoreCalculationMethods:
             "total_incidents": 20
         }
 
-        result = analyzer._calculate_personal_burnout_cbi(metrics)
+        result = analyzer._calculate_personal_burnout_ocb(metrics)
 
         assert isinstance(result, (int, float))
         assert result >= 0
-        assert result <= 100  # CBI scores are 0-100
+        assert result <= 100  # OCB scores are 0-100
 
-    def test_calculate_work_burnout_cbi(self, mock_rootly_client):
-        """Test _calculate_work_burnout_cbi"""
+    def test_calculate_work_burnout_ocb(self, mock_rootly_client):
+        """Test _calculate_work_burnout_ocb"""
         analyzer = UnifiedBurnoutAnalyzer(api_token="test_token", platform="rootly")
 
         metrics = {
@@ -697,14 +697,14 @@ class TestCoreCalculationMethods:
             "weekend_percentage": 0.15
         }
 
-        result = analyzer._calculate_work_burnout_cbi(metrics)
+        result = analyzer._calculate_work_burnout_ocb(metrics)
 
         assert isinstance(result, (int, float))
         assert result >= 0
         assert result <= 100
 
-    def test_calculate_accomplishment_burnout_cbi(self, mock_rootly_client):
-        """Test _calculate_accomplishment_burnout_cbi"""
+    def test_calculate_accomplishment_burnout_ocb(self, mock_rootly_client):
+        """Test _calculate_accomplishment_burnout_ocb"""
         analyzer = UnifiedBurnoutAnalyzer(api_token="test_token", platform="rootly")
 
         metrics = {
@@ -713,7 +713,7 @@ class TestCoreCalculationMethods:
             "total_incidents": 10
         }
 
-        result = analyzer._calculate_accomplishment_burnout_cbi(metrics)
+        result = analyzer._calculate_accomplishment_burnout_ocb(metrics)
 
         assert isinstance(result, (int, float))
         assert result >= 0

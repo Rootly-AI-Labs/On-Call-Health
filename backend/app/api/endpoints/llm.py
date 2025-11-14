@@ -37,13 +37,16 @@ def decrypt_token(encrypted_token: str) -> str:
     return fernet.decrypt(encrypted_token.encode()).decode()
 
 class LLMTokenRequest(BaseModel):
-    token: str
-    provider: str  # 'anthropic', 'openai', etc.
+    token: str = ""
+    provider: str = "anthropic"  # 'anthropic', 'openai', etc.
+    use_system_token: bool = False  # If True, use Railway system token instead
+    switch_to_custom: bool = False  # If True, switch to stored custom token
 
 class LLMTokenResponse(BaseModel):
     has_token: bool
     provider: Optional[str] = None
     token_suffix: Optional[str] = None
+    token_source: str = 'system'  # 'system' or 'custom'
     created_at: Optional[datetime] = None
 
 @router.post("/token", response_model=LLMTokenResponse)
@@ -52,12 +55,67 @@ async def store_llm_token(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Store or update user's LLM API token. Disabled for Railway deployment."""
-    # Railway deployment uses shared system token - no individual user tokens allowed
-    raise HTTPException(
-        status_code=status.HTTP_403_FORBIDDEN,
-        detail="Individual LLM tokens not supported in Railway deployment. AI is automatically enabled using system token."
-    )
+    """Store or update user's LLM API token, or enable system token."""
+
+    # If user wants to switch to their stored custom token
+    if request.switch_to_custom:
+        if not current_user.has_llm_token():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No custom token found. Please add a custom token first."
+            )
+
+        # Switch to custom token
+        current_user.active_llm_token_source = 'custom'
+        current_user.updated_at = datetime.now()
+
+        db.commit()
+        db.refresh(current_user)
+
+        logger.info(f"User {current_user.id} switched to custom LLM token")
+
+        # Get token info to return
+        try:
+            decrypted_token = decrypt_token(current_user.llm_token)
+            token_suffix = decrypted_token[-4:] if len(decrypted_token) > 4 else "****"
+        except Exception as e:
+            logger.error(f"Failed to decrypt token: {e}")
+            token_suffix = "****"
+
+        return LLMTokenResponse(
+            has_token=True,
+            provider=current_user.llm_provider,
+            token_suffix=token_suffix,
+            token_source='custom',
+            created_at=current_user.updated_at
+        )
+
+    # If user wants to use system token
+    if request.use_system_token:
+        import os
+        system_api_key = os.getenv('ANTHROPIC_API_KEY')
+        if not system_api_key:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="System LLM token not configured"
+            )
+
+        # Switch to system token (keep custom token stored)
+        current_user.active_llm_token_source = 'system'
+        current_user.updated_at = datetime.now()
+
+        db.commit()
+        db.refresh(current_user)
+
+        logger.info(f"User {current_user.id} switched to system LLM token")
+
+        return LLMTokenResponse(
+            has_token=True,
+            provider='anthropic',
+            token_suffix=None,  # Don't expose system token details
+            token_source='system',
+            created_at=None
+        )
     
     # Validate provider
     allowed_providers = ['anthropic', 'openai']
@@ -85,7 +143,7 @@ async def store_llm_token(
     try:
         if request.provider == 'anthropic':
             import anthropic
-            client = anthropic.Anthropic(api_key=request.token)
+            client = anthropic.Anthropic(api_key=request.token, timeout=30.0)
             # Test with a minimal API call
             response = client.messages.create(
                 model="claude-3-haiku-20240307",
@@ -94,33 +152,52 @@ async def store_llm_token(
             )
         elif request.provider == 'openai':
             import openai
-            client = openai.OpenAI(api_key=request.token)
+            client = openai.OpenAI(api_key=request.token, timeout=30.0)
             # Test with a minimal API call
             response = client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[{"role": "user", "content": "Hi"}],
                 max_tokens=1
             )
+    except ImportError as e:
+        logger.error(f"Missing library for {request.provider}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Server configuration error: {request.provider} library not installed"
+        )
     except Exception as e:
+        error_msg = str(e).lower()
         logger.error(f"Token verification failed for {request.provider}: {e}")
+
+        # Provide more specific error messages
+        if 'authentication' in error_msg or 'invalid' in error_msg or '401' in error_msg or 'unauthorized' in error_msg:
+            detail = f"Invalid API key. Please verify your {request.provider} token and try again."
+        elif 'timeout' in error_msg or 'timed out' in error_msg:
+            detail = f"Connection timeout while verifying token. Please try again."
+        elif 'connection' in error_msg or 'network' in error_msg:
+            detail = f"Network error while verifying token. Please check your connection and try again."
+        else:
+            detail = f"Token verification failed: {str(e)}"
+
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Token verification failed. Please check your {request.provider} API key and try again."
+            detail=detail
         )
     
     try:
         # Encrypt the token
         encrypted_token = encrypt_token(request.token)
         
-        # Update user record
+        # Update user record and switch to custom token
         current_user.llm_token = encrypted_token
         current_user.llm_provider = request.provider
+        current_user.active_llm_token_source = 'custom'
         current_user.updated_at = datetime.now()
-        
+
         db.commit()
         db.refresh(current_user)
-        
-        logger.info(f"LLM token stored for user {current_user.id} (provider: {request.provider})")
+
+        logger.info(f"LLM token stored and activated for user {current_user.id} (provider: {request.provider})")
         
         # Return response with masked token
         token_suffix = request.token[-4:] if len(request.token) > 4 else "****"
@@ -129,6 +206,7 @@ async def store_llm_token(
             has_token=True,
             provider=request.provider,
             token_suffix=token_suffix,
+            token_source='custom',
             created_at=current_user.updated_at
         )
         
@@ -144,52 +222,102 @@ async def get_llm_token_info(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Get information about system LLM token (Railway deployment uses shared token)."""
-    
-    # Always use Railway system token for all users - no individual user tokens
+    """Get information about user's active LLM token (system or custom)."""
+
+    # Determine which token is active (default to 'system' if not set)
+    active_source = getattr(current_user, 'active_llm_token_source', 'system') or 'system'
+
+    # If custom token is active and user has one stored
+    if active_source == 'custom' and current_user.has_llm_token():
+        try:
+            decrypted_token = decrypt_token(current_user.llm_token)
+            token_suffix = decrypted_token[-4:] if len(decrypted_token) > 4 else "****"
+
+            return LLMTokenResponse(
+                has_token=True,
+                provider=current_user.llm_provider,
+                token_suffix=token_suffix,
+                token_source='custom',
+                created_at=current_user.updated_at
+            )
+        except Exception as e:
+            logger.error(f"Failed to decrypt token for user {current_user.id}: {e}")
+            # Fall through to system token
+
+    # Return system token info (default)
     import os
     system_api_key = os.getenv('ANTHROPIC_API_KEY')
     if system_api_key:
-        # Return system token info (all users use Railway token)
         return LLMTokenResponse(
             has_token=True,
             provider='anthropic',
-            token_suffix=f"****{system_api_key[-4:]}",
-            created_at=None  # System token doesn't have creation date
+            token_suffix=None,  # Don't expose system token details
+            token_source='system',
+            created_at=None
         )
-    else:
-        # Railway token not configured
-        return LLMTokenResponse(has_token=False)
+
+    # No token available at all
+    return LLMTokenResponse(has_token=False, token_source='system')
+
+@router.patch("/token/preference")
+async def update_token_preference(
+    preference: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update user's preferred token source (system or custom)."""
+
+    token_source = preference.get('token_source')
+    if token_source not in ['system', 'custom']:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid token_source. Must be 'system' or 'custom'"
+        )
+
+    try:
+        # Update preference
+        current_user.active_llm_token_source = token_source
+        current_user.updated_at = datetime.now()
+
+        db.commit()
+        db.refresh(current_user)
+
+        logger.info(f"User {current_user.id} updated token preference to: {token_source}")
+
+        return {"message": f"Token preference updated to {token_source}", "token_source": token_source}
+
+    except Exception as e:
+        logger.error(f"Failed to update token preference for user {current_user.id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update token preference"
+        )
 
 @router.delete("/token")
 async def delete_llm_token(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Delete user's stored LLM token. Disabled for Railway deployment."""
-    # Railway deployment uses shared system token - no individual user tokens allowed
-    raise HTTPException(
-        status_code=status.HTTP_403_FORBIDDEN,
-        detail="Cannot delete system LLM token in Railway deployment."
-    )
-    
+    """Delete user's custom LLM token and revert to system token."""
+
     if not current_user.has_llm_token():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="No LLM token found"
         )
-    
+
     try:
-        # Clear the token fields
+        # Clear the custom token and switch back to system
         current_user.llm_token = None
         current_user.llm_provider = None
+        current_user.active_llm_token_source = 'system'
         current_user.updated_at = datetime.now()
-        
+
         db.commit()
-        
-        logger.info(f"LLM token deleted for user {current_user.id}")
-        
-        return {"message": "LLM token deleted successfully"}
+
+        logger.info(f"Custom LLM token deleted for user {current_user.id}, switched to system token")
+
+        return {"message": "Custom LLM token deleted successfully, switched to system token"}
         
     except Exception as e:
         logger.error(f"Failed to delete LLM token for user {current_user.id}: {e}")

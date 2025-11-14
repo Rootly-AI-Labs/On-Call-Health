@@ -95,16 +95,8 @@ class NotificationService:
 
         # Build notification message
         user_name = user.name or user.email
-        title = "New survey response received"
-        message = f"{user_name} submitted a burnout survey response."
-
-        # Set action URL based on whether there's an analysis
-        if analysis:
-            action_url = f"/dashboard?analysis={analysis.id}"
-            action_text = "View Analysis"
-        else:
-            action_url = "/dashboard"
-            action_text = "View Dashboard"
+        title = "Survey received"
+        message = f"A burnout survey was sent to you via Slack DM. Please take 2 minutes to complete it."
 
         for admin in org_admins:
             notification = UserNotification(
@@ -113,8 +105,8 @@ class NotificationService:
                 type='survey',
                 title=title,
                 message=message,
-                action_url=action_url,
-                action_text=action_text,
+                action_url=None,
+                action_text=None,
                 analysis_id=analysis.id if analysis else None,
                 priority='normal'
             )
@@ -260,6 +252,20 @@ class NotificationService:
 
         return False
 
+    def clear_all_notifications(self, user: User) -> int:
+        """Clear all notifications for a user by marking them as dismissed."""
+        notifications = self.db.query(UserNotification).filter(
+            ((UserNotification.user_id == user.id) |
+             (UserNotification.email == user.email)),
+            UserNotification.status != 'dismissed'
+        ).all()
+
+        for notification in notifications:
+            notification.status = 'dismissed'
+
+        self.db.commit()
+        return len(notifications)
+
     def create_survey_delivery_notification(
         self,
         organization_id: int,
@@ -285,9 +291,8 @@ class NotificationService:
         ).all()
 
         if is_manual and triggered_by:
-            title = "Survey delivery sent"
-            triggerer_name = triggered_by.name or triggered_by.email
-            message = f"{triggerer_name} sent burnout surveys to {recipient_count} team members via Slack."
+            title = "Scheduled surveys sent"
+            message = f"Daily burnout surveys were automatically sent to {recipient_count} team members via Slack."
         else:
             title = "Scheduled surveys sent"
             message = f"Daily burnout surveys were automatically sent to {recipient_count} team members via Slack."
@@ -299,6 +304,8 @@ class NotificationService:
                 type='survey',
                 title=title,
                 message=message,
+                action_url=None,
+                action_text=None,
                 priority='low' if not is_manual else 'normal'
             )
             notifications.append(notification)
@@ -325,8 +332,8 @@ class NotificationService:
             title = "Survey reminder sent"
             message = "A reminder to complete your burnout survey was sent to you via Slack DM."
         else:
-            title = "Survey received"
-            message = "A burnout survey was sent to you via Slack DM. Please take 2 minutes to complete it."
+            # Don't create notification for survey received - user gets it in Slack
+            return None
 
         notification = UserNotification(
             user_id=user_id,
@@ -334,8 +341,8 @@ class NotificationService:
             type='survey',
             title=title,
             message=message,
-            action_url="/dashboard",
-            action_text="View Dashboard",
+            action_url=None,
+            action_text=None,
             priority='normal'
         )
         self.db.add(notification)

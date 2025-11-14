@@ -18,7 +18,7 @@ class UserBurnoutReport(Base):
     organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False)
     analysis_id = Column(Integer, ForeignKey("analyses.id"), nullable=True)  # Optional - for linking to specific analysis
 
-    # Core self-reported scores (0-100 scale to match CBI)
+    # Core self-reported scores (0-100 scale to match OCB)
     self_reported_score = Column(Integer, nullable=False)  # 0-100 burnout score
     energy_level = Column(Integer, nullable=False)  # 1-5 scale (Very Low to Very High)
 
@@ -73,7 +73,7 @@ class UserBurnoutReport(Base):
 
     @property
     def risk_level(self):
-        """Calculate risk level from self-reported score using CBI ranges."""
+        """Calculate risk level from self-reported score using OCB ranges."""
         if self.self_reported_score < 25:
             return 'healthy'
         elif self.self_reported_score < 50:

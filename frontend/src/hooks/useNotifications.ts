@@ -39,10 +39,10 @@ export function useNotifications() {
         setHasMore(data.has_more || false)
         setOffset(currentOffset + data.notifications.length)
       } else {
-        console.error('Failed to fetch notifications:', response.status)
+        // Silently fail - notifications are not critical
       }
     } catch (error) {
-      console.error('Error fetching notifications:', error)
+      // Silently fail - notifications are not critical
     } finally {
       setIsLoading(false)
     }
@@ -142,6 +142,35 @@ export function useNotifications() {
     }
   }
 
+  // Clear all notifications
+  const clearAll = async () => {
+    try {
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+      const response = await fetch(`${API_BASE}/api/notifications/clear-all`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        }
+      })
+
+      if (response.ok) {
+        await fetchNotifications() // Refresh notifications
+        toast({
+          title: "All notifications cleared",
+          description: "All notifications have been dismissed."
+        })
+      }
+    } catch (error) {
+      console.error('Error clearing all notifications:', error)
+      toast({
+        title: "Error",
+        description: "Failed to clear all notifications.",
+        variant: "destructive"
+      })
+    }
+  }
+
   // Handle notification action (Accept invitation, View results, etc.)
   const handleAction = async (notification: Notification) => {
     if (!notification.action_url) return
@@ -176,6 +205,7 @@ export function useNotifications() {
     markAsRead,
     dismiss,
     markAllAsRead,
+    clearAll,
     handleAction
   }
 }

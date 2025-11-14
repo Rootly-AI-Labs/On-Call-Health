@@ -43,5 +43,8 @@ litellm
 anthropic
 openai
 
+# Monitoring
+newrelic
+
 # Development
 pytest

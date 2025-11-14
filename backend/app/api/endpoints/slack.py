@@ -426,10 +426,15 @@ async def test_slack_integration(
         
         # Get auth info
         auth_info = await slack_integration_oauth.test_auth(access_token)
-        
-        # Get user info
-        user_info = await slack_integration_oauth.get_user_info(access_token, integration.slack_user_id)
-        user_profile = user_info.get("user", {}).get("profile", {})
+
+        # Get user info (only if slack_user_id exists)
+        user_profile = {}
+        if integration.slack_user_id:
+            try:
+                user_info = await slack_integration_oauth.get_user_info(access_token, integration.slack_user_id)
+                user_profile = user_info.get("user", {}).get("profile", {})
+            except Exception as user_err:
+                logger.warning(f"Could not fetch user info: {user_err}")
         
         return {
             "success": True,

@@ -97,60 +97,18 @@ async def run_burnout_analysis(
         logger.info(f"ENDPOINT_DEBUG: Entered run_burnout_analysis for integration {request.integration_id}")
         logger.info(f"ENDPOINT_DEBUG: Request params - include_github: {request.include_github}, include_slack: {request.include_slack}")
         
-        # Handle beta integrations vs regular integrations
-        integration = None
-        if isinstance(request.integration_id, str) and request.integration_id.startswith("beta-"):
-            # Handle beta integration
-            beta_rootly_token = os.getenv('ROOTLY_API_TOKEN')
-            beta_pagerduty_token = os.getenv('PAGERDUTY_API_TOKEN')
-            
-            if request.integration_id == "beta-rootly" and beta_rootly_token:
-                # Use EXACT same name as /rootly/integrations endpoint - do NOT override with API call
-                from types import SimpleNamespace
-                
-                # Use the exact same hardcoded name that appears in the integrations dropdown
-                integration_display_name = "Rootly (Beta Access)"
-                
-                integration = SimpleNamespace(
-                    id="beta-rootly",
-                    api_token=beta_rootly_token,
-                    platform="rootly",
-                    name=integration_display_name,  # Use exact same name as frontend
-                    organization_name=integration_display_name
-                )
-            elif request.integration_id == "beta-pagerduty" and beta_pagerduty_token:
-                # Use EXACT same name as /pagerduty/integrations endpoint - do NOT override with API call
-                from types import SimpleNamespace
-                
-                # Use the exact same hardcoded name that appears in the integrations dropdown
-                integration_display_name = "PagerDuty (Beta Access)"
-                
-                integration = SimpleNamespace(
-                    id="beta-pagerduty",
-                    api_token=beta_pagerduty_token,
-                    platform="pagerduty",
-                    name=integration_display_name,  # Use exact same name as frontend
-                    organization_name=integration_display_name
-                )
-            
-            if not integration:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Beta integration not available"
-                )
-        else:
-            # Handle regular database integration
-            integration = db.query(RootlyIntegration).filter(
-                RootlyIntegration.id == request.integration_id,
-                RootlyIntegration.user_id == current_user.id,
-                RootlyIntegration.is_active == True
-            ).first()
-            
-            if not integration:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Integration not found or not active"
-                )
+        # Get the integration from database
+        integration = db.query(RootlyIntegration).filter(
+            RootlyIntegration.id == request.integration_id,
+            RootlyIntegration.user_id == current_user.id,
+            RootlyIntegration.is_active == True
+        ).first()
+
+        if not integration:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Integration not found or not active"
+            )
         
         # Check API permissions before starting analysis using customer's token
         check_token = integration.api_token
@@ -186,23 +144,20 @@ async def run_burnout_analysis(
             permission_warnings = [f"Permission check failed: {str(e)}"]
         
         # Create new analysis record
-        # For beta integrations, store a special marker in the integration_id field
-        db_integration_id = None if isinstance(integration.id, str) else integration.id
-        
         # DEBUG: Log what integration data we're storing
         logger.info(f"🔍 STORING INTEGRATION DATA: name='{integration.name}', platform='{integration.platform}', id='{integration.id}'")
         logger.info(f"🔍 Integration object type: {type(integration)}, has organization_name: {hasattr(integration, 'organization_name')}")
         if hasattr(integration, 'organization_name'):
             logger.info(f"🔍 Integration organization_name: '{integration.organization_name}'")
-        
+
         analysis = Analysis(
             user_id=current_user.id,
             organization_id=current_user.organization_id,  # Add organization_id for multi-tenancy
-            rootly_integration_id=db_integration_id,  # Null for beta integrations
+            rootly_integration_id=integration.id,
 
-            # NEW: Store integration details directly for simple frontend display
-            integration_name=integration.name,  # "PagerDuty (Beta Access)", "Failwhale Tales", etc.
-            platform=integration.platform,      # "rootly", "pagerduty"
+            # Store integration details directly for simple frontend display
+            integration_name=integration.name,
+            platform=integration.platform,
 
             time_range=request.time_range,
             status="pending",
@@ -211,7 +166,6 @@ async def run_burnout_analysis(
                 "include_github": request.include_github,
                 "include_slack": request.include_slack,
                 "permission_warnings": permission_warnings,
-                "beta_integration_id": integration.id if isinstance(integration.id, str) else None,
                 "organization_name": integration.organization_name if hasattr(integration, 'organization_name') else integration.name
             }
         )
@@ -2193,7 +2147,7 @@ async def get_member_daily_health(
                         day_incident_count = min(random.randint(1, 4), remaining_incidents)
                         incidents_distributed += day_incident_count
                         has_data = True
-                        # Calculate burnout score based on incident count (CONSISTENT with CBI)
+                        # Calculate burnout score based on incident count (CONSISTENT with OBC)
                         # Higher incidents = higher burnout score
                         health_score = min(70, day_incident_count * 15)
                 
@@ -2202,7 +2156,7 @@ async def get_member_daily_health(
                     day_incident_count = min(random.randint(1, 4), remaining_incidents)
                     incidents_distributed += day_incident_count  
                     has_data = True
-                    # Calculate burnout score based on incident count (CONSISTENT with CBI)  
+                    # Calculate burnout score based on incident count (CONSISTENT with OBC)  
                     # Higher incidents = higher burnout score
                     health_score = min(70, day_incident_count * 15)
             
@@ -2300,7 +2254,7 @@ async def get_member_daily_health(
             else:
                 # NO FAKE DATA: Only use real incident data
                 # If no incidents, use baseline low burnout score (no randomization)
-                # CONSISTENT with CBI methodology: higher = more burnout
+                # CONSISTENT with OBC methodology: higher = more burnout
                 health_score = 0
                 logger.error(f"🚨 FALLBACK_SCORE: {member_email} on {date_str} - no incidents, using score 0")
                 
@@ -2443,7 +2397,12 @@ async def run_analysis_task(
     from datetime import datetime
     import logging
     import os
-    
+    import sys
+
+    # Force output to stderr to ensure we see it
+    sys.stderr.write(f"\n🔥🔥🔥 BACKGROUND TASK STARTED: Analysis {analysis_id} 🔥🔥🔥\n")
+    sys.stderr.flush()
+
     logger = logging.getLogger(__name__)
     logger.info(f"BACKGROUND_TASK: Starting analysis {analysis_id} with timeout mechanism")
     logger.info(f"BACKGROUND_TASK: GitHub/Slack params - include_github: {include_github}, include_slack: {include_slack}")
@@ -2596,28 +2555,35 @@ async def run_analysis_task(
             # Ensure analyzer_service is properly initialized
             if not analyzer_service:
                 raise Exception("Analyzer service is None - initialization failed")
-            
+
             # Log analyzer type for debugging
             logger.info(f"BACKGROUND_TASK: Using analyzer type: {type(analyzer_service).__name__}")
-            
+
             # Call UnifiedBurnoutAnalyzer
             logger.info(f"BACKGROUND_TASK: Calling UnifiedBurnoutAnalyzer.analyze_burnout()")
             logger.info(f"BACKGROUND_TASK: Analysis parameters - time_range_days={time_range}, include_weekends={include_weekends}, user_id={user_id}, analysis_id={analysis_id}")
-            
-            # Add progress tracking
-            logger.info(f"BACKGROUND_TASK: Starting analysis execution at {datetime.now()}")
-            
-            results = await asyncio.wait_for(
-                analyzer_service.analyze_burnout(
-                    time_range_days=time_range,
-                    include_weekends=include_weekends,
-                    user_id=user_id,
-                    analysis_id=analysis_id
-                ),
-                timeout=480.0  # 8 minutes - aggressive timeout to fail faster
-            )
-            
-            logger.info(f"BACKGROUND_TASK: Analysis execution completed at {datetime.now()}")
+
+            logger.info(f"⏳ Analysis {analysis_id}: Starting analyze_burnout()")
+            try:
+                results = await asyncio.wait_for(
+                    analyzer_service.analyze_burnout(
+                        time_range_days=time_range,
+                        include_weekends=include_weekends,
+                        user_id=user_id,
+                        analysis_id=analysis_id
+                    ),
+                    timeout=900.0  # 15 minutes timeout
+                )
+                logger.info(f"✅ Analysis {analysis_id}: analyze_burnout() completed")
+            except Exception as analyze_error:
+                logger.error(f"❌ Analysis {analysis_id} failed: {str(analyze_error)}")
+                raise
+
+            # Check if analysis was deleted during execution
+            analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
+            if not analysis:
+                logger.info(f"BACKGROUND_TASK: Analysis {analysis_id} was deleted during execution, stopping")
+                return
             
             # Validate results
             if not results:
@@ -2649,15 +2615,17 @@ async def run_analysis_task(
                 logger.warning(f"A/B testing monitoring failed: {monitoring_error}")
             
             # Update analysis with results
+            logger.info(f"💾 Analysis {analysis_id}: Saving results to database")
             analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
             if analysis:
                 analysis.status = "completed"
                 analysis.results = results
                 analysis.completed_at = datetime.now()
+                logger.info(f"💾 Analysis {analysis_id}: Committing to database")
                 db.commit()
-                logger.info(f"BACKGROUND_TASK: Successfully saved results for analysis {analysis_id}")
+                logger.info(f"✅ Analysis {analysis_id}: Successfully saved and committed")
             else:
-                logger.error(f"BACKGROUND_TASK: Analysis {analysis_id} not found when trying to save results")
+                logger.error(f"❌ Analysis {analysis_id}: Not found when trying to save results")
                 
         except asyncio.TimeoutError:
             # Handle timeout
@@ -2665,20 +2633,27 @@ async def run_analysis_task(
             logger.error(f"BACKGROUND_TASK: Timeout occurred at {datetime.now()}")
             logger.error(f"BACKGROUND_TASK: Analysis was stuck - likely during incident data collection phase (causing 85% progress hang)")
             logger.error(f"BACKGROUND_TASK: This typically happens when Rootly API pagination takes too long")
-            
+
             analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
-            if analysis:
-                analysis.status = "failed"
-                analysis.error_message = "Analysis timed out after 8 minutes - likely stuck during incident data collection (85% progress hang). Try with a shorter time range or check Rootly API connectivity."
-                analysis.completed_at = datetime.now()
-                db.commit()
-                logger.info(f"BACKGROUND_TASK: Updated analysis {analysis_id} status to failed due to timeout")
+            if not analysis:
+                logger.info(f"BACKGROUND_TASK: Analysis {analysis_id} was deleted, not updating status")
+                return
+
+            analysis.status = "failed"
+            analysis.error_message = "Analysis timed out after 8 minutes - likely stuck during incident data collection (85% progress hang). Try with a shorter time range or check Rootly API connectivity."
+            analysis.completed_at = datetime.now()
+            db.commit()
+            logger.info(f"BACKGROUND_TASK: Updated analysis {analysis_id} status to failed due to timeout")
                 
         except Exception as analysis_error:
             # Handle analysis-specific errors
             logger.error(f"BACKGROUND_TASK: Analysis {analysis_id} failed: {analysis_error}")
-            
+
             analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
+            if not analysis:
+                logger.info(f"BACKGROUND_TASK: Analysis {analysis_id} was deleted, not updating status")
+                return
+
             if analysis:
                 # Check if this is a permission error - if so, fail immediately
                 error_message = str(analysis_error)

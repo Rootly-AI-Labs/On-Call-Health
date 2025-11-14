@@ -399,9 +399,56 @@ class MigrationRunner:
                     """
                 ]
             },
+            {
+                "name": "011_add_survey_recipients_to_integrations",
+                "description": "Add survey_recipients JSON field to rootly_integrations for storing selected survey recipients",
+                "sql": [
+                    """
+                    ALTER TABLE rootly_integrations
+                    ADD COLUMN IF NOT EXISTS survey_recipients JSON
+                    """
+                ]
+            },
+            {
+                "name": "012_ensure_user_correlation_platform_fields",
+                "description": "Ensure github_username and slack_user_id fields exist in user_correlations for analytics",
+                "sql": [
+                    """
+                    ALTER TABLE user_correlations
+                    ADD COLUMN IF NOT EXISTS github_username VARCHAR(100)
+                    """,
+                    """
+                    ALTER TABLE user_correlations
+                    ADD COLUMN IF NOT EXISTS slack_user_id VARCHAR(20)
+                    """,
+                    """
+                    CREATE INDEX IF NOT EXISTS idx_user_correlations_github_username
+                    ON user_correlations(github_username)
+                    WHERE github_username IS NOT NULL
+                    """,
+                    """
+                    CREATE INDEX IF NOT EXISTS idx_user_correlations_slack_user_id
+                    ON user_correlations(slack_user_id)
+                    WHERE slack_user_id IS NOT NULL
+                    """
+                ]
+            },
+            {
+                "name": "013_add_active_llm_token_source",
+                "description": "Add active_llm_token_source field to track which token (system or custom) is active",
+                "sql": [
+                    """
+                    ALTER TABLE users
+                    ADD COLUMN IF NOT EXISTS active_llm_token_source VARCHAR(20) DEFAULT 'system'
+                    """,
+                    """
+                    COMMENT ON COLUMN users.active_llm_token_source IS 'Which LLM token is currently active: system or custom'
+                    """
+                ]
+            },
             # Add future migrations here with incrementing numbers
             # {
-            #     "name": "009_add_user_preferences",
+            #     "name": "011_add_user_preferences",
             #     "description": "Add user preferences table",
             #     "sql": ["CREATE TABLE IF NOT EXISTS user_preferences (...)"]
             # }

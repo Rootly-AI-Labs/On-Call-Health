@@ -13,7 +13,7 @@ from collections import defaultdict
 
 from ..core.rootly_client import RootlyAPIClient
 from ..core.pagerduty_client import PagerDutyAPIClient
-from ..core.cbi_config import calculate_composite_cbi_score, calculate_personal_burnout, calculate_work_related_burnout, generate_cbi_score_reasoning
+from ..core.ocb_config import calculate_composite_ocb_score, calculate_personal_burnout, calculate_work_related_burnout, generate_ocb_score_reasoning
 from .ai_burnout_analyzer import get_ai_burnout_analyzer
 from .github_correlation_service import GitHubCorrelationService
 
@@ -100,7 +100,7 @@ class UnifiedBurnoutAnalyzer:
         self.github_token = github_token
         self.slack_token = slack_token
 
-        # Using Copenhagen Burnout Inventory (CBI) methodology
+        # Using Copenhagen Burnout Inventory (OCB) methodology
         logger.info("Unified analyzer using Copenhagen Burnout Inventory methodology")
         self.organization_name = organization_name
 
@@ -1214,8 +1214,8 @@ class UnifiedBurnoutAnalyzer:
         
         # If no incidents, return minimal analysis
         if not incidents:
-            # Calculate zero-incident CBI metrics for consistency
-            zero_cbi_metrics = {
+            # Calculate zero-incident OCB metrics for consistency
+            zero_ocb_metrics = {
                 'incident_frequency': 0,
                 'incident_severity': 0,
                 'response_urgency': 0,
@@ -1226,17 +1226,17 @@ class UnifiedBurnoutAnalyzer:
                 'oncall_burden': 0
             }
             
-            # Calculate CBI dimensions for zero incidents
-            personal_cbi = calculate_personal_burnout(zero_cbi_metrics)
-            work_cbi = calculate_work_related_burnout(zero_cbi_metrics) 
-            composite_cbi = calculate_composite_cbi_score(personal_cbi['score'], work_cbi['score'])
+            # Calculate OCB dimensions for zero incidents
+            personal_ocb = calculate_personal_burnout(zero_ocb_metrics)
+            work_ocb = calculate_work_related_burnout(zero_ocb_metrics) 
+            composite_ocb = calculate_composite_ocb_score(personal_ocb['score'], work_ocb['score'])
             
-            # Generate reasoning for zero-incident CBI scores
-            cbi_reasoning = generate_cbi_score_reasoning(
-                personal_cbi, 
-                work_cbi, 
-                composite_cbi,
-                zero_cbi_metrics
+            # Generate reasoning for zero-incident OCB scores
+            ocb_reasoning = generate_ocb_score_reasoning(
+                personal_ocb, 
+                work_ocb, 
+                composite_ocb,
+                zero_ocb_metrics
             )
             
             return {
@@ -1244,7 +1244,7 @@ class UnifiedBurnoutAnalyzer:
                 "user_name": user_name,
                 "user_email": user_email,
                 "burnout_score": 0,
-                "cbi_score": round(min(100, composite_cbi['composite_score']), 2),  # Cap display at 100 for UI
+                "ocb_score": round(min(100, composite_ocb['composite_score']), 2),  # Cap display at 100 for UI
                 "risk_level": "low",
                 "incident_count": 0,
                 "factors": {
@@ -1259,12 +1259,12 @@ class UnifiedBurnoutAnalyzer:
                     "work_related_burnout": 0,
                     "client_related_burnout": 0
                 },
-                "cbi_breakdown": {  # ✅ Add CBI breakdown for consistency
-                    "personal": round(personal_cbi['score'], 2),
-                    "work_related": round(work_cbi['score'], 2),
-                    "interpretation": composite_cbi['interpretation']
+                "ocb_breakdown": {  # ✅ Add OCB breakdown for consistency
+                    "personal": round(personal_ocb['score'], 2),
+                    "work_related": round(work_ocb['score'], 2),
+                    "interpretation": composite_ocb['interpretation']
                 },
-                "cbi_reasoning": cbi_reasoning,  # ✅ Add explanations
+                "ocb_reasoning": ocb_reasoning,  # ✅ Add explanations
                 "metrics": {
                     "incidents_per_week": 0,
                     "after_hours_percentage": 0,
@@ -1300,7 +1300,7 @@ class UnifiedBurnoutAnalyzer:
         # Calculate confidence intervals and data quality
         confidence = self._calculate_confidence_intervals(metrics, incidents, github_data, slack_data, user_tz)
         
-        # CBI DEBUG LOGGING - Removed to reduce Railway log noise
+        # OCB DEBUG LOGGING - Removed to reduce Railway log noise
         
         # Calculate overall burnout score using three-factor methodology (equal weighting)
         burnout_score = (dimensions["personal_burnout"] * 0.333 + 
@@ -1315,8 +1315,8 @@ class UnifiedBurnoutAnalyzer:
         # Determine risk level
         risk_level = self._determine_risk_level(burnout_score)
         
-        # Calculate CBI (Copenhagen Burnout Inventory) score
-        # Map existing metrics to CBI format with severity weighting
+        # Calculate OCB (Copenhagen Burnout Inventory) score
+        # Map existing metrics to OCB format with severity weighting
         severity_dist = metrics.get('severity_distribution', {})
 
         # Calculate research-based impact factors
@@ -1426,8 +1426,8 @@ class UnifiedBurnoutAnalyzer:
         
         logger.info(f"🔍 SEVERITY_WEIGHTED: User has {severity_weighted_total:.1f} severity-weighted incidents total ({severity_weighted_per_week:.1f}/week)")
         
-        # Apply Rootly's tiered scaling to all CBI metrics
-        cbi_metrics = {
+        # Apply Rootly's tiered scaling to all OCB metrics
+        ocb_metrics = {
             # Personal burnout factors - using Rootly's tiered approach
             'work_hours_trend': apply_incident_tiers(incidents_per_week) * 10,      # Scale to 0-100
             'weekend_work': after_hours_pct * 2,                                           # NO CAP: Extreme after-hours can exceed 100%
@@ -1444,25 +1444,25 @@ class UnifiedBurnoutAnalyzer:
             'oncall_burden': apply_rootly_incident_tiers(severity_weighted_per_week) * 10  # FIXED: Use severity-weighted incidents for proper SEV1 impact
         }
         
-        # 🐛 DEBUG: Log CBI metrics for troubleshooting zero scores
-        logger.info(f"🐛 CBI METRICS DEBUG for {user_name}:")
+        # 🐛 DEBUG: Log OCB metrics for troubleshooting zero scores
+        logger.info(f"🐛 OCB METRICS DEBUG for {user_name}:")
         logger.info(f"   - Incidents: {len(incidents)}")
         logger.info(f"   - incidents_per_week: {incidents_per_week}")
         logger.info(f"   - critical_incidents: {critical_incidents}, high_incidents: {high_incidents}")
         logger.info(f"   - severity_dist: {severity_dist}")
-        logger.info(f"   - CBI metrics: {cbi_metrics}")
+        logger.info(f"   - OCB metrics: {ocb_metrics}")
         
-        # Check if all CBI metrics are 0
-        non_zero_metrics = {k: v for k, v in cbi_metrics.items() if v > 0}
+        # Check if all OCB metrics are 0
+        non_zero_metrics = {k: v for k, v in ocb_metrics.items() if v > 0}
         if not non_zero_metrics:
-            logger.warning(f"⚠️ ALL CBI metrics are 0 for {user_name} with {len(incidents)} incidents!")
+            logger.warning(f"⚠️ ALL OCB metrics are 0 for {user_name} with {len(incidents)} incidents!")
 
-        # Calculate CBI dimensions
-        personal_cbi = calculate_personal_burnout(cbi_metrics)
-        work_cbi = calculate_work_related_burnout(cbi_metrics)
-        composite_cbi = calculate_composite_cbi_score(personal_cbi['score'], work_cbi['score'])
+        # Calculate OCB dimensions
+        personal_ocb = calculate_personal_burnout(ocb_metrics)
+        work_ocb = calculate_work_related_burnout(ocb_metrics)
+        composite_ocb = calculate_composite_ocb_score(personal_ocb['score'], work_ocb['score'])
         
-        # Prepare enhanced metrics with research insights for CBI reasoning
+        # Prepare enhanced metrics with research insights for OCB reasoning
         enhanced_metrics = metrics.copy()
         enhanced_metrics['time_impact_analysis'] = time_impacts
         enhanced_metrics['recovery_analysis'] = recovery_data
@@ -1472,11 +1472,11 @@ class UnifiedBurnoutAnalyzer:
             "compound_factor": self._calculate_compound_trauma_factor(severity_dist.get('sev0', 0) + severity_dist.get('sev1', 0))
         }
 
-        # Generate reasoning for the CBI scores
-        cbi_reasoning = generate_cbi_score_reasoning(
-            personal_cbi,
-            work_cbi,
-            composite_cbi,
+        # Generate reasoning for the OCB scores
+        ocb_reasoning = generate_ocb_score_reasoning(
+            personal_ocb,
+            work_ocb,
+            composite_ocb,
             enhanced_metrics  # Pass enhanced metrics with research insights
         )
         
@@ -1485,17 +1485,17 @@ class UnifiedBurnoutAnalyzer:
             "user_name": user_name,
             "user_email": user_email,
             "burnout_score": round(burnout_score, 2),
-            "cbi_score": round(min(100, composite_cbi['composite_score']), 2),  # Cap display at 100 for UI
+            "ocb_score": round(min(100, composite_ocb['composite_score']), 2),  # Cap display at 100 for UI
             "risk_level": risk_level,
             "incident_count": len(incidents),
             "factors": factors,
             "burnout_dimensions": dimensions,
-            "cbi_breakdown": {  # Add CBI breakdown for comparison
-                "personal": round(personal_cbi['score'], 2),
-                "work_related": round(work_cbi['score'], 2),
-                "interpretation": composite_cbi['interpretation']
+            "ocb_breakdown": {  # Add OCB breakdown for comparison
+                "personal": round(personal_ocb['score'], 2),
+                "work_related": round(work_ocb['score'], 2),
+                "interpretation": composite_ocb['interpretation']
             },
-            "cbi_reasoning": cbi_reasoning,  # Add explanations for the score
+            "ocb_reasoning": ocb_reasoning,  # Add explanations for the score
             "metrics": metrics,
             "confidence": confidence,  # Add confidence intervals and data quality
             # Research-based insights
@@ -2121,13 +2121,13 @@ class UnifiedBurnoutAnalyzer:
         # GitHub (15%) and Slack (15%) components to be added later
         
         # Personal Burnout (33.3% of final score)
-        personal_burnout = self._calculate_personal_burnout_cbi(metrics)
+        personal_burnout = self._calculate_personal_burnout_ocb(metrics)
         
         # Work-Related Burnout (33.3% of final score)  
-        work_related_burnout = self._calculate_work_burnout_cbi(metrics)
+        work_related_burnout = self._calculate_work_burnout_ocb(metrics)
         
         # Accomplishment Burnout (33.4% of final score)
-        accomplishment_burnout = self._calculate_accomplishment_burnout_cbi(metrics)
+        accomplishment_burnout = self._calculate_accomplishment_burnout_ocb(metrics)
         
         # Ensure all dimension values are numeric before rounding
         safe_personal_burnout = personal_burnout if personal_burnout is not None else 0.0
@@ -2140,8 +2140,8 @@ class UnifiedBurnoutAnalyzer:
             "accomplishment_burnout": round(safe_accomplishment_burnout, 2)
         }
     
-    def _calculate_personal_burnout_cbi(self, metrics: Dict[str, Any]) -> float:
-        """Calculate Personal Burnout from incident data using CBI methodology (0-10 scale)."""
+    def _calculate_personal_burnout_ocb(self, metrics: Dict[str, Any]) -> float:
+        """Calculate Personal Burnout from incident data using OCB methodology (0-10 scale)."""
         # NEW: Much more aggressive incident frequency scaling based on research
         ipw = metrics.get("incidents_per_week", 0)
         ipw = float(ipw) if ipw is not None else 0.0
@@ -2156,7 +2156,7 @@ class UnifiedBurnoutAnalyzer:
         else:  # 7+ IPW = critical burnout risk
             incident_frequency_score = 8 + min(2.0, (ipw - 7) / 4)  # 8-10 range (critical)
             
-        logger.info(f"Personal burnout CBI: {ipw} IPW → frequency_score={incident_frequency_score}")
+        logger.info(f"Personal burnout OCB: {ipw} IPW → frequency_score={incident_frequency_score}")
         
         # After hours score
         ahp = metrics.get("after_hours_percentage", 0)
@@ -2175,8 +2175,8 @@ class UnifiedBurnoutAnalyzer:
         
         return weighted_score
     
-    def _calculate_work_burnout_cbi(self, metrics: Dict[str, Any]) -> float:
-        """Calculate Work-Related Burnout from incident data using CBI methodology (0-10 scale)."""
+    def _calculate_work_burnout_ocb(self, metrics: Dict[str, Any]) -> float:
+        """Calculate Work-Related Burnout from incident data using OCB methodology (0-10 scale)."""
         # Use the NEW research-based severity weights
         severity_dist = metrics.get("severity_distribution", {}) or {}
         
@@ -2220,7 +2220,7 @@ class UnifiedBurnoutAnalyzer:
         else:  # Low severity load
             escalation_score = min(4.0, total_severity_impact / 12.5)
             
-        logger.info(f"Work burnout CBI: {total_incidents} incidents, "
+        logger.info(f"Work burnout OCB: {total_incidents} incidents, "
                         f"severity_impact={total_severity_impact}, escalation_score={escalation_score}")
         
         # Remove the old logic below and use the new severity-weighted calculation
@@ -2243,8 +2243,8 @@ class UnifiedBurnoutAnalyzer:
         # Use real metrics only
         return (escalation_score * 0.4 + response_stress * 0.3 + volume_stress * 0.3)
     
-    def _calculate_accomplishment_burnout_cbi(self, metrics: Dict[str, Any]) -> float:
-        """Calculate Accomplishment Burnout from incident data using CBI methodology (0-10 scale)."""
+    def _calculate_accomplishment_burnout_ocb(self, metrics: Dict[str, Any]) -> float:
+        """Calculate Accomplishment Burnout from incident data using OCB methodology (0-10 scale)."""
         # Use REAL data only - calculate based on actual performance
         # Resolution effectiveness based on incident data
         total_incidents = metrics.get("total_incidents", 0) 
@@ -2597,19 +2597,19 @@ class UnifiedBurnoutAnalyzer:
         eligible_members = members_with_incidents  # Only those with actual incident activity
         logger.info(f"🏥 TEAM_HEALTH: Filtering to {len(eligible_members)} members with incidents (from {len(member_analyses)} total)")
         
-        # Calculate average burnout for ELIGIBLE members only - prioritize CBI scores when available  
-        cbi_scores = [m.get("cbi_score") for m in eligible_members if m and isinstance(m, dict) and m.get("cbi_score") is not None]
+        # Calculate average burnout for ELIGIBLE members only - prioritize OCB scores when available  
+        ocb_scores = [m.get("ocb_score") for m in eligible_members if m and isinstance(m, dict) and m.get("ocb_score") is not None]
         
-        if cbi_scores and len(cbi_scores) > 0:
-            # Use CBI scores (0-100 scale where higher = more burnout)
-            avg_burnout = sum(cbi_scores) / len(cbi_scores)
-            using_cbi = True
-            logger.info(f"Team health calculation using CBI scores: avg={avg_burnout:.1f}, count={len(cbi_scores)}")
+        if ocb_scores and len(ocb_scores) > 0:
+            # Use OCB scores (0-100 scale where higher = more burnout)
+            avg_burnout = sum(ocb_scores) / len(ocb_scores)
+            using_ocb = True
+            logger.info(f"Team health calculation using OCB scores: avg={avg_burnout:.1f}, count={len(ocb_scores)}")
         else:
             # Fallback to legacy burnout scores (0-10 scale where higher = more burnout)
             legacy_scores = [m.get("burnout_score", 0) for m in eligible_members if m and isinstance(m, dict) and m.get("burnout_score") is not None]
             avg_burnout = sum(legacy_scores) / len(legacy_scores) if legacy_scores and len(legacy_scores) > 0 else 0
-            using_cbi = False
+            using_ocb = False
             logger.info(f"Team health calculation using legacy scores: avg={avg_burnout:.1f}, count={len(legacy_scores)}")
         
         # Count risk levels (updated for 4-tier system) - ONLY include eligible members with incidents
@@ -2623,11 +2623,11 @@ class UnifiedBurnoutAnalyzer:
                     risk_dist["low"] += 1
         
         # Calculate overall health score using appropriate scale
-        if using_cbi:
-            # CBI scoring (0-100 where higher = more burnout)
-            # Store raw CBI score as overall_score for frontend consumption
+        if using_ocb:
+            # OCB scoring (0-100 where higher = more burnout)
+            # Store raw OCB score as overall_score for frontend consumption
             overall_score = avg_burnout
-            logger.info(f"Using raw CBI score as overall_score: {overall_score}")
+            logger.info(f"Using raw OCB score as overall_score: {overall_score}")
         else:
             # Legacy scoring - convert 0-10 burnout to 0-10 health scale (inverse)
             overall_score = 10 - avg_burnout
@@ -2635,8 +2635,8 @@ class UnifiedBurnoutAnalyzer:
             logger.info(f"Using legacy health calculation: burnout={avg_burnout} -> health={overall_score}")
         
         # Determine health status based on scoring method
-        if using_cbi:
-            # CBI scoring (0-100 where higher = more burnout)
+        if using_ocb:
+            # OCB scoring (0-100 where higher = more burnout)
             if overall_score < 25:
                 health_status = "excellent"  # Low/minimal burnout
             elif overall_score < 50:
@@ -2645,7 +2645,7 @@ class UnifiedBurnoutAnalyzer:
                 health_status = "fair"       # Moderate burnout risk
             else:
                 health_status = "poor"       # High/severe burnout risk
-            logger.info(f"CBI health status: score={overall_score} -> {health_status}")
+            logger.info(f"OCB health status: score={overall_score} -> {health_status}")
         else:
             # Legacy scoring (0-10 health scale where higher = better health)
             if overall_score >= 9:  # 90%+
@@ -2662,7 +2662,7 @@ class UnifiedBurnoutAnalyzer:
         
         return {
             "overall_score": round(overall_score, 2),
-            "scoring_method": "CBI" if using_cbi else "Legacy",
+            "scoring_method": "OCB" if using_ocb else "Legacy",
             "risk_distribution": risk_dist,
             "average_burnout_score": round(avg_burnout, 2),
             "health_status": health_status,
@@ -3107,15 +3107,37 @@ class UnifiedBurnoutAnalyzer:
             Enhanced analysis with AI insights
         """
         try:
-            # Get user's LLM token from context
+            # Get user's LLM token preference from context
             from .ai_burnout_analyzer import get_user_context
-            from ..api.endpoints.llm import get_user_llm_token
-            
+            from ..api.endpoints.llm import decrypt_token
+            import os
+
             current_user = get_user_context()
             user_llm_token = None
             user_llm_provider = None
-            # Use system API key for all users (Railway environment key)
-            ai_analyzer = get_ai_burnout_analyzer()
+
+            # Check user's active token preference
+            if current_user and hasattr(current_user, 'active_llm_token_source'):
+                active_source = getattr(current_user, 'active_llm_token_source', 'system')
+
+                # If user prefers custom token and has one stored, use it
+                if active_source == 'custom' and current_user.has_llm_token():
+                    try:
+                        user_llm_token = decrypt_token(current_user.llm_token)
+                        user_llm_provider = current_user.llm_provider
+                        logger.info(f"Using user's custom {user_llm_provider} token for AI analysis")
+                        ai_analyzer = get_ai_burnout_analyzer(api_key=user_llm_token, provider=user_llm_provider)
+                    except Exception as e:
+                        logger.warning(f"Failed to use custom token, falling back to system: {e}")
+                        ai_analyzer = get_ai_burnout_analyzer()
+                else:
+                    # User prefers system token or no custom token available
+                    logger.info(f"Using system token for AI analysis (user preference: {active_source})")
+                    ai_analyzer = get_ai_burnout_analyzer()
+            else:
+                # No user context or preference, use system token
+                logger.info("No user context, using system token for AI analysis")
+                ai_analyzer = get_ai_burnout_analyzer()
             
             # Enhance each member analysis with null safety
             enhanced_members = []
@@ -3720,7 +3742,7 @@ class UnifiedBurnoutAnalyzer:
                         complete_individual_data[user_email][date_str].update(original_data)
                         complete_individual_data[user_email][date_str]["has_data"] = True
                         
-                        # Calculate individual burnout score for this user on this day (CONSISTENT with CBI)
+                        # Calculate individual burnout score for this user on this day (CONSISTENT with OCB)
                         burnout_score = self._calculate_individual_daily_health_score(
                             original_data, 
                             date_obj, 
@@ -3753,27 +3775,27 @@ class UnifiedBurnoutAnalyzer:
                 date_obj = datetime.now() - timedelta(days=days_analyzed - day_offset - 1)
                 date_str = date_obj.strftime('%Y-%m-%d')
                 
-                # Calculate team average CBI burnout score for this day
-                daily_cbi_scores = []
+                # Calculate team average OCB burnout score for this day
+                daily_ocb_scores = []
                 for user_email in complete_individual_data:
                     if date_str in complete_individual_data[user_email]:
-                        user_cbi_score = complete_individual_data[user_email][date_str].get("health_score")
-                        if user_cbi_score is not None:
-                            daily_cbi_scores.append(user_cbi_score)
+                        user_ocb_score = complete_individual_data[user_email][date_str].get("health_score")
+                        if user_ocb_score is not None:
+                            daily_ocb_scores.append(user_ocb_score)
                 
                 # Calculate team average from actual data (no hardcoded fallback)
-                if daily_cbi_scores:
-                    team_avg_cbi = int(sum(daily_cbi_scores) / len(daily_cbi_scores))
+                if daily_ocb_scores:
+                    team_avg_ocb = int(sum(daily_ocb_scores) / len(daily_ocb_scores))
                 else:
                     # If no data, calculate from team incident load
                     team_avg_incidents = sum(m.get("incident_count", 0) for m in team_analysis) / len(team_analysis) if team_analysis else 0
                     team_health_baseline = max(70, int(100 - (team_avg_incidents * 2)))
-                    team_avg_cbi = 100 - team_health_baseline  # Convert health to CBI burnout score
+                    team_avg_ocb = 100 - team_health_baseline  # Convert health to OCB burnout score
                 
                 # Add team average to each user's data for this day
                 for user_email in complete_individual_data:
                     if date_str in complete_individual_data[user_email]:
-                        complete_individual_data[user_email][date_str]["team_health"] = team_avg_cbi
+                        complete_individual_data[user_email][date_str]["team_health"] = team_avg_ocb
                         
                         # Add formatted day name for frontend display
                         complete_individual_data[user_email][date_str]["day_name"] = date_obj.strftime("%a, %b %d")
@@ -3806,9 +3828,9 @@ class UnifiedBurnoutAnalyzer:
         team_analysis: List[Dict[str, Any]]
     ) -> int:
         """
-        Calculate individual daily CBI burnout score (0-100 scale, higher = worse burnout).
+        Calculate individual daily OCB burnout score (0-100 scale, higher = worse burnout).
         
-        Aligned with main CBI Risk Level Scale:
+        Aligned with main OCB Risk Level Scale:
         - 0-24: Healthy (green)
         - 25-49: Fair (yellow) 
         - 50-74: Poor (orange)
@@ -3907,19 +3929,19 @@ class UnifiedBurnoutAnalyzer:
             # Apply bounds (0-100 range, higher = better health)
             final_health_score = max(0, min(100, int(final_health_score)))
             
-            # Convert health score to CBI burnout score for alignment with main chart
-            # Health: 100 = excellent, 0 = poor → CBI: 0 = healthy, 100 = critical
-            cbi_burnout_score = 100 - final_health_score
+            # Convert health score to OCB burnout score for alignment with main chart
+            # Health: 100 = excellent, 0 = poor → OCB: 0 = healthy, 100 = critical
+            ocb_burnout_score = 100 - final_health_score
             
-            return cbi_burnout_score
+            return ocb_burnout_score
             
         except Exception as e:
             logger.error(f"Error calculating individual daily health score for {user_email}: {e}")
-            # CBI FALLBACK: Calculate from incident count (no hardcoded values)
+            # OCB FALLBACK: Calculate from incident count (no hardcoded values)
             incident_count = daily_data.get("incident_count", 0)
             fallback_health = max(20, 90 - (incident_count * 15))  # Dynamic health fallback
-            fallback_cbi = 100 - fallback_health  # Convert to CBI burnout score
-            return fallback_cbi
+            fallback_ocb = 100 - fallback_health  # Convert to OCB burnout score
+            return fallback_ocb
     
     def _determine_health_status_from_score(self, score: float) -> str:
         """Determine health status from burnout score (SimpleBurnoutAnalyzer approach)."""

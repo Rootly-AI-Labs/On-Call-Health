@@ -44,6 +44,7 @@ export default function useDashboard() {
   const [historicalTrends, setHistoricalTrends] = useState<any>(null)
   const [loadingTrends, setLoadingTrends] = useState(false)
   const [initialDataLoaded, setInitialDataLoaded] = useState(false)
+  const [loadingAnalyses, setLoadingAnalyses] = useState(false)  // Start false to prevent hydration mismatch
   const [analysisMappings, setAnalysisMappings] = useState<any>(null)
   const [hasDataFromCache, setHasDataFromCache] = useState(false)
 
@@ -85,7 +86,21 @@ export default function useDashboard() {
   
   const router = useRouter()
   const searchParams = useSearchParams()
-  
+
+  // Flag to prevent duplicate auth error toasts/redirects
+  const [hasShownAuthError, setHasShownAuthError] = useState(false)
+
+  // Centralized auth check helper
+  const checkAuthToken = (): string | null => {
+    const authToken = localStorage.getItem('auth_token')
+    if (!authToken && !hasShownAuthError) {
+      setHasShownAuthError(true)
+      toast.error("No authentication token found - please log in")
+      router.push('/auth/login')
+    }
+    return authToken
+  }
+
   // Backend health monitoring - temporarily disabled
 
 
@@ -111,15 +126,23 @@ export default function useDashboard() {
       if (currentRunningAnalysisId) {
         const authToken = localStorage.getItem('auth_token')
         if (authToken) {
-          await fetch(`${API_BASE}/analyses/${currentRunningAnalysisId}`, {
+          const response = await fetch(`${API_BASE}/analyses/${currentRunningAnalysisId}`, {
             method: 'DELETE',
             headers: {
               'Authorization': `Bearer ${authToken}`
             }
           })
+
+          if (response.ok) {
+            toast.success("Analysis canceled successfully")
+          } else {
+            toast.error("Failed to cancel analysis")
+          }
         }
       }
     } catch (error) {
+      console.error('Error canceling analysis:', error)
+      toast.error("Error canceling analysis")
     } finally {
       // Reset all analysis state
       setAnalysisRunning(false)
@@ -129,7 +152,7 @@ export default function useDashboard() {
       setAnalysisStage("loading")
       setCurrentStageIndex(0)
       setTargetProgress(0)
-      
+
       // Refresh the analysis list to remove the deleted analysis
       await loadPreviousAnalyses()
     }
@@ -267,13 +290,10 @@ export default function useDashboard() {
         setHasDataFromCache(true)
         setInitialDataLoaded(true) // Mark as loaded since we have cached data
 
-        // Still need to load previous analyses when using cache
-        loadPreviousAnalyses()
-
-        return // Exit early since we used cache
+        // Don't return yet - we still need to set up event listeners and load analyses
       }
     }
-    
+
     // Add event listeners for page focus/visibility changes
     window.addEventListener('focus', handlePageFocus)
     const visibilityHandler = () => {
@@ -283,17 +303,10 @@ export default function useDashboard() {
     }
     document.addEventListener('visibilitychange', visibilityHandler)
 
+    let isMounted = true
+
     const loadInitialData = async () => {
       try {
-        // If we already have cached data, mark as loaded immediately
-        if (hasDataFromCache) {
-          setInitialDataLoaded(true)
-          return
-        }
-
-        // Set loading state to prevent "Setup Required" from flashing
-        setLoadingIntegrations(true)
-
         // Load data with individual error handling to prevent blocking
         const results = await Promise.allSettled([
           loadPreviousAnalyses(),
@@ -309,18 +322,24 @@ export default function useDashboard() {
 
         // Mark as loaded - the data is ready even if currentAnalysis isn't set yet
         // The UI will update when currentAnalysis is set in the next render
-        setInitialDataLoaded(true)
+        if (isMounted) {
+          setInitialDataLoaded(true)
+        }
       } catch (error) {
         // Always set to true to prevent endless loading, even if some data fails
-        setInitialDataLoaded(true)
+        if (isMounted) {
+          setInitialDataLoaded(true)
+        }
       }
     }
-    
+
     loadInitialData()
     
     // Fallback timeout to prevent endless loading (max 15 seconds)
     const timeoutId = setTimeout(() => {
-      setInitialDataLoaded(true)
+      if (isMounted) {
+        setInitialDataLoaded(true)
+      }
     }, 15000)
 
     // Listen for localStorage changes (when integrations are updated on other pages)
@@ -357,6 +376,7 @@ export default function useDashboard() {
 
     // Cleanup event listeners and timeout
     return () => {
+      isMounted = false
       window.removeEventListener('focus', handlePageFocus)
       document.removeEventListener('visibilitychange', visibilityHandler)
       window.removeEventListener('storage', handleStorageChange)
@@ -387,21 +407,37 @@ export default function useDashboard() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
     const analysisId = urlParams.get('analysis')
-    
+
     if (analysisId) {
+      let retryCount = 0
+      const maxRetries = 10 // Max 5 seconds of retries
+      let timeoutId: NodeJS.Timeout | null = null
+
       // Small delay to ensure auth token and integrations are loaded
       const loadAnalysisWithDelay = () => {
         const authToken = localStorage.getItem('auth_token')
         if (authToken) {
           loadSpecificAnalysis(analysisId)
+        } else if (retryCount < maxRetries) {
+          retryCount++
+          // Retry after another short delay
+          timeoutId = setTimeout(loadAnalysisWithDelay, 500)
         } else {
-            // Retry after another short delay
-          setTimeout(loadAnalysisWithDelay, 500)
+          // Max retries exceeded - redirect to login
+          toast.error("Authentication required - please log in")
+          router.push('/auth/login')
         }
       }
-      
+
       // Initial delay to let other useEffects run first
-      setTimeout(loadAnalysisWithDelay, 100)
+      timeoutId = setTimeout(loadAnalysisWithDelay, 100)
+
+      // Cleanup timeout on unmount
+      return () => {
+        if (timeoutId) {
+          clearTimeout(timeoutId)
+        }
+      }
     }
   }, []) // Only run once on mount
 
@@ -452,15 +488,18 @@ export default function useDashboard() {
     }
   }, [integrations]) // Removed selectedIntegration from deps to prevent unnecessary re-renders
 
-  const loadPreviousAnalyses = async (append = false): Promise<boolean> => {
+  const loadPreviousAnalyses = async (append = false, silent = false): Promise<boolean> => {
     // CRITICAL: Set loading state FIRST before any async operations
     if (append) {
       setLoadingMoreAnalyses(true)
+    } else {
+      setLoadingAnalyses(true)
     }
 
     try {
-      const authToken = localStorage.getItem('auth_token')
+      const authToken = checkAuthToken()
       if (!authToken) {
+        setLoadingAnalyses(false)
         return false
       }
 
@@ -527,6 +566,7 @@ export default function useDashboard() {
           }
         }
 
+        setLoadingAnalyses(false)
         return newAnalyses.length > 0
       } else {
         // Handle API errors (401, 404, 500, etc.)
@@ -546,12 +586,11 @@ export default function useDashboard() {
         } else {
           toast.error("Failed to load analyses")
         }
+        setLoadingAnalyses(false)
         return false
       }
     } catch (error) {
-      console.error('Unexpected error in loadPreviousAnalyses:', error)
-
-      // Check if this is a network connectivity issue
+      // Check if this is a network connectivity issue (expected during Railway startup)
       const isNetworkError = error instanceof Error && (
         error.message.includes('fetch') ||
         error.message.includes('network') ||
@@ -560,23 +599,32 @@ export default function useDashboard() {
         error.name === 'TypeError'
       )
 
-      if (isNetworkError) {
-        toast.error("Cannot connect to backend")
-      } else {
-        toast.error("Error loading analyses")
+      // Only log non-network errors
+      if (!isNetworkError) {
+        console.error('Unexpected error in loadPreviousAnalyses:', error)
+      }
+
+      if (!silent) {
+        if (isNetworkError) {
+          toast.error("Cannot connect to backend")
+        } else {
+          toast.error("Error loading analyses")
+        }
       }
       return false
     } finally {
       // CRITICAL: ALWAYS reset loading state in finally block
       if (append) {
         setLoadingMoreAnalyses(false)
+      } else {
+        setLoadingAnalyses(false)
       }
     }
   }
 
   const loadSpecificAnalysis = async (analysisId: string) => {
     try {
-      const authToken = localStorage.getItem('auth_token')
+      const authToken = checkAuthToken()
       if (!authToken) {
         return
       }
@@ -663,7 +711,7 @@ export default function useDashboard() {
         return
       }
 
-      const authToken = localStorage.getItem('auth_token')
+      const authToken = checkAuthToken()
       if (!authToken) {
         setLoadingTrends(false)
         return
@@ -725,8 +773,10 @@ export default function useDashboard() {
 
     setDeletingAnalysis(true)
     try {
-      const authToken = localStorage.getItem('auth_token')
-      if (!authToken) return
+      const authToken = checkAuthToken()
+      if (!authToken) {
+        return
+      }
 
       
       const response = await fetch(`${API_BASE}/analyses/${analysisToDelete.id}`, {
@@ -736,9 +786,9 @@ export default function useDashboard() {
         }
       })
 
+      // Treat both 200 and 404 as success (404 means already deleted)
+      if (response.ok || response.status === 404) {
 
-      if (response.ok) {
-        
         // Immediately remove from local state - be more explicit about ID matching
         setPreviousAnalyses(prev => {
           const filtered = prev.filter(a => {
@@ -747,22 +797,22 @@ export default function useDashboard() {
           })
           return filtered
         })
-        
+
         // If the deleted analysis was currently selected, clear it
         if (currentAnalysis?.id === analysisToDelete.id) {
           setCurrentAnalysis(null)
           updateURLWithAnalysis(null)
         }
-        
+
         toast.success("Analysis deleted")
-        
+
         // Close dialog and reset state
         setDeleteDialogOpen(false)
         setAnalysisToDelete(null)
-        
+
         // Also reload from server to ensure consistency
         setTimeout(() => loadPreviousAnalyses(), 500)
-        
+
       } else {
         const errorData = await response.json()
         throw new Error(errorData.detail || 'Failed to delete analysis')
@@ -779,8 +829,10 @@ export default function useDashboard() {
   // Function to fetch platform mappings (same as integrations page)
   const fetchPlatformMappings = async () => {
     try {
-      const authToken = localStorage.getItem('auth_token')
-      if (!authToken) return
+      const authToken = checkAuthToken()
+      if (!authToken) {
+        return
+      }
       
       // Fetch both GitHub and Slack mappings like the integrations page does
       const [githubResponse, slackResponse] = await Promise.all([
@@ -899,9 +951,6 @@ export default function useDashboard() {
             // Set loading to false when using cache
             setLoadingIntegrations(false)
             setHasDataFromCache(true)
-            
-            // Still need to load previous analyses when using integration cache
-            loadPreviousAnalyses()
 
             return
           } catch (error) {
@@ -917,9 +966,8 @@ export default function useDashboard() {
     }
 
     try {
-      const authToken = localStorage.getItem('auth_token')
+      const authToken = checkAuthToken()
       if (!authToken) {
-        router.push('/auth/login')
         return
       }
 
@@ -1157,8 +1205,10 @@ export default function useDashboard() {
   // Load LLM configuration
   const loadLlmConfig = async () => {
     try {
-      const authToken = localStorage.getItem('auth_token')
-      if (!authToken) return
+      const authToken = checkAuthToken()
+      if (!authToken) {
+        return
+      }
 
       let response
       try {
@@ -1205,12 +1255,22 @@ export default function useDashboard() {
         if (cacheAge < 5 * 60 * 1000) { // 5 minutes
           // Load from cache without API call
           const cached = JSON.parse(cachedIntegrations)
-          const rootlyIntegrations = Array.isArray(cached.rootly) ? cached.rootly : []
-          const pagerdutyIntegrations = Array.isArray(cached.pagerduty) ? cached.pagerduty : []
-          const loadedIntegrations = rootlyIntegrations.concat(pagerdutyIntegrations)
+          // Cache is stored as a flat array of integrations
+          const loadedIntegrations = Array.isArray(cached) ? cached : []
           setIntegrations(loadedIntegrations)
-          setGithubIntegration(cached.github?.connected ? cached.github.integration : null)
-          setSlackIntegration(cached.slack?.integration || null)
+
+          // Also load GitHub and Slack from their separate cache keys
+          const cachedGithub = localStorage.getItem('github_integration')
+          const cachedSlack = localStorage.getItem('slack_integration')
+          if (cachedGithub) {
+            const githubData = JSON.parse(cachedGithub)
+            setGithubIntegration(githubData?.connected ? githubData.integration : null)
+          }
+          if (cachedSlack) {
+            const slackData = JSON.parse(cachedSlack)
+            setSlackIntegration(slackData?.integration || null)
+          }
+
           currentIntegrations = loadedIntegrations
         } else {
           // Cache is stale, need to load fresh data
@@ -1219,21 +1279,17 @@ export default function useDashboard() {
           const freshCachedIntegrations = localStorage.getItem('all_integrations')
           if (freshCachedIntegrations) {
             const cached = JSON.parse(freshCachedIntegrations)
-            const rootlyIntegrations = Array.isArray(cached.rootly) ? cached.rootly : []
-            const pagerdutyIntegrations = Array.isArray(cached.pagerduty) ? cached.pagerduty : []
-            currentIntegrations = rootlyIntegrations.concat(pagerdutyIntegrations)
+            currentIntegrations = Array.isArray(cached) ? cached : []
           }
         }
       } else {
-        // No cache, need to load fresh data  
+        // No cache, need to load fresh data
         await loadIntegrations(true, false) // Force refresh but don't show global loading
         // After async load, get the updated integrations from cache
         const freshCachedIntegrations = localStorage.getItem('all_integrations')
         if (freshCachedIntegrations) {
           const cached = JSON.parse(freshCachedIntegrations)
-          const rootlyIntegrations = Array.isArray(cached.rootly) ? cached.rootly : []
-          const pagerdutyIntegrations = Array.isArray(cached.pagerduty) ? cached.pagerduty : []
-          currentIntegrations = rootlyIntegrations.concat(pagerdutyIntegrations)
+          currentIntegrations = Array.isArray(cached) ? cached : []
         }
       }
       
@@ -1346,9 +1402,10 @@ export default function useDashboard() {
     setCurrentStageIndex(0)
 
     try {
-      const authToken = localStorage.getItem('auth_token')
+      const authToken = checkAuthToken()
       if (!authToken) {
-        throw new Error('No authentication token found')
+        setAnalysisRunning(false)
+        return
       }
 
       // Debug log the request data
@@ -1404,9 +1461,10 @@ export default function useDashboard() {
         throw new Error('No analysis ID returned from server')
       }
 
-      
+
       // Refresh the analyses list to show the new running analysis in sidebar
-      await loadPreviousAnalyses()
+      // Use silent mode - if this fails, it's not critical as polling will continue
+      await loadPreviousAnalyses(false, true)
 
       // Poll for analysis completion
       let pollRetryCount = 0
@@ -1433,7 +1491,19 @@ export default function useDashboard() {
               }
             })
           } catch (networkError) {
-            throw new Error('Cannot connect to backend server during polling')
+            // Network error (including CORS errors from 502) - retry with backoff
+            pollRetryCount++
+
+            if (pollRetryCount >= maxRetries) {
+              setAnalysisRunning(false)
+              setCurrentRunningAnalysisId(null)
+              toast.error("Cannot connect to backend - analysis may still be running. Please refresh the page.")
+              return
+            }
+
+            // Continue polling with exponential backoff
+            setTimeout(pollAnalysis, Math.min(2000 * pollRetryCount, 10000))
+            return
           }
 
           if (pollResponse.ok) {
@@ -1443,9 +1513,23 @@ export default function useDashboard() {
             setAnalysisRunning(false)
             setCurrentRunningAnalysisId(null)
             toast.error("Analysis was deleted or no longer exists")
-            
+
             // Try to load the most recent analysis as fallback
             await loadPreviousAnalyses()
+            return
+          } else if (pollResponse.status === 502 || pollResponse.status === 503) {
+            // Backend temporarily unavailable - retry with backoff
+            pollRetryCount++
+
+            if (pollRetryCount >= maxRetries) {
+              setAnalysisRunning(false)
+              setCurrentRunningAnalysisId(null)
+              toast.error("Backend server unavailable - analysis may still be running. Please try again later.")
+              return
+            }
+
+            // Continue polling with exponential backoff
+            setTimeout(pollAnalysis, Math.min(2000 * pollRetryCount, 10000))
             return
           } else {
             // Other HTTP errors - treat as polling failure
@@ -1607,7 +1691,7 @@ export default function useDashboard() {
 
   const getRiskColor = (riskLevel: string) => {
     switch (riskLevel) {
-      // CBI 4-tier system
+      // OCB 4-tier system
       case "critical":
         return "text-red-800 bg-red-100 border-red-300"    // Critical (75-100): Dark red
       case "poor": 
@@ -1717,17 +1801,17 @@ export default function useDashboard() {
     const members = Array.isArray(teamAnalysis) ? teamAnalysis : teamAnalysis?.members
     return members
       ?.filter((member) => {
-        // Only include members with CBI scores
-        const memberWithCbi = member as any;
-        return memberWithCbi.cbi_score !== undefined && memberWithCbi.cbi_score !== null && memberWithCbi.cbi_score > 0
+        // Only include members with OCB scores
+        const memberWithOcb = member as any;
+        return memberWithOcb.ocb_score !== undefined && memberWithOcb.ocb_score !== null && memberWithOcb.ocb_score > 0
       })
       ?.map((member) => {
-        // Use CBI scoring system (0-100 scale, higher = more burnout)
-        const score = (member as any).cbi_score || 0
+        // Use OCB scoring system (0-100 scale, higher = more burnout)
+        const score = (member as any).ocb_score || 0
         
         const burnoutScore = Math.max(0, score);
         
-        // Official CBI 4-color system based on burnout score (higher = worse)
+        // Official OCB 4-color system based on burnout score (higher = worse)
         const getRiskFromBurnoutScore = (burnoutScore: number) => {
           if (burnoutScore < 25) return { level: 'low', color: '#10b981' };      // Green - Low/minimal burnout (0-24)
           if (burnoutScore < 50) return { level: 'mild', color: '#eab308' };     // Yellow - Mild burnout symptoms (25-49)  
@@ -1743,7 +1827,7 @@ export default function useDashboard() {
           score: burnoutScore,
           riskLevel: riskInfo.level,
           backendRiskLevel: member.risk_level, // Keep original for reference
-          scoreType: 'CBI',
+          scoreType: 'OCB',
           fill: riskInfo.color,
         }
       })
@@ -1785,9 +1869,9 @@ export default function useDashboard() {
   // NO FALLBACK DATA: Only show burnout factors if we have REAL API data
   // Include ALL members with burnout scores, not just those with incidents
   // Members with high GitHub activity but no incidents should still be included
-  // Filter members with CBI scores only
-  const membersWithCbiScores = members.filter((m: any) =>
-    m?.cbi_score !== undefined && m?.cbi_score !== null && m?.cbi_score > 0
+  // Filter members with OCB scores only
+  const membersWithOcbScores = members.filter((m: any) =>
+    m?.ocb_score !== undefined && m?.ocb_score !== null && m?.ocb_score > 0
   );
   
   // For backward compatibility, keep membersWithIncidents for other parts of the code
@@ -1806,7 +1890,7 @@ export default function useDashboard() {
   // Backend provides pre-calculated factors - frontend should ONLY display, never recalculate
   const membersWithGitHubData = members.filter((m: any) => 
     m?.github_activity && (m.github_activity.commits_count > 0 || m.github_activity.commits_per_week > 0));
-  const allActiveMembers = membersWithCbiScores; // Only include members with CBI scores
+  const allActiveMembers = membersWithOcbScores; // Only include members with OCB scores
 
   const burnoutFactors = (allActiveMembers.length > 0) ? [
     { 
@@ -1823,7 +1907,7 @@ export default function useDashboard() {
         
         const sum = workloadScores.reduce((total, score) => total + score, 0);
         const average = sum / workloadScores.length;
-        // Convert 0-10 scale to CBI 0-100 scale (whole integer)
+        // Convert 0-10 scale to OCB 0-100 scale (whole integer)
         return Math.round(average * 10);
       })(),
       metrics: `Average workload factor from ${allActiveMembers.length} active team members`
@@ -1842,7 +1926,7 @@ export default function useDashboard() {
         
         const sum = afterHoursScores.reduce((total, score) => total + score, 0);
         const average = sum / afterHoursScores.length;
-        // Convert 0-10 scale to CBI 0-100 scale (whole integer)
+        // Convert 0-10 scale to OCB 0-100 scale (whole integer)
         return Math.round(average * 10);
       })(),
       metrics: `Average after-hours factor from ${allActiveMembers.length} active team members`
@@ -1861,7 +1945,7 @@ export default function useDashboard() {
         
         const sum = weekendScores.reduce((total, score) => total + score, 0);
         const average = sum / weekendScores.length;
-        // Convert 0-10 scale to CBI 0-100 scale (whole integer)
+        // Convert 0-10 scale to OCB 0-100 scale (whole integer)
         return Math.round(average * 10);
       })(),
       metrics: `Average weekend work factor from ${allActiveMembers.length} active team members`
@@ -1880,7 +1964,7 @@ export default function useDashboard() {
         
         const sum = responseScores.reduce((total, score) => total + score, 0);
         const average = sum / responseScores.length;
-        // Convert 0-10 scale to CBI 0-100 scale (whole integer)
+        // Convert 0-10 scale to OCB 0-100 scale (whole integer)
         return Math.round(average * 10);
       })(),
       metrics: `Average response time factor from ${allActiveMembers.length} active team members`
@@ -1899,7 +1983,7 @@ export default function useDashboard() {
         
         const sum = incidentLoadScores.reduce((a: number, b: number) => a + b, 0);
         const average = sum / incidentLoadScores.length;
-        // Convert 0-10 scale to CBI 0-100 scale (whole integer)
+        // Convert 0-10 scale to OCB 0-100 scale (whole integer)
         return Math.round(average * 10);
       })(),
       metrics: `Average incident load factor from ${allActiveMembers.length} active team members`
@@ -1911,7 +1995,7 @@ export default function useDashboard() {
     severity: factor.value! >= 70 ? 'Critical' : factor.value! >= 50 ? 'Poor' : factor.value! >= 30 ? 'Fair' : 'Good'
   })) : [];
   
-  // Get high-risk factors for emphasis (CBI scale 0-100)
+  // Get high-risk factors for emphasis (OCB scale 0-100)
   const highRiskFactors = burnoutFactors.filter(f => f.value >= 50).sort((a, b) => b.value - a.value);
 
   // sort descending for RiskFactors 
@@ -1933,6 +2017,7 @@ return {
   loadingIntegrations,
   initialDataLoaded,
   hasDataFromCache,
+  loadingAnalyses,
   loadingTrends,
   analysisRunning,
   analysisStage,

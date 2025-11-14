@@ -369,8 +369,8 @@ class AIBurnoutAnalyzerService:
                     "name": member_name,
                     "email": member_email,
                     "user_id": member.get("user_id"),
-                    "burnout_score": member.get("cbi_score") if member.get("cbi_score") is not None else member.get("burnout_score", 0),
-                    "scoring_type": "CBI" if member.get("cbi_score") is not None else "Legacy",
+                    "burnout_score": member.get("ocb_score") if member.get("ocb_score") is not None else member.get("burnout_score", 0),
+                    "scoring_type": "OCB" if member.get("ocb_score") is not None else "Legacy",
                     "incident_count": len(member.get("incidents", []))
                 })
             
@@ -610,35 +610,35 @@ class AIBurnoutAnalyzerService:
 
 
     def _generate_executive_summary(self, team_members: List[Dict[str, Any]], available_integrations: List[str]) -> Dict[str, Any]:
-        """Generate a comprehensive executive summary of team burnout status using CBI methodology."""
+        """Generate a comprehensive executive summary of team burnout status using OCB methodology."""
         risk_dist = self._analyze_team_risk_distribution(team_members)
         total_incidents = sum(len(member.get("incidents", [])) for member in team_members)
         
-        # Use CBI scores if available, otherwise fall back to legacy scoring
-        cbi_scores = []
+        # Use OCB scores if available, otherwise fall back to legacy scoring
+        ocb_scores = []
         legacy_scores = []
         
         for member in team_members:
-            cbi_score = member.get("cbi_score")
-            if cbi_score is not None:
-                cbi_scores.append(cbi_score)
+            ocb_score = member.get("ocb_score")
+            if ocb_score is not None:
+                ocb_scores.append(ocb_score)
             else:
                 legacy_score = member.get("burnout_score", 0)
                 legacy_scores.append(legacy_score)
         
         # Calculate average burnout level
-        if cbi_scores:
-            avg_cbi_score = sum(cbi_scores) / len(cbi_scores)
+        if ocb_scores:
+            avg_ocb_score = sum(ocb_scores) / len(ocb_scores)
             avg_legacy_score = 0  # Not used but defined for consistency
-            using_cbi = True
-            # For display, convert CBI to health score (100 - CBI score)
-            overall_health_score = round(100 - avg_cbi_score, 1)
-            avg_burnout_display = round(avg_cbi_score, 1)
-            trajectory_score = avg_cbi_score
+            using_ocb = True
+            # For display, convert OCB to health score (100 - OCB score)
+            overall_health_score = round(100 - avg_ocb_score, 1)
+            avg_burnout_display = round(avg_ocb_score, 1)
+            trajectory_score = avg_ocb_score
         else:
             avg_legacy_score = sum(legacy_scores) / len(legacy_scores) if legacy_scores else 0
-            avg_cbi_score = 0  # Not used but defined for consistency
-            using_cbi = False
+            avg_ocb_score = 0  # Not used but defined for consistency
+            using_ocb = False
             overall_health_score = round(100 - (avg_legacy_score * 10), 1)
             avg_burnout_display = round(avg_legacy_score, 2)
             trajectory_score = avg_legacy_score * 10  # Convert to 0-100 scale
@@ -646,11 +646,11 @@ class AIBurnoutAnalyzerService:
         high_risk_count = risk_dist["distribution"]["high"] + risk_dist["distribution"]["critical"]
         medium_risk_count = risk_dist["distribution"]["medium"]
         
-        # Generate narrative summary using CBI terminology
+        # Generate narrative summary using OCB terminology
         if high_risk_count > 0:
             urgency_level = "Critical"
-            if using_cbi:
-                primary_concern = f"{high_risk_count} team member(s) showing severe CBI burnout symptoms (>75/100) requiring immediate intervention"
+            if using_ocb:
+                primary_concern = f"{high_risk_count} team member(s) showing severe OCB burnout symptoms (>75/100) requiring immediate intervention"
             else:
                 primary_concern = f"{high_risk_count} team member(s) showing severe burnout symptoms requiring immediate intervention"
         elif medium_risk_count > len(team_members) * 0.5:
@@ -658,13 +658,13 @@ class AIBurnoutAnalyzerService:
             primary_concern = f"Over half the team ({medium_risk_count} members) showing elevated stress levels"
         elif medium_risk_count > 0:
             urgency_level = "Moderate"
-            if using_cbi:
-                primary_concern = f"{medium_risk_count} team member(s) showing moderate CBI burnout warning signs (25-74/100)"
+            if using_ocb:
+                primary_concern = f"{medium_risk_count} team member(s) showing moderate OCB burnout warning signs (25-74/100)"
             else:
                 primary_concern = f"{medium_risk_count} team member(s) showing early burnout warning signs"
         else:
             urgency_level = "Low"
-            primary_concern = "Team appears to be managing workload effectively with healthy CBI scores" if using_cbi else "Team appears to be managing workload effectively"
+            primary_concern = "Team appears to be managing workload effectively with healthy OCB scores" if using_ocb else "Team appears to be managing workload effectively"
         
         return {
             "urgency_level": urgency_level,
@@ -673,18 +673,18 @@ class AIBurnoutAnalyzerService:
             "key_metrics": {
                 "total_team_incidents": total_incidents,
                 "average_burnout_score": avg_burnout_display,
-                "scoring_methodology": "CBI (0-100)" if using_cbi else "Legacy (0-10)",
+                "scoring_methodology": "OCB (0-100)" if using_ocb else "Legacy (0-10)",
                 "high_risk_percentage": risk_dist["high_risk_percentage"],
                 "data_completeness": len(available_integrations)
             },
             "immediate_actions_needed": high_risk_count > 0,
-            "team_trajectory": self._determine_team_trajectory(trajectory_score, using_cbi)
+            "team_trajectory": self._determine_team_trajectory(trajectory_score, using_ocb)
         }
     
-    def _determine_team_trajectory(self, burnout_score: float, is_cbi: bool) -> str:
+    def _determine_team_trajectory(self, burnout_score: float, is_ocb: bool) -> str:
         """Determine team trajectory based on burnout score and methodology."""
-        if is_cbi:
-            # CBI scoring: 0-100 where higher = more burnout
+        if is_ocb:
+            # OCB scoring: 0-100 where higher = more burnout
             if burnout_score >= 75:
                 return "Critical Risk"
             elif burnout_score >= 50:
@@ -1142,17 +1142,17 @@ You are an expert burnout analyst reviewing a software team's health data. Gener
         """Prepare detailed team data for LLM analysis."""
         active_responders = [m for m in team_members if m.get("incident_count", 0) > 0]
         
-        # Calculate comprehensive metrics using CBI when available
-        cbi_scores = [m.get("cbi_score") for m in team_members if m.get("cbi_score") is not None]
-        legacy_scores = [m.get("burnout_score", 0) for m in team_members if m.get("cbi_score") is None]
+        # Calculate comprehensive metrics using OCB when available
+        ocb_scores = [m.get("ocb_score") for m in team_members if m.get("ocb_score") is not None]
+        legacy_scores = [m.get("burnout_score", 0) for m in team_members if m.get("ocb_score") is None]
         
-        if cbi_scores:
-            avg_burnout = sum(cbi_scores) / len(cbi_scores)
-            using_cbi = True
-            burnout_scale = "CBI (0-100)"
+        if ocb_scores:
+            avg_burnout = sum(ocb_scores) / len(ocb_scores)
+            using_ocb = True
+            burnout_scale = "OCB (0-100)"
         else:
             avg_burnout = sum(legacy_scores) / len(legacy_scores) if legacy_scores else 0
-            using_cbi = False  
+            using_ocb = False  
             burnout_scale = "Legacy (0-10)"
             
         total_incidents = sum(m.get("incident_count", 0) for m in team_members)
@@ -1206,13 +1206,13 @@ You are an expert burnout analyst reviewing a software team's health data. Gener
             }
         
         # Individual patterns with more detail - use appropriate risk criteria
-        if using_cbi:
+        if using_ocb:
             high_risk_members = sorted(
-                [m for m in team_members if m.get("cbi_score", 0) >= 75],
-                key=lambda x: x.get("cbi_score", 0),
+                [m for m in team_members if m.get("ocb_score", 0) >= 75],
+                key=lambda x: x.get("ocb_score", 0),
                 reverse=True
             )
-            risk_criteria = "CBI score ≥75/100 (severe burnout)"
+            risk_criteria = "OCB score ≥75/100 (severe burnout)"
         else:
             high_risk_members = sorted(
                 [m for m in team_members if m.get("burnout_score", 0) >= 7],
@@ -1228,9 +1228,9 @@ You are an expert burnout analyst reviewing a software team's health data. Gener
             risk_level = member.get("risk_level", "unknown")
             
             # Use appropriate scoring method
-            if using_cbi:
-                score = member.get("cbi_score", 0)
-                score_display = f"{score:.1f}/100 CBI"
+            if using_ocb:
+                score = member.get("ocb_score", 0)
+                score_display = f"{score:.1f}/100 OCB"
             else:
                 score = member.get("burnout_score", 0)
                 score_display = f"{score:.1f}/10 legacy"
@@ -1278,7 +1278,7 @@ You are an expert burnout analyst reviewing a software team's health data. Gener
             "responder_percentage": len(active_responders) / len(team_members) * 100 if team_members else 0,
             "avg_burnout_score": avg_burnout,
             "burnout_scale": burnout_scale,
-            "scoring_explanation": self._get_scoring_explanation(using_cbi),
+            "scoring_explanation": self._get_scoring_explanation(using_ocb),
             "high_risk_count": len(high_risk_members),
             "risk_criteria": risk_criteria,
             "total_incidents": total_incidents,
@@ -1290,21 +1290,21 @@ You are an expert burnout analyst reviewing a software team's health data. Gener
             "slack_stats": slack_stats
         }
     
-    def _get_scoring_explanation(self, using_cbi: bool) -> str:
+    def _get_scoring_explanation(self, using_ocb: bool) -> str:
         """Get explanation of the scoring methodology for the LLM."""
-        if using_cbi:
-            return """This team uses the Copenhagen Burnout Inventory (CBI) methodology:
+        if using_ocb:
+            return """This team uses the On-Call Burnout (OCB) methodology:
 - Scale: 0-100 where HIGHER scores = MORE burnout (opposite of health scores)
 - 0-24: Low/minimal burnout (healthy)
 - 25-49: Mild burnout symptoms  
 - 50-74: Moderate/significant burnout
 - 75-100: High/severe burnout (critical intervention needed)
-- CBI is scientifically validated and measures Personal + Work-Related burnout dimensions"""
+- OCB is scientifically validated and measures Personal + Work-Related burnout dimensions"""
         else:
             return """This team uses legacy burnout scoring:
 - Scale: 0-10 where higher scores = more burnout
 - Converted to 0-100 scale for display (multiply by 10)
-- Less precise than CBI methodology"""
+- Less precise than OCB methodology"""
 
     def _call_anthropic_for_narrative(self, prompt: str, api_key: str) -> str:
         """Call Anthropic API for narrative generation."""
@@ -1374,27 +1374,33 @@ _ai_analyzer_cache = {}
 def get_ai_burnout_analyzer(api_key: Optional[str] = None, provider: Optional[str] = None) -> AIBurnoutAnalyzerService:
     """
     Get AI burnout analyzer instance.
-    
-    Uses system API key for all users to provide AI insights by default.
-    
+
+    Respects user's token preference: uses custom token if provided, otherwise system token.
+
     Args:
-        api_key: Deprecated - system uses Railway environment key
-        provider: LLM provider (always 'anthropic' for system key)
-        
+        api_key: Optional custom API key (if user has configured one)
+        provider: LLM provider ('anthropic' or 'openai')
+
     Returns:
         AIBurnoutAnalyzerService instance
     """
     import os
-    
-    # Always use system API key from Railway environment
-    system_api_key = os.getenv('ANTHROPIC_API_KEY')
-    system_provider = 'anthropic'
-    
-    # Use system key for cache (single instance for all users)
     import hashlib
-    cache_key = hashlib.sha256(f"{system_api_key or ''}:{system_provider}".encode()).hexdigest()[:16]
-    
+
+    # Determine which token to use
+    if api_key and provider:
+        # User has custom token - use it
+        effective_api_key = api_key
+        effective_provider = provider
+    else:
+        # No custom token - use system token from Railway environment
+        effective_api_key = os.getenv('ANTHROPIC_API_KEY')
+        effective_provider = 'anthropic'
+
+    # Create cache key based on the actual token being used
+    cache_key = hashlib.sha256(f"{effective_api_key or ''}:{effective_provider}".encode()).hexdigest()[:16]
+
     if cache_key not in _ai_analyzer_cache:
-        _ai_analyzer_cache[cache_key] = AIBurnoutAnalyzerService(api_key=system_api_key, provider=system_provider)
-    
+        _ai_analyzer_cache[cache_key] = AIBurnoutAnalyzerService(api_key=effective_api_key, provider=effective_provider)
+
     return _ai_analyzer_cache[cache_key]
