@@ -200,7 +200,9 @@ async def add_rootly_integration(
         db.add(new_integration)
         db.commit()
         db.refresh(new_integration)
-        
+
+        # Include permissions in response (use cached from preview)
+        # This prevents showing "insufficient permissions" while waiting for list reload
         return {
             "status": "success",
             "message": f"Rootly integration '{integration_data.name}' added successfully",
@@ -210,7 +212,8 @@ async def add_rootly_integration(
                 "organization_name": new_integration.organization_name,
                 "total_users": new_integration.total_users,
                 "is_default": new_integration.is_default,
-                "created_at": new_integration.created_at.isoformat()
+                "created_at": new_integration.created_at.isoformat(),
+                "permissions": permissions  # Include permissions from preview validation
             }
         }
         
