@@ -2082,11 +2082,18 @@ export default function IntegrationsPage() {
                   </div>
                   <Button
                     onClick={() => {
-                      // Open drawer immediately if we have cached data
+                      // Open drawer immediately for better UX
+                      setTeamMembersDrawerOpen(true)
+
+                      // If we have cached data, show it immediately
                       if (selectedOrganization && syncedUsersCache.current.has(selectedOrganization)) {
-                        setTeamMembersDrawerOpen(true)
+                        const cachedUsers = syncedUsersCache.current.get(selectedOrganization)!
+                        setSyncedUsers(cachedUsers)
+                        setShowSyncedUsers(true)
+                      } else {
+                        // Otherwise fetch from API
+                        fetchSyncedUsers(false, false)
                       }
-                      fetchSyncedUsers(false, false)
                     }}
                     disabled={!selectedOrganization}
                     className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
