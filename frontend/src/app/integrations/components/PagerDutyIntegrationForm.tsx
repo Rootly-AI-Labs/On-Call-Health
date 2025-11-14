@@ -37,15 +37,17 @@ export function PagerDutyIntegrationForm({
 }: PagerDutyIntegrationFormProps) {
   const [showInstructions, setShowInstructions] = useState(false)
   const [showToken, setShowToken] = useState(false)
+  const [lastTestedToken, setLastTestedToken] = useState<string>('')
 
   const tokenValue = form.watch('pagerdutyToken')
 
   // Auto-validate token when it's fully entered and valid format
   useEffect(() => {
-    if (tokenValue && isValidToken(tokenValue)) {
+    if (tokenValue && isValidToken(tokenValue) && tokenValue !== lastTestedToken) {
+      setLastTestedToken(tokenValue)
       onTest('pagerduty', tokenValue)
     }
-  }, [tokenValue])
+  }, [tokenValue, lastTestedToken, isValidToken, onTest])
 
   return (
     <Card className="border-green-200 max-w-2xl mx-auto">
