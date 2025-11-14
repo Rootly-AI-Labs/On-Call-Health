@@ -287,7 +287,7 @@ export function UnifiedSlackCard({
                 <ul className="space-y-2 text-sm text-gray-600">
                   <li className="flex items-start space-x-2">
                     <span className="text-green-600 mt-0.5">✓</span>
-                    <span><strong>Survey Delivery:</strong> Let team members report burnout via /burnout-survey command and automated DMs</span>
+                    <span><strong>Slack Surveys:</strong> Collect burnout data through Slack surveys via command and automated DMs</span>
                   </li>
                   <li className="flex items-start space-x-2">
                     <span className="text-green-600 mt-0.5">✓</span>
@@ -341,10 +341,10 @@ export function UnifiedSlackCard({
                 <div className="p-4 flex items-center justify-between">
                   <div className="flex-1">
                     <Label htmlFor="survey-toggle" className="text-base font-medium text-gray-900 cursor-pointer">
-                      Survey Delivery
+                      Slack Surveys
                     </Label>
                     <p className="text-sm text-gray-600 mt-1">
-                      Let team members report burnout via /burnout-survey command
+                      Enable burnout surveys via Slack command and automated DMs
                     </p>
                   </div>
                   <Switch
