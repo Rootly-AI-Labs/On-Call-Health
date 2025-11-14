@@ -3486,18 +3486,17 @@ export default function IntegrationsPage() {
                       >
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center space-x-3">
-                            {/* Checkbox - disabled if survey not enabled */}
-                            <div className="relative">
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={() => {}} // Handled by parent div onClick
-                                disabled={!surveyEnabled}
-                                className={`w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500 ${
-                                  surveyEnabled ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
-                                }`}
-                              />
-                            </div>
+                            {/* Checkbox - only show if surveys enabled */}
+                            {surveyEnabled && (
+                              <div className="relative">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => {}} // Handled by parent div onClick
+                                  className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
+                                />
+                              </div>
+                            )}
 
                             {/* Avatar with on-call indicator */}
                             <div className="relative">
