@@ -1391,6 +1391,8 @@ async def get_synced_users(
                 "platforms": platforms,
                 "github_username": corr.github_username,
                 "slack_user_id": corr.slack_user_id,
+                "rootly_user_id": corr.rootly_user_id,  # Added for Rootly incident matching
+                "pagerduty_user_id": corr.pagerduty_user_id,  # Added for PagerDuty incident matching
                 "is_oncall": is_oncall,
                 "created_at": corr.created_at.isoformat() if corr.created_at else None
             })

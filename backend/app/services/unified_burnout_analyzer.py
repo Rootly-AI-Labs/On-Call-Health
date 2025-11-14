@@ -1113,7 +1113,17 @@ class UnifiedBurnoutAnalyzer:
             # Add safety check for None user
             if user is None:
                 continue
-            user_id = str(user.get("id")) if user.get("id") is not None else "unknown"
+
+            # CRITICAL FIX: Use platform-specific user ID for synced users
+            # For PagerDuty synced users, use pagerduty_user_id instead of database ID
+            # For Rootly synced users, use rootly_user_id instead of database ID
+            if self.platform == "pagerduty" and user.get("pagerduty_user_id"):
+                user_id = str(user["pagerduty_user_id"])
+            elif self.platform == "rootly" and user.get("rootly_user_id"):
+                user_id = str(user["rootly_user_id"])
+            else:
+                user_id = str(user.get("id")) if user.get("id") is not None else "unknown"
+
             # Get GitHub/Slack data for this user - handle JSONAPI format
             if isinstance(user, dict) and "attributes" in user:
                 user_email = user["attributes"].get("email")
@@ -1241,13 +1251,21 @@ class UnifiedBurnoutAnalyzer:
         # Extract user info based on platform
         if self.platform == "pagerduty":
             # PagerDuty API structure
-            user_id = user.get("id")
+            # CRITICAL FIX: Use pagerduty_user_id for synced users
+            if user.get("pagerduty_user_id"):
+                user_id = user.get("pagerduty_user_id")
+            else:
+                user_id = user.get("id")
             user_name = user.get("name") or user.get("summary", "Unknown")
             user_email = user.get("email")
         else:
             # Rootly API structure
             user_attrs = user.get("attributes", {})
-            user_id = user.get("id")
+            # CRITICAL FIX: Use rootly_user_id for synced users
+            if user.get("rootly_user_id"):
+                user_id = user.get("rootly_user_id")
+            else:
+                user_id = user.get("id")
             user_name = user_attrs.get("full_name") or user_attrs.get("name", "Unknown")
             user_email = user_attrs.get("email")
         
@@ -3292,7 +3310,8 @@ class UnifiedBurnoutAnalyzer:
                 if user.get('user_email') and user.get('user_id'):
                     user_key = user['user_email'].lower()
                     individual_daily_data[user_key] = {}
-                    # Create ID to email mapping for incident processing
+                    # CRITICAL FIX: Create ID to email mapping using platform-specific user ID
+                    # This ensures PagerDuty incident assignments (e.g., P3HWE4C) match user IDs
                     user_id_to_email[str(user['user_id'])] = user['user_email']
             
             logger.info(f"Created user ID mapping for {len(user_id_to_email)} users from {self.platform} team analysis")
