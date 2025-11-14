@@ -2125,19 +2125,19 @@ export default function IntegrationsPage() {
             ) : null}
         </div>
 
-        {/* Enhanced Integrations Section */}
+        {/* Team Management Section */}
         <div className="mt-16 space-y-8">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-slate-900 mb-3">Enhanced Integrations</h2>
+            <h2 className="text-2xl font-bold text-slate-900 mb-3">Team Management</h2>
             <p className="text-lg text-slate-600 mb-2">
-              Connect GitHub and Slack for deeper insights
+              Sync and manage your team members for burnout analysis
             </p>
             <p className="text-slate-500">
-              Analyze code patterns, team communication, and collect direct feedback
+              View synced users, manage GitHub mappings, and select survey recipients
             </p>
           </div>
 
-          {/* Sync Members Card */}
+          {/* Team Members Card */}
           <div className="max-w-2xl mx-auto">
             <Card className={`border-2 ${selectedOrganization ? 'border-purple-200 bg-purple-50' : 'border-gray-200 bg-gray-50'}`}>
               <CardContent className="p-6">
@@ -2194,6 +2194,19 @@ export default function IntegrationsPage() {
                 </div>
               </CardContent>
             </Card>
+          </div>
+        </div>
+
+        {/* Enhanced Integrations Section */}
+        <div className="mt-16 space-y-8">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-slate-900 mb-3">Enhanced Integrations</h2>
+            <p className="text-lg text-slate-600 mb-2">
+              Connect GitHub and Slack for deeper insights
+            </p>
+            <p className="text-slate-500">
+              Analyze code patterns, team communication, and collect direct feedback
+            </p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 mb-8 max-w-2xl mx-auto">
