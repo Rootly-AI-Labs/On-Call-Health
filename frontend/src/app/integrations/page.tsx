@@ -2018,7 +2018,7 @@ export default function IntegrationsPage() {
                                 <div className="flex items-center space-x-4">
                                   <span className="text-gray-500">Read permissions:</span>
                                   {/* Show loader when permissions are being checked */}
-                                  {(integration.permissions.users.access === null && integration.permissions.incidents.access === null) || refreshingPermissions === integration.id ? (
+                                  {(integration.permissions?.users?.access === null && integration.permissions?.incidents?.access === null) || refreshingPermissions === integration.id ? (
                                     <div className="flex items-center space-x-2">
                                       <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
                                       <span className="text-gray-500">Checking permissions...</span>
@@ -2026,7 +2026,7 @@ export default function IntegrationsPage() {
                                   ) : (
                                     <>
                                       <div className="flex items-center space-x-1">
-                                        {integration.permissions.users.access ? (
+                                        {integration.permissions?.users?.access ? (
                                           <Tooltip content="✓ User read permissions: Required to run burnout analysis and identify team members">
                                             <CheckCircle className="w-4 h-4 text-green-500 cursor-help" />
                                           </Tooltip>
@@ -2038,7 +2038,7 @@ export default function IntegrationsPage() {
                                         <span>Users</span>
                                       </div>
                                       <div className="flex items-center space-x-1">
-                                        {integration.permissions.incidents.access ? (
+                                        {integration.permissions?.incidents?.access ? (
                                           <Tooltip content="✓ Incident read permissions: Required to run burnout analysis and analyze incident response patterns">
                                             <CheckCircle className="w-4 h-4 text-green-500 cursor-help" />
                                           </Tooltip>
@@ -2065,8 +2065,8 @@ export default function IntegrationsPage() {
                               </div>
 
                               {/* Error message for insufficient permissions */}
-                              {integration.permissions.users.access !== null && integration.permissions.incidents.access !== null &&
-                               (!integration.permissions.users.access || !integration.permissions.incidents.access) && (
+                              {integration.permissions?.users?.access !== null && integration.permissions?.incidents?.access !== null &&
+                               (!integration.permissions?.users?.access || !integration.permissions?.incidents?.access) && (
                                 <div className="mt-3">
                                   <Alert className="border-red-200 bg-red-50">
                                     <AlertCircle className="h-4 w-4 text-red-600" />
