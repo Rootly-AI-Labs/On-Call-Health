@@ -2562,13 +2562,16 @@ async def run_analysis_task(
                         # CRITICAL: Must use the actual platform user ID for incident matching!
                         if platform == "pagerduty":
                             user_id = corr.pagerduty_user_id
+                            # Skip PagerDuty users without user_id (can't match)
+                            if not user_id:
+                                logger.warning(f"Skipping PagerDuty user {corr.email} - missing pagerduty_user_id")
+                                continue
                         else:  # rootly
-                            user_id = corr.rootly_user_id  # Use Rootly API user ID, NOT email
-
-                        # Skip if no user ID (shouldn't happen but be safe)
-                        if not user_id:
-                            logger.warning(f"Skipping synced user {corr.email} - missing {platform} user ID")
-                            continue
+                            # Prefer rootly_user_id for accuracy, but fallback to email for backward compatibility
+                            user_id = corr.rootly_user_id or corr.email
+                            if not user_id:
+                                logger.warning(f"Skipping Rootly user - missing both rootly_user_id and email")
+                                continue
 
                         user_data = {
                             'id': user_id,  # Must be actual platform user ID for incident matching
