@@ -2031,7 +2031,7 @@ export default function IntegrationsPage() {
                                             <CheckCircle className="w-4 h-4 text-green-500 cursor-help" />
                                           </Tooltip>
                                         ) : (
-                                          <Tooltip content={`✗ User read permissions required: ${integration.permissions.users.error || "Permission denied"}. Both User and Incident read permissions are required to run burnout analysis.`}>
+                                          <Tooltip content={`✗ User read permissions required: ${integration.permissions?.users?.error || "Permission denied"}. Both User and Incident read permissions are required to run burnout analysis.`}>
                                             <AlertCircle className="w-4 h-4 text-red-500 cursor-help" />
                                           </Tooltip>
                                         )}
@@ -2043,7 +2043,7 @@ export default function IntegrationsPage() {
                                             <CheckCircle className="w-4 h-4 text-green-500 cursor-help" />
                                           </Tooltip>
                                         ) : (
-                                          <Tooltip content={`✗ Incident read permissions required: ${integration.permissions.incidents.error || "Permission denied"}. Both User and Incident read permissions are required to run burnout analysis.`}>
+                                          <Tooltip content={`✗ Incident read permissions required: ${integration.permissions?.incidents?.error || "Permission denied"}. Both User and Incident read permissions are required to run burnout analysis.`}>
                                             <AlertCircle className="w-4 h-4 text-red-500 cursor-help" />
                                           </Tooltip>
                                         )}
@@ -3961,7 +3961,6 @@ export default function IntegrationsPage() {
                         slackResults = await TeamHandlers.syncSlackUserIds(setLoadingTeamMembers, fetchSyncedUsers, true)
                       }
 
-                      console.log('Sync completed:', { syncResults, slackResults })
                       setSyncProgress({
                         stage: 'Sync Complete!',
                         details: 'Your team members have been successfully synced',
