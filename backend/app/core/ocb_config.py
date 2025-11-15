@@ -397,15 +397,32 @@ def generate_ocb_score_reasoning(
     severity_dist = raw_metrics.get('severity_distribution', {}) if raw_metrics else {}
 
     # Personal burnout contributors
-    if personal_score > 50:
-        personal_components = personal_result.get('components', {})
+    # Always show personal factors regardless of score
+    personal_components = personal_result.get('components', {})
+    if personal_components:
         top_personal = sorted(personal_components.items(), key=lambda x: x[1].get('weighted_score', 0), reverse=True)
+        
+        # Use the same total_weight that was used in the final score calculation
+        # This is stored in data_completeness and represents the sum of weights for all factors with data
+        total_weight = personal_result.get('data_completeness', 0)
+        if total_weight == 0:
+            # Fallback: calculate from components if data_completeness not available
+            total_weight = sum(factor_data.get('weight', 0) for factor_data in personal_components.values())
 
-        for factor_name, factor_data in top_personal[:4]:  # Top 4 contributors for better granularity
+        for factor_name, factor_data in top_personal:  # Show all contributors
             weighted_score = factor_data.get('weighted_score', 0)
-            if weighted_score > 5:  # Only show significant contributors
+            normalized_score = factor_data.get('normalized_score', 0)
+            factor_weight = factor_data.get('weight', 0)
+            if weighted_score > 0:  # Show all factors with any contribution
+                # Calculate contribution to final score: weighted_score / total_weight
+                # This ensures the sum of displayed contributions equals the final score
+                if total_weight > 0:
+                    contribution = weighted_score / total_weight
+                    display_score = round(contribution, 1)
+                else:
+                    display_score = round(normalized_score, 1)
                 if factor_name == 'sleep_quality_proxy':
-                    personal_factors.append(f"Sleep quality impact from critical incidents ({weighted_score:.1f} points)")
+                    personal_factors.append(f"Sleep quality impact from critical incidents ({display_score:.1f} points)")
                     # Add critical incident details
                     critical_count = trauma_data.get('critical_incidents', 0) if raw_metrics else 0
                     compound_factor = trauma_data.get('compound_factor', 1.0) if raw_metrics else 1.0
@@ -415,7 +432,7 @@ def generate_ocb_score_reasoning(
                         personal_factors.append(f"  • Research insight: 5+ critical incidents create exponential psychological impact")
 
                 elif factor_name == 'vacation_usage':
-                    personal_factors.append(f"Recovery time between incidents ({weighted_score:.1f} points)")
+                    personal_factors.append(f"Recovery time between incidents ({display_score:.1f} points)")
                     # Add recovery pattern details
                     recovery_violations = recovery_data.get('recovery_violations', 0) if raw_metrics else 0
                     avg_recovery = recovery_data.get('avg_recovery_hours', 0) if raw_metrics else 0
@@ -425,14 +442,14 @@ def generate_ocb_score_reasoning(
                         personal_factors.append(f"  • Average recovery time: {avg_recovery:.1f} hours")
 
                 elif factor_name == 'work_hours_trend':
-                    personal_factors.append(f"Extended work hours ({weighted_score:.1f} points)")
+                    personal_factors.append(f"Extended work hours ({display_score:.1f} points)")
                     # Add time pattern details for extended work hours
                     after_hours_count = time_data.get('after_hours_incidents', 0) if raw_metrics else 0
                     if after_hours_count > 0:
                         personal_factors.append(f"  • After-hours incidents: {after_hours_count} incidents")
 
                 elif factor_name == 'after_hours_activity':
-                    personal_factors.append(f"Non-business hours incident activity ({weighted_score:.1f} points)")
+                    personal_factors.append(f"Non-business hours incident activity ({display_score:.1f} points)")
                     # Add time pattern details
                     after_hours_count = time_data.get('after_hours_incidents', 0) if raw_metrics else 0
                     overnight_count = time_data.get('overnight_incidents', 0) if raw_metrics else 0
@@ -442,7 +459,7 @@ def generate_ocb_score_reasoning(
                         personal_factors.append(f"  • Overnight incidents: {overnight_count} incidents")
 
                 elif factor_name == 'weekend_work':
-                    personal_factors.append(f"Weekend incident activity ({weighted_score:.1f} points)")
+                    personal_factors.append(f"Weekend incident activity ({display_score:.1f} points)")
                     # Add weekend pattern details
                     weekend_count = time_data.get('weekend_incidents', 0) if raw_metrics else 0
                     if weekend_count > 0:
@@ -479,36 +496,54 @@ def generate_ocb_score_reasoning(
             recovery_patterns.append(f"Recovery periods <48 hours: {recovery_violations} occurrences")
         if avg_recovery > 0 and avg_recovery < 168:  # Less than 1 week
             recovery_patterns.append(f"Average recovery time: {avg_recovery:.1f} hours")
-
+    
     # Work-related burnout contributors
-    if work_score > 50:
-        work_components = work_result.get('components', {})
+    # Always show work-related factors regardless of score
+    work_components = work_result.get('components', {})
+    if work_components:
         top_work = sorted(work_components.items(), key=lambda x: x[1].get('weighted_score', 0), reverse=True)
+        
+        # Use the same total_weight that was used in the final score calculation
+        # This is stored in data_completeness and represents the sum of weights for all factors with data
+        total_weight = work_result.get('data_completeness', 0)
+        if total_weight == 0:
+            # Fallback: calculate from components if data_completeness not available
+            total_weight = sum(factor_data.get('weight', 0) for factor_data in work_components.values())
 
-        for factor_name, factor_data in top_work[:4]:  # Top 4 contributors
+        for factor_name, factor_data in top_work:  # Show all contributors
             weighted_score = factor_data.get('weighted_score', 0)
-            if weighted_score > 5:  # Only show significant contributors
+            normalized_score = factor_data.get('normalized_score', 0)
+            factor_weight = factor_data.get('weight', 0)
+            if weighted_score > 0:  # Show all factors with any contribution
+                # Calculate contribution to final score: weighted_score / total_weight
+                # This ensures the sum of displayed contributions equals the final score
+                if total_weight > 0:
+                    contribution = weighted_score / total_weight
+                    display_score = round(contribution, 1)
+                else:
+                    display_score = round(normalized_score, 1)
                 if factor_name == 'oncall_burden':
                     total_incidents = sum(severity_dist.values()) if severity_dist else 0
                     if total_incidents > 0:
-                        work_factors.append(f"On-call responsibility load: {total_incidents} total incidents ({weighted_score:.1f} points)")
+                        work_factors.append(f"On-call responsibility load: {total_incidents} total incidents ({display_score:.1f} points)")
                     else:
-                        work_factors.append(f"On-call responsibility load ({weighted_score:.1f} points)")
+                        work_factors.append(f"On-call responsibility load ({display_score:.1f} points)")
 
                 elif factor_name == 'deployment_frequency':
                     # Include severity breakdown in critical production incident frequency
                     if severity_dist:
                         severity_breakdown = []
+                        total_incidents = sum(severity_dist.values())
                         for severity, count in severity_dist.items():
                             if count > 0:
                                 severity_breakdown.append(f"{count} {severity}")
                         if severity_breakdown:
                             severity_text = ", ".join(severity_breakdown)
-                            work_factors.append(f"Critical production incident frequency: {severity_text} ({weighted_score:.1f} points)")
+                            work_factors.append(f"Critical production incident frequency: {severity_text} ({display_score:.1f} points total for {total_incidents} incidents)")
                         else:
-                            work_factors.append(f"Critical production incident frequency ({weighted_score:.1f} points)")
+                            work_factors.append(f"Critical production incident frequency ({display_score:.1f} points)")
                     else:
-                        work_factors.append(f"Critical production incident frequency ({weighted_score:.1f} points)")
+                        work_factors.append(f"Critical production incident frequency ({display_score:.1f} points)")
                     # Add critical incident compound factor details
                     critical_count = trauma_data.get('critical_incidents', 0) if raw_metrics else 0
                     compound_factor = trauma_data.get('compound_factor', 1.0) if raw_metrics else 1.0
@@ -516,7 +551,7 @@ def generate_ocb_score_reasoning(
                         work_factors.append(f"  • Compound trauma factor: {compound_factor:.2f}x psychological impact")
 
                 elif factor_name == 'pr_frequency':
-                    work_factors.append(f"Incident severity-weighted workload ({weighted_score:.1f} points)")
+                    work_factors.append(f"Incident severity-weighted workload ({display_score:.1f} points)")
                     # Add severity distribution details
                     if severity_dist:
                         high_severity = severity_dist.get('SEV0', 0) + severity_dist.get('SEV1', 0)
@@ -524,10 +559,13 @@ def generate_ocb_score_reasoning(
                             work_factors.append(f"  • High-severity incidents (SEV0/SEV1): {high_severity} incidents")
 
                 elif factor_name == 'sprint_completion':
-                    work_factors.append(f"Response time requirements ({weighted_score:.1f} points)")
+                    work_factors.append(f"Response time requirements ({display_score:.1f} points)")
 
                 elif factor_name == 'meeting_load':
-                    work_factors.append(f"Incident response meeting load ({weighted_score:.1f} points)")
+                    work_factors.append(f"Incident response meeting load ({display_score:.1f} points)")
+                
+                elif factor_name == 'code_review_speed':
+                    work_factors.append(f"Code review speed pressure ({display_score:.1f} points)")
 
     # Add work-related baseline information
     if raw_metrics:
