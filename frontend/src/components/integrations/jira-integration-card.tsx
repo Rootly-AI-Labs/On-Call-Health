@@ -154,43 +154,29 @@ export function JiraIntegrationCard({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div className="flex items-center space-x-2">
               <Globe className="w-4 h-4 text-gray-400" />
-              <div>
+              <div className="min-w-0 flex-1">
                 <div className="font-medium">Site</div>
-                <div className="text-gray-600">{integration.jira_site_url}</div>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Box className="w-4 h-4 text-gray-400" />
-              <div>
-                <div className="font-medium">Cloud ID</div>
-                <div className="text-gray-600 text-xs font-mono">{integration.jira_cloud_id.substring(0, 12)}...</div>
+                <div className="text-gray-600 truncate">{integration.jira_site_url}</div>
               </div>
             </div>
             {integration.jira_display_name && (
               <div className="flex items-center space-x-2">
                 <CheckCircle className="w-4 h-4 text-gray-400" />
-                <div>
+                <div className="min-w-0 flex-1">
                   <div className="font-medium">User</div>
-                  <div className="text-gray-600">{integration.jira_display_name}</div>
+                  <div className="text-gray-600 truncate">{integration.jira_display_name}</div>
                 </div>
               </div>
             )}
             {integration.jira_email && (
               <div className="flex items-center space-x-2">
                 <Calendar className="w-4 h-4 text-gray-400" />
-                <div>
+                <div className="min-w-0 flex-1">
                   <div className="font-medium">Email</div>
-                  <div className="text-gray-600">{integration.jira_email}</div>
+                  <div className="text-gray-600 truncate">{integration.jira_email}</div>
                 </div>
               </div>
             )}
-            <div className="flex items-center space-x-2">
-              <Calendar className="w-4 h-4 text-gray-400" />
-              <div>
-                <div className="font-medium">Last Updated</div>
-                <div className="text-gray-600">{new Date(integration.updated_at).toLocaleDateString()}</div>
-              </div>
-            </div>
             <div className="flex items-center space-x-2">
               <Key className="w-4 h-4 text-gray-400" />
               <div>
@@ -203,25 +189,35 @@ export function JiraIntegrationCard({
                 </div>
               </div>
             </div>
+            {integration.accessible_sites_count && integration.accessible_sites_count > 0 && (
+              <div className="flex items-center space-x-2">
+                <Box className="w-4 h-4 text-gray-400" />
+                <div>
+                  <div className="font-medium">Accessible Sites</div>
+                  <div className="text-gray-600">{integration.accessible_sites_count} site{integration.accessible_sites_count > 1 ? 's' : ''}</div>
+                </div>
+              </div>
+            )}
+            <div className="flex items-center space-x-2">
+              <Calendar className="w-4 h-4 text-gray-400" />
+              <div>
+                <div className="font-medium">Last Updated</div>
+                <div className="text-gray-600">{new Date(integration.updated_at).toLocaleDateString()}</div>
+              </div>
+            </div>
+            {integration.token_expires_at && (
+              <div className="flex items-center space-x-2">
+                <Calendar className="w-4 h-4 text-gray-400" />
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium">Token Expiry</div>
+                  <div className="text-gray-600 text-xs truncate">
+                    {new Date(integration.token_expires_at).toLocaleString()}
+                    {integration.supports_refresh && " (auto-refresh)"}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-
-          {/* Accessible Sites */}
-          {integration.accessible_sites_count && integration.accessible_sites_count > 0 && (
-            <div>
-              <div className="text-sm font-medium mb-2">Accessible Sites:</div>
-              <Badge variant="outline" className="text-xs">
-                {integration.accessible_sites_count} site{integration.accessible_sites_count > 1 ? 's' : ''}
-              </Badge>
-            </div>
-          )}
-
-          {/* Token Expiry Warning */}
-          {integration.token_expires_at && (
-            <div className="text-xs text-gray-500">
-              Token expires: {new Date(integration.token_expires_at).toLocaleString()}
-              {integration.supports_refresh && " (auto-refresh enabled)"}
-            </div>
-          )}
 
           {/* Permissions */}
           <div>
@@ -243,7 +239,7 @@ export function JiraIntegrationCard({
               ))}
             </div>
             <div className="mt-1 text-xs text-gray-500">
-              Required: <code className="bg-gray-100 px-1 rounded">read:jira-work</code>, <code className="bg-gray-100 px-1 rounded">read:jira-user</code>
+              We collect issue assignments, worklogs, time tracking, and project membership data to analyze workload patterns and identify burnout risk.
             </div>
           </div>
 
