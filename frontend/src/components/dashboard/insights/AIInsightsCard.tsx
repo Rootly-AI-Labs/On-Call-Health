@@ -20,7 +20,7 @@ function getTextAfterSummary(html: string): string {
     .trim();
 
   // Try to find "Summary" header and extract text after it
-  const summaryMatch = text.match(/(?:##?\s*)?Summary[\s:]*(.+?)(?=(?:##?\s*[A-Z])|$)/is);
+  const summaryMatch = text.match(/(?:##?\s*)?Summary[\s:]*([\s\S]+?)(?=(?:##?\s*[A-Z])|$)/i);
 
   if (summaryMatch && summaryMatch[1]) {
     return summaryMatch[1].trim();

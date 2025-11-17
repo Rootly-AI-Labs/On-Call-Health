@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 
@@ -91,7 +91,7 @@ export default function useDashboard() {
   const [hasShownAuthError, setHasShownAuthError] = useState(false)
 
   // Centralized auth check helper
-  const checkAuthToken = (): string | null => {
+  const checkAuthToken = useCallback((): string | null => {
     const authToken = localStorage.getItem('auth_token')
     if (!authToken && !hasShownAuthError) {
       setHasShownAuthError(true)
@@ -99,7 +99,7 @@ export default function useDashboard() {
       router.push('/auth/login')
     }
     return authToken
-  }
+  }, [hasShownAuthError, router])
 
   // Backend health monitoring - temporarily disabled
 
@@ -470,11 +470,6 @@ export default function useDashboard() {
     }
   }, [currentAnalysis])
 
-  // Load platform mappings on component mount (same as integrations page)
-  useEffect(() => {
-    fetchPlatformMappings()
-  }, [])
-
   // Sync selectedIntegration with localStorage when integrations change
   // This ensures the dashboard uses the correct organization after user changes it on integrations page
   useEffect(() => {
@@ -486,7 +481,7 @@ export default function useDashboard() {
         setSelectedIntegration(savedOrg)
       }
     }
-  }, [integrations]) // Removed selectedIntegration from deps to prevent unnecessary re-renders
+  }, [integrations, selectedIntegration])
 
   const loadPreviousAnalyses = async (append = false, silent = false): Promise<boolean> => {
     // CRITICAL: Set loading state FIRST before any async operations
@@ -827,13 +822,13 @@ export default function useDashboard() {
   }
 
   // Function to fetch platform mappings (same as integrations page)
-  const fetchPlatformMappings = async () => {
+  const fetchPlatformMappings = useCallback(async () => {
     try {
       const authToken = checkAuthToken()
       if (!authToken) {
         return
       }
-      
+
       // Fetch both GitHub and Slack mappings like the integrations page does
       const [githubResponse, slackResponse] = await Promise.all([
         fetch(`${API_BASE}/integrations/mappings/platform/github`, {
@@ -843,23 +838,28 @@ export default function useDashboard() {
           headers: { 'Authorization': `Bearer ${authToken}` }
         })
       ])
-      
+
       let allMappings: any[] = []
-      
+
       if (githubResponse.ok) {
         const githubMappings = await githubResponse.json()
         allMappings = allMappings.concat(githubMappings)
       }
-      
+
       if (slackResponse.ok) {
         const slackMappings = await slackResponse.json()
         allMappings = allMappings.concat(slackMappings)
       }
-      
+
       setAnalysisMappings({ mappings: allMappings })
     } catch (error) {
     }
-  }
+  }, [checkAuthToken])
+
+  // Load platform mappings on component mount (same as integrations page)
+  useEffect(() => {
+    fetchPlatformMappings()
+  }, [fetchPlatformMappings])
 
   // Helper function to check if user has GitHub mapping (only if actually mapped)
   const hasGitHubMapping = (userEmail: string) => {
@@ -1874,41 +1874,42 @@ export default function useDashboard() {
   // Include ALL members with burnout scores, not just those with incidents
   // Members with high GitHub activity but no incidents should still be included
   // Filter members with OCB scores only
-  const membersWithOcbScores = members.filter((m: any) =>
+  const membersWithOcbScores = useMemo(() => members.filter((m: any) =>
     m?.ocb_score !== undefined && m?.ocb_score !== null && m?.ocb_score > 0
-  );
-  
+  ), [members]);
+
   // For backward compatibility, keep membersWithIncidents for other parts of the code
   const membersWithIncidents = members.filter((m: any) => (m?.incident_count || 0) > 0);
-  
+
   // Check if we have any real factors data from the API (not calculated/fake values)
-  const hasRealFactorsData = membersWithIncidents.length > 0 && 
+  const hasRealFactorsData = membersWithIncidents.length > 0 &&
     membersWithIncidents.some((m: any) => m?.factors && (
       (m.factors.after_hours !== undefined && m.factors.after_hours !== null) ||
       (m.factors.weekend_work !== undefined && m.factors.weekend_work !== null) ||
       (m.factors.incident_load !== undefined && m.factors.incident_load !== null) ||
       (m.factors.response_time !== undefined && m.factors.response_time !== null)
     ));
-  
+
   // Use backend-calculated factors for organization-level metrics
   // Backend provides pre-calculated factors - frontend should ONLY display, never recalculate
-  const membersWithGitHubData = members.filter((m: any) => 
+  const membersWithGitHubData = members.filter((m: any) =>
     m?.github_activity && (m.github_activity.commits_count > 0 || m.github_activity.commits_per_week > 0));
-  const allActiveMembers = membersWithOcbScores; // Only include members with OCB scores
 
-  const burnoutFactors = (allActiveMembers.length > 0) ? [
-    { 
-      factor: "Workload Intensity", 
+  const allActiveMembers = membersWithOcbScores;
+
+  const burnoutFactors = useMemo(() => (allActiveMembers.length > 0) ? [
+    {
+      factor: "Workload Intensity",
       value: (() => {
         if (allActiveMembers.length === 0) return null;
-        
+
         // Use backend-calculated workload factors
         const workloadScores = allActiveMembers
           .map((m: any) => m?.factors?.workload ?? 0)
           .filter(score => score > 0);
-        
+
         if (workloadScores.length === 0) return 0;
-        
+
         const sum = workloadScores.reduce((total, score) => total + score, 0);
         const average = sum / workloadScores.length;
         // Convert 0-10 scale to OCB 0-100 scale (whole integer)
@@ -1916,18 +1917,18 @@ export default function useDashboard() {
       })(),
       metrics: `Average workload factor from ${allActiveMembers.length} active team members`
     },
-    { 
-      factor: "After Hours Activity", 
+    {
+      factor: "After Hours Activity",
       value: (() => {
         if (allActiveMembers.length === 0) return null;
-        
+
         // Use backend-calculated after_hours factors
         const afterHoursScores = allActiveMembers
           .map((m: any) => m?.factors?.after_hours ?? 0)
           .filter(score => score > 0);
-        
+
         if (afterHoursScores.length === 0) return 0;
-        
+
         const sum = afterHoursScores.reduce((total, score) => total + score, 0);
         const average = sum / afterHoursScores.length;
         // Convert 0-10 scale to OCB 0-100 scale (whole integer)
@@ -1935,18 +1936,18 @@ export default function useDashboard() {
       })(),
       metrics: `Average after-hours factor from ${allActiveMembers.length} active team members`
     },
-    { 
-      factor: "Weekend Work", 
+    {
+      factor: "Weekend Work",
       value: (() => {
         if (allActiveMembers.length === 0) return null;
-        
+
         // Use backend-calculated weekend_work factors
         const weekendScores = allActiveMembers
           .map((m: any) => m?.factors?.weekend_work ?? 0)
           .filter(score => score > 0);
-        
+
         if (weekendScores.length === 0) return 0;
-        
+
         const sum = weekendScores.reduce((total, score) => total + score, 0);
         const average = sum / weekendScores.length;
         // Convert 0-10 scale to OCB 0-100 scale (whole integer)
@@ -1954,18 +1955,18 @@ export default function useDashboard() {
       })(),
       metrics: `Average weekend work factor from ${allActiveMembers.length} active team members`
     },
-    { 
-      factor: "Response Time", 
+    {
+      factor: "Response Time",
       value: (() => {
         if (allActiveMembers.length === 0) return null;
-        
+
         // Use backend-calculated response_time factors
         const responseScores = allActiveMembers
           .map((m: any) => m?.factors?.response_time ?? 0)
           .filter(score => score > 0);
-        
+
         if (responseScores.length === 0) return 0;
-        
+
         const sum = responseScores.reduce((total, score) => total + score, 0);
         const average = sum / responseScores.length;
         // Convert 0-10 scale to OCB 0-100 scale (whole integer)
@@ -1973,18 +1974,18 @@ export default function useDashboard() {
       })(),
       metrics: `Average response time factor from ${allActiveMembers.length} active team members`
     },
-    { 
-      factor: "Incident Load", 
+    {
+      factor: "Incident Load",
       value: (() => {
         if (allActiveMembers.length === 0) return null;
-        
+
         // Use backend-calculated incident_load factors
         const incidentLoadScores = allActiveMembers
           .map((m: any) => m?.factors?.incident_load ?? 0)
           .filter(score => score > 0);
-        
+
         if (incidentLoadScores.length === 0) return 0;
-        
+
         const sum = incidentLoadScores.reduce((a: number, b: number) => a + b, 0);
         const average = sum / incidentLoadScores.length;
         // Convert 0-10 scale to OCB 0-100 scale (whole integer)
@@ -1997,7 +1998,7 @@ export default function useDashboard() {
     color: getFactorColor(factor.value!),
     recommendation: getRecommendation(factor.factor),
     severity: factor.value! >= 70 ? 'Critical' : factor.value! >= 50 ? 'Poor' : factor.value! >= 30 ? 'Fair' : 'Good'
-  })) : [];
+  })) : [], [allActiveMembers]);
   
   // Get high-risk factors for emphasis (OCB scale 0-100)
   const highRiskFactors = burnoutFactors.filter(f => f.value >= 50).sort((a, b) => b.value - a.value);

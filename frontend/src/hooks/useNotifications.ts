@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useToast } from '@/hooks/use-toast'
 import type { Notification, NotificationResponse } from '@/types/notifications'
 
@@ -15,7 +15,7 @@ export function useNotifications() {
   const LIMIT = 20
 
   // Fetch notifications from API
-  const fetchNotifications = async (loadMore = false) => {
+  const fetchNotifications = useCallback(async (loadMore = false) => {
     try {
       setIsLoading(true)
       const currentOffset = loadMore ? offset : 0
@@ -46,7 +46,7 @@ export function useNotifications() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [offset])
 
   // Load more notifications for infinite scroll
   const loadMoreNotifications = async () => {
@@ -193,7 +193,7 @@ export function useNotifications() {
 
     const interval = setInterval(fetchNotifications, 30000)
     return () => clearInterval(interval)
-  }, [])
+  }, [fetchNotifications])
 
   return {
     notifications,
