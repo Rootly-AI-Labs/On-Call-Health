@@ -257,6 +257,8 @@ export default function IntegrationsPage() {
   const [loadingSyncedUsers, setLoadingSyncedUsers] = useState(false)
   const [showSyncedUsers, setShowSyncedUsers] = useState(false)
   const [teamMembersDrawerOpen, setTeamMembersDrawerOpen] = useState(false)
+  const [refreshingOnCall, setRefreshingOnCall] = useState(false)
+  const [oncallCacheInfo, setOncallCacheInfo] = useState<any>(null)
 
   // Cache to track which integrations have already been loaded
   const syncedUsersCache = useRef<Map<string, any[]>>(new Map())
@@ -1394,6 +1396,40 @@ export default function IntegrationsPage() {
       forceRefresh,
       recipientsCache.current
     )
+  }
+
+  // Refresh on-call status
+  const refreshOnCallStatus = async () => {
+    if (!selectedOrganization) {
+      toast.error('Please select an organization first')
+      return
+    }
+
+    setRefreshingOnCall(true)
+    try {
+      const authToken = localStorage.getItem('auth_token')
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+
+      const response = await fetch(`${apiBase}/rootly/integrations/${selectedOrganization}/refresh-oncall`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      })
+
+      if (response.ok) {
+        toast.success('On-call status refreshed')
+        // Reload synced users with fresh on-call data
+        await fetchSyncedUsers(false, false, true)
+      } else {
+        toast.error('Failed to refresh on-call status')
+      }
+    } catch (error) {
+      console.error('Error refreshing on-call status:', error)
+      toast.error('Failed to refresh on-call status')
+    } finally {
+      setRefreshingOnCall(false)
+    }
   }
 
   // Inline mapping edit handlers
@@ -3460,6 +3496,20 @@ export default function IntegrationsPage() {
                 </SheetDescription>
               </div>
               <div className="flex items-center gap-3 flex-shrink-0">
+                <Button
+                  onClick={refreshOnCallStatus}
+                  disabled={refreshingOnCall || loadingSyncedUsers}
+                  variant="outline"
+                  size="sm"
+                  className="h-9"
+                  title="Refresh on-call status"
+                >
+                  {refreshingOnCall ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4" />
+                  )}
+                </Button>
                 <Button
                   onClick={() => setShowSyncConfirmModal(true)}
                   disabled={loadingTeamMembers}
