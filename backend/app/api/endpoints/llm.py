@@ -48,6 +48,10 @@ class LLMTokenResponse(BaseModel):
     token_suffix: Optional[str] = None
     token_source: str = 'system'  # 'system' or 'custom'
     created_at: Optional[datetime] = None
+    # Info about stored custom token (even if not active)
+    has_stored_custom_token: bool = False
+    stored_custom_provider: Optional[str] = None
+    stored_custom_token_suffix: Optional[str] = None
 
 @router.post("/token", response_model=LLMTokenResponse)
 async def store_llm_token(
@@ -109,12 +113,27 @@ async def store_llm_token(
 
         logger.info(f"User {current_user.id} switched to system LLM token")
 
+        # Check if user has stored custom token
+        stored_custom_info = {}
+        if current_user.has_llm_token():
+            try:
+                decrypted_token = decrypt_token(current_user.llm_token)
+                token_suffix = decrypted_token[-4:] if len(decrypted_token) > 4 else "****"
+                stored_custom_info = {
+                    'has_stored_custom_token': True,
+                    'stored_custom_provider': current_user.llm_provider,
+                    'stored_custom_token_suffix': token_suffix
+                }
+            except Exception as e:
+                logger.error(f"Failed to decrypt stored token: {e}")
+
         return LLMTokenResponse(
             has_token=True,
             provider='anthropic',
             token_suffix=None,  # Don't expose system token details
             token_source='system',
-            created_at=None
+            created_at=None,
+            **stored_custom_info
         )
     
     # Validate provider
@@ -227,6 +246,20 @@ async def get_llm_token_info(
     # Determine which token is active (default to 'system' if not set)
     active_source = getattr(current_user, 'active_llm_token_source', 'system') or 'system'
 
+    # Get stored custom token info (if any)
+    stored_custom_info = {}
+    if current_user.has_llm_token():
+        try:
+            decrypted_token = decrypt_token(current_user.llm_token)
+            token_suffix = decrypted_token[-4:] if len(decrypted_token) > 4 else "****"
+            stored_custom_info = {
+                'has_stored_custom_token': True,
+                'stored_custom_provider': current_user.llm_provider,
+                'stored_custom_token_suffix': token_suffix
+            }
+        except Exception as e:
+            logger.error(f"Failed to decrypt stored token for user {current_user.id}: {e}")
+
     # If custom token is active and user has one stored
     if active_source == 'custom' and current_user.has_llm_token():
         try:
@@ -238,7 +271,8 @@ async def get_llm_token_info(
                 provider=current_user.llm_provider,
                 token_suffix=token_suffix,
                 token_source='custom',
-                created_at=current_user.updated_at
+                created_at=current_user.updated_at,
+                **stored_custom_info
             )
         except Exception as e:
             logger.error(f"Failed to decrypt token for user {current_user.id}: {e}")
@@ -253,11 +287,16 @@ async def get_llm_token_info(
             provider='anthropic',
             token_suffix=None,  # Don't expose system token details
             token_source='system',
-            created_at=None
+            created_at=None,
+            **stored_custom_info  # Include stored custom token info even when using system
         )
 
     # No token available at all
-    return LLMTokenResponse(has_token=False, token_source='system')
+    return LLMTokenResponse(
+        has_token=False,
+        token_source='system',
+        **stored_custom_info
+    )
 
 @router.patch("/token/preference")
 async def update_token_preference(

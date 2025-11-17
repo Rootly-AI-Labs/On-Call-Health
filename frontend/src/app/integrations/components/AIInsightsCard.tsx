@@ -17,7 +17,15 @@ import { useState, useEffect, useRef } from "react"
 import { toast } from "sonner"
 
 interface AIInsightsCardProps {
-  llmConfig: { has_token: boolean; provider?: string; token_suffix?: string; token_source?: string } | null
+  llmConfig: {
+    has_token: boolean
+    provider?: string
+    token_suffix?: string
+    token_source?: string
+    has_stored_custom_token?: boolean
+    stored_custom_provider?: string
+    stored_custom_token_suffix?: string
+  } | null
   onConnect: (token: string, provider: string, useSystemToken: boolean, switchToCustom?: boolean) => Promise<void>
   onDisconnect: () => Promise<void>
   isConnecting: boolean
@@ -258,7 +266,7 @@ export function AIInsightsCard({
         )}
 
         {/* Show custom token connected state */}
-        {isConnected && useCustomToken && llmConfig.token_source === 'custom' && (
+        {isConnected && llmConfig.token_source === 'custom' && (
           <div className="p-5 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl">
             <div className="flex items-start justify-between">
               <div className="flex-1">
@@ -286,6 +294,31 @@ export function AIInsightsCard({
                 variant="ghost"
                 onClick={() => setShowDeleteDialog(true)}
                 className="text-red-600 hover:text-red-700 hover:bg-red-100"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Show stored custom token info when using system token but has custom token stored */}
+        {isConnected && !useCustomToken && llmConfig.token_source === 'system' && llmConfig.has_stored_custom_token && (
+          <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1">
+                <div className="text-sm text-amber-900 mb-1">
+                  <span className="font-semibold">Stored custom token detected</span>
+                </div>
+                <div className="text-xs text-amber-700">
+                  You have a custom {llmConfig.stored_custom_provider} token stored (ending in {llmConfig.stored_custom_token_suffix}).
+                  You can delete it or switch back to using it.
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setShowDeleteDialog(true)}
+                className="text-red-600 hover:text-red-700 hover:bg-red-100 shrink-0"
               >
                 <Trash2 className="w-4 h-4" />
               </Button>
