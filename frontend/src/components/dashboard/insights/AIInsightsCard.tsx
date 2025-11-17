@@ -3,15 +3,35 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Sparkles } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { Sparkles, ChevronRight } from "lucide-react"
+import { useState } from "react"
+import { AIInsightsModal } from "./AIInsightsModal"
 
 interface AIInsightsCardProps {
   currentAnalysis: any
 }
 
+// Helper function to extract text after "Summary" section
+function getTextAfterSummary(html: string): string {
+  // Remove HTML tags and get plain text
+  const text = html
+    .replace(/<[^>]*>/g, '')
+    .replace(/\n\n+/g, ' ')
+    .trim();
+
+  // Try to find "Summary" header and extract text after it
+  const summaryMatch = text.match(/(?:##?\s*)?Summary[\s:]*(.+?)(?=(?:##?\s*[A-Z])|$)/is);
+
+  if (summaryMatch && summaryMatch[1]) {
+    return summaryMatch[1].trim();
+  }
+
+  // If no Summary section found, return the beginning of the text
+  return text;
+}
+
 export function AIInsightsCard({ currentAnalysis }: AIInsightsCardProps) {
-  const router = useRouter()
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Only show if AI insights data exists (show even if unavailable/loading)
   const aiInsights = currentAnalysis?.analysis_data?.ai_team_insights;
@@ -19,64 +39,76 @@ export function AIInsightsCard({ currentAnalysis }: AIInsightsCardProps) {
     return null
   }
 
+  const insightsData = currentAnalysis.analysis_data.ai_team_insights.insights;
+  const hasContent = insightsData?.llm_team_analysis;
+
   return (
-    <Card className="mb-6 bg-gradient-to-br from-blue-50 via-white to-indigo-50 border-blue-200 shadow-sm">
-      <CardHeader>
-        <div className="flex items-center space-x-2">
-          <CardTitle>AI Team Insights</CardTitle>
-          <Badge variant="secondary" className="text-xs">AI Enhanced</Badge>
-        </div>
-        <CardDescription>
-          Analysis generated from {currentAnalysis.analysis_data.ai_team_insights.insights?.team_size || 0} team members
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="prose prose-sm max-w-none">
-        {(() => {
-          const aiInsights = currentAnalysis.analysis_data.ai_team_insights.insights;
+    <>
+      <Card className="flex flex-col h-[400px]">
+        <CardHeader>
+          <div className="flex items-center space-x-2">
+            <Sparkles className="w-5 h-5 text-blue-600" />
+            <CardTitle className="text-lg">AI Team Insights</CardTitle>
+          </div>
+          <CardDescription>
+            AI-generated analysis
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 flex flex-col">
+          {(() => {
+            // Check if we have LLM-generated narrative
+            if (hasContent) {
+              const summaryText = getTextAfterSummary(insightsData.llm_team_analysis);
 
-          // Check if we have LLM-generated narrative
-          if (aiInsights?.llm_team_analysis) {
-            return (
-              <div className="space-y-4">
-                <div
-                  className="leading-relaxed text-gray-800"
-                  dangerouslySetInnerHTML={{
-                    __html: aiInsights.llm_team_analysis
-                      .replace(/^### (.*?)$/gm, '<h3 class="text-lg font-semibold mt-6 mb-3">$1</h3>')
-                      .replace(/^## (.*?)$/gm, '<h2 class="text-xl font-bold mt-6 mb-4">$1</h2>')
-                      .replace(/^# (.*?)$/gm, '<h1 class="text-2xl font-bold mt-6 mb-4">$1</h1>')
-                      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                      .replace(/\n\n/g, '</p><p class="mt-4">')
-                      .replace(/^(?!<h[123]|<p)/, '<p>')
-                      .replace(/(?<!>)$/, '</p>')
-                  }}
-                />
-              </div>
-            );
-          }
+              return (
+                <div className="flex flex-col h-full">
+                  <div className="flex-1 mb-4 overflow-hidden">
+                    <p className="text-base text-gray-700 leading-relaxed line-clamp-[12]">
+                      {summaryText}
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsModalOpen(true)}
+                    className="w-full mt-auto"
+                  >
+                    View Full Insights
+                    <ChevronRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </div>
+              );
+            }
 
-          // No LLM-generated content available
-          const isAnalysisRunning = currentAnalysis?.status === 'running' || currentAnalysis?.status === 'pending';
+            // No LLM-generated content available
+            const isAnalysisRunning = currentAnalysis?.status === 'running' || currentAnalysis?.status === 'pending';
 
-          if (isAnalysisRunning) {
-            return (
-              <div className="text-center py-12 text-gray-500">
-                <Sparkles className="h-10 w-10 mx-auto mb-4 opacity-40 animate-pulse" />
-                <h4 className="font-medium text-gray-700 mb-2">Generating AI Insights</h4>
-                <p className="text-sm">AI analysis is being generated...</p>
-              </div>
-            )
-          } else {
-            return (
-              <div className="text-center py-12 text-gray-500">
-                <Sparkles className="h-10 w-10 mx-auto mb-4 opacity-40" />
-                <h4 className="font-medium text-gray-700 mb-2">No AI Insights Generated</h4>
-                <p className="text-sm">Run a new analysis to generate AI insights</p>
-              </div>
-            )
-          }
-        })()}
-      </CardContent>
-    </Card>
+            if (isAnalysisRunning) {
+              return (
+                <div className="text-center py-8 text-gray-500">
+                  <Sparkles className="h-8 w-8 mx-auto mb-3 opacity-40 animate-pulse" />
+                  <p className="text-sm font-medium text-gray-700 mb-1">Generating AI Insights</p>
+                  <p className="text-xs">AI analysis is being generated...</p>
+                </div>
+              )
+            } else {
+              return (
+                <div className="text-center py-8 text-gray-500">
+                  <Sparkles className="h-8 w-8 mx-auto mb-3 opacity-40" />
+                  <p className="text-sm font-medium text-gray-700 mb-1">No AI Insights</p>
+                  <p className="text-xs">Run a new analysis to generate insights</p>
+                </div>
+              )
+            }
+          })()}
+        </CardContent>
+      </Card>
+
+      <AIInsightsModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        currentAnalysis={currentAnalysis}
+      />
+    </>
   )
 }

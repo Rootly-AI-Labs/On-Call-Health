@@ -658,9 +658,6 @@ export default function Dashboard() {
                 setExpandedDataSources={setExpandedDataSources}
               />
 
-              {/* Other Features */}
-              <AIInsightsCard currentAnalysis={currentAnalysis} />
-
               {/* Partial Data Warning */}
               {currentAnalysis?.analysis_data?.error && currentAnalysis?.analysis_data?.partial_data && (
                 <Card className="mb-6 border-yellow-200 bg-yellow-50">
@@ -729,76 +726,84 @@ export default function Dashboard() {
                 </Card>
               )}
 
-              {/* Organization Member Scores - Full Width */}
-              <Card className="mb-6">
-                <CardHeader>
-                  <CardTitle>Individual Burnout Scores</CardTitle>
-                  <CardDescription>Team member OCB burnout scores (higher = more burnout risk)</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {memberBarData.length > 0 ? (
-                    <div className="h-[350px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={memberBarData} margin={{ top: 20, right: 30, bottom: 60, left: 20 }}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis 
-                            dataKey="fullName" 
-                            angle={-45}
-                            textAnchor="end"
-                            height={60}
-                            interval={0}
-                            tick={{ fontSize: 11 }}
-                          />
-                          <YAxis domain={[0, 100]} />
-                          <Tooltip 
-                            formatter={(value, name, props) => {
-                              const data = props.payload;
-                              const getRiskLabel = (level: string) => {
-                                switch(level) {
-                                  case 'low': return 'Low/Minimal Burnout';
-                                  case 'mild': return 'Mild Burnout Symptoms';
-                                  case 'moderate': return 'Moderate/Significant Burnout';
-                                  case 'high': return 'High/Severe Burnout';
-                                  default: return level;
-                                }
-                              };
-                              return [
-                                `${Number(value).toFixed(1)}/100`, 
-                                `${data.scoreType} Score (${getRiskLabel(data.riskLevel)})`
-                              ];
-                            }}
-                            labelFormatter={(label, payload) => {
-                              const data = payload?.[0]?.payload;
-                              return data ? `${data.fullName}` : label;
-                            }}
-                            contentStyle={{
-                              backgroundColor: 'white',
-                              border: '1px solid #e5e7eb',
-                              borderRadius: '8px',
-                              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                            }}
-                          />
-                          <Bar 
-                            dataKey="score" 
-                            radius={[4, 4, 0, 0]}
-                          >
-                            {memberBarData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.fill} />
-                            ))}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  ) : (
-                    <div className="h-[350px] flex items-center justify-center text-gray-500">
-                      <div className="text-center">
-                        <p className="text-lg font-medium">No incident data available</p>
-                        <p className="text-sm mt-2">Members with zero incidents are not displayed in this chart</p>
+              {/* Individual Burnout Scores and AI Insights Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                {/* Individual Burnout Scores - Takes 2/3 width on large screens */}
+                <Card className="lg:col-span-2">
+                  <CardHeader>
+                    <CardTitle>Individual Burnout Scores</CardTitle>
+                    <CardDescription>Team member OCB burnout scores (higher = more burnout risk)</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {memberBarData.length > 0 ? (
+                      <div className="h-[350px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={memberBarData} margin={{ top: 20, right: 30, bottom: 60, left: 20 }}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis
+                              dataKey="fullName"
+                              angle={-45}
+                              textAnchor="end"
+                              height={60}
+                              interval={0}
+                              tick={{ fontSize: 11 }}
+                            />
+                            <YAxis domain={[0, 100]} />
+                            <Tooltip
+                              formatter={(value, name, props) => {
+                                const data = props.payload;
+                                const getRiskLabel = (level: string) => {
+                                  switch(level) {
+                                    case 'low': return 'Low/Minimal Burnout';
+                                    case 'mild': return 'Mild Burnout Symptoms';
+                                    case 'moderate': return 'Moderate/Significant Burnout';
+                                    case 'high': return 'High/Severe Burnout';
+                                    default: return level;
+                                  }
+                                };
+                                return [
+                                  `${Number(value).toFixed(1)}/100`,
+                                  `${data.scoreType} Score (${getRiskLabel(data.riskLevel)})`
+                                ];
+                              }}
+                              labelFormatter={(label, payload) => {
+                                const data = payload?.[0]?.payload;
+                                return data ? `${data.fullName}` : label;
+                              }}
+                              contentStyle={{
+                                backgroundColor: 'white',
+                                border: '1px solid #e5e7eb',
+                                borderRadius: '8px',
+                                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                              }}
+                            />
+                            <Bar
+                              dataKey="score"
+                              radius={[4, 4, 0, 0]}
+                            >
+                              {memberBarData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.fill} />
+                              ))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
                       </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                    ) : (
+                      <div className="h-[350px] flex items-center justify-center text-gray-500">
+                        <div className="text-center">
+                          <p className="text-lg font-medium">No incident data available</p>
+                          <p className="text-sm mt-2">Members with zero incidents are not displayed in this chart</p>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* AI Insights Card - Takes 1/3 width on large screens */}
+                <div className="lg:col-span-1">
+                  <AIInsightsCard currentAnalysis={currentAnalysis} />
+                </div>
+              </div>
 
               {/* Charts Section */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
