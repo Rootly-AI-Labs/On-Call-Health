@@ -362,17 +362,7 @@ class UserSyncService:
                 return github_int
             except Exception as e:
                 logger.error(f"Failed to decrypt GitHub token: {e}")
-                # Fall through to env var fallback
-
-        # Fallback to environment variable (for Railway/beta)
-        beta_token = os.getenv('GITHUB_TOKEN')
-        if beta_token:
-            logger.info(f"No user GitHub integration found for user {user.id}, using beta token from environment")
-            # Create a temporary GitHubIntegration object with beta token
-            temp_int = GitHubIntegration()
-            temp_int.decrypted_token = beta_token
-            temp_int.organizations = ['rootlyhq', 'Rootly-AI-Labs']  # Default orgs for beta
-            return temp_int
+                return None
 
         logger.info(f"No GitHub integration found for user {user.id}")
         return None
@@ -389,10 +379,20 @@ class UserSyncService:
         Returns statistics about matching results.
         """
         try:
-            # Get GitHub integration
+            # Check if user has an actual GitHub integration (not just beta token fallback)
+            github_int = self.db.query(GitHubIntegration).filter(
+                GitHubIntegration.user_id == user.id,
+                GitHubIntegration.github_token.isnot(None)
+            ).first()
+
+            if not github_int:
+                logger.info("Skipping GitHub matching - no active GitHub integration for user")
+                return None
+
+            # Get the decrypted token
             github_int = self._get_github_integration(user)
             if not github_int:
-                logger.info("Skipping GitHub matching - no GitHub integration configured")
+                logger.info("Skipping GitHub matching - failed to get GitHub integration")
                 return None
 
             # Get organizations from integration
