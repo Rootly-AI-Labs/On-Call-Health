@@ -209,7 +209,7 @@ export function UnifiedSlackCard({
 
       // Reload Slack status to ensure UI is in sync with backend
       if (loadSlackStatus) {
-        loadSlackStatus()
+        await loadSlackStatus(true) // Force refresh to bypass cache
       }
     } catch (error) {
       console.error('Error toggling feature:', error)
