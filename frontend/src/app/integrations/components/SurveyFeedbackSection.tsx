@@ -19,7 +19,7 @@ interface SurveyFeedbackSectionProps {
   fetchSyncedUsers: () => void
   setShowManualSurveyModal: (show: boolean) => void
   loadSlackPermissions: () => void
-  loadSlackStatus?: () => void
+  loadSlackStatus?: (forceRefresh?: boolean) => void
   setSlackSurveyDisconnectDialogOpen: (open: boolean) => void
   setIsConnectingSlackOAuth: (connecting: boolean) => void
   toast: any
