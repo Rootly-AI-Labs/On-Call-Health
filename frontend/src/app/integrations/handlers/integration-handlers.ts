@@ -41,7 +41,11 @@ export async function testConnection(
     const data = await response.json()
 
 
-    if (response.ok && (data.valid || data.status === 'success')) {
+    // Check for duplicate token first
+    if (response.ok && data.status === 'duplicate_token') {
+      setConnectionStatus('duplicate')
+      setDuplicateInfo(data)
+    } else if (response.ok && (data.valid || data.status === 'success')) {
       setConnectionStatus('success')
       if (platform === 'rootly') {
         setPreviewData({

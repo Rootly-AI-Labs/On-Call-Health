@@ -2330,96 +2330,96 @@ export default function IntegrationsPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 mb-8 max-w-2xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-4 mb-6 max-w-2xl mx-auto">
             {/* GitHub Card */}
             {loadingGitHub ? (
-              <Card className="border-2 border-gray-200 p-8 flex items-center justify-center relative h-32 animate-pulse">
-                <div className="absolute top-4 right-4 w-16 h-5 bg-gray-300 rounded"></div>
+              <Card className="border-2 border-gray-200 p-4 flex items-center justify-center relative h-20 animate-pulse">
+                <div className="absolute top-2 right-2 w-16 h-5 bg-gray-300 rounded"></div>
                 <div className="flex items-center space-x-2">
-                  <div className="w-10 h-10 bg-gray-300 rounded"></div>
-                  <div className="h-8 w-24 bg-gray-300 rounded"></div>
+                  <div className="w-8 h-8 bg-gray-300 rounded"></div>
+                  <div className="h-6 w-20 bg-gray-300 rounded"></div>
                 </div>
               </Card>
             ) : (
-                <Card 
-                  className={`border-2 transition-all cursor-pointer hover:shadow-lg ${
-                    activeEnhancementTab === 'github' 
-                      ? 'border-gray-500 shadow-lg bg-gray-50' 
+                <Card
+                  className={`border-2 transition-all cursor-pointer hover:shadow-md ${
+                    activeEnhancementTab === 'github'
+                      ? 'border-gray-500 shadow-md bg-gray-50'
                       : 'border-gray-200 hover:border-gray-300'
-                  } p-8 flex items-center justify-center relative h-32`}
+                  } p-4 flex items-center justify-center relative h-20`}
                   onClick={() => {
                     setActiveEnhancementTab(activeEnhancementTab === 'github' ? null : 'github')
                   }}
                 >
                   {githubIntegration ? (
-                    <div className="absolute top-4 right-4 flex flex-col items-end space-y-1">
-                      <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">
+                    <div className="absolute top-2 right-2 flex flex-col items-end space-y-1">
+                      <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200 text-xs">
                         <CheckCircle className="w-3 h-3 mr-1" />
                         Connected
                       </Badge>
                     </div>
                   ) : null}
                   {activeEnhancementTab === 'github' && (
-                    <div className="absolute top-4 left-4">
-                      <CheckCircle className="w-6 h-6 text-gray-600" />
+                    <div className="absolute top-2 left-2">
+                      <CheckCircle className="w-5 h-5 text-gray-600" />
                     </div>
                   )}
                   <div className="flex items-center space-x-2">
-                    <div className="w-10 h-10 rounded flex items-center justify-center">
+                    <div className="w-8 h-8 rounded flex items-center justify-center">
                       <Image
                         src="/images/github-logo.png"
                         alt="GitHub"
-                        width={40}
-                        height={40}
-                        className="h-10 w-10 object-contain"
+                        width={32}
+                        height={32}
+                        className="h-8 w-8 object-contain"
                       />
                     </div>
-                    <span className="text-2xl font-bold text-slate-900">GitHub</span>
+                    <span className="text-lg font-bold text-slate-900">GitHub</span>
                   </div>
                 </Card>
             )}
 
             {/* Slack Card */}
             {loadingSlack ? (
-              <Card className="border-2 border-gray-200 p-8 flex items-center justify-center relative h-32 animate-pulse">
-                <div className="absolute top-4 right-4 w-16 h-5 bg-gray-300 rounded"></div>
+              <Card className="border-2 border-gray-200 p-4 flex items-center justify-center relative h-20 animate-pulse">
+                <div className="absolute top-2 right-2 w-16 h-5 bg-gray-300 rounded"></div>
                 <div className="flex items-center space-x-2">
-                  <div className="w-10 h-10 bg-gray-300 rounded"></div>
-                  <div className="h-8 w-20 bg-gray-300 rounded"></div>
+                  <div className="w-8 h-8 bg-gray-300 rounded"></div>
+                  <div className="h-6 w-16 bg-gray-300 rounded"></div>
                 </div>
               </Card>
             ) : (
-              <Card 
-                className={`border-2 transition-all cursor-pointer hover:shadow-lg ${
-                  activeEnhancementTab === 'slack' 
-                    ? 'border-purple-500 shadow-lg bg-purple-50' 
+              <Card
+                className={`border-2 transition-all cursor-pointer hover:shadow-md ${
+                  activeEnhancementTab === 'slack'
+                    ? 'border-purple-500 shadow-md bg-purple-50'
                     : 'border-gray-200 hover:border-purple-300'
-                } p-8 flex items-center justify-center relative h-32`}
+                } p-4 flex items-center justify-center relative h-20`}
                 onClick={() => {
                   setActiveEnhancementTab(activeEnhancementTab === 'slack' ? null : 'slack')
                 }}
               >
                   {slackIntegration ? (
-                    <div className="absolute top-4 right-4">
-                      <Badge variant="secondary" className="bg-green-100 text-green-700">Connected</Badge>
+                    <div className="absolute top-2 right-2">
+                      <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">Connected</Badge>
                     </div>
                   ) : null}
                   {activeEnhancementTab === 'slack' && (
-                    <div className="absolute top-4 left-4">
-                      <CheckCircle className="w-6 h-6 text-purple-600" />
+                    <div className="absolute top-2 left-2">
+                      <CheckCircle className="w-5 h-5 text-purple-600" />
                     </div>
                   )}
                   <div className="flex items-center space-x-2">
-                    <div className="w-10 h-10 rounded flex items-center justify-center">
+                    <div className="w-8 h-8 rounded flex items-center justify-center">
                       <Image
                         src="/images/slack-logo.png"
                         alt="Slack"
-                        width={40}
-                        height={40}
-                        className="h-10 w-10 object-contain"
+                        width={32}
+                        height={32}
+                        className="h-8 w-8 object-contain"
                       />
                     </div>
-                    <span className="text-2xl font-bold text-slate-900">Slack</span>
+                    <span className="text-lg font-bold text-slate-900">Slack</span>
                   </div>
                 </Card>
             )}
