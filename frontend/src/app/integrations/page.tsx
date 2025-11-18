@@ -269,6 +269,8 @@ export default function IntegrationsPage() {
   const [loadingSyncedUsers, setLoadingSyncedUsers] = useState(false)
   const [showSyncedUsers, setShowSyncedUsers] = useState(false)
   const [teamMembersDrawerOpen, setTeamMembersDrawerOpen] = useState(false)
+  const [refreshingOnCall, setRefreshingOnCall] = useState(false)
+  const [oncallCacheInfo, setOncallCacheInfo] = useState<any>(null)
 
   // Cache to track which integrations have already been loaded
   const syncedUsersCache = useRef<Map<string, any[]>>(new Map())
@@ -1570,6 +1572,40 @@ export default function IntegrationsPage() {
     )
   }
 
+  // Refresh on-call status
+  const refreshOnCallStatus = async () => {
+    if (!selectedOrganization) {
+      toast.error('Please select an organization first')
+      return
+    }
+
+    setRefreshingOnCall(true)
+    try {
+      const authToken = localStorage.getItem('auth_token')
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+
+      const response = await fetch(`${apiBase}/rootly/integrations/${selectedOrganization}/refresh-oncall`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      })
+
+      if (response.ok) {
+        toast.success('On-call status refreshed')
+        // Reload synced users with fresh on-call data
+        await fetchSyncedUsers(false, false, true)
+      } else {
+        toast.error('Failed to refresh on-call status')
+      }
+    } catch (error) {
+      console.error('Error refreshing on-call status:', error)
+      toast.error('Failed to refresh on-call status')
+    } finally {
+      setRefreshingOnCall(false)
+    }
+  }
+
   // Inline mapping edit handlers
   const startInlineEdit = (mappingId: number | string, currentValue: string = '') => {
     // Don't allow editing of manual mappings inline since they already exist
@@ -2364,6 +2400,11 @@ export default function IntegrationsPage() {
                   </div>
                   <Button
                     onClick={() => {
+                      if (!selectedOrganization) {
+                        toast.error('Please select an organization first')
+                        return
+                      }
+
                       // Open drawer immediately for better UX
                       setTeamMembersDrawerOpen(true)
 
@@ -2390,6 +2431,7 @@ export default function IntegrationsPage() {
                     }}
                     disabled={!selectedOrganization}
                     className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                    title={!selectedOrganization ? 'Please select an organization first' : ''}
                   >
                     <Users className="w-4 h-4 mr-2" />
                     View Members
@@ -3719,6 +3761,20 @@ export default function IntegrationsPage() {
                 </SheetDescription>
               </div>
               <div className="flex items-center gap-3 flex-shrink-0">
+                <Button
+                  onClick={refreshOnCallStatus}
+                  disabled={refreshingOnCall || loadingSyncedUsers}
+                  variant="outline"
+                  size="sm"
+                  className="h-9"
+                  title="Refresh on-call status"
+                >
+                  {refreshingOnCall ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4" />
+                  )}
+                </Button>
                 <Button
                   onClick={() => setShowSyncConfirmModal(true)}
                   disabled={loadingTeamMembers}
