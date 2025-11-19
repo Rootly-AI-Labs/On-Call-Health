@@ -53,6 +53,7 @@ import {
   Building,
   Calendar,
   ChevronDown,
+  ChevronUp,
   Clock,
   Edit3,
   Key,
@@ -160,6 +161,7 @@ export default function IntegrationsPage() {
   const [backUrl, setBackUrl] = useState<string>('/dashboard')
   const [selectedOrganization, setSelectedOrganization] = useState<string>("")
   const [navigatingToDashboard, setNavigatingToDashboard] = useState(false)
+  const [expandedIntegrations, setExpandedIntegrations] = useState<Set<number>>(new Set())
 
   // GitHub/Slack integration state
   const [githubIntegration, setGithubIntegration] = useState<GitHubIntegration | null>(null)
@@ -332,6 +334,18 @@ export default function IntegrationsPage() {
     } finally {
       setLoadingOrgMembers(false)
     }
+  }
+
+  const toggleIntegrationExpanded = (integrationId: number) => {
+    setExpandedIntegrations(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(integrationId)) {
+        newSet.delete(integrationId)
+      } else {
+        newSet.add(integrationId)
+      }
+      return newSet
+    })
   }
 
   const startEditingGitHubUsername = (userId: number, currentUsername: string | null) => {
@@ -1927,20 +1941,20 @@ export default function IntegrationsPage() {
         )}
 
         {/* Platform Selection Cards */}
-        <div className="grid md:grid-cols-2 gap-8 mb-8 max-w-2xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-4 mb-6 max-w-2xl mx-auto">
           {/* Rootly Card */}
           {loadingRootly ? (
-            <Card className="border-2 border-gray-200 p-8 flex items-center justify-center relative h-32 animate-pulse">
-                <div className="absolute top-4 right-4 w-6 h-6 bg-gray-300 rounded"></div>
-                <div className="h-12 w-48 bg-gray-300 rounded"></div>
+            <Card className="border-2 border-gray-200 p-4 flex items-center justify-center relative h-20 animate-pulse">
+                <div className="absolute top-2 right-2 w-5 h-5 bg-gray-300 rounded"></div>
+                <div className="h-8 w-32 bg-gray-300 rounded"></div>
             </Card>
           ) : (
-              <Card 
-                className={`border-2 transition-all cursor-pointer hover:shadow-lg ${
-                  activeTab === 'rootly' 
-                    ? 'border-purple-500 shadow-lg bg-purple-50' 
+              <Card
+                className={`border-2 transition-all cursor-pointer hover:shadow-md ${
+                  activeTab === 'rootly'
+                    ? 'border-purple-500 shadow-md bg-purple-50'
                     : 'border-gray-200 hover:border-purple-300'
-                } p-8 flex items-center justify-center relative h-32`}
+                } p-4 flex items-center justify-center relative h-20`}
                 onClick={() => {
                   setActiveTab('rootly')
                   setAddingPlatform('rootly')
@@ -1957,16 +1971,16 @@ export default function IntegrationsPage() {
               >
                 {activeTab === 'rootly' && (
                   <>
-                    <div className="absolute top-4 left-4">
-                      <CheckCircle className="w-6 h-6 text-purple-600" />
+                    <div className="absolute top-2 left-2">
+                      <CheckCircle className="w-5 h-5 text-purple-600" />
                     </div>
-                    <div className="absolute top-4 right-4">
-                      <Badge variant="secondary" className="bg-purple-100 text-purple-700">{rootlyCount}</Badge>
+                    <div className="absolute top-2 right-2">
+                      <Badge variant="secondary" className="bg-purple-100 text-purple-700 text-xs">{rootlyCount}</Badge>
                     </div>
                   </>
                 )}
                 {activeTab !== 'rootly' && rootlyCount > 0 && (
-                  <Badge variant="secondary" className="absolute top-4 right-4">{rootlyCount}</Badge>
+                  <Badge variant="secondary" className="absolute top-2 right-2 text-xs">{rootlyCount}</Badge>
                 )}
                 <div className="flex items-center justify-center">
                   <Image
@@ -1974,7 +1988,7 @@ export default function IntegrationsPage() {
                     alt="Rootly"
                     width={200}
                     height={80}
-                    className="h-16 w-auto object-contain"
+                    className="h-12 w-auto object-contain"
                   />
                 </div>
               </Card>
@@ -1982,20 +1996,20 @@ export default function IntegrationsPage() {
 
           {/* PagerDuty Card */}
           {(loadingPagerDuty ? (
-            <Card className="border-2 border-gray-200 p-8 flex items-center justify-center relative h-32 animate-pulse">
-              <div className="absolute top-4 right-4 w-6 h-6 bg-gray-300 rounded"></div>
+            <Card className="border-2 border-gray-200 p-4 flex items-center justify-center relative h-20 animate-pulse">
+              <div className="absolute top-2 right-2 w-5 h-5 bg-gray-300 rounded"></div>
               <div className="flex items-center space-x-2">
-                <div className="w-10 h-10 bg-gray-300 rounded"></div>
-                <div className="h-8 w-32 bg-gray-300 rounded"></div>
+                <div className="w-8 h-8 bg-gray-300 rounded"></div>
+                <div className="h-6 w-24 bg-gray-300 rounded"></div>
               </div>
             </Card>
           ) : (
-            <Card 
-              className={`border-2 transition-all cursor-pointer hover:shadow-lg ${
-                activeTab === 'pagerduty' 
-                  ? 'border-green-500 shadow-lg bg-green-50' 
+            <Card
+              className={`border-2 transition-all cursor-pointer hover:shadow-md ${
+                activeTab === 'pagerduty'
+                  ? 'border-green-500 shadow-md bg-green-50'
                   : 'border-gray-200 hover:border-green-300'
-              } p-8 flex items-center justify-center relative h-32`}
+              } p-4 flex items-center justify-center relative h-20`}
               onClick={() => {
                 setActiveTab('pagerduty')
                 setAddingPlatform('pagerduty')
@@ -2012,22 +2026,22 @@ export default function IntegrationsPage() {
             >
               {activeTab === 'pagerduty' && (
                 <>
-                  <div className="absolute top-4 left-4">
-                    <CheckCircle className="w-6 h-6 text-green-600" />
+                  <div className="absolute top-2 left-2">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
                   </div>
-                  <div className="absolute top-4 right-4">
-                    <Badge variant="secondary" className="bg-green-100 text-green-700">{pagerdutyCount}</Badge>
+                  <div className="absolute top-2 right-2">
+                    <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">{pagerdutyCount}</Badge>
                   </div>
                 </>
               )}
               {activeTab !== 'pagerduty' && pagerdutyCount > 0 && (
-                <Badge variant="secondary" className="absolute top-4 right-4">{pagerdutyCount}</Badge>
+                <Badge variant="secondary" className="absolute top-2 right-2 text-xs">{pagerdutyCount}</Badge>
               )}
               <div className="flex items-center space-x-2">
-                <div className="w-10 h-10 bg-green-600 rounded flex items-center justify-center">
-                  <span className="text-white font-bold text-base">PD</span>
+                <div className="w-8 h-8 bg-green-600 rounded flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">PD</span>
                 </div>
-                <span className="text-2xl font-bold text-slate-900">PagerDuty</span>
+                <span className="text-lg font-bold text-slate-900">PagerDuty</span>
               </div>
             </Card>
           ))}
@@ -2110,83 +2124,116 @@ export default function IntegrationsPage() {
             ) : integrations.length > 0 && filteredIntegrations.length > 0 ? (
               <Card className="max-w-2xl mx-auto">
                 <CardContent className="p-6 space-y-4">
-                  {filteredIntegrations.map((integration) => (
+                  {filteredIntegrations.map((integration) => {
+                    const isExpanded = expandedIntegrations.has(integration.id)
+
+                    return (
                     <div key={integration.id} className={`
-                      p-6 rounded-lg border relative
+                      rounded-lg border relative transition-all
                       ${integration.platform === 'rootly' ? 'border-green-200 bg-green-50' : 'border-green-200 bg-green-50'}
                       ${savingIntegrationId === integration.id ? 'opacity-75' : ''}
+                      ${isExpanded ? 'p-4' : 'p-3'}
                     `}>
                       {/* Saving overlay */}
                       {savingIntegrationId === integration.id && (
-                        <div className="absolute inset-0 bg-white bg-opacity-50 flex items-center justify-center rounded-lg">
+                        <div className="absolute inset-0 bg-white bg-opacity-50 flex items-center justify-center rounded-lg z-10">
                           <div className="flex items-center space-x-2">
                             <Loader2 className="w-5 h-5 animate-spin" />
                             <span className="text-sm font-medium">Saving...</span>
                           </div>
                         </div>
                       )}
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-2">
-                            
-                            {editingIntegration === integration.id ? (
-                              <div className="flex items-center space-x-2">
-                                <Input
-                                  value={editingName}
-                                  onChange={(e) => setEditingName(e.target.value)}
-                                  className="h-8 w-48"
-                                  disabled={savingIntegrationId === integration.id}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && savingIntegrationId !== integration.id) {
-                                      updateIntegrationName(integration, editingName)
-                                      setEditingIntegration(null)
-                                    } else if (e.key === 'Escape') {
-                                      setEditingIntegration(null)
-                                    }
-                                  }}
-                                />
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  disabled={savingIntegrationId === integration.id}
-                                  onClick={() => {
-                                    updateIntegrationName(integration, editingName)
-                                    setEditingIntegration(null)
-                                  }}
-                                >
-                                  <Check className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            ) : (
-                              <div className="flex items-center space-x-2">
-                                <h3 className="font-semibold text-lg">{integration.name}</h3>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  disabled={savingIntegrationId === integration.id}
-                                  onClick={() => {
-                                    setEditingIntegration(integration.id)
-                                    setEditingName(integration.name)
-                                  }}
-                                >
-                                  <Edit3 className="w-3 h-3" />
-                                </Button>
-                              </div>
-                            )}
-                            
-                            <Badge variant={integration.platform === 'rootly' ? 'default' : 'secondary'} 
-                                   className={integration.platform === 'rootly' ? 'bg-purple-100 text-purple-700' : 'bg-green-100 text-green-700'}>
-                              {integration.platform}
-                            </Badge>
-                            
+
+                      {/* Collapsed Header - Click anywhere to expand */}
+                      <div
+                        className="flex items-center cursor-pointer hover:bg-white/30 -m-3 p-3 rounded-lg transition-colors"
+                        onClick={() => !editingIntegration && toggleIntegrationExpanded(integration.id)}
+                      >
+                        {/* Expand/Collapse Icon */}
+                        <div className="flex-shrink-0 w-6">
+                          {isExpanded ? (
+                            <ChevronUp className="w-4 h-4 text-gray-500" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4 text-gray-500" />
+                          )}
+                        </div>
+
+                        {/* Name - flexible width */}
+                        {editingIntegration === integration.id ? (
+                          <div className="flex items-center space-x-2 flex-1 min-w-0 mr-3" onClick={(e) => e.stopPropagation()}>
+                            <Input
+                              value={editingName}
+                              onChange={(e) => setEditingName(e.target.value)}
+                              className="h-8 w-48"
+                              disabled={savingIntegrationId === integration.id}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && savingIntegrationId !== integration.id) {
+                                  updateIntegrationName(integration, editingName)
+                                  setEditingIntegration(null)
+                                } else if (e.key === 'Escape') {
+                                  setEditingIntegration(null)
+                                }
+                              }}
+                            />
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              disabled={savingIntegrationId === integration.id}
+                              onClick={() => {
+                                updateIntegrationName(integration, editingName)
+                                setEditingIntegration(null)
+                              }}
+                            >
+                              <Check className="w-4 h-4" />
+                            </Button>
                           </div>
-                          
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+                        ) : (
+                          <h3 className="font-semibold text-base truncate flex-1 min-w-0 mr-3">{integration.name}</h3>
+                        )}
+
+                        {/* Stats in collapsed view - fixed widths for alignment */}
+                        {!isExpanded && (
+                          <>
+                            <div className="flex items-center gap-1 text-sm text-gray-600 w-16 flex-shrink-0">
+                              <Users className="w-3 h-3" />
+                              <span>{integration.total_users}</span>
+                            </div>
+                            <div className="text-sm text-gray-500 w-28 flex-shrink-0">•••{integration.token_suffix}</div>
+                          </>
+                        )}
+
+                        {/* Badge - fixed width for alignment */}
+                        <Badge variant={integration.platform === 'rootly' ? 'default' : 'secondary'}
+                               className={`flex-shrink-0 w-24 justify-center ${integration.platform === 'rootly' ? 'bg-purple-100 text-purple-700' : 'bg-green-100 text-green-700'}`}>
+                          {integration.platform}
+                        </Badge>
+                      </div>
+
+                      {/* Expanded Details */}
+                      {isExpanded && (
+                        <div className="mt-4 space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                             <div className="flex items-start space-x-2">
                               <Building className="w-4 h-4 mt-0.5 text-gray-400" />
-                              <div>
-                                <div className="font-bold text-gray-900">Organization</div>
+                              <div className="flex-1">
+                                <div className="font-bold text-gray-900 flex items-center gap-2">
+                                  Organization
+                                  {editingIntegration !== integration.id && (
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      disabled={savingIntegrationId === integration.id}
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        setEditingIntegration(integration.id)
+                                        setEditingName(integration.name)
+                                      }}
+                                      className="h-5 w-5 p-0"
+                                    >
+                                      <Edit3 className="w-3 h-3" />
+                                    </Button>
+                                  )}
+                                </div>
                                 <div className="text-gray-600">{integration.organization_name}</div>
                               </div>
                             </div>
@@ -2287,7 +2334,7 @@ export default function IntegrationsPage() {
                               {/* Error message for insufficient permissions */}
                               {integration.permissions?.users?.access !== null && integration.permissions?.incidents?.access !== null &&
                                (!integration.permissions?.users?.access || !integration.permissions?.incidents?.access) && (
-                                <div className="mt-3">
+                                <div>
                                   <Alert className="border-red-200 bg-red-50">
                                     <AlertCircle className="h-4 w-4 text-red-600" />
                                     <AlertDescription className="text-red-800">
@@ -2298,24 +2345,27 @@ export default function IntegrationsPage() {
                               )}
                             </>
                           )}
+
+                          {/* Delete Button in Expanded View */}
+                          <div className="pt-3 border-t border-gray-200 flex justify-end">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setIntegrationToDelete(integration)
+                                setDeleteDialogOpen(true)
+                              }}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete Integration
+                            </Button>
+                          </div>
                         </div>
-                        
-                        <div className="flex items-center">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => {
-                              setIntegrationToDelete(integration)
-                              setDeleteDialogOpen(true)
-                            }}
-                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
+                      )}
                     </div>
-                  ))}
+                    )
+                  })}
 
                   {/* Skeleton card while reloading integrations */}
                   {reloadingIntegrations && (
@@ -2454,96 +2504,96 @@ export default function IntegrationsPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 mb-8 max-w-2xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-4 mb-6 max-w-2xl mx-auto">
             {/* GitHub Card */}
             {loadingGitHub ? (
-              <Card className="border-2 border-gray-200 p-8 flex items-center justify-center relative h-32 animate-pulse">
-                <div className="absolute top-4 right-4 w-16 h-5 bg-gray-300 rounded"></div>
+              <Card className="border-2 border-gray-200 p-4 flex items-center justify-center relative h-20 animate-pulse">
+                <div className="absolute top-2 right-2 w-16 h-5 bg-gray-300 rounded"></div>
                 <div className="flex items-center space-x-2">
-                  <div className="w-10 h-10 bg-gray-300 rounded"></div>
-                  <div className="h-8 w-24 bg-gray-300 rounded"></div>
+                  <div className="w-8 h-8 bg-gray-300 rounded"></div>
+                  <div className="h-6 w-20 bg-gray-300 rounded"></div>
                 </div>
               </Card>
             ) : (
-                <Card 
-                  className={`border-2 transition-all cursor-pointer hover:shadow-lg ${
-                    activeEnhancementTab === 'github' 
-                      ? 'border-gray-500 shadow-lg bg-gray-50' 
+                <Card
+                  className={`border-2 transition-all cursor-pointer hover:shadow-md ${
+                    activeEnhancementTab === 'github'
+                      ? 'border-gray-500 shadow-md bg-gray-50'
                       : 'border-gray-200 hover:border-gray-300'
-                  } p-8 flex items-center justify-center relative h-32`}
+                  } p-4 flex items-center justify-center relative h-20`}
                   onClick={() => {
                     setActiveEnhancementTab(activeEnhancementTab === 'github' ? null : 'github')
                   }}
                 >
                   {githubIntegration ? (
-                    <div className="absolute top-4 right-4 flex flex-col items-end space-y-1">
-                      <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">
+                    <div className="absolute top-2 right-2 flex flex-col items-end space-y-1">
+                      <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200 text-xs">
                         <CheckCircle className="w-3 h-3 mr-1" />
                         Connected
                       </Badge>
                     </div>
                   ) : null}
                   {activeEnhancementTab === 'github' && (
-                    <div className="absolute top-4 left-4">
-                      <CheckCircle className="w-6 h-6 text-gray-600" />
+                    <div className="absolute top-2 left-2">
+                      <CheckCircle className="w-5 h-5 text-gray-600" />
                     </div>
                   )}
                   <div className="flex items-center space-x-2">
-                    <div className="w-10 h-10 rounded flex items-center justify-center">
+                    <div className="w-8 h-8 rounded flex items-center justify-center">
                       <Image
                         src="/images/github-logo.png"
                         alt="GitHub"
-                        width={40}
-                        height={40}
-                        className="h-10 w-10 object-contain"
+                        width={32}
+                        height={32}
+                        className="h-8 w-8 object-contain"
                       />
                     </div>
-                    <span className="text-2xl font-bold text-slate-900">GitHub</span>
+                    <span className="text-lg font-bold text-slate-900">GitHub</span>
                   </div>
                 </Card>
             )}
 
             {/* Slack Card */}
             {loadingSlack ? (
-              <Card className="border-2 border-gray-200 p-8 flex items-center justify-center relative h-32 animate-pulse">
-                <div className="absolute top-4 right-4 w-16 h-5 bg-gray-300 rounded"></div>
+              <Card className="border-2 border-gray-200 p-4 flex items-center justify-center relative h-20 animate-pulse">
+                <div className="absolute top-2 right-2 w-16 h-5 bg-gray-300 rounded"></div>
                 <div className="flex items-center space-x-2">
-                  <div className="w-10 h-10 bg-gray-300 rounded"></div>
-                  <div className="h-8 w-20 bg-gray-300 rounded"></div>
+                  <div className="w-8 h-8 bg-gray-300 rounded"></div>
+                  <div className="h-6 w-16 bg-gray-300 rounded"></div>
                 </div>
               </Card>
             ) : (
-              <Card 
-                className={`border-2 transition-all cursor-pointer hover:shadow-lg ${
-                  activeEnhancementTab === 'slack' 
-                    ? 'border-purple-500 shadow-lg bg-purple-50' 
+              <Card
+                className={`border-2 transition-all cursor-pointer hover:shadow-md ${
+                  activeEnhancementTab === 'slack'
+                    ? 'border-purple-500 shadow-md bg-purple-50'
                     : 'border-gray-200 hover:border-purple-300'
-                } p-8 flex items-center justify-center relative h-32`}
+                } p-4 flex items-center justify-center relative h-20`}
                 onClick={() => {
                   setActiveEnhancementTab(activeEnhancementTab === 'slack' ? null : 'slack')
                 }}
               >
                   {slackIntegration ? (
-                    <div className="absolute top-4 right-4">
-                      <Badge variant="secondary" className="bg-green-100 text-green-700">Connected</Badge>
+                    <div className="absolute top-2 right-2">
+                      <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">Connected</Badge>
                     </div>
                   ) : null}
                   {activeEnhancementTab === 'slack' && (
-                    <div className="absolute top-4 left-4">
-                      <CheckCircle className="w-6 h-6 text-purple-600" />
+                    <div className="absolute top-2 left-2">
+                      <CheckCircle className="w-5 h-5 text-purple-600" />
                     </div>
                   )}
                   <div className="flex items-center space-x-2">
-                    <div className="w-10 h-10 rounded flex items-center justify-center">
+                    <div className="w-8 h-8 rounded flex items-center justify-center">
                       <Image
                         src="/images/slack-logo.png"
                         alt="Slack"
-                        width={40}
-                        height={40}
-                        className="h-10 w-10 object-contain"
+                        width={32}
+                        height={32}
+                        className="h-8 w-8 object-contain"
                       />
                     </div>
-                    <span className="text-2xl font-bold text-slate-900">Slack</span>
+                    <span className="text-lg font-bold text-slate-900">Slack</span>
                   </div>
                 </Card>
             )}

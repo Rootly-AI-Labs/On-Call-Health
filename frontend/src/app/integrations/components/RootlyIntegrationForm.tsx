@@ -5,7 +5,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { HelpCircle, ChevronDown, CheckCircle, AlertCircle, Shield, Plus, Loader2, Eye, EyeOff, Copy, Check } from "lucide-react"
+import { HelpCircle, ChevronDown, CheckCircle, AlertCircle, Shield, Plus, Loader2, Eye, EyeOff, Copy, Check, Edit3 } from "lucide-react"
 import { UseFormReturn } from "react-hook-form"
 import { RootlyFormData, PreviewData } from "../types"
 
@@ -39,6 +39,7 @@ export function RootlyIntegrationForm({
   const [showInstructions, setShowInstructions] = useState(false)
   const [showToken, setShowToken] = useState(false)
   const [lastTestedToken, setLastTestedToken] = useState<string>('')
+  const [editingInline, setEditingInline] = useState(false)
 
   const tokenValue = form.watch('rootlyToken')
 
@@ -49,6 +50,17 @@ export function RootlyIntegrationForm({
       onTest('rootly', tokenValue)
     }
   }, [tokenValue, lastTestedToken, isValidToken, onTest])
+
+  // Auto-populate name field when preview data is available
+  useEffect(() => {
+    if (previewData?.suggested_name && connectionStatus === 'success') {
+      const currentName = form.getValues('nickname')
+      // Only auto-fill if the field is empty
+      if (!currentName) {
+        form.setValue('nickname', previewData.suggested_name)
+      }
+    }
+  }, [previewData, connectionStatus, form])
 
   return (
     <Card className="border-purple-200 max-w-2xl mx-auto">
@@ -167,13 +179,42 @@ export function RootlyIntegrationForm({
                   <Alert className="border-green-200 bg-green-50">
                     <CheckCircle className="h-4 w-4 text-green-600" />
                     <AlertDescription className="text-green-800">
-                      <div className="space-y-2">
-                        <p className="font-semibold">✅ Token validated! Permissions verified.</p>
-                        <div className="space-y-1 text-sm">
-                          <p><span className="font-medium">Organization:</span> {previewData.organization_name}</p>
-                          <p><span className="font-medium">Users:</span> {previewData.total_users}</p>
-                        </div>
+                      <p className="font-semibold">✅ Token validated! Permissions verified.</p>
+                      <div className="text-sm mt-1 flex items-center gap-2 flex-wrap">
+                        <span>Connected to</span>
+                        {editingInline ? (
+                          <Input
+                            value={form.watch('nickname') || previewData.organization_name}
+                            onChange={(e) => form.setValue('nickname', e.target.value)}
+                            className="h-6 w-64 inline-flex"
+                            autoFocus
+                            onBlur={() => setEditingInline(false)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                setEditingInline(false)
+                              }
+                            }}
+                          />
+                        ) : (
+                          <>
+                            <span className="font-medium">{form.watch('nickname') || previewData.organization_name}</span>
+                            {previewData.can_add && (
+                              <button
+                                type="button"
+                                onClick={() => setEditingInline(true)}
+                                className="text-gray-500 hover:text-gray-700"
+                                title="Edit integration name"
+                              >
+                                <Edit3 className="w-3 h-3" />
+                              </button>
+                            )}
+                          </>
+                        )}
+                        <span>({previewData.total_users} users)</span>
                       </div>
+                      {form.watch('nickname') && form.watch('nickname') !== previewData.organization_name && (
+                        <p className="text-xs text-green-700 mt-1">Custom name: {form.watch('nickname')}</p>
+                      )}
                     </AlertDescription>
                   </Alert>
                 ) : (
@@ -194,27 +235,6 @@ export function RootlyIntegrationForm({
                       <p className="text-sm mt-2">Please create a new API token with the required permissions and try again.</p>
                     </AlertDescription>
                   </Alert>
-                )}
-
-                {previewData.can_add && previewData.permissions?.users?.access && previewData.permissions?.incidents?.access && (
-                  <FormField
-                    control={form.control}
-                    name="nickname"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Integration Name (optional)</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            placeholder={previewData.suggested_name || previewData.organization_name}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Give this integration a custom name
-                        </FormDescription>
-                      </FormItem>
-                    )}
-                  />
                 )}
               </>
             )}
