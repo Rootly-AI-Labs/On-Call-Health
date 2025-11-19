@@ -47,16 +47,16 @@ class RootlyAPIClient:
                         logger.info(f" Rootly users permission check: SUCCESS")
                     elif response.status_code == 401:
                         permissions["users"]["error"] = "Unauthorized - check API token"
-                        logger.warning(f"️ Rootly users permission check: 401 Unauthorized")
+                        logger.warning(f"Rootly users permission check: 401 Unauthorized")
                     elif response.status_code == 403:
                         permissions["users"]["error"] = "Token needs 'users:read' permission"
-                        logger.warning(f"️ Rootly users permission check: 403 Forbidden")
+                        logger.warning(f"Rootly users permission check: 403 Forbidden")
                     elif response.status_code == 404:
                         permissions["users"]["error"] = "API token doesn't have access to user data"
-                        logger.warning(f"️ Rootly users permission check: 404 Not Found")
+                        logger.warning(f"Rootly users permission check: 404 Not Found")
                     else:
                         permissions["users"]["error"] = f"HTTP {response.status_code}"
-                        logger.warning(f"️ Rootly users permission check: HTTP {response.status_code}")
+                        logger.warning(f"Rootly users permission check: HTTP {response.status_code}")
 
                 except Exception as e:
                     permissions["users"]["error"] = f"Connection error: {str(e)}"
