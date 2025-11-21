@@ -292,17 +292,23 @@ export default function Dashboard() {
                       onClick={async () => {
                         const analysisKey = analysis.uuid || analysis.id.toString()
 
+                        // Get members array - handle both object and array formats
+                        const teamAnalysis = analysis.analysis_data?.team_analysis
+                        const members = Array.isArray(teamAnalysis) ? teamAnalysis : (teamAnalysis as any)?.members
+
                         console.log('Analysis clicked:', {
                           id: analysis.id,
                           uuid: analysis.uuid,
                           hasSummary: !!analysis.analysis_data,
-                          hasMembers: analysis.analysis_data?.team_analysis?.members?.length || 0
+                          hasMembers: Array.isArray(members) ? members.length : 0
                         })
 
                         // Check cache first - but only use if it has full analysis data with members
                         const cachedAnalysis = analysisCache.get(analysisKey)
-                        if (cachedAnalysis && cachedAnalysis.analysis_data && cachedAnalysis.analysis_data.team_analysis &&
-                            cachedAnalysis.analysis_data.team_analysis.members && cachedAnalysis.analysis_data.team_analysis.members.length > 0) {
+                        const cachedTeamAnalysis = cachedAnalysis?.analysis_data?.team_analysis
+                        const cachedMembers = Array.isArray(cachedTeamAnalysis) ? cachedTeamAnalysis : (cachedTeamAnalysis as any)?.members
+
+                        if (cachedAnalysis && cachedAnalysis.analysis_data && cachedMembers && Array.isArray(cachedMembers) && cachedMembers.length > 0) {
                           console.log('Using cached full analysis')
                           // Use cached full analysis data
                           setCurrentAnalysis(cachedAnalysis)
@@ -312,8 +318,7 @@ export default function Dashboard() {
                         }
 
                         // If analysis doesn't have full data with members, fetch it
-                        if (!analysis.analysis_data || !analysis.analysis_data.team_analysis ||
-                            !analysis.analysis_data.team_analysis.members || analysis.analysis_data.team_analysis.members.length === 0) {
+                        if (!analysis.analysis_data || !members || !Array.isArray(members) || members.length === 0) {
                           console.log('Fetching full analysis from API...')
                           try {
                             const authToken = localStorage.getItem('auth_token')
@@ -329,7 +334,9 @@ export default function Dashboard() {
 
                             if (response.ok) {
                               const fullAnalysis = await response.json()
-                              console.log('Full analysis loaded, members:', fullAnalysis.analysis_data?.team_analysis?.members?.length || 0)
+                              const fullTeamAnalysis = fullAnalysis.analysis_data?.team_analysis
+                              const fullMembers = Array.isArray(fullTeamAnalysis) ? fullTeamAnalysis : (fullTeamAnalysis as any)?.members
+                              console.log('Full analysis loaded, members:', Array.isArray(fullMembers) ? fullMembers.length : 0)
                               // Cache the full analysis data (whether sufficient or insufficient)
                               setAnalysisCache(prev => new Map(prev.set(analysisKey, fullAnalysis)))
                               setCurrentAnalysis(fullAnalysis)
