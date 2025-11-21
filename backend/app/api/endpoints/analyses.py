@@ -43,7 +43,8 @@ def extract_analysis_summary(full_results: dict) -> dict:
         summary["metadata"] = {
             "total_incidents": metadata.get("total_incidents", 0),
             "days_analyzed": metadata.get("days_analyzed", 30),
-            "total_members": metadata.get("total_members", 0)
+            "total_members": metadata.get("total_members", 0),
+            "severity_breakdown": metadata.get("severity_breakdown", {})
         }
 
     if "team_health" in full_results:
