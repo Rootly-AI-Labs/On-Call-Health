@@ -241,7 +241,7 @@ class UnifiedBurnoutAnalyzer:
 
             incidents = data.get("incidents", []) if data else []
             metadata = data.get("collection_metadata", {}) if data else {}
-            
+
             # COMPREHENSIVE DATA VALIDATION AND ANALYSIS
             logger.info(f"UNIFIED ANALYZER: DATA VALIDATION for {self.platform.upper()}")
             logger.info(f"   - Platform: {self.platform}")
@@ -249,6 +249,7 @@ class UnifiedBurnoutAnalyzer:
             logger.info(f"   - Users extracted: {len(users)}")
             logger.info(f"   - Incidents extracted: {len(incidents)}")
             logger.info(f"   - Metadata keys: {list(metadata.keys()) if metadata else 'None'}")
+            logger.info(f"   - Severity breakdown in metadata: {metadata.get('severity_breakdown', 'NOT FOUND')}")
             
             # Validate user data structure
             if users:
