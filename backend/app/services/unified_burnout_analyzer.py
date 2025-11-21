@@ -249,6 +249,7 @@ class UnifiedBurnoutAnalyzer:
             logger.info(f"   - Users extracted: {len(users)}")
             logger.info(f"   - Incidents extracted: {len(incidents)}")
             logger.info(f"   - Metadata keys: {list(metadata.keys()) if metadata else 'None'}")
+            logger.info(f"   - Full metadata: {metadata}")
             logger.info(f"   - Severity breakdown in metadata: {metadata.get('severity_breakdown', 'NOT FOUND')}")
             
             # Validate user data structure
