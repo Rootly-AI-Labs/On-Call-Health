@@ -15,6 +15,7 @@ from ..core.pagerduty_client import PagerDutyAPIClient
 from ..core.cbi_config import calculate_composite_cbi_score, calculate_personal_burnout, calculate_work_related_burnout, generate_cbi_score_reasoning
 from .ai_burnout_analyzer import get_ai_burnout_analyzer
 from .github_correlation_service import GitHubCorrelationService
+from ..utils.incident_utils import slim_incidents
 
 logger = logging.getLogger(__name__)
 
@@ -599,7 +600,7 @@ class UnifiedBurnoutAnalyzer:
                 "recommendations": self._generate_recommendations(team_health, team_analysis),
                 "daily_trends": daily_trends,
                 "individual_daily_data": individual_daily_data,
-                "raw_incident_data": incidents,  # Store complete incident data for individual daily health reconstruction
+                "raw_incident_data": slim_incidents(incidents),  # Store slimmed incident data (96% size reduction)
                 "period_summary": {
                     "average_score": round(period_average_score, 2),
                     "days_analyzed": time_range_days,
