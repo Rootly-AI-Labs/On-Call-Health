@@ -296,11 +296,6 @@ export default function Dashboard() {
                         const teamAnalysis = analysis.analysis_data?.team_analysis
                         const members = Array.isArray(teamAnalysis) ? teamAnalysis : (teamAnalysis as any)?.members
 
-                        // DEBUG: Check what we have
-                        if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-                          alert(`Analysis ${analysis.id}: members=${Array.isArray(members) ? members.length : 'not array'}`)
-                        }
-
                         // Check cache first - but only use if it has full analysis data with members
                         const cachedAnalysis = analysisCache.get(analysisKey)
                         const cachedTeamAnalysis = cachedAnalysis?.analysis_data?.team_analysis
@@ -316,9 +311,6 @@ export default function Dashboard() {
 
                         // If analysis doesn't have full data with members, fetch it
                         if (!analysis.analysis_data || !members || !Array.isArray(members) || members.length === 0) {
-                          if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-                            alert('Fetching full analysis...')
-                          }
                           try {
                             const authToken = localStorage.getItem('auth_token')
                             if (!authToken) return
@@ -331,29 +323,16 @@ export default function Dashboard() {
 
                             if (response.ok) {
                               const fullAnalysis = await response.json()
-                              const fullTeamAnalysis = fullAnalysis.analysis_data?.team_analysis
-                              const fullMembers = Array.isArray(fullTeamAnalysis) ? fullTeamAnalysis : (fullTeamAnalysis as any)?.members
-
-                              if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-                                alert(`Got full analysis: members=${Array.isArray(fullMembers) ? fullMembers.length : 'not array'}`)
-                              }
-
                               // Cache the full analysis data
                               setAnalysisCache(prev => new Map(prev.set(analysisKey, fullAnalysis)))
                               setCurrentAnalysis(fullAnalysis)
                               setRedirectingToSuggested(false) // Turn off redirect loader
                               updateURLWithAnalysis(fullAnalysis.uuid || fullAnalysis.id)
                             } else {
-                              if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-                                alert(`Fetch failed: ${response.status}`)
-                              }
                               console.error('Failed to fetch full analysis:', response.status)
                               setRedirectingToSuggested(false)
                             }
                           } catch (error) {
-                            if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-                              alert(`Fetch error: ${error}`)
-                            }
                             console.error('Error fetching full analysis:', error)
                             setRedirectingToSuggested(false)
                           }
