@@ -76,9 +76,6 @@ export function BurnoutFactorsV0({ ocbReasoning }: BurnoutFactorsV0Props) {
                   </div>
                 </div>
               </div>
-              <span className="text-lg font-bold text-green-700">
-                {(personalPoints / 2).toFixed(1)} points
-              </span>
             </div>
           </div>
 
@@ -92,7 +89,7 @@ export function BurnoutFactorsV0({ ocbReasoning }: BurnoutFactorsV0Props) {
                   {factor.points && (
                     <div className="text-right">
                       <span className="text-xl text-gray-900" style={{ fontWeight: '700 !important' }}>
-                        {(factor.points / 2).toFixed(1)}
+                        {factor.points.toFixed(1)}
                       </span>
                       <span className="text-sm text-gray-500 ml-1" style={{ fontWeight: '400 !important' }}>points</span>
                     </div>
@@ -155,9 +152,6 @@ export function BurnoutFactorsV0({ ocbReasoning }: BurnoutFactorsV0Props) {
                   </div>
                 </div>
               </div>
-              <span className="text-lg font-bold text-blue-700">
-                {(workRelatedPoints / 2).toFixed(1)} points
-              </span>
             </div>
           </div>
 
@@ -171,7 +165,7 @@ export function BurnoutFactorsV0({ ocbReasoning }: BurnoutFactorsV0Props) {
                   {factor.points && (
                     <div className="text-right">
                       <span className="text-xl text-gray-900" style={{ fontWeight: '700 !important' }}>
-                        {(factor.points / 2).toFixed(1)}
+                        {factor.points.toFixed(1)}
                       </span>
                       <span className="text-sm text-gray-500 ml-1" style={{ fontWeight: '400 !important' }}>points</span>
                     </div>
