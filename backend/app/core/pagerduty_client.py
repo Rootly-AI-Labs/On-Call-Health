@@ -584,7 +584,11 @@ class PagerDutyDataCollector:
         
         incidents_with_emails = len([i for i in normalized_incidents if i.get("assigned_to") and i.get("assigned_to", {}).get("email")])
         logger.info(f"🚀 PAGERDUTY COLLECTION: {incidents_with_emails}/{len(normalized_incidents)} incidents have emails")
-        
+
+        # Calculate severity breakdown using shared utility
+        from app.utils.incident_utils import calculate_severity_breakdown
+        severity_counts = calculate_severity_breakdown(normalized_incidents)
+
         # Add enhanced collection metadata
         metadata = normalized_data.get("metadata", {})
         normalized_data["collection_metadata"] = {
@@ -599,7 +603,8 @@ class PagerDutyDataCollector:
             "assignment_stats": metadata.get("assignment_stats", {}),
             "total_incidents": len(incidents),
             "total_users": len(users),
-            "incidents_with_valid_emails": incidents_with_emails
+            "incidents_with_valid_emails": incidents_with_emails,
+            "severity_breakdown": severity_counts
         }
         
         logger.info(f"PAGERDUTY COLLECTION: COMPLETE - Returning enhanced data")

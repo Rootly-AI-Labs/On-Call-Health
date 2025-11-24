@@ -824,8 +824,9 @@ class UnifiedBurnoutAnalyzer:
                 # Only fetch incidents from API (much faster!)
                 # Different APIs use different parameters
                 if self.platform == "pagerduty":
-                    since = datetime.now() - timedelta(days=days_back)
-                    until = datetime.now()
+                    import pytz
+                    since = datetime.now(pytz.UTC) - timedelta(days=days_back)
+                    until = datetime.now(pytz.UTC)
                     raw_incidents = await self.client.get_incidents(since=since, until=until, limit=5000)
                 else:  # rootly
                     raw_incidents = await self.client.get_incidents(days_back=days_back, limit=5000)
