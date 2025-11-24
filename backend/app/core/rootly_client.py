@@ -689,55 +689,9 @@ class RootlyAPIClient:
             if not users:
                 raise Exception("No users found - check API permissions")
             
-            # Count incidents by severity
-            severity_counts = {
-                "sev0_count": 0,  # Critical/Emergency
-                "sev1_count": 0,
-                "sev2_count": 0,
-                "sev3_count": 0,
-                "sev4_count": 0
-            }
-            
-            # Process incidents to count severities
-            for incident in incidents:
-                try:
-                    # Extract severity from incident attributes
-                    attrs = incident.get("attributes", {})
-                    severity_info = attrs.get("severity", {})
-                    severity_name = "sev4"  # Default
-                    
-                    if isinstance(severity_info, dict) and "data" in severity_info:
-                        severity_data = severity_info.get("data", {})
-                        if isinstance(severity_data, dict) and "attributes" in severity_data:
-                            severity_attrs = severity_data["attributes"]
-                            # Look for severity name or level
-                            severity_name = severity_attrs.get("name", "sev4").lower()
-                            if not severity_name.startswith("sev"):
-                                # Map common severity names to sev levels
-                                severity_map = {
-                                    "critical": "sev1",
-                                    "high": "sev2", 
-                                    "medium": "sev3",
-                                    "low": "sev4"
-                                }
-                                severity_name = severity_map.get(severity_name.lower(), "sev4")
-                    
-                    # Increment the appropriate counter
-                    if severity_name == "sev0" or severity_name == "emergency":
-                        severity_counts["sev0_count"] += 1
-                    elif severity_name == "sev1":
-                        severity_counts["sev1_count"] += 1
-                    elif severity_name == "sev2":
-                        severity_counts["sev2_count"] += 1
-                    elif severity_name == "sev3":
-                        severity_counts["sev3_count"] += 1
-                    else:
-                        severity_counts["sev4_count"] += 1
-                        
-                except Exception as e:
-                    logger.debug(f"Error counting severity for incident: {e}")
-                    # Default to sev4 on error
-                    severity_counts["sev4_count"] += 1
+            # Calculate severity breakdown using shared utility
+            from app.utils.incident_utils import calculate_severity_breakdown
+            severity_counts = calculate_severity_breakdown(incidents)
             
             # Process and return data
             processed_data = {

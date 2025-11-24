@@ -231,3 +231,77 @@ def slim_incidents(incidents: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     )
 
     return slimmed
+
+
+def calculate_severity_breakdown(incidents: List[Dict[str, Any]]) -> Dict[str, int]:
+    """
+    Calculate severity breakdown counts from a list of incidents.
+
+    Counts incidents by severity level (SEV0-SEV4) for analytics and reporting.
+
+    Args:
+        incidents: List of incident objects with attributes.severity data
+
+    Returns:
+        Dictionary with severity counts:
+        {
+            "sev0_count": 0,
+            "sev1_count": 0,
+            "sev2_count": 0,
+            "sev3_count": 0,
+            "sev4_count": 0
+        }
+
+    Example:
+        >>> incidents = [{"attributes": {"severity": {"data": {"attributes": {"name": "SEV1"}}}}}]
+        >>> calculate_severity_breakdown(incidents)
+        {'sev0_count': 0, 'sev1_count': 1, 'sev2_count': 0, 'sev3_count': 0, 'sev4_count': 0}
+    """
+    severity_counts = {
+        "sev0_count": 0,
+        "sev1_count": 0,
+        "sev2_count": 0,
+        "sev3_count": 0,
+        "sev4_count": 0
+    }
+
+    for incident in incidents:
+        try:
+            # Extract severity from incident attributes
+            attrs = incident.get("attributes", {})
+            severity_info = attrs.get("severity", {})
+            severity_name = "sev4"  # Default to lowest severity
+
+            if isinstance(severity_info, dict) and "data" in severity_info:
+                severity_data = severity_info.get("data", {})
+                if isinstance(severity_data, dict) and "attributes" in severity_data:
+                    severity_attrs = severity_data["attributes"]
+                    severity_name = severity_attrs.get("name", "sev4").lower()
+                    if not severity_name.startswith("sev"):
+                        # Map common severity names to sev levels
+                        severity_map = {
+                            "critical": "sev1",
+                            "high": "sev2",
+                            "medium": "sev3",
+                            "low": "sev4"
+                        }
+                        severity_name = severity_map.get(severity_name.lower(), "sev4")
+
+            # Increment the appropriate counter
+            if severity_name == "sev0" or severity_name == "emergency":
+                severity_counts["sev0_count"] += 1
+            elif severity_name == "sev1":
+                severity_counts["sev1_count"] += 1
+            elif severity_name == "sev2":
+                severity_counts["sev2_count"] += 1
+            elif severity_name == "sev3":
+                severity_counts["sev3_count"] += 1
+            else:
+                severity_counts["sev4_count"] += 1
+
+        except Exception as e:
+            logger.debug(f"Error counting severity for incident: {e}")
+            # Default to sev4 on error
+            severity_counts["sev4_count"] += 1
+
+    return severity_counts
