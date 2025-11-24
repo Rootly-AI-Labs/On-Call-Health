@@ -161,30 +161,30 @@ export default function useDashboard() {
   // Helper function to determine if insufficient data card should be shown
   const shouldShowInsufficientDataCard = () => {
     if (!currentAnalysis || analysisRunning) return false
-    
+
     // Show for failed analyses
     if (currentAnalysis.status === 'failed') return true
-    
+
     // Show for completed analyses with no meaningful data
     if (currentAnalysis.status === 'completed') {
       // Check if analysis_data is completely missing
       if (!currentAnalysis.analysis_data) {
         return true
       }
-      
+
       // Check if we have team_health or team_summary data but with no meaningful content
       if (currentAnalysis.analysis_data?.team_health || currentAnalysis.analysis_data?.team_summary) {
         // Check if the analysis has 0 members - this indicates insufficient data
         const teamAnalysis = currentAnalysis.analysis_data.team_analysis
-        
+
         // Handle both array format (team_analysis directly) and object format (team_analysis.members)
         const members = Array.isArray(teamAnalysis) ? teamAnalysis : teamAnalysis?.members
         const hasNoMembers = !members || members.length === 0
-        
+
         if (hasNoMembers) {
           return true // Show insufficient data card
         }
-        
+
         return false // Has meaningful data - even if 0 incidents, show normal dashboard
       }
       
@@ -556,7 +556,33 @@ export default function useDashboard() {
 
           if (!analysisId && data.analyses && data.analyses.length > 0 && !currentAnalysis) {
             const mostRecentAnalysis = data.analyses[0] // Analyses should be ordered by created_at desc
-            setCurrentAnalysis(mostRecentAnalysis)
+
+            // Check if the analysis has full member data
+            const teamAnalysis = mostRecentAnalysis.analysis_data?.team_analysis
+            const members = Array.isArray(teamAnalysis) ? teamAnalysis : teamAnalysis?.members
+
+            if (members && Array.isArray(members) && members.length > 0) {
+              // Has full data, use it directly
+              setCurrentAnalysis(mostRecentAnalysis)
+            } else {
+              // Summary only, fetch the full analysis
+              const analysisKey = mostRecentAnalysis.uuid || mostRecentAnalysis.id.toString()
+              try {
+                const response = await fetch(`${API_BASE}/analyses/${mostRecentAnalysis.id}`, {
+                  headers: {
+                    'Authorization': `Bearer ${authToken}`
+                  }
+                })
+
+                if (response.ok) {
+                  const fullAnalysis = await response.json()
+                  setAnalysisCache(prev => new Map(prev.set(analysisKey, fullAnalysis)))
+                  setCurrentAnalysis(fullAnalysis)
+                }
+              } catch (error) {
+                console.error('Error fetching most recent analysis:', error)
+              }
+            }
             // Platform mappings will be fetched by the dedicated useEffect
           }
         }
@@ -624,12 +650,18 @@ export default function useDashboard() {
         return
       }
 
-      // Check cache first
+      // Check cache first - only use if it has full analysis data with members
       const cachedAnalysis = analysisCache.get(analysisId)
-      if (cachedAnalysis && cachedAnalysis.analysis_data && cachedAnalysis.analysis_data.team_analysis) {
-        setCurrentAnalysis(cachedAnalysis)
-        setRedirectingToSuggested(false)
-        return
+      if (cachedAnalysis && cachedAnalysis.analysis_data) {
+        const teamAnalysis = cachedAnalysis.analysis_data.team_analysis
+        const members = Array.isArray(teamAnalysis) ? teamAnalysis : teamAnalysis?.members
+
+        // Only use cache if it has actual member data
+        if (members && Array.isArray(members) && members.length > 0) {
+          setCurrentAnalysis(cachedAnalysis)
+          setRedirectingToSuggested(false)
+          return
+        }
       }
       // Check if analysisId is a UUID (contains hyphens) or integer ID
       const isUuid = analysisId.includes('-')

@@ -18,6 +18,44 @@ from ...core.input_validation import AnalysisRequest as ValidatedAnalysisRequest
 
 logger = logging.getLogger(__name__)
 
+
+def extract_analysis_summary(full_results: dict) -> dict:
+    """
+    Extract lightweight summary data from full analysis results.
+    Keeps only essential data needed for sidebar display and compatibility.
+    Reduces 30MB+ payloads to <1KB summaries.
+    """
+    if not full_results:
+        return None
+
+    # Essential structure for frontend compatibility
+    summary = {
+        "team_analysis": {
+            "members": []  # Empty list - frontend only checks for existence
+        },
+        "metadata": {},
+        "team_health": {}
+    }
+
+    # Include only high-level metrics if they exist
+    if "metadata" in full_results:
+        metadata = full_results["metadata"]
+        summary["metadata"] = {
+            "total_incidents": metadata.get("total_incidents", 0),
+            "days_analyzed": metadata.get("days_analyzed", 30),
+            "total_members": metadata.get("total_members", 0),
+            "severity_breakdown": metadata.get("severity_breakdown", {})
+        }
+
+    if "team_health" in full_results:
+        health = full_results["team_health"]
+        summary["team_health"] = {
+            "overall_score": health.get("overall_score", 0),
+            "members_at_risk": health.get("members_at_risk", 0)
+        }
+
+    return summary
+
 router = APIRouter()
 
 
@@ -300,7 +338,7 @@ async def list_analyses(
                 created_at=analysis.created_at,
                 completed_at=analysis.completed_at,
                 time_range=analysis.time_range or 30,
-                analysis_data=analysis.results,
+                analysis_data=extract_analysis_summary(analysis.results),
                 config=analysis.config
             )
         )

@@ -16,6 +16,7 @@ from ..core.pagerduty_client import PagerDutyAPIClient
 from ..core.ocb_config import calculate_composite_ocb_score, calculate_personal_burnout, calculate_work_related_burnout, generate_ocb_score_reasoning
 from .ai_burnout_analyzer import get_ai_burnout_analyzer
 from .github_correlation_service import GitHubCorrelationService
+from ..utils.incident_utils import slim_incidents
 
 import pytz
 from collections import defaultdict
@@ -240,7 +241,7 @@ class UnifiedBurnoutAnalyzer:
 
             incidents = data.get("incidents", []) if data else []
             metadata = data.get("collection_metadata", {}) if data else {}
-            
+
             # COMPREHENSIVE DATA VALIDATION AND ANALYSIS
             logger.info(f"UNIFIED ANALYZER: DATA VALIDATION for {self.platform.upper()}")
             logger.info(f"   - Platform: {self.platform}")
@@ -248,6 +249,8 @@ class UnifiedBurnoutAnalyzer:
             logger.info(f"   - Users extracted: {len(users)}")
             logger.info(f"   - Incidents extracted: {len(incidents)}")
             logger.info(f"   - Metadata keys: {list(metadata.keys()) if metadata else 'None'}")
+            logger.info(f"   - Full metadata: {metadata}")
+            logger.info(f"   - Severity breakdown in metadata: {metadata.get('severity_breakdown', 'NOT FOUND')}")
             
             # Validate user data structure
             if users:
@@ -673,7 +676,7 @@ class UnifiedBurnoutAnalyzer:
                 "recommendations": self._generate_recommendations(team_health, team_analysis),
                 "daily_trends": daily_trends,
                 "individual_daily_data": individual_daily_data,
-                "raw_incident_data": incidents,  # Store complete incident data for individual daily health reconstruction
+                "raw_incident_data": slim_incidents(incidents),  # Store slimmed incident data (96% size reduction)
                 "period_summary": {
                     "average_score": round(period_average_score, 2),
                     "days_analyzed": time_range_days,
@@ -841,6 +844,10 @@ class UnifiedBurnoutAnalyzer:
                 else:
                     incidents = raw_incidents
 
+                # Calculate severity breakdown using shared utility
+                from app.utils.incident_utils import calculate_severity_breakdown
+                severity_counts = calculate_severity_breakdown(incidents)
+
                 # Build data structure with synced users
                 data = {
                     "users": self.synced_users,
@@ -850,6 +857,7 @@ class UnifiedBurnoutAnalyzer:
                         "days_analyzed": days_back,
                         "total_users": len(self.synced_users),
                         "total_incidents": len(incidents),
+                        "severity_breakdown": severity_counts,
                         "used_synced_users": True,
                         "date_range": {
                             "start": (datetime.now() - timedelta(days=days_back)).isoformat(),

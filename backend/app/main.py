@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from slowapi.errors import RateLimitExceeded
 from .models import create_tables
 from .core.config import settings
@@ -56,6 +57,10 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 # Add rate limiting to the app
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, custom_rate_limit_exceeded_handler)
+
+# Add GZip compression middleware (must be added before other middleware)
+# Compresses responses > 1KB with gzip, typically achieves 70-90% compression for JSON
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # Add security middleware
 app.middleware("http")(security_middleware)

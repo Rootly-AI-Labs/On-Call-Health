@@ -292,44 +292,49 @@ export default function Dashboard() {
                       onClick={async () => {
                         const analysisKey = analysis.uuid || analysis.id.toString()
 
-                        // Check cache first
+                        // Get members array - handle both object and array formats
+                        const teamAnalysis = analysis.analysis_data?.team_analysis
+                        const members = Array.isArray(teamAnalysis) ? teamAnalysis : (teamAnalysis as any)?.members
+
+                        // Check cache first - but only use if it has full analysis data with members
                         const cachedAnalysis = analysisCache.get(analysisKey)
-                        if (cachedAnalysis) {
-                          // Use cached analysis data (includes both sufficient and insufficient data cases)
+                        const cachedTeamAnalysis = cachedAnalysis?.analysis_data?.team_analysis
+                        const cachedMembers = Array.isArray(cachedTeamAnalysis) ? cachedTeamAnalysis : (cachedTeamAnalysis as any)?.members
+
+                        if (cachedAnalysis && cachedAnalysis.analysis_data && cachedMembers && Array.isArray(cachedMembers) && cachedMembers.length > 0) {
+                          // Use cached full analysis data
                           setCurrentAnalysis(cachedAnalysis)
                           setRedirectingToSuggested(false) // Turn off redirect loader
                           updateURLWithAnalysis(cachedAnalysis.uuid || cachedAnalysis.id)
                           return
                         }
 
-                        // If analysis doesn't have full data and not in cache, fetch it
-                        if (!analysis.analysis_data || !analysis.analysis_data.team_analysis) {
+                        // If analysis doesn't have full data with members, fetch it
+                        if (!analysis.analysis_data || !members || !Array.isArray(members) || members.length === 0) {
                           try {
                             const authToken = localStorage.getItem('auth_token')
                             if (!authToken) return
-                            
+
                             const response = await fetch(`${API_BASE}/analyses/${analysis.id}`, {
                               headers: {
                                 'Authorization': `Bearer ${authToken}`
                               }
                             })
-                            
+
                             if (response.ok) {
                               const fullAnalysis = await response.json()
-                              // Cache the full analysis data (whether sufficient or insufficient)
+                              // Cache the full analysis data
                               setAnalysisCache(prev => new Map(prev.set(analysisKey, fullAnalysis)))
                               setCurrentAnalysis(fullAnalysis)
                               setRedirectingToSuggested(false) // Turn off redirect loader
                               updateURLWithAnalysis(fullAnalysis.uuid || fullAnalysis.id)
                             } else {
-                              setCurrentAnalysis(analysis)
-                              setRedirectingToSuggested(false) // Turn off redirect loader
-                              updateURLWithAnalysis(analysis.uuid || analysis.id)
+                              console.error('Failed to fetch full analysis:', response.status)
+                              setRedirectingToSuggested(false)
                             }
                           } catch (error) {
-                                                setCurrentAnalysis(analysis)
-                            setRedirectingToSuggested(false) // Turn off redirect loader
-                            updateURLWithAnalysis(analysis.uuid || analysis.id)
+                            console.error('Error fetching full analysis:', error)
+                            setRedirectingToSuggested(false)
                           }
                         } else {
                           // Analysis already has full data, cache it and use it
