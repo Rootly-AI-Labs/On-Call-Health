@@ -169,6 +169,7 @@ export default function Dashboard() {
   handleSignOut,
   exportAsJSON,
   shouldShowInsufficientDataCard,
+  hasNoIncidentsInPeriod,
   updateURLWithAnalysis,
 
   // start-analysis modal
@@ -593,12 +594,13 @@ export default function Dashboard() {
             </Card>
           )}
 
-          <AnalysisProgressSection 
+          <AnalysisProgressSection
             analysisRunning={analysisRunning}
             analysisStage={analysisStage}
             analysisProgress={analysisProgress}
             currentAnalysis={currentAnalysis}
             shouldShowInsufficientDataCard={shouldShowInsufficientDataCard}
+            hasNoIncidentsInPeriod={hasNoIncidentsInPeriod}
             getAnalysisStages={getAnalysisStages}
             cancelRunningAnalysis={cancelRunningAnalysis}
             startAnalysis={startAnalysis}
@@ -1624,9 +1626,14 @@ export default function Dashboard() {
               <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <AlertTriangle className="w-8 h-8 text-yellow-600" />
               </div>
-              <h3 className="text-lg font-semibold mb-2 text-yellow-800">Insufficient Data</h3>
+              <h3 className="text-lg font-semibold mb-2 text-yellow-800">
+                {hasNoIncidentsInPeriod() ? 'No Incidents in Time Period' : 'Insufficient Data'}
+              </h3>
               <p className="text-yellow-700 mb-4">
-                This analysis has insufficient data to generate meaningful burnout insights. This could be due to lack of organization member data, incident history, or API access issues.
+                {hasNoIncidentsInPeriod()
+                  ? `No incidents were found in the selected ${timeRange}-day period. Try selecting a longer time range or check if there are any incidents in your ${selectedIntegrationData?.platform || 'organization'}.`
+                  : 'This analysis has insufficient data to generate meaningful burnout insights. This could be due to lack of organization member data, incident history, or API access issues.'
+                }
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Button 

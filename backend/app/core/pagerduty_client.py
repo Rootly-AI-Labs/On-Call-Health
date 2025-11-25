@@ -216,7 +216,7 @@ class PagerDutyAPIClient:
                             "until": until_str,
                             "limit": min(100, limit - len(all_incidents)),
                             "offset": offset,
-                            "include[]": ["users", "services", "teams", "escalation_policies", "priorities"],
+                            "include[]": ["users", "services", "teams", "escalation_policies", "priorities", "severity"],
                             "statuses[]": ["triggered", "acknowledged", "resolved"]
                         }
                     ) as response:
@@ -832,10 +832,31 @@ class PagerDutyDataCollector:
         return None  # No assignment found
     
     def _map_priority_to_severity(self, incident: Dict[str, Any]) -> str:
-        """Map PagerDuty priority/urgency to severity level."""
+        """Map PagerDuty severity/priority/urgency to severity level."""
         urgency = incident.get("urgency", "low").lower()
 
-        # Check priority first for more specific classification
+        # Check for actual severity field first (most accurate)
+        severity = incident.get("severity")
+        if severity and isinstance(severity, dict):
+            severity_name = severity.get("summary", "").lower()
+            if not severity_name:
+                severity_name = severity.get("name", "").lower()
+
+            # Map severity names to our format
+            if "sev-1" in severity_name or "sev1" in severity_name or "critical" in severity_name:
+                logger.debug(f"SEVERITY MAPPING: Direct severity '{severity_name}' → sev1")
+                return "sev1"
+            elif "sev-2" in severity_name or "sev2" in severity_name or "major" in severity_name:
+                logger.debug(f"SEVERITY MAPPING: Direct severity '{severity_name}' → sev2")
+                return "sev2"
+            elif "sev-3" in severity_name or "sev3" in severity_name or "minor" in severity_name:
+                logger.debug(f"SEVERITY MAPPING: Direct severity '{severity_name}' → sev3")
+                return "sev3"
+            elif "sev-4" in severity_name or "sev4" in severity_name or "low" in severity_name:
+                logger.debug(f"SEVERITY MAPPING: Direct severity '{severity_name}' → sev4")
+                return "sev4"
+
+        # Check priority second for more specific classification
         priority = incident.get("priority")
         mapped_severity = None
 

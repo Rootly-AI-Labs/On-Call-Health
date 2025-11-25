@@ -13,9 +13,6 @@ export function JiraIntegrationCard({ onConnect, isConnecting }: JiraIntegration
       <CardContent className="pt-6 space-y-4">
         <div className="space-y-2">
           <h3 className="text-lg font-semibold text-slate-900">Connect Your Jira Account</h3>
-          <p className="text-sm text-slate-600">
-            Connect Jira to analyze workload distribution, issue tracking patterns, and identify potential burnout indicators from work assignments.
-          </p>
         </div>
 
         <div className="space-y-3">

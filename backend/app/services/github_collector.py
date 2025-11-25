@@ -79,20 +79,25 @@ class GitHubCollector:
     async def _check_manual_mappings(self, email: str, user_id: int) -> Optional[str]:
         """
         Check user_mappings table for manual GitHub mappings.
-        
+
         Args:
             email: The email address to look up
             user_id: The user ID who owns the mappings
-            
+
         Returns:
             GitHub username if found, None otherwise
         """
         try:
+            # Validate user_id is an integer (not a PagerDuty/Rootly user ID string)
+            if not isinstance(user_id, int):
+                logger.warning(f"Invalid user_id type for manual mapping check: {type(user_id).__name__}: {user_id}")
+                return None
+
             database_url = os.getenv('DATABASE_URL')
             if not database_url:
                 logger.warning("DATABASE_URL not set, cannot check manual mappings")
                 return None
-            
+
             engine = create_engine(database_url)
             conn = engine.connect()
             
@@ -141,6 +146,11 @@ class GitHubCollector:
             GitHub username if found, None otherwise
         """
         try:
+            # Validate user_id is an integer (not a PagerDuty/Rootly user ID string)
+            if not isinstance(user_id, int):
+                logger.warning(f"Invalid user_id type for synced member check: {type(user_id).__name__}: {user_id}")
+                return None
+
             database_url = os.getenv('DATABASE_URL')
             if not database_url:
                 return None

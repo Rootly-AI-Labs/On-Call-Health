@@ -28,7 +28,23 @@ export async function initNewRelic() {
 
   try {
     // Dynamically import to avoid SSR issues
-    const { BrowserAgent } = await import('@newrelic/browser-agent/loaders/browser-agent')
+    // Use string-based import that Next.js can't statically analyze
+    // This prevents build-time errors if the package is missing
+    const packageName = '@newrelic/browser-agent'
+    let newRelicModule: any
+    try {
+      // Use Function constructor to create a dynamic import that webpack can't analyze
+      newRelicModule = await new Function('packageName', 'return import(packageName)')(packageName)
+    } catch (importError) {
+      // Package not available - this is fine, New Relic is optional
+      return null
+    }
+
+    const BrowserAgent = newRelicModule?.BrowserAgent || newRelicModule?.default?.BrowserAgent
+
+    if (!BrowserAgent) {
+      return null
+    }
 
     // Initialize the browser agent
     const agent = new BrowserAgent({
@@ -56,6 +72,7 @@ export async function initNewRelic() {
     return agent
   } catch (error) {
     // Silently fail - monitoring is optional
+    // This catch will handle both import errors and initialization errors
     return null
   }
 }

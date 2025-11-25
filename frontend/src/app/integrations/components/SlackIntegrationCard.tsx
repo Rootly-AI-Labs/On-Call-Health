@@ -33,7 +33,6 @@ export function SlackIntegrationCard({ onConnect, isConnecting }: SlackIntegrati
           </div>
           <div>
             <CardTitle>Add Slack Integration</CardTitle>
-            <CardDescription>Connect your Slack workspace to analyze communication patterns</CardDescription>
           </div>
         </div>
       </CardHeader>
@@ -155,9 +154,6 @@ export function SlackIntegrationCard({ onConnect, isConnecting }: SlackIntegrati
               )}
             </Button>
           </div>
-          <p className="text-sm text-gray-500">
-            URL should start with "https://hooks.slack.com/services/"
-          </p>
         </div>
         <div className="space-y-2">
           <label htmlFor="slack-token" className="text-sm font-medium">Slack Bot Token</label>
@@ -184,9 +180,6 @@ export function SlackIntegrationCard({ onConnect, isConnecting }: SlackIntegrati
               )}
             </Button>
           </div>
-          <p className="text-sm text-gray-500">
-            Token should start with "xoxb-" followed by your bot token
-          </p>
         </div>
         <Button
           className="bg-purple-600 hover:bg-purple-700 text-white"

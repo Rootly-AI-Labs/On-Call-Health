@@ -30,7 +30,12 @@ class MappingRecorder:
         data_points_count: Optional[int] = None
     ) -> Optional[IntegrationMapping]:
         """Record a mapping attempt."""
-        
+
+        # Validate user_id is an integer (not a PagerDuty/Rootly user ID string)
+        if not isinstance(user_id, int):
+            logger.warning(f"Skipping mapping record - user_id must be an integer database ID, got {type(user_id).__name__}: {user_id}")
+            return None
+
         # Verify user exists to prevent foreign key violations
         from ..models import User
         user_exists = self.db.query(User).filter(User.id == user_id).first()

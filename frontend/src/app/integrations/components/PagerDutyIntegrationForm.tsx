@@ -58,7 +58,6 @@ export function PagerDutyIntegrationForm({
           </div>
           <div>
             <CardTitle>Add PagerDuty Integration</CardTitle>
-            <CardDescription>Connect your PagerDuty account for burnout analysis</CardDescription>
           </div>
         </div>
       </CardHeader>
@@ -140,9 +139,6 @@ export function PagerDutyIntegrationForm({
                       </div>
                     </div>
                   </FormControl>
-                  <FormDescription>
-                    Your API token should be 20-32 characters long
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

@@ -267,25 +267,34 @@ def calculate_severity_breakdown(incidents: List[Dict[str, Any]]) -> Dict[str, i
 
     for incident in incidents:
         try:
-            # Extract severity from incident attributes
-            attrs = incident.get("attributes", {})
-            severity_info = attrs.get("severity", {})
             severity_name = "sev4"  # Default to lowest severity
 
-            if isinstance(severity_info, dict) and "data" in severity_info:
-                severity_data = severity_info.get("data", {})
-                if isinstance(severity_data, dict) and "attributes" in severity_data:
-                    severity_attrs = severity_data["attributes"]
-                    severity_name = severity_attrs.get("name", "sev4").lower()
-                    if not severity_name.startswith("sev"):
-                        # Map common severity names to sev levels
-                        severity_map = {
-                            "critical": "sev1",
-                            "high": "sev2",
-                            "medium": "sev3",
-                            "low": "sev4"
-                        }
-                        severity_name = severity_map.get(severity_name.lower(), "sev4")
+            # Check for PagerDuty format first (direct severity field)
+            if "severity" in incident and isinstance(incident["severity"], str):
+                # PagerDuty normalized format: severity is a string like "sev1", "sev2"
+                severity_name = incident["severity"].lower()
+            else:
+                # Rootly format: severity is nested in attributes
+                attrs = incident.get("attributes", {})
+                severity_info = attrs.get("severity", {})
+
+                if isinstance(severity_info, dict) and "data" in severity_info:
+                    severity_data = severity_info.get("data", {})
+                    if isinstance(severity_data, dict) and "attributes" in severity_data:
+                        severity_attrs = severity_data["attributes"]
+                        severity_name = severity_attrs.get("name", "sev4").lower()
+
+            # Normalize severity name if not already in sev format
+            if not severity_name.startswith("sev"):
+                # Map common severity names to sev levels
+                severity_map = {
+                    "critical": "sev1",
+                    "emergency": "sev0",
+                    "high": "sev2",
+                    "medium": "sev3",
+                    "low": "sev4"
+                }
+                severity_name = severity_map.get(severity_name.lower(), "sev4")
 
             # Increment the appropriate counter
             if severity_name == "sev0" or severity_name == "emergency":

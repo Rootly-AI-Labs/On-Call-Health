@@ -71,7 +71,6 @@ export function RootlyIntegrationForm({
           </div>
           <div>
             <CardTitle>Add Rootly Integration</CardTitle>
-            <CardDescription>Connect your Rootly account to analyze incident data</CardDescription>
           </div>
         </div>
       </CardHeader>
@@ -154,9 +153,6 @@ export function RootlyIntegrationForm({
                       </div>
                     </div>
                   </FormControl>
-                  <FormDescription>
-                    Token should start with "rootly_" followed by 64 hex characters
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

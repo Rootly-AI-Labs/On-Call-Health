@@ -10,6 +10,7 @@ interface AnalysisProgressSectionProps {
   analysisProgress: number
   currentAnalysis: any
   shouldShowInsufficientDataCard: () => boolean
+  hasNoIncidentsInPeriod?: () => boolean
   getAnalysisStages: () => any[]
   cancelRunningAnalysis: () => void
   startAnalysis: () => void
@@ -18,10 +19,11 @@ interface AnalysisProgressSectionProps {
 
 export function AnalysisProgressSection({
   analysisRunning,
-  analysisStage, 
+  analysisStage,
   analysisProgress,
   currentAnalysis,
   shouldShowInsufficientDataCard,
+  hasNoIncidentsInPeriod,
   getAnalysisStages,
   cancelRunningAnalysis,
   startAnalysis,
@@ -91,13 +93,18 @@ export function AnalysisProgressSection({
             <AlertTriangle className="w-8 h-8 text-red-600" />
           </div>
           <h3 className="text-lg font-semibold mb-2 text-red-800">
-            {currentAnalysis.error_message?.includes('permission') || currentAnalysis.error_message?.includes('access') ? 
-              'API Permission Error' : 'Insufficient Data'}
+            {currentAnalysis.error_message?.includes('permission') || currentAnalysis.error_message?.includes('access')
+              ? 'API Permission Error'
+              : hasNoIncidentsInPeriod && hasNoIncidentsInPeriod()
+                ? 'No Incidents in Time Period'
+                : 'Insufficient Data'}
           </h3>
           <p className="text-red-700 mb-4">
-            {currentAnalysis.error_message?.includes('permission') || currentAnalysis.error_message?.includes('access') ? 
-              currentAnalysis.error_message : 
-              'This analysis has insufficient data to generate meaningful burnout insights. This could be due to lack of organization member data, incident history, or API access issues.'
+            {currentAnalysis.error_message?.includes('permission') || currentAnalysis.error_message?.includes('access')
+              ? currentAnalysis.error_message
+              : hasNoIncidentsInPeriod && hasNoIncidentsInPeriod()
+                ? 'No incidents were found in the selected time period. Try selecting a longer time range or check if there are any incidents in your organization.'
+                : 'This analysis has insufficient data to generate meaningful burnout insights. This could be due to lack of organization member data, incident history, or API access issues.'
             }
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">

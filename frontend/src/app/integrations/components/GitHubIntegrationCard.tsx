@@ -31,7 +31,6 @@ export function GitHubIntegrationCard({ onConnect, isConnecting }: GitHubIntegra
           </div>
           <div>
             <CardTitle>Add GitHub Integration</CardTitle>
-            <CardDescription>Connect your GitHub account to analyze development patterns</CardDescription>
           </div>
         </div>
       </CardHeader>
@@ -125,9 +124,6 @@ export function GitHubIntegrationCard({ onConnect, isConnecting }: GitHubIntegra
               )}
             </Button>
           </div>
-          <p className="text-sm text-gray-500">
-            Token should start with "ghp_" followed by 36 characters
-          </p>
         </div>
         <Button
           className="bg-gray-900 hover:bg-gray-800 text-white"

@@ -257,12 +257,11 @@ export function UnifiedSlackCard({
             </div>
             <div>
               <CardTitle className="text-lg text-gray-900">Slack</CardTitle>
-              <p className="text-sm text-gray-600">
-                {isConnected
-                  ? slackIntegration.workspace_name || 'Connected to workspace'
-                  : 'Connect Slack for surveys and sentiment analysis'
-                }
-              </p>
+              {isConnected && (
+                <p className="text-sm text-gray-600">
+                  {slackIntegration.workspace_name || 'Connected to workspace'}
+                </p>
+              )}
             </div>
           </div>
 
@@ -294,20 +293,6 @@ export function UnifiedSlackCard({
           <>
             {/* Pre-Connection: Simple description and button */}
             <div className="space-y-4">
-              <div className="bg-white rounded-lg border p-4">
-                <h4 className="font-medium text-gray-900 mb-2">What you'll get:</h4>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  <li className="flex items-start space-x-2">
-                    <span className="text-green-600 mt-0.5">✓</span>
-                    <span><strong>Slack Surveys:</strong> Collect burnout data through Slack surveys via command and automated DMs</span>
-                  </li>
-                  <li className="flex items-start space-x-2">
-                    <span className="text-green-600 mt-0.5">✓</span>
-                    <span><strong>Communication Patterns:</strong> Analyze channel messages to detect burnout patterns and communication trends</span>
-                  </li>
-                </ul>
-              </div>
-
               {/* Connect Button */}
               {process.env.NEXT_PUBLIC_SLACK_CLIENT_ID ? (
                 <div className="flex justify-center pt-2">
