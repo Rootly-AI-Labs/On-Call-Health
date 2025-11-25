@@ -683,17 +683,17 @@ class PagerDutyDataCollector:
             assigned_user_info = self._extract_incident_assignment_enhanced(
                 incident, user_id_to_email, user_id_to_name
             )
-            
+
             if assigned_user_info:
                 method = assigned_user_info.get("assignment_method", "unknown")
                 assignment_stats[f"from_{method}"] = assignment_stats.get(f"from_{method}", 0) + 1
                 assignment_stats["assignment_methods"].append(method)
-                
+
                 if assigned_user_info.get("email"):
                     incidents_with_emails += 1
             else:
                 assignment_stats["no_assignment"] += 1
-            
+
             # Create normalized incident
             normalized_incident = {
                 "id": incident.get("id"),
@@ -715,13 +715,18 @@ class PagerDutyDataCollector:
                 "teams": [team.get("summary", "") for team in incident.get("teams", [])],
                 "priority_name": incident.get("priority", {}).get("summary", "") if incident.get("priority") else ""
             }
-            
+
             normalized_incidents.append(normalized_incident)
-            
-            # Log progress for first few incidents
-            if i < 3:
+
+            # Log progress for first few incidents with severity details
+            if i < 5:
                 user_email = assigned_user_info.get("email", "None") if assigned_user_info else "None"
-                logger.info(f"🚀 PD INCIDENT #{i}: '{normalized_incident['title'][:50]}' -> {user_email}")
+                severity_field = incident.get("severity")
+                priority_field = incident.get("priority")
+                logger.info(f"🚀 PD INCIDENT #{i}: '{normalized_incident['title'][:40]}' -> {user_email}")
+                logger.info(f"   Raw severity field: {severity_field}")
+                logger.info(f"   Raw priority field: {priority_field}")
+                logger.info(f"   Mapped to: {normalized_incident['severity']}")
         
         # 🎯 STEP 4: Calculate success statistics
         total_incidents = len(incidents)
