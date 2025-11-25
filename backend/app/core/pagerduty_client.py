@@ -718,10 +718,15 @@ class PagerDutyDataCollector:
 
             normalized_incidents.append(normalized_incident)
 
-            # Log progress for first few incidents
-            if i < 3:
+            # Log progress for first few incidents with full structure
+            if i < 2:
                 user_email = assigned_user_info.get("email", "None") if assigned_user_info else "None"
                 logger.info(f"🚀 PD INCIDENT #{i}: '{normalized_incident['title'][:50]}' -> {user_email}")
+                logger.info(f"   Available fields: {list(incident.keys())}")
+                logger.info(f"   Priority: {incident.get('priority')}")
+                logger.info(f"   Urgency: {incident.get('urgency')}")
+                logger.info(f"   Custom fields: {incident.get('custom_fields', 'None')}")
+                logger.info(f"   Body: {incident.get('body', {})}")
         
         # 🎯 STEP 4: Calculate success statistics
         total_incidents = len(incidents)
