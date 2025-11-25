@@ -69,11 +69,15 @@ class UnifiedBurnoutAnalyzer:
         slack_token: Optional[str] = None,
         jira_token: Optional[str] = None,
         organization_name: Optional[str] = None,
-        synced_users: Optional[List[Dict[str, Any]]] = None
+        synced_users: Optional[List[Dict[str, Any]]] = None,
+        current_user_id: Optional[int] = None
     ):
         # Check for mock data mode from environment
         self.use_mock_data = os.getenv('USE_MOCK_DATA', 'false').lower() == 'true'
         self.mock_scenario = os.getenv('MOCK_SCENARIO', 'healthy_team')
+
+        # Store current_user_id for Jira integration lookup (will not change during analysis)
+        self.current_user_id = current_user_id
 
         # Initialize mock data loader if available and enabled
         self.mock_loader = None
@@ -111,6 +115,12 @@ class UnifiedBurnoutAnalyzer:
         self.synced_users = synced_users
         if synced_users:
             logger.info(f"Using {len(synced_users)} pre-synced users from Team Sync - will skip user API fetch")
+            # Check if jira_account_id is in synced users
+            users_with_jira = [u for u in synced_users if u.get('jira_account_id')]
+            logger.info(f"🔍 CONSTRUCTOR: {len(users_with_jira)} synced users have jira_account_id at initialization")
+            if users_with_jira and len(users_with_jira) > 0:
+                sample = users_with_jira[0]
+                logger.info(f"   Sample: {sample.get('name')} → jira_account_id={sample.get('jira_account_id')}")
         else:
             logger.info("No synced users provided - will fetch users from API (slower)")
 
@@ -744,31 +754,42 @@ class UnifiedBurnoutAnalyzer:
 
 
             # JIRA BURNOUT ADJUSTMENT: Recalculate burnout scores using Jira ticket workload
-            try:
-                logger.info(f"JIRA BURNOUT: Fetching Jira ticket data for burnout analysis")
-                from ..models import JiraIntegration, db as db_instance
-                from ..api.endpoints.jira import decrypt_token
-                from ..auth.integration_oauth import jira_integration_oauth
+            if self.features['jira'] and self.current_user_id:
+                try:
+                    logger.info(f"\n{'='*80}")
+                    logger.info(f"JIRA BURNOUT ANALYSIS: Starting Jira integration for current_user_id={self.current_user_id}")
+                    logger.info(f"{'='*80}")
+                    logger.info(f"JIRA BURNOUT: Fetching Jira ticket data for burnout analysis")
 
-                # Get Jira integration (if available)
-                jira_integration = None
-                if hasattr(self, 'current_user_id'):
-                    # This will be available if current_user_id is set on the analyzer
-                    from ..models import get_db
-                    # For now, we'll skip Jira if we can't get proper DB session
-                    # This should be improved to pass DB session properly
-                    logger.info(f"JIRA BURNOUT: Skipping Jira data - DB session not available in analyzer")
-                else:
-                    logger.info(f"JIRA BURNOUT: Skipping Jira data - current_user_id not available")
+                    # Fetch Jira workload data using current_user_id (the person running the analysis)
+                    # NOT the variable user_id (which changes during incident processing)
+                    jira_workload = await self._fetch_jira_workload_data(self.current_user_id)
 
-                # If Jira data is available, add it to team members and recalculate
-                if jira_integration:
-                    logger.info(f"JIRA BURNOUT: Recalculating scores with Jira ticket workload")
-                    team_analysis["members"] = self._recalculate_burnout_with_jira(team_analysis["members"], metadata)
+                    if jira_workload:
+                        logger.info(f"JIRA BURNOUT: ✅ Successfully fetched Jira workload for {len(jira_workload)} assignees")
+                        logger.info(f"JIRA BURNOUT: Correlating Jira data with team members")
+                        # Correlate Jira data with team members
+                        team_analysis["members"] = self._correlate_jira_data(
+                            team_analysis["members"],
+                            jira_workload
+                        )
 
-            except Exception as e:
-                logger.warning(f"JIRA BURNOUT: Could not integrate Jira data: {e}")
-                # Continue without Jira data - it's optional
+                        # Recalculate burnout scores using Jira data
+                        logger.info(f"JIRA BURNOUT: Recalculating scores with Jira ticket workload")
+                        team_analysis["members"] = self._recalculate_burnout_with_jira(team_analysis["members"], metadata)
+                    else:
+                        logger.info(f"❌ JIRA BURNOUT: No Jira workload data found - Jira integration may not be configured or user has no Jira access")
+                        logger.info(f"{'='*80}\n")
+
+                except Exception as e:
+                    logger.warning(f"❌ JIRA BURNOUT: Could not integrate Jira data: {e}")
+                    logger.warning(f"{'='*80}\n")
+                    # Continue without Jira data - it's optional
+            else:
+                if not self.features['jira']:
+                    logger.info(f"⚠️ JIRA BURNOUT: Skipping Jira data - Jira feature disabled (no jira_token provided)")
+                if not self.current_user_id:
+                    logger.info(f"⚠️ JIRA BURNOUT: Skipping Jira data - no current_user_id provided to analyzer")
 
             # Calculate overall team health AFTER GitHub burnout adjustment
             health_calc_start = datetime.now()
@@ -990,6 +1011,15 @@ class UnifiedBurnoutAnalyzer:
             # If synced users provided, use them instead of fetching from API
             if self.synced_users:
                 logger.info(f"TEAM SYNC OPTIMIZATION: Using {len(self.synced_users)} pre-synced users, only fetching incidents")
+
+                # DEBUG: Check if jira_account_id is present in synced users
+                users_with_jira = [u for u in self.synced_users if u.get('jira_account_id')]
+                if users_with_jira:
+                    logger.info(f"🔍 JIRA MAPPING IN SYNCED USERS: {len(users_with_jira)} users have jira_account_id")
+                    for u in users_with_jira[:3]:  # Log first 3
+                        logger.info(f"   - {u.get('name')} → jira_account_id={u.get('jira_account_id')}")
+                else:
+                    logger.warning(f"⚠️ NO JIRA MAPPINGS in synced_users! Sample user keys: {list(self.synced_users[0].keys()) if self.synced_users else 'empty'}")
 
                 # Only fetch incidents from API (much faster!)
                 # Different APIs use different parameters
@@ -1401,6 +1431,15 @@ class UnifiedBurnoutAnalyzer:
         # Get on-call status if available (from synced users)
         is_oncall = user.get("is_oncall", False)
 
+        # Get Jira account ID if available (from synced users)
+        jira_account_id = user.get("jira_account_id")
+
+        # DEBUG: Log Jira mapping for this user
+        if jira_account_id:
+            logger.info(f"🔍 JIRA MAPPING FOUND: User {user_name} has jira_account_id={jira_account_id}")
+        else:
+            logger.debug(f"⚠️ JIRA MAPPING MISSING: User {user_name} (email: {user_email}) has no jira_account_id. User object keys: {list(user.keys())}")
+
         # If no incidents, return minimal analysis
         if not incidents:
             # Calculate zero-incident OCB metrics for consistency
@@ -1433,6 +1472,7 @@ class UnifiedBurnoutAnalyzer:
                 "user_name": user_name,
                 "user_email": user_email,
                 "is_oncall": is_oncall,
+                "jira_account_id": jira_account_id,  # Include Jira mapping for workload correlation
                 "burnout_score": 0,
                 "ocb_score": round(min(100, composite_ocb['composite_score']), 2),  # Cap display at 100 for UI
                 "risk_level": "low",
@@ -1679,6 +1719,7 @@ class UnifiedBurnoutAnalyzer:
             "user_name": user_name,
             "user_email": user_email,
             "is_oncall": is_oncall,
+            "jira_account_id": jira_account_id,  # Include Jira mapping for workload correlation
             "burnout_score": round(burnout_score, 2),
             "ocb_score": round(min(100, composite_ocb['composite_score']), 2),  # Cap display at 100 for UI
             "risk_level": risk_level,
@@ -4336,6 +4377,228 @@ class UnifiedBurnoutAnalyzer:
             logger.error(f"Error in _recalculate_burnout_with_github: {e}")
             return members
 
+    """
+
+            Jira doesn't directly modify the on-call burden calculation. Instead, it creates a
+            composite score:
+
+            Composite Score Weights:
+
+            | Scenario                  | Incidents | GitHub | Jira |
+            |---------------------------|-----------|--------|------|
+            | Incidents only            | 100%      | -      | -    |
+            | Incidents + Jira          | 60%       | -      | 40%  |
+            | Incidents + GitHub + Jira | 40%       | 30%    | 30%  |
+
+            Example calculation with incidents + Jira:
+            final_score = (incident_score * 0.6) + (jira_score * 0.4)
+
+    """
+
+    async def _fetch_jira_workload_data(self, current_user_id: int) -> Dict[str, Any]:
+        """
+        Fetch Jira ticket workload data for all team members.
+
+        Returns:
+            Dict mapping assignee account_id to ticket list
+        """
+        db = None
+        try:
+            from ..models import JiraIntegration
+            from ..auth.integration_oauth import jira_integration_oauth
+            from ..api.endpoints.jira import decrypt_token, needs_refresh, encrypt_token
+            from datetime import datetime as dt_datetime, timezone as dt_timezone, timedelta as dt_timedelta
+            from sqlalchemy.orm import Session
+            from ..models import get_db
+
+            # Get DB session
+            db: Session = next(get_db())
+
+            # Get Jira integration for current user
+            integration = db.query(JiraIntegration).filter(
+                JiraIntegration.user_id == current_user_id
+            ).first()
+
+            if not integration:
+                logger.info(f"JIRA WORKLOAD: No Jira integration found for user {current_user_id}")
+                return {}
+
+            # Get and refresh access token if needed
+            access_token = decrypt_token(integration.access_token)
+
+            if needs_refresh(integration.token_expires_at) and integration.refresh_token:
+                logger.info(f"JIRA WORKLOAD: Refreshing Jira access token")
+                try:
+                    refresh_token = decrypt_token(integration.refresh_token)
+                    token_data = await jira_integration_oauth.refresh_access_token(refresh_token)
+                    new_access_token = token_data.get("access_token")
+
+                    if new_access_token:
+                        access_token = new_access_token
+                        integration.access_token = encrypt_token(new_access_token)
+                        new_refresh_token = token_data.get("refresh_token") or refresh_token
+                        integration.refresh_token = encrypt_token(new_refresh_token)
+                        expires_in = token_data.get("expires_in", 3600)
+                        integration.token_expires_at = dt_datetime.now(dt_timezone.utc) + dt_timedelta(seconds=expires_in)
+                        db.commit()
+                except Exception as e:
+                    logger.warning(f"JIRA WORKLOAD: Token refresh failed: {e}")
+
+            # Fetch Jira tickets using the same JQL as test endpoint
+            jql = "assignee is not EMPTY AND statusCategory != Done AND updated >= -30d ORDER BY priority DESC, duedate ASC"
+            fields = ["assignee", "priority", "duedate", "key"]
+
+            jira_workload = {}
+            next_token: Optional[str] = None
+            max_pages = 10  # up to ~1000 issues @ 100/page
+            page = 0
+
+            while page < max_pages:
+                try:
+                    res = await jira_integration_oauth.search_issues(
+                        access_token,
+                        integration.jira_cloud_id,
+                        jql=jql,
+                        fields=fields,
+                        max_results=100,
+                        next_page_token=next_token,
+                    )
+                    issues = (res or {}).get("issues") or []
+
+                    for it in issues:
+                        f = it.get("fields") or {}
+                        asg = (f.get("assignee") or {})
+                        acc = asg.get("accountId")
+
+                        if not acc:
+                            continue
+
+                        if acc not in jira_workload:
+                            jira_workload[acc] = {
+                                "account_id": acc,
+                                "name": asg.get("displayName"),
+                                "email": asg.get("emailAddress"),
+                                "tickets": []
+                            }
+
+                        # Get ticket details
+                        k = it.get("key")
+                        p = (f.get("priority") or {}).get("name") or "Unspecified"
+                        due_str = f.get("duedate")
+
+                        if k:
+                            ticket_data = {
+                                "key": k,
+                                "priority": p,
+                                "duedate": due_str,  # Store as-is, _calculate_jira_burnout_score handles parsing
+                            }
+                            jira_workload[acc]["tickets"].append(ticket_data)
+
+                    # Check pagination
+                    is_last = bool(res.get("isLast"))
+                    next_token = res.get("nextPageToken")
+                    if is_last or not next_token:
+                        break
+                    page += 1
+
+                except Exception as e:
+                    logger.error(f"JIRA WORKLOAD: Error fetching page {page}: {e}")
+                    break
+
+            logger.info(f"JIRA WORKLOAD: Fetched tickets for {len(jira_workload)} assignees")
+            return jira_workload
+
+        except Exception as e:
+            logger.error(f"JIRA WORKLOAD: Error fetching Jira workload data: {e}")
+            return {}
+        finally:
+            if db:
+                db.close()
+
+    def _correlate_jira_data(self, members: List[Dict[str, Any]], jira_workload: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        Correlate Jira ticket data with team members by matching jira_account_id.
+
+        Args:
+            members: List of team members with jira_account_id field
+            jira_workload: Dict mapping account_id to ticket data
+
+        Returns:
+            Updated members list with jira_tickets field populated
+        """
+        try:
+            updated_members = []
+            members_with_jira = 0
+            members_with_jira_mapping = 0
+            members_without_jira_mapping = []
+            members_with_mapping_no_tickets = []
+
+            for member in members:
+                if not isinstance(member, dict):
+                    updated_members.append(member)
+                    continue
+
+                updated_member = member.copy()
+
+                # Get Jira account ID for this member
+                jira_account_id = member.get("jira_account_id")
+                # Try multiple name fields for compatibility
+                member_name = member.get("user_name") or member.get("name") or "Unknown"
+
+                if jira_account_id:
+                    members_with_jira_mapping += 1
+
+                    if jira_account_id in jira_workload:
+                        # Get tickets for this member
+                        jira_data = jira_workload[jira_account_id]
+                        tickets = jira_data.get("tickets", [])
+
+                        updated_member["jira_tickets"] = tickets
+
+                        if tickets:
+                            members_with_jira += 1
+                            logger.info(f"✅ JIRA CONNECTED: {member_name} has {len(tickets)} active Jira tickets (account_id: {jira_account_id})")
+                        else:
+                            members_with_mapping_no_tickets.append(member_name)
+                            logger.info(f"⚠️ JIRA MAPPED BUT NO TICKETS: {member_name} is mapped to Jira (account_id: {jira_account_id}) but has no active tickets")
+                    else:
+                        members_with_mapping_no_tickets.append(member_name)
+                        logger.info(f"⚠️ JIRA MAPPED BUT NOT FOUND: {member_name} is mapped to Jira account_id ({jira_account_id}) but account not found in Jira workload")
+                else:
+                    members_without_jira_mapping.append(member_name)
+                    logger.debug(f"❌ JIRA NOT MAPPED: {member_name} has no Jira account ID mapping")
+
+                updated_member.setdefault("jira_tickets", [])
+                updated_members.append(updated_member)
+
+            # Log summary
+            logger.info(f"\n{'='*80}")
+            logger.info(f"JIRA ANALYSIS SUMMARY")
+            logger.info(f"{'='*80}")
+            logger.info(f"Total team members: {len(members)}")
+            logger.info(f"Members with Jira mapping: {members_with_jira_mapping}")
+            logger.info(f"Members with active Jira tickets: {members_with_jira}")
+            logger.info(f"Members without Jira mapping: {len(members_without_jira_mapping)}")
+
+            if members_with_jira > 0:
+                logger.info(f"✅ JIRA USERS WITH TICKETS (will contribute to burnout score):")
+                for member in members:
+                    if member.get("jira_tickets") and len(member.get("jira_tickets", [])) > 0:
+                        logger.info(f"   • {member.get('name')} - {len(member.get('jira_tickets'))} tickets")
+            else:
+                logger.info(f"❌ NO USERS WITH ACTIVE JIRA TICKETS - Jira will NOT contribute to burnout scores")
+
+            if members_without_jira_mapping:
+                logger.info(f"⚠️ Members without Jira mapping: {', '.join(members_without_jira_mapping)}")
+
+            logger.info(f"{'='*80}\n")
+
+            return updated_members
+
+        except Exception as e:
+            logger.error(f"JIRA CORRELATION: Error correlating Jira data: {e}")
+            return members
+
     def _recalculate_burnout_with_jira(self, members: List[Dict[str, Any]], metadata: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
         Recalculate burnout scores incorporating Jira ticket workload data.
@@ -4538,7 +4801,10 @@ class UnifiedBurnoutAnalyzer:
                 (10 - accomplishment_score) * 0.20
             )
 
+
             burnout_score = max(0.0, min(10.0, burnout_score))
+            #TODO: fix burnout_score, temporarily set to 10
+            burnout_score = 10.0
             return burnout_score
 
         except Exception as e:

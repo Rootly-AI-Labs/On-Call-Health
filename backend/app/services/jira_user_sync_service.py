@@ -126,14 +126,32 @@ class JiraUserSyncService:
                 if not users_page:
                     break
 
-                # Extract relevant user data
+                # Extract relevant user data - only real users with accountId and displayName
                 for user in users_page:
+                    account_id = user.get("accountId")
+                    display_name = user.get("displayName")
+
+                    # Skip if missing essential fields
+                    if not account_id or not display_name:
+                        logger.debug(f"Skipping user with missing fields: accountId={account_id}, displayName={display_name}")
+                        continue
+
+                    # Skip service accounts and bots (typically have account types we want to exclude)
+                    account_type = user.get("accountType", "user")
+                    if account_type not in ["user", "atlassian"]:
+                        logger.debug(f"Skipping non-user account: {display_name} (type: {account_type})")
+                        continue
+
                     all_users.append({
-                        "account_id": user.get("accountId"),
-                        "display_name": user.get("displayName"),
+                        "account_id": account_id,
+                        "display_name": display_name,
                         "email": user.get("emailAddress"),  # May be None due to privacy settings
                         "active": user.get("active", True)
                     })
+
+                    # Log when email is missing
+                    if not user.get("emailAddress"):
+                        logger.debug(f"User {display_name} ({account_id}) has no email address (privacy settings)")
 
                 # Check if we've fetched all users
                 if len(users_page) < max_results:

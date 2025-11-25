@@ -288,6 +288,17 @@ export default function IntegrationsPage() {
   const [loadingOrgMembers, setLoadingOrgMembers] = useState(false)
   const [savingUsername, setSavingUsername] = useState(false)
 
+  // Jira mapping state
+  const [jiraUsers, setJiraUsers] = useState<Array<{
+    account_id: string
+    display_name: string
+    email: string | null
+  }>>([])
+  const [loadingJiraUsers, setLoadingJiraUsers] = useState(false)
+  const [editingJiraUserId, setEditingJiraUserId] = useState<number | null>(null)
+  const [editingJiraAccountId, setEditingJiraAccountId] = useState('')
+  const [savingJiraMapping, setSavingJiraMapping] = useState(false)
+
   // Manual survey delivery modal state
   const [showManualSurveyModal, setShowManualSurveyModal] = useState(false)
 
@@ -334,6 +345,103 @@ export default function IntegrationsPage() {
       console.error('Error fetching GitHub org members:', error)
     } finally {
       setLoadingOrgMembers(false)
+    }
+  }
+
+  // Jira users handlers
+  const fetchJiraUsers = async () => {
+    if (!jiraIntegration) return
+
+    setLoadingJiraUsers(true)
+    try {
+      const authToken = localStorage.getItem('auth_token')
+      if (!authToken) {
+        toast.error('Please log in to load Jira users')
+        return
+      }
+
+      const response = await fetch(`${API_BASE}/integrations/jira/jira-users`, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+
+        // Validate and filter users - ensure all have required fields
+        const validUsers = (data.users || []).filter(
+          (user: any) => user.account_id && user.display_name
+        )
+
+        console.log(`Loaded ${validUsers.length} valid Jira users`)
+        setJiraUsers(validUsers)
+      } else {
+        const error = await response.json()
+        console.error('Failed to load Jira users:', error)
+        toast.error('Failed to load Jira users')
+        setJiraUsers([])
+      }
+    } catch (error) {
+      console.error('Error fetching Jira users:', error)
+      toast.error('Error fetching Jira users')
+      setJiraUsers([])
+    } finally {
+      setLoadingJiraUsers(false)
+    }
+  }
+
+  const startEditingJiraMapping = (userId: number, currentAccountId: string | null) => {
+    setEditingJiraUserId(userId)
+    setEditingJiraAccountId(currentAccountId || '')
+  }
+
+  const cancelEditingJiraMapping = () => {
+    setEditingJiraUserId(null)
+    setEditingJiraAccountId('')
+  }
+
+  const saveJiraMapping = async (userId: number) => {
+    setSavingJiraMapping(true)
+    try {
+      const authToken = localStorage.getItem('auth_token')
+      if (!authToken) {
+        toast.error('Please log in to update Jira mapping')
+        return
+      }
+
+      const accountIdToSave = editingJiraAccountId === '__clear__' ? '' : editingJiraAccountId
+
+      const jiraUser = jiraUsers.find(u => u.account_id === accountIdToSave)
+
+      const response = await fetch(
+        `${API_BASE}/rootly/user-correlation/${userId}/jira-mapping?jira_account_id=${encodeURIComponent(accountIdToSave)}${jiraUser?.email ? `&jira_email=${encodeURIComponent(jiraUser.email)}` : ''}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${authToken}`
+          }
+        }
+      )
+
+      if (response.ok) {
+        toast.success(accountIdToSave ? 'Jira mapping updated' : 'Jira mapping cleared')
+        // Refresh users
+        const selectedOrg = selectedOrganization || integrations.find(i => i.is_default)?.id?.toString()
+        if (selectedOrg) {
+          syncedUsersCache.current.delete(selectedOrg)
+          await fetchSyncedUsers(false, false, true)
+        }
+        cancelEditingJiraMapping()
+      } else {
+        const error = await response.json()
+        toast.error(error.detail || 'Failed to update Jira mapping')
+      }
+    } catch (error) {
+      console.error('Error updating Jira mapping:', error)
+      toast.error('Failed to update Jira mapping')
+    } finally {
+      setSavingJiraMapping(false)
     }
   }
 
@@ -704,6 +812,13 @@ export default function IntegrationsPage() {
 
     loadSavedRecipients()
   }, [teamMembersDrawerOpen, selectedOrganization])
+
+  // Fetch Jira users when drawer opens
+  useEffect(() => {
+    if (jiraIntegration && teamMembersDrawerOpen && showSyncedUsers) {
+      fetchJiraUsers()
+    }
+  }, [jiraIntegration, teamMembersDrawerOpen, showSyncedUsers])
 
   // Handle Slack/Jira OAuth success redirect
   useEffect(() => {
@@ -2687,9 +2802,6 @@ export default function IntegrationsPage() {
                 integration={githubIntegration}
                 onDisconnect={() => setGithubDisconnectDialogOpen(true)}
                 onTest={handleGitHubTest}
-                onViewMappings={() => openMappingDrawer('github')}
-                loadingMappings={loadingMappingData}
-                selectedMappingPlatform={selectedMappingPlatform}
               />
             )}
             {/* Jira Integration Card - Not Connected */}
@@ -2706,10 +2818,7 @@ export default function IntegrationsPage() {
                 integration={jiraIntegration}
                 onDisconnect={() => setJiraDisconnectDialogOpen(true)}
                 onTest={handleJiraTest}
-                onViewMappings={() => openMappingDrawer('jira')}
                 isLoading={isDisconnectingJira}
-                loadingMappings={loadingMappingData}
-                selectedMappingPlatform={selectedMappingPlatform}
               />
             )}
 
@@ -4132,6 +4241,106 @@ export default function IntegrationsPage() {
                             )}
                           </div>
                         )}
+
+                        {/* Jira mapping section - always show if Jira connected */}
+                        {jiraIntegration && (
+                          <div className="pl-13 mt-2" onClick={(e) => e.stopPropagation()}>
+                            {editingJiraUserId === user.id ? (
+                              // Jira Edit mode
+                              <div className="flex items-center space-x-2">
+                                <Select
+                                  value={editingJiraAccountId}
+                                  onValueChange={setEditingJiraAccountId}
+                                  disabled={savingJiraMapping}
+                                >
+                                  <SelectTrigger className="h-8 text-xs flex-1">
+                                    <SelectValue placeholder="Select Jira user..." />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="__clear__">
+                                      <span className="text-gray-400 italic">Clear mapping</span>
+                                    </SelectItem>
+                                    {jiraUsers.length > 0 ? (
+                                      jiraUsers.map((jiraUser) => (
+                                        <SelectItem key={jiraUser.account_id} value={jiraUser.account_id}>
+                                          <div className="space-y-0.5">
+                                            <div className="font-medium">{jiraUser.display_name}</div>
+                                            <div className="text-xs text-gray-500">
+                                              {jiraUser.email ? jiraUser.email : '<no-email>'}
+                                            </div>
+                                          </div>
+                                        </SelectItem>
+                                      ))
+                                    ) : (
+                                      <div className="text-xs text-gray-400 p-2">
+                                        {loadingJiraUsers ? 'Loading...' : 'No Jira users found'}
+                                      </div>
+                                    )}
+                                  </SelectContent>
+                                </Select>
+                                <Button
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    saveJiraMapping(user.id)
+                                  }}
+                                  disabled={savingJiraMapping}
+                                  className="h-8 px-2"
+                                >
+                                  {savingJiraMapping ? (
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                  ) : (
+                                    <Check className="w-3 h-3" />
+                                  )}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    cancelEditingJiraMapping()
+                                  }}
+                                  disabled={savingJiraMapping}
+                                  className="h-8 px-2"
+                                >
+                                  <X className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            ) : (
+                              // Jira Display mode
+                              <div className="flex items-center justify-between text-xs">
+                                <div className="text-gray-500">
+                                  Jira: {user.jira_account_id ? (
+                                    <div className="space-y-0.5">
+                                      <div className="font-mono text-gray-700">
+                                        {jiraUsers.find(u => u.account_id === user.jira_account_id)?.display_name ||
+                                         user.jira_account_id.substring(0, 8) + '...'}
+                                      </div>
+                                      {user.jira_email ? (
+                                        <div className="text-xs text-gray-500">{user.jira_email}</div>
+                                      ) : (
+                                        <div className="text-xs text-gray-400">&lt;no-email&gt;</div>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <span className="text-gray-400 italic">Not mapped</span>
+                                  )}
+                                </div>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    startEditingJiraMapping(user.id, user.jira_account_id)
+                                  }}
+                                  className="h-6 px-2 text-gray-400 hover:text-gray-700"
+                                >
+                                  <Edit3 className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                     )
@@ -4248,6 +4457,12 @@ export default function IntegrationsPage() {
                             <span className="font-semibold text-gray-900">{syncProgress.results.slack_synced}</span>
                           </div>
                         )}
+                        {syncProgress.results.jira_matched !== undefined && syncProgress.results.jira_matched > 0 && (
+                          <div className="flex items-center justify-between py-2">
+                            <span className="text-sm text-gray-700">Jira accounts matched</span>
+                            <span className="font-semibold text-gray-900">{syncProgress.results.jira_matched}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -4292,7 +4507,7 @@ export default function IntegrationsPage() {
                         )}
                         <li><strong>Clean Sync:</strong> All existing users from this integration will be removed and replaced with the fresh list.</li>
                         <li><strong>Used in Analysis:</strong> These synced users will be used when running burnout analysis.</li>
-                        <li><strong>Cross-Platform Matching:</strong> Users will be matched across GitHub and Slack accounts when possible.</li>
+                        <li><strong>Cross-Platform Matching:</strong> Users will be matched across GitHub, Slack, and Jira accounts when possible.</li>
                       </ul>
                     </div>
 

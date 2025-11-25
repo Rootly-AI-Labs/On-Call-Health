@@ -996,3 +996,96 @@ async def disconnect_jira(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to disconnect Jira: {str(e)}")
+
+
+@router.get("/jira-users")
+async def get_jira_users(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Get all active Jira users from the connected workspace.
+    Used for dropdown selection in team member mapping interface.
+
+    Returns:
+        List of Jira users with account_id, display_name, and email
+    """
+    from ...services.jira_user_sync_service import JiraUserSyncService
+
+    try:
+        integration = db.query(JiraIntegration).filter(
+            JiraIntegration.user_id == current_user.id
+        ).first()
+
+        if not integration:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Jira integration not found. Please connect Jira first."
+            )
+
+        # Decrypt token if expired, refresh if needed
+        access_token = decrypt_token(integration.access_token)
+
+        if needs_refresh(integration.token_expires_at):
+            logger.info("[Jira] Token needs refresh, attempting refresh...")
+            if not integration.refresh_token:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Jira token expired and cannot be refreshed. Please reconnect."
+                )
+
+            try:
+                new_token_data = await jira_integration_oauth.refresh_access_token(
+                    decrypt_token(integration.refresh_token)
+                )
+                access_token = new_token_data.get("access_token")
+                refresh_token = new_token_data.get("refresh_token")
+                expires_in = new_token_data.get("expires_in", 3600)
+
+                # Update integration with new tokens
+                integration.access_token = encrypt_token(access_token)
+                if refresh_token:
+                    integration.refresh_token = encrypt_token(refresh_token)
+                integration.token_expires_at = datetime.now(dt_timezone.utc) + timedelta(seconds=expires_in)
+                db.commit()
+                logger.info("[Jira] Token refreshed successfully")
+            except Exception as e:
+                logger.error("[Jira] Token refresh failed: %s", e)
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Jira token refresh failed. Please reconnect."
+                )
+
+        # Fetch all Jira users
+        sync_service = JiraUserSyncService(db)
+        jira_users = await sync_service._fetch_jira_users(
+            access_token,
+            integration.jira_cloud_id
+        )
+
+        # Filter to ensure we only return valid users with display names and account IDs
+        valid_users = [
+            {
+                "account_id": u.get("account_id"),
+                "display_name": u.get("display_name"),
+                "email": u.get("email")
+            }
+            for u in jira_users
+            if u.get("account_id") and u.get("display_name")
+        ]
+
+        logger.info("[Jira] Retrieved %d valid users for dropdown", len(valid_users))
+
+        return {
+            "success": True,
+            "users": valid_users  # Returns list of {account_id, display_name, email}
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("[Jira] Failed to get Jira users: %s", e, exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve Jira users: {str(e)}"
+        )

@@ -1,27 +1,21 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { AlertCircle, CheckCircle, Calendar, Globe, Key, Trash2, TestTube, Loader2, ArrowLeftRight, Users } from "lucide-react"
+import { AlertCircle, CheckCircle, Calendar, Globe, Key, Trash2, TestTube, Loader2 } from "lucide-react"
 import type { JiraIntegration } from "../types"
 
 interface JiraConnectedCardProps {
   integration: JiraIntegration
   onDisconnect: () => void
   onTest: () => void
-  onViewMappings?: () => void
   isLoading?: boolean
-  loadingMappings?: boolean
-  selectedMappingPlatform?: string | null
 }
 
 export function JiraConnectedCard({
   integration,
   onDisconnect,
   onTest,
-  onViewMappings,
-  isLoading = false,
-  loadingMappings = false,
-  selectedMappingPlatform = null
+  isLoading = false
 }: JiraConnectedCardProps) {
   return (
     <Card className="border-2 border-green-200 bg-green-50/50 max-w-2xl mx-auto">
@@ -149,28 +143,6 @@ export function JiraConnectedCard({
             )}
             Test Connection
           </Button>
-          {onViewMappings && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onViewMappings}
-              disabled={loadingMappings}
-              className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 hover:text-blue-800 hover:border-blue-300"
-              title="View and manage Jira user mappings"
-            >
-              {loadingMappings && selectedMappingPlatform === 'jira' ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Loading...
-                </>
-              ) : (
-                <>
-                  <Users className="w-4 h-4 mr-2" />
-                  View Mappings
-                </>
-              )}
-            </Button>
-          )}
           <Button
             size="sm"
             variant="destructive"

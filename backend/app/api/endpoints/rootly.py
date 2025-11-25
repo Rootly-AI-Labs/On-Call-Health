@@ -1400,6 +1400,8 @@ async def get_synced_users(
                 platforms.append("github")
             if corr.slack_user_id:
                 platforms.append("slack")
+            if corr.jira_account_id:
+                platforms.append("jira")
 
             # Check if user is currently on-call
             is_oncall = corr.email.lower() in {email.lower() for email in oncall_emails}
@@ -1413,6 +1415,8 @@ async def get_synced_users(
                 "slack_user_id": corr.slack_user_id,
                 "rootly_user_id": corr.rootly_user_id,  # Added for Rootly incident matching
                 "pagerduty_user_id": corr.pagerduty_user_id,  # Added for PagerDuty incident matching
+                "jira_account_id": corr.jira_account_id,
+                "jira_email": corr.jira_email,
                 "is_oncall": is_oncall,
                 "created_at": corr.created_at.isoformat() if corr.created_at else None
             })
@@ -1690,4 +1694,96 @@ async def update_user_correlation_github_username(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to update GitHub username: {str(e)}"
+        )
+
+
+@router.patch("/user-correlation/{correlation_id}/jira-mapping")
+async def update_user_correlation_jira_mapping(
+    correlation_id: int,
+    jira_account_id: str = "",
+    jira_email: str = None,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Manually update Jira account mapping for a UserCorrelation.
+    Supports exclusive one-to-one mapping - if another user already has this Jira account_id,
+    that mapping will be cleared first.
+
+    Used for dropdown selection in Team Members panel.
+    """
+    try:
+        # Fetch the correlation - ensure it belongs to current user
+        correlation = db.query(UserCorrelation).filter(
+            UserCorrelation.id == correlation_id,
+            UserCorrelation.user_id == current_user.id
+        ).first()
+
+        if not correlation:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User correlation not found or doesn't belong to you"
+            )
+
+        jira_account_id = (jira_account_id or "").strip()
+        old_account_id = correlation.jira_account_id
+
+        if jira_account_id == "":
+            # Clear the mapping
+            correlation.jira_account_id = None
+            correlation.jira_email = None
+            db.commit()
+            logger.info(
+                f"User {current_user.id} cleared Jira mapping for {correlation.email} "
+                f"(was: {old_account_id})"
+            )
+            message = "Jira mapping cleared"
+        else:
+            # Check if another user already has this Jira account_id
+            # If so, clear that user's mapping first (exclusive mapping)
+            existing = db.query(UserCorrelation).filter(
+                UserCorrelation.jira_account_id == jira_account_id,
+                UserCorrelation.id != correlation_id,
+                UserCorrelation.user_id == current_user.id  # Only within same user's org
+            ).first()
+
+            if existing:
+                logger.info(
+                    f"Clearing existing Jira mapping: {existing.email} had {jira_account_id}, now reassigning to {correlation.email}"
+                )
+                existing.jira_account_id = None
+                existing.jira_email = None
+
+            # Set the new mapping
+            correlation.jira_account_id = jira_account_id
+            correlation.jira_email = jira_email or None
+            db.commit()
+            logger.info(
+                f"User {current_user.id} updated Jira mapping for {correlation.email}: "
+                f"{old_account_id} → {jira_account_id}"
+            )
+            message = "Jira mapping updated"
+
+        return {
+            "success": True,
+            "message": message,
+            "correlation": {
+                "id": correlation.id,
+                "email": correlation.email,
+                "name": correlation.name,
+                "jira_account_id": correlation.jira_account_id,
+                "jira_email": correlation.jira_email,
+                "github_username": correlation.github_username,
+                "slack_user_id": correlation.slack_user_id
+            }
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Failed to update Jira mapping: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update Jira mapping: {str(e)}"
         )

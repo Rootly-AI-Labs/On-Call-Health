@@ -2589,26 +2589,28 @@ async def run_analysis_task(
                 for corr in correlations:
                     if corr.integration_ids and integration_id_str in corr.integration_ids:
                         # Format user data for analyzer (compatible with API format)
+                        # IMPORTANT: Use a different variable name to avoid overwriting the current user's ID
                         if platform == "pagerduty":
-                            user_id = corr.pagerduty_user_id
-                            if not user_id:
+                            platform_user_id = corr.pagerduty_user_id
+                            if not platform_user_id:
                                 logger.warning(f"Skipping PagerDuty user {corr.email} - missing pagerduty_user_id")
                                 continue
                         else:  # rootly
                             # Prefer rootly_user_id for accuracy, but fallback to email for backward compatibility
-                            user_id = corr.rootly_user_id or corr.email
-                            if not user_id:
+                            platform_user_id = corr.rootly_user_id or corr.email
+                            if not platform_user_id:
                                 logger.warning(f"Skipping Rootly user - missing both rootly_user_id and email")
                                 continue
 
                         user_data = {
-                            'id': user_id,  # Must be actual platform user ID for incident matching
+                            'id': platform_user_id,  # Must be actual platform user ID for incident matching
                             'name': corr.name,
                             'email': corr.email,
                             'is_oncall': oncall_emails.get(corr.email.lower(), False),
                             # Include enhanced platform mappings
                             'github_username': corr.github_username,
                             'slack_user_id': corr.slack_user_id,
+                            'jira_account_id': corr.jira_account_id,  # Jira mapping for workload correlation
                             'synced': True  # Mark as from Team Sync
                         }
                         synced_users.append(user_data)
@@ -2625,6 +2627,9 @@ async def run_analysis_task(
         else:
             logger.info("BACKGROUND_TASK: Skipping Team Sync query (missing user_id or integration_id)")
 
+        # CRITICAL: Verify user_id hasn't been overwritten before passing to analyzer
+        logger.info(f"BACKGROUND_TASK: Creating analyzer with current_user_id={user_id} (should match the logged-in user, NOT a team member ID)")
+
         analyzer_service = UnifiedBurnoutAnalyzer(
             api_token=effective_api_token,
             platform=platform,
@@ -2633,9 +2638,10 @@ async def run_analysis_task(
             slack_token=slack_token if include_slack else None,
             jira_token=jira_token if include_jira else None,
             organization_name=organization_name,
-            synced_users=synced_users  # Pass synced users from Team Sync
+            synced_users=synced_users,  # Pass synced users from Team Sync
+            current_user_id=user_id  # Pass the current user ID for Jira integration lookup
         )
-        logger.info(f"BACKGROUND_TASK: UnifiedBurnoutAnalyzer initialized - Features: AI={use_ai_analyzer}, GitHub={include_github}, Slack={include_slack}, Jira={include_jira}")
+        logger.info(f"BACKGROUND_TASK: UnifiedBurnoutAnalyzer initialized - Features: AI={use_ai_analyzer}, GitHub={include_github}, Slack={include_slack}, Jira={include_jira}, current_user_id={user_id}")
         
         # Run the analysis with timeout (15 minutes max)
         logger.info(f"BACKGROUND_TASK: Starting burnout analysis with 15-minute timeout for analysis {analysis_id}")
