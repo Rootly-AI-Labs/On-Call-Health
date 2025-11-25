@@ -696,6 +696,7 @@ class PagerDutyDataCollector:
 
             # Extract urgency (PagerDuty's incident classification)
             urgency = incident.get("urgency", "low")
+            logger.info(f"PD incident {incident.get('incident_number')}: urgency={urgency}")
 
             # Create normalized incident
             normalized_incident = {
