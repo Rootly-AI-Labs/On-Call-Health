@@ -582,41 +582,62 @@ export function TeamHealthOverview({
                 }
               }
 
+              const isPagerDuty = currentAnalysis?.platform === 'pagerduty';
+
               return severityBreakdown && (
-                <div className={`mt-4 grid ${severityBreakdown.sev0_count > 0 ? 'grid-cols-5' : 'grid-cols-4'} gap-2`}>
-                  {severityBreakdown.sev0_count > 0 && (
-                    <div className="bg-purple-50 rounded-lg p-2 text-center">
-                      <div className="text-xs font-semibold text-purple-700">SEV0</div>
-                      <div className="text-lg font-bold text-purple-600">
-                        {severityBreakdown.sev0_count}
+                isPagerDuty ? (
+                  // PagerDuty: Show only High/Low urgency
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    <div className="bg-red-50 rounded-lg p-2 text-center">
+                      <div className="text-xs font-semibold text-red-700">High Urgency</div>
+                      <div className="text-lg font-bold text-red-600">
+                        {severityBreakdown.sev1_count}
                       </div>
                     </div>
-                  )}
-                  <div className="bg-red-50 rounded-lg p-2 text-center">
-                    <div className="text-xs font-semibold text-red-700">SEV1</div>
-                    <div className="text-lg font-bold text-red-600">
-                      {severityBreakdown.sev1_count}
+                    <div className="bg-green-50 rounded-lg p-2 text-center">
+                      <div className="text-xs font-semibold text-green-700">Low Urgency</div>
+                      <div className="text-lg font-bold text-green-600">
+                        {severityBreakdown.sev4_count}
+                      </div>
                     </div>
                   </div>
-                  <div className="bg-orange-50 rounded-lg p-2 text-center">
-                    <div className="text-xs font-semibold text-orange-700">SEV2</div>
-                    <div className="text-lg font-bold text-orange-600">
-                      {severityBreakdown.sev2_count}
+                ) : (
+                  // Rootly: Show standard SEV0-SEV4
+                  <div className={`mt-4 grid ${severityBreakdown.sev0_count > 0 ? 'grid-cols-5' : 'grid-cols-4'} gap-2`}>
+                    {severityBreakdown.sev0_count > 0 && (
+                      <div className="bg-purple-50 rounded-lg p-2 text-center">
+                        <div className="text-xs font-semibold text-purple-700">SEV0</div>
+                        <div className="text-lg font-bold text-purple-600">
+                          {severityBreakdown.sev0_count}
+                        </div>
+                      </div>
+                    )}
+                    <div className="bg-red-50 rounded-lg p-2 text-center">
+                      <div className="text-xs font-semibold text-red-700">SEV1</div>
+                      <div className="text-lg font-bold text-red-600">
+                        {severityBreakdown.sev1_count}
+                      </div>
+                    </div>
+                    <div className="bg-orange-50 rounded-lg p-2 text-center">
+                      <div className="text-xs font-semibold text-orange-700">SEV2</div>
+                      <div className="text-lg font-bold text-orange-600">
+                        {severityBreakdown.sev2_count}
+                      </div>
+                    </div>
+                    <div className="bg-yellow-50 rounded-lg p-2 text-center">
+                      <div className="text-xs font-semibold text-yellow-700">SEV3</div>
+                      <div className="text-lg font-bold text-yellow-600">
+                        {severityBreakdown.sev3_count}
+                      </div>
+                    </div>
+                    <div className="bg-green-50 rounded-lg p-2 text-center">
+                      <div className="text-xs font-semibold text-green-700">SEV4</div>
+                      <div className="text-lg font-bold text-green-600">
+                        {severityBreakdown.sev4_count}
+                      </div>
                     </div>
                   </div>
-                  <div className="bg-yellow-50 rounded-lg p-2 text-center">
-                    <div className="text-xs font-semibold text-yellow-700">SEV3</div>
-                    <div className="text-lg font-bold text-yellow-600">
-                      {severityBreakdown.sev3_count}
-                    </div>
-                  </div>
-                  <div className="bg-green-50 rounded-lg p-2 text-center">
-                    <div className="text-xs font-semibold text-green-700">SEV4</div>
-                    <div className="text-lg font-bold text-green-600">
-                      {severityBreakdown.sev4_count}
-                    </div>
-                  </div>
-                </div>
+                )
               );
             })()}
             {currentAnalysis.analysis_data?.session_hours !== undefined && (
