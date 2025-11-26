@@ -302,7 +302,7 @@ class GitHubCollector:
 
         headers = {
             'Authorization': f'token {token}',
-            'Accept': 'application/vnd.github.v3+json',
+            'Accept': 'application/vnd.github.cloak-preview+json',  # Required for commit search API
             'User-Agent': 'Rootly-Burnout-Detector'
         }
 
