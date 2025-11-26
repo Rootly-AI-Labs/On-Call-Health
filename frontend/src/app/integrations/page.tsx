@@ -375,7 +375,6 @@ export default function IntegrationsPage() {
           (user: any) => user.account_id && user.display_name
         )
 
-        console.log(`Loaded ${validUsers.length} valid Jira users`)
         setJiraUsers(validUsers)
       } else {
         const error = await response.json()

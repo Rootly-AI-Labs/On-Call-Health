@@ -157,32 +157,6 @@ export async function handleJiraTest(
 
     if (result.success) {
       toast.success('Jira connection is working correctly!')
-
-      // Log all the data we're collecting
-      console.log('[Jira] ========== TEST CONNECTION RESULTS ==========')
-      console.log('[Jira] Permissions:', result.permissions)
-      console.log('[Jira] Connected User:', result.user_info)
-
-      // Log detailed information about all users and their tickets
-      if (result.workload_preview && result.workload_preview.per_responder) {
-        console.log(`[Jira] Total issues found: ${result.workload_preview.total_issues}`)
-        console.log(`[Jira] Users with tickets: ${result.workload_preview.per_responder.length}`)
-        console.log('[Jira] ========== USER DETAILS ==========')
-
-        result.workload_preview.per_responder.forEach((user: any, index: number) => {
-          console.log(`\n[Jira] User ${index + 1}:`)
-          console.log(`  Name: ${user.assignee_name}`)
-          console.log(`  User ID: ${user.assignee_account_id}`)
-          console.log(`  Email: ${user.assignee_email || 'N/A'}`)
-          console.log(`  Total Tickets: ${user.count}`)
-          console.log(`  Priority Summary:`, user.priorities)
-          console.log(`  Tickets:`)
-          user.tickets.forEach((ticket: any) => {
-            console.log(`    - ${ticket.key} | Priority: ${ticket.priority} | Due: ${ticket.duedate || 'No due date'}`)
-          })
-        })
-        console.log('[Jira] =====================================')
-      }
     } else {
       toast.error(result.message || 'Connection test failed')
     }

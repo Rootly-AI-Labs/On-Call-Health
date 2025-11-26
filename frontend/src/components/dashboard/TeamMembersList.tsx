@@ -44,18 +44,7 @@ export function TeamMembersList({
     return '#dc2626';                       // Red - High/severe burnout
   };
 
-  const renderMemberCard = (member: any) => {
-    // Debug: Log GitHub activity data
-    if (member.github_activity) {
-      console.log(`Member ${member.user_email} github_activity:`, member.github_activity);
-      console.log(`  - commits_count: ${member.github_activity.commits_count}`);
-      console.log(`  - commits_per_week: ${member.github_activity.commits_per_week}`);
-      console.log(`  - Condition check: ${member.github_activity.commits_count > 0 || member.github_activity.commits_per_week > 0}`);
-    } else {
-      console.log(`Member ${member.user_email} has NO github_activity`);
-    }
-
-    return (
+  const renderMemberCard = (member: any) => (
     <Card
       key={member.user_id}
       className="cursor-pointer hover:shadow-md transition-shadow"
@@ -197,8 +186,7 @@ export function TeamMembersList({
         </div>
       </CardContent>
     </Card>
-    );
-  };
+  )
 
   return (
     <>
