@@ -4569,12 +4569,16 @@ class UnifiedBurnoutAnalyzer:
             logger.error(f"JIRA CORRELATION: Error correlating Jira data: {e}")
             return members
 
-
-    # TODO: readjust accordingly
+    # TODO: adjust if needed
     def _recalculate_burnout_with_jira(self, members: List[Dict[str, Any]], metadata: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
         Recalculate OCB scores incorporating Jira ticket workload data.
-        Uses the OCB scoring framework to assess burnout from Jira tickets.
+
+        Jira is treated as an increasing burnout factor:
+        - It can never reduce the original OCB score
+        - It can increase the score up to a maximum of 100
+        - The higher the Jira OCB contribution, the more of the remaining
+        "headroom" to 100 it fills.
         """
         try:
             updated_members = []
@@ -4590,45 +4594,74 @@ class UnifiedBurnoutAnalyzer:
                 member_name = member.get("user_name") or member.get("name") or "Unknown"
 
                 if jira_tickets:
-                    # Calculate Jira OCB contribution
-                    original_ocb = member.get("ocb_score", 0)
-                    jira_ocb_contribution = self._calculate_jira_ocb_contribution(jira_tickets)
+                    # Baseline OCB score (from incidents / other signals)
+                    original_ocb = float(member.get("ocb_score") or 0.0)
+                    # Clamp to 0–100 just in case
+                    original_ocb = max(0.0, min(100.0, original_ocb))
 
-                    # Combine OCB scores: weighted blend (60% incidents + 40% Jira)
-                    final_ocb = (original_ocb * 0.6) + (jira_ocb_contribution * 0.4)
+                    # Jira workload → 0–100 burnout-style score
+                    jira_ocb_contribution = self._calculate_jira_ocb_contribution(jira_tickets)
+                    jira_ocb_contribution = max(0.0, min(100.0, jira_ocb_contribution))
+
+                    # Combine using "headroom" model:
+                    # final = original + (100 - original) * (jira / 100)
+                    # - If jira = 0 → no change
+                    # - If jira = 100 → jump to 100
+                    # - Always >= original_ocb, <= 100
+                    final_ocb = original_ocb + (100.0 - original_ocb) * (jira_ocb_contribution / 100.0)
+
+                    # Just in case of any float weirdness, clamp again
+                    final_ocb = max(original_ocb, min(100.0, final_ocb))
+
+                    jira_added_risk = final_ocb - original_ocb
                     updated_member["ocb_score"] = round(final_ocb, 2)
 
-                    logger.info(f"🔍 JIRA OCB {member_name}: tickets={len(jira_tickets)}, original_ocb={original_ocb}, jira_ocb={jira_ocb_contribution}, final_ocb={final_ocb}")
+                    logger.info(
+                        f"🔍 JIRA OCB {member_name}: "
+                        f"tickets={len(jira_tickets)}, "
+                        f"original_ocb={original_ocb:.2f}, "
+                        f"jira_ocb={jira_ocb_contribution:.2f}, "
+                        f"jira_added_risk={jira_added_risk:.2f}, "
+                        f"final_ocb={final_ocb:.2f}"
+                    )
 
-                    # Add Jira breakdown for transparency
+                    # Jira breakdown for transparency
                     ticket_count = len(jira_tickets)
-                    critical_count = len([t for t in jira_tickets if t.get("priority", "").lower() in ["critical", "blocker", "highest", "high"]])
-                    critical_ratio = (critical_count / ticket_count * 100) if ticket_count > 0 else 0
+                    critical_count = len([
+                        t for t in jira_tickets
+                        if t.get("priority", "").lower() in ["critical", "blocker", "highest", "high"]
+                    ])
+                    critical_ratio = (critical_count / ticket_count * 100) if ticket_count > 0 else 0.0
 
                     updated_member["jira_burnout_breakdown"] = {
                         "jira_ocb_score": round(jira_ocb_contribution, 2),
                         "original_ocb": round(original_ocb, 2),
                         "final_ocb": round(final_ocb, 2),
+                        "jira_added_risk": round(jira_added_risk, 2),
                         "jira_indicators": {
                             "ticket_count": ticket_count,
                             "critical_high_priority_count": critical_count,
                             "critical_ratio": round(critical_ratio, 1),
                             "high_workload": ticket_count >= 20,
-                            "critical_ratio_high": critical_ratio > 30
-                        }
+                            "critical_ratio_high": critical_ratio > 30,
+                        },
                     }
 
                     jira_adjustments_made += 1
 
                 updated_members.append(updated_member)
 
-            logger.info(f"JIRA OCB: Updated OCB scores for {jira_adjustments_made}/{len(members)} members with Jira workload")
+            logger.info(
+                f"JIRA OCB: Updated OCB scores for {jira_adjustments_made}/{len(members)} members with Jira workload"
+            )
 
             return updated_members
 
         except Exception as e:
             logger.error(f"Error in _recalculate_burnout_with_jira: {e}")
             return members
+
+
 
     # TODO: finetune - fix so that we use deadline date, priority and number of tickets for user to contribute to the score
     def _calculate_jira_ocb_contribution(
