@@ -227,6 +227,7 @@ export default function IntegrationsPage() {
       github_matched?: number
       slack_synced?: number
       slack_skipped?: number
+      jira_matched?: number
     }
   } | null>(null)
   const [editingMapping, setEditingMapping] = useState<ManualMapping | null>(null)
