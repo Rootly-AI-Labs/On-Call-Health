@@ -146,8 +146,14 @@ class GitHubCollector:
             GitHub username if found, None otherwise
         """
         try:
-            # Validate user_id is an integer (not a PagerDuty/Rootly user ID string)
-            if not isinstance(user_id, int):
+            # Convert user_id to int if it's a string
+            if isinstance(user_id, str):
+                try:
+                    user_id = int(user_id)
+                except (ValueError, TypeError):
+                    logger.warning(f"Invalid user_id type for synced member check: {type(user_id).__name__}: {user_id}")
+                    return None
+            elif not isinstance(user_id, int):
                 logger.warning(f"Invalid user_id type for synced member check: {type(user_id).__name__}: {user_id}")
                 return None
 
