@@ -16,7 +16,7 @@ interface NewMappingDialogProps {
   onOpenChange: (open: boolean) => void
   form: NewMappingForm
   onFormChange: (form: NewMappingForm) => void
-  selectedPlatform: 'github' | 'slack' | null
+  selectedPlatform: 'github' | 'slack' | 'jira' | null
   onCreateMapping: () => void
 }
 
@@ -37,7 +37,7 @@ export function NewMappingDialog({
             <span>Create New Manual Mapping</span>
           </DialogTitle>
           <DialogDescription>
-            Create a manual mapping between a source platform user and {selectedPlatform === 'github' ? 'GitHub' : 'Slack'} account.
+            Create a manual mapping between a source platform user and {selectedPlatform === 'github' ? 'GitHub' : selectedPlatform === 'slack' ? 'Slack' : 'Jira'} account.
           </DialogDescription>
         </DialogHeader>
 
@@ -55,6 +55,7 @@ export function NewMappingDialog({
                 <SelectContent>
                   <SelectItem value="rootly">Rootly</SelectItem>
                   <SelectItem value="pagerduty">PagerDuty</SelectItem>
+                  <SelectItem value="jira">Jira</SelectItem>
                 </SelectContent>
               </Select>
             </div>

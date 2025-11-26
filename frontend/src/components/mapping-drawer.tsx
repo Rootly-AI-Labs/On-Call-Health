@@ -64,7 +64,7 @@ interface MappingStatistics {
 interface MappingDrawerProps {
   isOpen: boolean
   onClose: () => void
-  platform: 'github' | 'slack'
+  platform: 'github' | 'slack' | 'jira'
   onRefresh?: () => void
 }
 
@@ -323,44 +323,48 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
   }, [inlineEditingValue, platform, validateGitHubUsername])
 
   const runAutoMapping = async () => {
-    if (platform !== 'github') {
-      toast.error('Auto-mapping is only available for GitHub')
+    if (platform !== 'github' && platform !== 'jira') {
+      toast.error(`Auto-mapping is only available for GitHub and Jira`)
       return
     }
     setRunningAutoMapping(true)
     setMappingProgress(null)
     setMappingResults([])
-    
+
     try {
       const authToken = localStorage.getItem('auth_token')
       if (!authToken) {
         toast.error('Authentication required')
         return
       }
-      
-      
-      const response = await fetch(`${API_BASE}/integrations/manual-mappings/run-github-mapping`, {
+
+      // Use platform-specific endpoint
+      const endpoint = platform === 'github'
+        ? `${API_BASE}/integrations/manual-mappings/run-github-mapping`
+        : `${API_BASE}/integrations/manual-mappings/run-jira-mapping`
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json'
         }
       })
-      
-      
+
+
       if (!response.ok) {
         const error = await response.json().catch(() => ({}))
-        
-        if (error.detail === 'GitHub integration not found') {
-          toast.error('Please connect a GitHub integration first before running auto-mapping')
+
+        if (error.detail === 'GitHub integration not found' || error.detail === 'Jira integration not found') {
+          toast.error(`Please connect a ${platformTitle} integration first before running auto-mapping`)
           return
         }
-        
+
         throw new Error(error.detail || error.message || `HTTP ${response.status}: Failed to run auto-mapping`)
       }
-      
+
       const result = await response.json()
-      
+
       setMappingProgress({
         total: result.total_processed,
         processed: result.total_processed,
@@ -368,26 +372,26 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
         notFound: result.not_found,
         errors: result.errors
       })
-      
+
       setMappingResults(result.results)
       setShowMappingResults(true)
-      
+
       if (result.mapped > 0) {
-        toast.success(`✅ Successfully mapped ${result.mapped} users to GitHub`)
+        toast.success(`✅ Successfully mapped ${result.mapped} users to ${platformTitle}`)
         // Reload mapping data to show new mappings
         await loadMappingData()
       } else if (result.total_processed > 0) {
         // Users were processed but none were successfully mapped
         const failureReasons = []
-        if (result.not_found > 0) failureReasons.push(`${result.not_found} not found in GitHub`)
+        if (result.not_found > 0) failureReasons.push(`${result.not_found} not found in ${platformTitle}`)
         if (result.errors > 0) failureReasons.push(`${result.errors} errors occurred`)
-        
+
         const reasonText = failureReasons.length > 0 ? ` (${failureReasons.join(', ')})` : ''
         toast.warning(`⚠️ Processed ${result.total_processed} users but found no successful mappings${reasonText}`)
       } else {
         toast.info('ℹ️ No users found to process for auto-mapping')
       }
-      
+
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to run auto-mapping')
     } finally {
@@ -713,8 +717,8 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
     }
   }
 
-  const platformTitle = platform === 'github' ? 'GitHub' : 'Slack'
-  const platformColor = platform === 'github' ? 'blue' : 'purple'
+  const platformTitle = platform === 'github' ? 'GitHub' : platform === 'jira' ? 'Jira' : 'Slack'
+  const platformColor = platform === 'github' ? 'blue' : platform === 'jira' ? 'blue' : 'purple'
 
   // Platform logo component
   const PlatformLogo = ({ platform, size = 'sm' }: { platform: string, size?: 'sm' | 'md' }) => {
@@ -784,7 +788,7 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
                 <div className="mb-8">
                   <div className="mb-6 flex items-center justify-between">
                     <h3 className="font-semibold text-gray-900">Mapping Statistics</h3>
-                    {platform === 'github' && (
+                    {(platform === 'github' || platform === 'jira') && (
                       <div className="flex space-x-2">
                         <Button
                           onClick={runAutoMapping}
@@ -800,7 +804,7 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
                           ) : (
                             <>
                               <Users className="w-4 h-4 mr-2" />
-                              Run GitHub Auto-Mapping
+                              Run {platformTitle} Auto-Mapping
                             </>
                           )}
                         </Button>
@@ -918,7 +922,7 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-blue-700">
                       <Loader2 className="w-3 h-3 inline-block mr-1 animate-spin" />
-                      Searching for GitHub usernames...
+                      {platform === 'github' ? 'Searching for GitHub usernames...' : platform === 'jira' ? 'Searching for Jira users...' : 'Searching for Slack users...'}
                     </span>
                     {mappingProgress && (
                       <span className="text-sm text-blue-600">
@@ -929,7 +933,7 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
                   {mappingProgress && (
                     <>
                       <div className="w-full bg-blue-100 rounded-full h-2 mb-2">
-                        <div 
+                        <div
                           className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                           style={{ width: `${(mappingProgress.processed / mappingProgress.total) * 100}%` }}
                         />
@@ -943,7 +947,7 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
                   )}
                   {!mappingProgress && (
                     <div className="text-xs text-blue-600 mt-2">
-                      Analyzing team member emails and searching GitHub for matches...
+                      {platform === 'github' ? 'Analyzing team member emails and searching GitHub for matches...' : platform === 'jira' ? 'Analyzing team member names and searching Jira for matches...' : 'Analyzing team member emails and searching Slack for matches...'}
                     </div>
                   )}
                 </div>
@@ -1020,10 +1024,10 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
                           <span className="font-medium truncate max-w-[200px]" title={result.email}>
                             {result.name || result.email}
                           </span>
-                          {result.status === 'mapped' && (
+                          {result.status === 'mapped' && result.github_username && (
                             <>
                               <span className="text-gray-500">→</span>
-                              <span className="text-blue-600">@{result.github_username}</span>
+                              <span className="text-blue-600">{platform === 'github' ? '@' : ''}{result.github_username}</span>
                             </>
                           )}
                         </div>

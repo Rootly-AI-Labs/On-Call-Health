@@ -34,8 +34,8 @@ export function isCacheStale(): boolean {
  * Open mapping drawer for a specific platform
  */
 export function openMappingDrawer(
-  platform: 'github' | 'slack',
-  setMappingDrawerPlatform: (platform: 'github' | 'slack') => void,
+  platform: 'github' | 'slack' | 'jira',
+  setMappingDrawerPlatform: (platform: 'github' | 'slack' | 'jira') => void,
   setMappingDrawerOpen: (open: boolean) => void
 ): void {
   setMappingDrawerPlatform(platform)

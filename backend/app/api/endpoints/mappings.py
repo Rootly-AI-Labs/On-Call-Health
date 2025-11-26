@@ -86,7 +86,7 @@ async def get_analysis_mappings(
         # We'll filter them later to prioritize analysis-relevant ones
         manual_mappings = db.query(UserMapping).filter(
             UserMapping.user_id == current_user.id,
-            UserMapping.target_platform.in_(["github", "slack"])  # Only include relevant platforms
+            UserMapping.target_platform.in_(["github", "slack", "jira"])  # Only include relevant platforms
         ).all()
         
         # Get emails from integration mappings for analysis context

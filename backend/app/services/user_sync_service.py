@@ -85,6 +85,16 @@ class UserSyncService:
                     f"{github_stats['skipped']} skipped"
                 )
 
+            # After syncing Rootly/PagerDuty users, try to match Jira accounts
+            jira_stats = await self._match_jira_users(current_user)
+            stats['jira_matched'] = jira_stats['matched'] if jira_stats else 0
+            stats['jira_skipped'] = jira_stats['skipped'] if jira_stats else 0
+            if jira_stats:
+                logger.info(
+                    f"Jira matching: {jira_stats['matched']} users matched, "
+                    f"{jira_stats['skipped']} skipped"
+                )
+
             return stats
 
         except Exception as e:
@@ -470,5 +480,110 @@ class UserSyncService:
 
         except Exception as e:
             logger.error(f"Error in GitHub matching: {e}")
+            self.db.rollback()
+            return None
+
+    async def _match_jira_users(self, user: User) -> Optional[Dict[str, int]]:
+        """
+        Match all synced users to Jira accounts using email and name matching.
+
+        This uses:
+        - Email exact matching (primary)
+        - Name similarity matching (fuzzy matching fallback)
+
+        Returns statistics about matching results.
+        """
+        try:
+            from app.models import JiraIntegration
+            from app.services.jira_user_sync_service import JiraUserSyncService as JiraSync
+            from cryptography.fernet import Fernet
+            import base64
+            from app.core.config import settings
+
+            # Check if user has an active Jira integration
+            jira_int = self.db.query(JiraIntegration).filter(
+                JiraIntegration.user_id == user.id
+            ).first()
+
+            if not jira_int:
+                logger.info("Skipping Jira matching - no active Jira integration for user")
+                return None
+
+            logger.info(f"Starting Jira account matching for user {user.id}")
+
+            # Decrypt token
+            key = settings.JWT_SECRET_KEY.encode()
+            key = base64.urlsafe_b64encode(key[:32].ljust(32, b'\0'))
+            fernet = Fernet(key)
+            access_token = fernet.decrypt(jira_int.access_token.encode()).decode()
+
+            # Fetch Jira users
+            jira_sync_service = JiraSync(self.db)
+            jira_users = await jira_sync_service._fetch_jira_users(access_token, jira_int.jira_cloud_id)
+
+            if not jira_users:
+                logger.info("No Jira users found to match")
+                return {"matched": 0, "skipped": 0}
+
+            # Get all synced users without Jira account IDs
+            correlations = self.db.query(UserCorrelation).filter(
+                UserCorrelation.user_id == user.id,
+                UserCorrelation.jira_account_id.is_(None)
+            ).all()
+
+            if not correlations:
+                logger.info("No users need Jira matching")
+                return {"matched": 0, "skipped": 0}
+
+            logger.info(f"Found {len(correlations)} users to match with {len(jira_users)} Jira users")
+
+            matched = 0
+            skipped = 0
+
+            # Try to match each correlation to a Jira user
+            for correlation in correlations:
+                jira_match = None
+
+                # 1. Try exact email match first (primary)
+                if correlation.email:
+                    jira_match = next(
+                        (ju for ju in jira_users if ju.get("email") and ju["email"].lower() == correlation.email.lower()),
+                        None
+                    )
+
+                # 2. Fall back to name-based fuzzy matching
+                if not jira_match and correlation.name:
+                    from difflib import SequenceMatcher
+                    best_score = 0.70  # 70% threshold
+                    for jira_user in jira_users:
+                        jira_name = jira_user.get("display_name", "")
+                        if jira_name:
+                            score = SequenceMatcher(None, correlation.name.lower(), jira_name.lower()).ratio()
+                            if score > best_score:
+                                best_score = score
+                                jira_match = jira_user
+
+                if jira_match:
+                    correlation.jira_account_id = jira_match.get("account_id")
+                    correlation.jira_email = jira_match.get("email")
+                    matched += 1
+                    logger.info(f"✅ Matched {correlation.name} ({correlation.email}) to Jira: {jira_match.get('display_name')}")
+                else:
+                    skipped += 1
+                    logger.debug(f"❌ No Jira match for {correlation.name} ({correlation.email})")
+
+            # Commit all changes
+            if matched > 0:
+                self.db.commit()
+                logger.info(f"✅ Completed {matched} Jira account matches")
+
+            return {
+                "matched": matched,
+                "skipped": skipped,
+                "total": len(correlations)
+            }
+
+        except Exception as e:
+            logger.error(f"Error in Jira matching: {e}", exc_info=True)
             self.db.rollback()
             return None

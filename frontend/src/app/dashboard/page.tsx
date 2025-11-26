@@ -129,10 +129,13 @@ export default function Dashboard() {
   // integrations & options
   githubIntegration,
   slackIntegration,
+  jiraIntegration,
   includeGithub,
   setIncludeGithub,
   includeSlack,
   setIncludeSlack,
+  includeJira,
+  setIncludeJira,
   enableAI,
   setEnableAI,
   llmConfig,
@@ -2056,9 +2059,43 @@ export default function Dashboard() {
                     </div>
                   )}
 
-                  {/* Empty grid cell if only one integration */}
-                  {false && (
-                    <div></div>
+                  {/* Jira Toggle Card */}
+                  {true && (
+                    <div className={`border rounded-lg p-3 transition-all ${includeJira && jiraIntegration ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white'}`}>
+                      {/* Always show Jira content immediately, no skeleton loader */}
+                      {(
+                        <>
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center space-x-2">
+                              <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center">
+                                <svg
+                                  viewBox="0 0 24 24"
+                                  className="w-4 h-4 text-white"
+                                  fill="currentColor"
+                                >
+                                  <path d="M11.571 11.513H0a5.218 5.218 0 0 0 5.232 5.215h2.13v2.057A5.215 5.215 0 0 0 12.575 24V12.518a1.005 1.005 0 0 0-1.005-1.005zm5.723-5.756H5.736a5.215 5.215 0 0 0 5.215 5.214h2.129v2.058a5.218 5.218 0 0 0 5.215 5.232V6.758a1.001 1.001 0 0 0-1.001-1.001zM23.013 0H11.455a5.215 5.215 0 0 0 5.215 5.215h2.129v2.057A5.215 5.215 0 0 0 24 12.483V1.005A1.001 1.001 0 0 0 23.013 0Z"/>
+                                </svg>
+                              </div>
+                              <div>
+                                <h3 className="text-sm font-medium text-gray-900">Jira</h3>
+                              </div>
+                            </div>
+                            <Switch
+                              checked={includeJira && !!jiraIntegration}
+                              onCheckedChange={(checked) => {
+                                if (!jiraIntegration) {
+                                  toast.error("Jira not connected - please connect on integrations page")
+                                } else {
+                                  setIncludeJira(checked)
+                                }
+                              }}
+                              disabled={false}
+                            />
+                          </div>
+                          <p className="text-xs text-gray-600 mb-1">Issue tracking</p>
+                        </>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>

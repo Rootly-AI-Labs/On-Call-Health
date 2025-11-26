@@ -307,7 +307,8 @@ class AnalysisRequest(BaseValidatedModel):
     time_range: int = Field(30, gt=0, le=365, description="Analysis time range in days")
     include_weekends: bool = Field(True, description="Include weekend data")
     include_github: bool = Field(False, description="Include GitHub data")
-    include_slack: bool = Field(False, description="Include Slack data") 
+    include_slack: bool = Field(False, description="Include Slack data")
+    include_jira: bool = Field(False, description="Include Jira data")
     enable_ai: bool = Field(False, description="Enable AI insights")
     
     @field_validator('integration_id')

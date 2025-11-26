@@ -11,6 +11,7 @@ import type {
   Integration,
   GitHubIntegration,
   SlackIntegration,
+  JiraIntegration,
   OrganizationMember,
   AnalysisResult,
   AnalysisStage,
@@ -70,10 +71,12 @@ export default function useDashboard() {
     incident: boolean
     github: boolean
     slack: boolean
+    jira: boolean
   }>({
     incident: false,
     github: false,
-    slack: false
+    slack: false,
+    jira: false
   })
   // Initialize redirectingToSuggested to true if there's an analysis ID in URL
   const [redirectingToSuggested, setRedirectingToSuggested] = useState(() => {
@@ -256,10 +259,11 @@ export default function useDashboard() {
           const parsed = JSON.parse(cachedIntegrations)
           setIntegrations(parsed)
           
-          // Also load GitHub and Slack from cache if available
+          // Also load GitHub, Slack, and Jira from cache if available
           const cachedGithub = localStorage.getItem('github_integration')
           const cachedSlack = localStorage.getItem('slack_integration')
-          
+          const cachedJira = localStorage.getItem('jira_integration')
+
           if (cachedGithub) {
             const githubData = JSON.parse(cachedGithub)
             if (githubData.connected && githubData.integration) {
@@ -268,13 +272,22 @@ export default function useDashboard() {
               setGithubIntegration(null)
             }
           }
-          
+
           if (cachedSlack) {
             const slackData = JSON.parse(cachedSlack)
             if (slackData.connected && slackData.integration) {
               setSlackIntegration(slackData.integration)
             } else {
               setSlackIntegration(null)
+            }
+          }
+
+          if (cachedJira) {
+            const jiraData = JSON.parse(cachedJira)
+            if (jiraData.connected && jiraData.integration) {
+              setJiraIntegration(jiraData.integration)
+            } else {
+              setJiraIntegration(null)
             }
           }
           
@@ -964,7 +977,8 @@ export default function useDashboard() {
             // Also load GitHub and Slack from cache if available
             const cachedGithub = localStorage.getItem('github_integration')
             const cachedSlack = localStorage.getItem('slack_integration')
-            
+            const cachedJira = localStorage.getItem('jira_integration')
+
             if (cachedGithub) {
               const githubData = JSON.parse(cachedGithub)
               if (githubData.connected && githubData.integration) {
@@ -973,13 +987,22 @@ export default function useDashboard() {
                 setGithubIntegration(null)
               }
             }
-            
+
             if (cachedSlack) {
               const slackData = JSON.parse(cachedSlack)
               if (slackData.connected && slackData.integration) {
                 setSlackIntegration(slackData.integration)
               } else {
                 setSlackIntegration(null)
+              }
+            }
+
+            if (cachedJira) {
+              const jiraData = JSON.parse(cachedJira)
+              if (jiraData.connected && jiraData.integration) {
+                setJiraIntegration(jiraData.integration)
+              } else {
+                setJiraIntegration(null)
               }
             }
             
@@ -1015,11 +1038,11 @@ export default function useDashboard() {
         return
       }
 
-      // Load both Rootly, PagerDuty, GitHub, and Slack integrations
-      
-      let rootlyResponse, pagerdutyResponse, githubResponse, slackResponse
+      // Load both Rootly, PagerDuty, GitHub, Slack, and Jira integrations
+
+      let rootlyResponse, pagerdutyResponse, githubResponse, slackResponse, jiraResponse
       try {
-        [rootlyResponse, pagerdutyResponse, githubResponse, slackResponse] = await Promise.all([
+        [rootlyResponse, pagerdutyResponse, githubResponse, slackResponse, jiraResponse] = await Promise.all([
           fetch(`${API_BASE}/rootly/integrations`, {
             headers: { 'Authorization': `Bearer ${authToken}` }
           }),
@@ -1031,6 +1054,9 @@ export default function useDashboard() {
           }),
           fetch(`${API_BASE}/integrations/slack/status`, {
             headers: { 'Authorization': `Bearer ${authToken}` }
+          }),
+          fetch(`${API_BASE}/integrations/jira/status`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
           })
         ])
       } catch (networkError) {
@@ -1041,24 +1067,32 @@ export default function useDashboard() {
       const pagerdutyData = pagerdutyResponse.ok ? await pagerdutyResponse.json() : { integrations: [] }
       const githubData = githubResponse.ok ? await githubResponse.json() : { connected: false, integration: null }
       const slackData = slackResponse.ok ? await slackResponse.json() : { connected: false, integration: null }
+      const jiraData = jiraResponse.ok ? await jiraResponse.json() : { connected: false, integration: null }
 
 
-      // Set GitHub and Slack integration states
+      // Set GitHub, Slack, and Jira integration states
       if (githubData.connected && githubData.integration) {
         setGithubIntegration(githubData.integration)
       } else {
         setGithubIntegration(null)
       }
-      
+
       if (slackData.connected && slackData.integration) {
         setSlackIntegration(slackData.integration)
       } else {
         setSlackIntegration(null)
       }
-      
-      // Cache GitHub and Slack integration status separately
+
+      if (jiraData.connected && jiraData.integration) {
+        setJiraIntegration(jiraData.integration)
+      } else {
+        setJiraIntegration(null)
+      }
+
+      // Cache GitHub, Slack, and Jira integration status separately
       localStorage.setItem('github_integration', JSON.stringify(githubData))
       localStorage.setItem('slack_integration', JSON.stringify(slackData))
+      localStorage.setItem('jira_integration', JSON.stringify(jiraData))
 
       // Ensure platform is set
       const rootlyIntegrations = (rootlyData.integrations || []).map((i: Integration, index: number) => {
@@ -1240,8 +1274,10 @@ export default function useDashboard() {
   // GitHub/Slack integration states
   const [githubIntegration, setGithubIntegration] = useState<GitHubIntegration | null>(null)
   const [slackIntegration, setSlackIntegration] = useState<SlackIntegration | null>(null)
+  const [jiraIntegration, setJiraIntegration] = useState<JiraIntegration | null>(null)
   const [includeGithub, setIncludeGithub] = useState(true)
   const [includeSlack, setIncludeSlack] = useState(true)
+  const [includeJira, setIncludeJira] = useState(true)
   const [enableAI, setEnableAI] = useState(true)
   const [llmConfig, setLlmConfig] = useState<{has_token: boolean, provider?: string} | null>(null)
   const [isLoadingGitHubSlack, setIsLoadingGitHubSlack] = useState(false)
@@ -1306,6 +1342,7 @@ export default function useDashboard() {
           // Also load GitHub and Slack from their separate cache keys
           const cachedGithub = localStorage.getItem('github_integration')
           const cachedSlack = localStorage.getItem('slack_integration')
+          const cachedJira = localStorage.getItem('jira_integration')
           if (cachedGithub) {
             const githubData = JSON.parse(cachedGithub)
             setGithubIntegration(githubData?.connected ? githubData.integration : null)
@@ -1313,6 +1350,10 @@ export default function useDashboard() {
           if (cachedSlack) {
             const slackData = JSON.parse(cachedSlack)
             setSlackIntegration(slackData?.integration || null)
+          }
+          if (cachedJira) {
+            const jiraData = JSON.parse(cachedJira)
+            setJiraIntegration(jiraData?.connected ? jiraData.integration : null)
           }
 
           currentIntegrations = loadedIntegrations
@@ -1468,6 +1509,7 @@ export default function useDashboard() {
         include_weekends: true,
         include_github: githubIntegration ? includeGithub : false,
         include_slack: slackIntegration ? includeSlack : false,
+        include_jira: jiraIntegration ? includeJira : false,
         enable_ai: enableAI  // User can toggle, uses Railway token when enabled
       }
       
@@ -2125,10 +2167,13 @@ return {
   // integrations & options
   githubIntegration,
   slackIntegration,
+  jiraIntegration,
   includeGithub,
   setIncludeGithub,
   includeSlack,
   setIncludeSlack,
+  includeJira,
+  setIncludeJira,
   enableAI,
   setEnableAI,
   llmConfig,

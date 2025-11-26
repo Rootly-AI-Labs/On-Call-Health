@@ -664,30 +664,37 @@ async def test_jira_integration(
 
             for it in issues:
                 f = it.get("fields") or {}
-                asg = (f.get("assignee") or {})
+                asg = (f.get("assignee") or {}) 
                 acc = asg.get("accountId") or "unknown"
                 name = asg.get("displayName") or acc
-
+                email = asg.get("emailAddress") or None
                 if acc not in per:
                     per[acc] = {
                         "assignee_account_id": acc,
                         "assignee_name": name,
+                        "assignee_email" : email,
                         "count": 0,
-                        "priorities": {},  # name -> count
-                        "earliest_due": None,  # date
-                        "issue_keys": [],
+                        "priorities": {},  # name -> count (for summary)
+                        "tickets": [],  # list of all tickets with priority and duedate
                     }
                 per[acc]["count"] += 1
-                p = (f.get("priority") or {}).get("name") or "Unspecified"
-                per[acc]["priorities"][p] = per[acc]["priorities"].get(p, 0) + 1
-                due = _parse_due(f.get("duedate"))
-                if due:
-                    ed = per[acc]["earliest_due"]
-                    per[acc]["earliest_due"] = min(ed, due) if ed else due
+
+                # Get ticket details
                 k = it.get("key")
+                p = (f.get("priority") or {}).get("name") or "Unspecified"
+                due = _parse_due(f.get("duedate"))
+
+                # Add to priority summary
+                per[acc]["priorities"][p] = per[acc]["priorities"].get(p, 0) + 1
+
+                # Add complete ticket data for burnout calculation
                 if k:
-                    if len(per[acc]["issue_keys"]) < 10:  # avoid massive logs
-                        per[acc]["issue_keys"].append(k)
+                    ticket_data = {
+                        "key": k,
+                        "priority": p,
+                        "duedate": due.isoformat() if due else None,
+                    }
+                    per[acc]["tickets"].append(ticket_data)
 
             # pagination (enhanced API)
             is_last = bool(res.get("isLast"))
@@ -696,27 +703,60 @@ async def test_jira_integration(
                 break
             page += 1
 
-        # Log a readable summary
+        # Log a readable summary with email addresses
         logger.info("[Jira/Test] Workload summary: total_issues=%d", total_issues)
+
         for acc, m in per.items():
-            prios = " ".join([f"{k}:{v}" for k, v in sorted(m["priorities"].items(), key=lambda kv: (-kv[1], kv[0]))])
+            prios = " ".join([
+                f"{k}:{v}"
+                for k, v in sorted(m["priorities"].items(), key=lambda kv: (-kv[1], kv[0]))
+            ])
+
+            sample_keys = [t["key"] for t in m["tickets"][:5]]
+            earliest_due = None
+            if m["tickets"]:
+                due_dates = [t["duedate"] for t in m["tickets"] if t["duedate"]]
+                if due_dates:
+                    earliest_due = min(due_dates)
+
             logger.info(
-                "[Jira/Test] Responder %s (%s): tickets=%d, priorities=[%s], earliest_due=%s, samples=%s",
+                "[Jira/Test] User %s (ID: %s, Email: %s): "
+                "tickets=%d, priorities=[%s], earliest_due=%s, samples=%s",
                 m["assignee_name"],
                 acc,
+                m.get("assignee_email") or "N/A",
                 m["count"],
                 prios or "none",
-                m["earliest_due"].isoformat() if m["earliest_due"] else "None",
-                ",".join(m["issue_keys"]),
+                earliest_due if earliest_due else "None",
+                ",".join(sample_keys),
             )
 
-        # Return a compact preview (optional, keeps frontend stable)
-        preview = sorted(per.values(), key=lambda m: (-m["count"], m["assignee_name"]))[:20]
-        for row in preview:
+            # Log all tickets for this user
+            logger.info("[Jira/Test] All tickets for %s:", m["assignee_name"])
+            for ticket in m["tickets"]:
+                logger.info(
+                    "[Jira/Test]   - %s | Priority: %s | Due: %s",
+                    ticket["key"],
+                    ticket["priority"],
+                    ticket["duedate"] or "No due date",
+                )
+
+        # Return complete user + ticket data instead of preview
+        all_users = sorted(per.values(), key=lambda m: (-m["count"], m["assignee_name"]))
+
+        for row in all_users:
             # make priorities stable for JSON
-            row["priorities"] = dict(sorted(row["priorities"].items(), key=lambda kv: (-kv[1], kv[0])))
-            if isinstance(row.get("earliest_due"), date):
-                row["earliest_due"] = row["earliest_due"].isoformat()
+            row["priorities"] = dict(
+                sorted(row["priorities"].items(), key=lambda kv: (-kv[1], kv[0]))
+            )
+
+        # Convert all_users list to dict format for mapping recording
+        # This allows the mapping service to match by email
+        jira_workload_dict = {}
+        for user in all_users:
+            account_id = user.get("assignee_account_id")
+            if account_id:
+                jira_workload_dict[account_id] = user
 
         return {
             "success": True,
@@ -729,8 +769,9 @@ async def test_jira_integration(
             },
             "workload_preview": {
                 "total_issues": total_issues,
-                "per_responder": preview,
+                "per_responder": all_users,  # full list now
             },
+            "jira_workload_dict": jira_workload_dict,  # for auto-mapping
         }
 
     except HTTPException:
@@ -738,6 +779,195 @@ async def test_jira_integration(
     except Exception as e:
         logger.error("[Jira] integration test failed: %s", e, exc_info=True)
         return {"success": False, "message": f"Jira integration test failed: {str(e)}", "permissions": None}
+
+
+@router.post("/auto-map")
+async def auto_map_jira_users(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Auto-map Jira users to team emails by email matching.
+
+    Records all mapping attempts to IntegrationMapping table for analysis tracking.
+    Similar to GitHub auto-mapping - uses email as primary identifier.
+
+    Accepts optional request body with:
+    - team_emails: List of source platform emails (e.g., from Rootly/PagerDuty)
+    - analysis_id: (Optional) Analysis that triggered this mapping
+    - source_platform: (Optional) Source platform name (default: "rootly")
+
+    Returns:
+        Mapping statistics including success rate and per-user results
+    """
+    from ...services.jira_mapping_service import JiraMappingService
+
+    try:
+        # Parse request body
+        body = await request.json() if request.headers.get("content-type", "").startswith("application/json") else {}
+        team_emails = body.get("team_emails", [])
+        analysis_id = body.get("analysis_id")
+        source_platform = body.get("source_platform", "rootly")
+
+        if not team_emails:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="team_emails list is required"
+            )
+
+        logger.info("[Jira] Auto-mapping Jira users for %d team emails", len(team_emails))
+
+        # Get Jira integration and fetch workload data
+        integration = db.query(JiraIntegration).filter(JiraIntegration.user_id == current_user.id).first()
+        if not integration:
+            raise HTTPException(
+                status_code=404,
+                detail="Jira integration not found. Please connect your Jira account first.",
+            )
+
+        # Refresh token if needed
+        access_token = decrypt_token(integration.access_token)
+        if needs_refresh(integration.token_expires_at) and integration.refresh_token:
+            logger.info("[Jira] Refreshing access token for auto-mapping")
+            refresh_token = decrypt_token(integration.refresh_token)
+            token_data = await jira_integration_oauth.refresh_access_token(refresh_token)
+            new_access_token = token_data.get("access_token")
+            if new_access_token:
+                access_token = new_access_token
+                integration.access_token = encrypt_token(new_access_token)
+                new_refresh_token = token_data.get("refresh_token") or refresh_token
+                integration.refresh_token = encrypt_token(new_refresh_token)
+                expires_in = token_data.get("expires_in", 3600)
+                integration.token_expires_at = datetime.now(dt_timezone.utc) + timedelta(seconds=expires_in)
+                db.commit()
+
+        # Fetch Jira workload data (all active issues)
+        jql = "assignee is not EMPTY AND statusCategory != Done AND updated >= -30d ORDER BY priority DESC, duedate ASC"
+        fields = ["assignee", "priority", "duedate", "key"]
+
+        jira_workload = {}
+        next_token: Optional[str] = None
+        max_pages = 10
+        page = 0
+
+        while page < max_pages:
+            res = await jira_integration_oauth.search_issues(
+                access_token,
+                integration.jira_cloud_id,
+                jql=jql,
+                fields=fields,
+                max_results=100,
+                next_page_token=next_token,
+            )
+            issues = (res or {}).get("issues") or []
+
+            for it in issues:
+                f = it.get("fields") or {}
+                asg = (f.get("assignee") or {})
+                acc = asg.get("accountId")
+                if acc and acc not in jira_workload:
+                    jira_workload[acc] = {
+                        "assignee_account_id": acc,
+                        "assignee_name": asg.get("displayName"),
+                        "assignee_email": asg.get("emailAddress"),
+                        "count": 0,
+                        "priorities": {},
+                        "tickets": [],
+                    }
+
+                if acc:
+                    jira_workload[acc]["count"] += 1
+                    p = (f.get("priority") or {}).get("name") or "Unspecified"
+                    jira_workload[acc]["priorities"][p] = jira_workload[acc]["priorities"].get(p, 0) + 1
+
+            is_last = bool(res.get("isLast"))
+            next_token = res.get("nextPageToken")
+            if is_last or not next_token:
+                break
+            page += 1
+
+        logger.info("[Jira] Fetched workload for %d Jira users", len(jira_workload))
+
+        # Record mappings using JiraMappingService
+        mapping_service = JiraMappingService(db)
+        mapping_stats = mapping_service.record_jira_mappings(
+            team_emails=team_emails,
+            jira_workload_data=jira_workload,
+            user_id=current_user.id,
+            analysis_id=analysis_id,
+            source_platform=source_platform
+        )
+
+        logger.info(
+            "[Jira] Auto-mapping complete: %d mapped, %d failed",
+            mapping_stats["mapped"],
+            mapping_stats["failed"]
+        )
+
+        return {
+            "success": True,
+            "message": f"Auto-mapped {mapping_stats['mapped']} Jira users to team emails",
+            "stats": mapping_stats,
+            "jira_workload_count": len(jira_workload),
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("[Jira] Auto-mapping failed: %s", e, exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Jira auto-mapping failed: {str(e)}"
+        )
+
+
+@router.post("/sync-users")
+async def sync_jira_users(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Sync all users from Jira workspace to UserCorrelation table.
+    Uses email-based matching first, falls back to fuzzy name matching.
+
+    Returns:
+        Statistics about matched, created, updated, and skipped users
+    """
+    from ...services.jira_user_sync_service import JiraUserSyncService
+
+    try:
+        logger.info("[Jira] Starting user sync for user %s", current_user.id)
+
+        sync_service = JiraUserSyncService(db)
+        stats = await sync_service.sync_jira_users(current_user)
+
+        logger.info(
+            "[Jira] Sync completed: matched=%d, created=%d, updated=%d, skipped=%d",
+            stats['matched'],
+            stats['created'],
+            stats['updated'],
+            stats['skipped']
+        )
+
+        return {
+            "success": True,
+            "message": f"Synced {stats['matched']} Jira users to team members",
+            "stats": stats
+        }
+
+    except ValueError as ve:
+        logger.warning("[Jira] Sync validation error: %s", ve)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(ve)
+        )
+    except Exception as e:
+        logger.error("[Jira] Sync failed: %s", e, exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to sync Jira users: {str(e)}"
+        )
 
 
 @router.delete("/disconnect")
@@ -766,3 +996,96 @@ async def disconnect_jira(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to disconnect Jira: {str(e)}")
+
+
+@router.get("/jira-users")
+async def get_jira_users(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Get all active Jira users from the connected workspace.
+    Used for dropdown selection in team member mapping interface.
+
+    Returns:
+        List of Jira users with account_id, display_name, and email
+    """
+    from ...services.jira_user_sync_service import JiraUserSyncService
+
+    try:
+        integration = db.query(JiraIntegration).filter(
+            JiraIntegration.user_id == current_user.id
+        ).first()
+
+        if not integration:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Jira integration not found. Please connect Jira first."
+            )
+
+        # Decrypt token if expired, refresh if needed
+        access_token = decrypt_token(integration.access_token)
+
+        if needs_refresh(integration.token_expires_at):
+            logger.info("[Jira] Token needs refresh, attempting refresh...")
+            if not integration.refresh_token:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Jira token expired and cannot be refreshed. Please reconnect."
+                )
+
+            try:
+                new_token_data = await jira_integration_oauth.refresh_access_token(
+                    decrypt_token(integration.refresh_token)
+                )
+                access_token = new_token_data.get("access_token")
+                refresh_token = new_token_data.get("refresh_token")
+                expires_in = new_token_data.get("expires_in", 3600)
+
+                # Update integration with new tokens
+                integration.access_token = encrypt_token(access_token)
+                if refresh_token:
+                    integration.refresh_token = encrypt_token(refresh_token)
+                integration.token_expires_at = datetime.now(dt_timezone.utc) + timedelta(seconds=expires_in)
+                db.commit()
+                logger.info("[Jira] Token refreshed successfully")
+            except Exception as e:
+                logger.error("[Jira] Token refresh failed: %s", e)
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Jira token refresh failed. Please reconnect."
+                )
+
+        # Fetch all Jira users
+        sync_service = JiraUserSyncService(db)
+        jira_users = await sync_service._fetch_jira_users(
+            access_token,
+            integration.jira_cloud_id
+        )
+
+        # Filter to ensure we only return valid users with display names and account IDs
+        valid_users = [
+            {
+                "account_id": u.get("account_id"),
+                "display_name": u.get("display_name"),
+                "email": u.get("email")
+            }
+            for u in jira_users
+            if u.get("account_id") and u.get("display_name")
+        ]
+
+        logger.info("[Jira] Retrieved %d valid users for dropdown", len(valid_users))
+
+        return {
+            "success": True,
+            "users": valid_users  # Returns list of {account_id, display_name, email}
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("[Jira] Failed to get Jira users: %s", e, exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve Jira users: {str(e)}"
+        )

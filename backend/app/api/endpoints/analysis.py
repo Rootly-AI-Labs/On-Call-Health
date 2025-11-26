@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, 
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from ...models import get_db, User, Analysis, RootlyIntegration
+from ...models import get_db, User, Analysis, RootlyIntegration, UserCorrelation, JiraIntegration
 from ...auth.dependencies import get_current_active_user
 from ...core.rootly_client import RootlyAPIClient
 from ...services.unified_burnout_analyzer import UnifiedBurnoutAnalyzer
@@ -317,6 +317,8 @@ async def run_analysis_task(analysis_id: int, integration_id: int, days_back: in
 async def _run_analysis_task_impl(db, analysis_id: int, integration_id: int, days_back: int, user_id: int):
     """Implementation of the analysis task."""
     try:
+        logger.info(f"🔍 ANALYSIS TASK: Starting analysis {analysis_id} for user {user_id} with updated Jira correlation code")
+
         # Update status to running
         analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
         analysis.status = "running"
@@ -364,7 +366,16 @@ async def _run_analysis_task_impl(db, analysis_id: int, integration_id: int, day
                     f"Slack communication patterns analysis not enabled for user {user_id} "
                     f"(survey: {feature_config.survey_enabled if feature_config else 'N/A'})"
                 )
-        
+
+        # Check for Jira integration
+        jira_integration = db.query(JiraIntegration).filter(
+            JiraIntegration.user_id == user_id,
+            JiraIntegration.access_token.isnot(None)
+        ).first()
+        has_jira = bool(jira_integration)
+        if has_jira:
+            logger.info(f"Jira integration found for user {user_id}")
+
         # Attempt to collect incident data to determine if GitHub-only analysis is needed
         incident_data_available = False
         try:
@@ -472,13 +483,64 @@ async def _run_analysis_task_impl(db, analysis_id: int, integration_id: int, day
                 except Exception as e:
                     logger.error(f"Failed to decrypt GitHub token: {e}")
 
+            # Get Jira token if available
+            jira_token = None
+            if has_jira:
+                from ...api.endpoints.jira import decrypt_jira_token
+                try:
+                    jira_token = decrypt_jira_token(jira_integration.access_token)
+                    logger.info(f"Retrieved Jira token for user {user_id}")
+                except Exception as e:
+                    logger.error(f"Failed to decrypt Jira token: {e}")
+
+            # Fetch user correlations for Jira mapping
+            synced_users = []
+            try:
+                logger.info(f"🔍 Fetching user correlations for user_id={user_id}")
+                user_correlations = db.query(UserCorrelation).filter(
+                    UserCorrelation.user_id == user_id
+                ).all()
+
+                logger.info(f"🔍 Query returned {len(user_correlations)} user correlation records")
+
+                # Format user correlations for the analyzer
+                synced_users = [
+                    {
+                        "email": uc.email,
+                        "name": uc.name,
+                        "github_username": uc.github_username,
+                        "slack_user_id": uc.slack_user_id,
+                        "rootly_user_id": uc.rootly_user_id,
+                        "jira_account_id": uc.jira_account_id,
+                        "jira_email": uc.jira_email
+                    }
+                    for uc in user_correlations
+                ]
+
+                logger.info(f"✅ Fetched {len(synced_users)} user correlations for analysis")
+                users_with_jira = [u for u in synced_users if u.get("jira_account_id")]
+                if users_with_jira:
+                    logger.info(f"  ✅ {len(users_with_jira)} users have Jira mapping")
+                    for u in users_with_jira[:3]:  # Log first 3
+                        logger.info(f"    - {u.get('name')} → jira_account_id={u.get('jira_account_id')}")
+                else:
+                    logger.warning(f"  ⚠️ NO users have Jira account ID mapping in user_correlations table!")
+                    if synced_users:
+                        logger.warning(f"  Sample user fields: {list(synced_users[0].keys())}")
+            except Exception as e:
+                logger.error(f"❌ Failed to fetch user correlations: {e}", exc_info=True)
+                synced_users = []
+
             # Initialize UnifiedBurnoutAnalyzer with all available integrations
             analyzer = UnifiedBurnoutAnalyzer(
                 api_token=integration.api_token,
                 platform=integration.platform,
                 enable_ai=has_llm_token,
                 github_token=github_token,
-                slack_token=slack_token
+                slack_token=slack_token,
+                jira_token=jira_token,
+                synced_users=synced_users,
+                current_user_id=user_id
             )
             
             # Run analysis

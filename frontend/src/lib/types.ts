@@ -41,6 +41,15 @@ export interface SlackIntegration {
   granted_scopes?: string
 }
 
+export interface JiraIntegration {
+  id: number
+  jira_workspace_id: string
+  jira_username: string
+  token_source: string
+  connected_at: string
+  last_updated: string
+}
+
 export interface OrganizationMember {
   id: string
   name: string

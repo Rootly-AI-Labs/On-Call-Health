@@ -20,6 +20,7 @@ interface TeamHealthOverviewProps {
     incident: boolean
     github: boolean
     slack: boolean
+    jira: boolean
   }
   setExpandedDataSources: (fn: (prev: any) => any) => void
 }
@@ -728,6 +729,32 @@ export function TeamHealthOverview({
                   <div className="ml-7 text-xs text-gray-600 space-y-1">
                     <div>• {currentAnalysis?.analysis_data?.slack_insights?.total_messages?.toLocaleString() || '0'} messages</div>
                     <div>• {currentAnalysis?.analysis_data?.slack_insights?.active_channels?.toLocaleString() || '0'} channels</div>
+                  </div>
+                )}
+              </div>
+
+              {/* Jira Data */}
+              <div className="space-y-2">
+                <div
+                  className="flex items-center cursor-pointer hover:bg-gray-50 rounded px-1 py-0.5 transition-colors"
+                  onClick={() => setExpandedDataSources(prev => ({ ...prev, jira: !prev.jira }))}
+                >
+                  {expandedDataSources.jira ?
+                    <ChevronDown className="w-3 h-3 mr-1 text-gray-500" /> :
+                    <ChevronRight className="w-3 h-3 mr-1 text-gray-500" />
+                  }
+                  <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                  <span className="text-xs font-medium text-slate-700 flex-1">Jira Issues</span>
+                  {currentAnalysis?.analysis_data?.data_sources?.jira_data ? (
+                    <CheckCircle className="w-3 h-3 text-green-600 ml-2" />
+                  ) : (
+                    <Minus className="w-3 h-3 text-gray-400 ml-2" />
+                  )}
+                </div>
+                {expandedDataSources.jira && currentAnalysis?.analysis_data?.data_sources?.jira_data && (
+                  <div className="ml-7 text-xs text-gray-600 space-y-1">
+                    <div>• {currentAnalysis?.analysis_data?.jira_insights?.total_issues?.toLocaleString() || '0'} issues</div>
+                    <div>• {currentAnalysis?.analysis_data?.jira_insights?.active_projects?.toLocaleString() || '0'} projects</div>
                   </div>
                 )}
               </div>

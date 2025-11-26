@@ -214,9 +214,15 @@ export function TeamMembersList({
               return member.ocb_score !== undefined && member.ocb_score !== null
             })
             
-            // Separate members with and without incidents
-            const membersWithIncidents = validMembers.filter(member => (member.incident_count || 0) > 0)
-            const membersWithoutIncidents = validMembers.filter(member => (member.incident_count || 0) === 0)
+            // Separate members with incidents/burnout and those with neither
+            // Include members with incidents OR OCB score (e.g., from Jira) in main section
+            const membersWithIncidents = validMembers.filter(member =>
+              (member.incident_count || 0) > 0 || (member.ocb_score || 0) > 0
+            )
+            // Only hide members with BOTH zero incidents AND zero OCB score
+            const membersWithoutIncidents = validMembers.filter(member =>
+              (member.incident_count || 0) === 0 && (member.ocb_score || 0) === 0
+            )
 
             
             // Sort members by score (highest risk first)
@@ -227,14 +233,14 @@ export function TeamMembersList({
 
             return (
               <>
-                {/* Members with incidents */}
+                {/* Members with incidents or burnout (from Jira, GitHub, etc.) */}
                 {membersWithIncidents.length > 0 && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                     {sortMembers(membersWithIncidents).map(renderMemberCard)}
                   </div>
                 )}
 
-                {/* Collapsible section for members without incidents */}
+                {/* Collapsible section for members with no activity (no incidents and no burnout) */}
                 {(membersWithoutIncidents.length > 0 || isLoading) && (
                   <div className="mt-6">
                     <Button
@@ -255,7 +261,7 @@ export function TeamMembersList({
                             'Loading team members...'
                           ) : (
                             <>
-                              {showMembersWithoutIncidents ? 'Hide' : 'Show'} team members without incidents
+                              {showMembersWithoutIncidents ? 'Hide' : 'Show'} team members with no activity
                               <span className="ml-1 text-xs bg-gray-200 px-2 py-1 rounded">
                                 {membersWithoutIncidents.length}
                               </span>

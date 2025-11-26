@@ -9,18 +9,12 @@ interface GitHubConnectedCardProps {
   integration: GitHubIntegration
   onDisconnect: () => void
   onTest: () => void
-  onViewMappings: () => void
-  loadingMappings: boolean
-  selectedMappingPlatform: string | null
 }
 
 export function GitHubConnectedCard({
   integration,
   onDisconnect,
-  onTest,
-  onViewMappings,
-  loadingMappings,
-  selectedMappingPlatform
+  onTest
 }: GitHubConnectedCardProps) {
   const [orgMemberCount, setOrgMemberCount] = useState<number | null>(null)
   const [loadingMembers, setLoadingMembers] = useState(false)
@@ -76,26 +70,6 @@ export function GitHubConnectedCard({
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onViewMappings}
-              disabled={loadingMappings}
-              className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 hover:text-blue-800 hover:border-blue-300"
-              title="View and manage GitHub user mappings"
-            >
-              {loadingMappings && selectedMappingPlatform === 'github' ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Loading...
-                </>
-              ) : (
-                <>
-                  <Users className="w-4 h-4 mr-2" />
-                  View Mappings
-                </>
-              )}
-            </Button>
             <Button
               size="sm"
               variant="outline"

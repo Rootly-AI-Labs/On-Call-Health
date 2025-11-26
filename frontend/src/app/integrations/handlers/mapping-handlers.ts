@@ -2,10 +2,10 @@ import { toast } from "sonner"
 import { API_BASE, IntegrationMapping, MappingStatistics } from "../types"
 
 export async function loadMappingData(
-  platform: 'github' | 'slack',
+  platform: 'github' | 'slack' | 'jira',
   showMappingDialog: boolean,
   setLoadingMappingData: (loading: boolean) => void,
-  setSelectedMappingPlatform: (platform: 'github' | 'slack') => void,
+  setSelectedMappingPlatform: (platform: 'github' | 'slack' | 'jira') => void,
   setMappingData: (data: IntegrationMapping[]) => void,
   setMappingStats: (stats: MappingStatistics) => void,
   setAnalysisMappingStats: (stats: any) => void,
@@ -51,7 +51,8 @@ export async function loadMappingData(
 
       // Show success message only if dialog is already open (refresh action)
       if (showMappingDialog) {
-        toast.success(`${platform === 'github' ? 'GitHub' : 'Slack'} mapping data refreshed successfully`)
+        const platformName = platform === 'github' ? 'GitHub' : platform === 'slack' ? 'Slack' : 'Jira'
+        toast.success(`${platformName} mapping data refreshed successfully`)
       }
     } else {
       throw new Error(`Failed to fetch mapping data - Mappings: ${mappingsResponse.status}, Stats: ${statsResponse.status}`)
@@ -108,7 +109,7 @@ export async function saveEditedMapping(
   mappingId: number | string,
   email: string,
   inlineEditingValue: string,
-  selectedMappingPlatform: 'github' | 'slack' | null,
+  selectedMappingPlatform: 'github' | 'slack' | 'jira' | null,
   githubValidation: { valid: boolean; message?: string } | null,
   setSavingInlineMapping: (saving: boolean) => void,
   setMappingData: React.Dispatch<React.SetStateAction<any[]>>,
@@ -244,7 +245,7 @@ export async function saveInlineMapping(
   mappingId: number | string,
   email: string,
   inlineEditingValue: string,
-  selectedMappingPlatform: 'github' | 'slack' | null,
+  selectedMappingPlatform: 'github' | 'slack' | 'jira' | null,
   githubValidation: { valid: boolean; message?: string } | null,
   setSavingInlineMapping: (saving: boolean) => void,
   setMappingData: React.Dispatch<React.SetStateAction<any[]>>,
@@ -338,9 +339,9 @@ export async function saveInlineMapping(
 }
 
 export async function loadManualMappings(
-  platform: 'github' | 'slack',
+  platform: 'github' | 'slack' | 'jira',
   setLoadingManualMappings: (loading: boolean) => void,
-  setSelectedManualMappingPlatform: (platform: 'github' | 'slack' | null) => void,
+  setSelectedManualMappingPlatform: (platform: 'github' | 'slack' | 'jira' | null) => void,
   setManualMappings: (mappings: any[]) => void,
   setManualMappingStats: (stats: any) => void,
   setShowManualMappingDialog: (show: boolean) => void
@@ -391,10 +392,10 @@ export async function loadManualMappings(
 export async function createManualMapping(
   newMappingForm: any,
   showManualMappingDialog: boolean,
-  selectedManualMappingPlatform: 'github' | 'slack' | null,
+  selectedManualMappingPlatform: 'github' | 'slack' | 'jira' | null,
   setNewMappingDialogOpen: (open: boolean) => void,
   setNewMappingForm: (form: any) => void,
-  loadManualMappings: (platform: 'github' | 'slack') => Promise<void>
+  loadManualMappings: (platform: 'github' | 'slack' | 'jira') => Promise<void>
 ): Promise<void> {
   try {
     const authToken = localStorage.getItem('auth_token')
@@ -439,9 +440,9 @@ export async function updateManualMapping(
   mappingId: number,
   targetIdentifier: string,
   showManualMappingDialog: boolean,
-  selectedManualMappingPlatform: 'github' | 'slack' | null,
+  selectedManualMappingPlatform: 'github' | 'slack' | 'jira' | null,
   setEditingMapping: (mapping: any) => void,
-  loadManualMappings: (platform: 'github' | 'slack') => Promise<void>
+  loadManualMappings: (platform: 'github' | 'slack' | 'jira') => Promise<void>
 ): Promise<void> {
   try {
     const authToken = localStorage.getItem('auth_token')
@@ -479,8 +480,8 @@ export async function updateManualMapping(
 export async function deleteManualMapping(
   mappingId: number,
   showManualMappingDialog: boolean,
-  selectedManualMappingPlatform: 'github' | 'slack' | null,
-  loadManualMappings: (platform: 'github' | 'slack') => Promise<void>
+  selectedManualMappingPlatform: 'github' | 'slack' | 'jira' | null,
+  loadManualMappings: (platform: 'github' | 'slack' | 'jira') => Promise<void>
 ): Promise<void> {
   try {
     const authToken = localStorage.getItem('auth_token')
