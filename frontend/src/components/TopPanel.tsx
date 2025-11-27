@@ -45,17 +45,20 @@ export function TopPanel() {
         <div className="flex h-16 items-center justify-between">
           {/* Left: brand + nav */}
           <div className="flex items-center gap-10">
-            {/* Powered by Rootly AI */}
-            <div className="flex flex-col items-start gap-0.5">
-              <span className="text-[10px] uppercase tracking-wide leading-none text-gray-400 font-medium">powered by</span>
-              <Image
-                src="/images/rootly-ai-logo.png"
-                alt="Rootly AI"
-                width={112}
-                height={44}
-                className="h-7 w-auto mt-0.5"
-                priority
-              />
+            {/* On-Call Burnout powered by Rootly AI */}
+            <div className="flex flex-col items-start gap-1">
+              <span className="text-sm font-extrabold text-gray-700">On-Call Burnout</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] uppercase tracking-wide leading-none text-gray-400 font-medium">powered by</span>
+                <Image
+                  src="/images/rootly-ai-logo.png"
+                  alt="Rootly AI"
+                  width={112}
+                  height={44}
+                  className="h-5 w-auto"
+                  priority
+                />
+              </div>
             </div>
 
             <nav className="hidden md:flex items-center gap-1">

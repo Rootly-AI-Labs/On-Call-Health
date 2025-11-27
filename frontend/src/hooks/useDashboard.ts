@@ -1270,6 +1270,7 @@ export default function useDashboard() {
   const [showTimeRangeDialog, setShowTimeRangeDialog] = useState(false)
   const [selectedTimeRange, setSelectedTimeRange] = useState("30")
   const [dialogSelectedIntegration, setDialogSelectedIntegration] = useState<string>("")
+  const [noIntegrationsFound, setNoIntegrationsFound] = useState(false)
   
   // GitHub/Slack integration states
   const [githubIntegration, setGithubIntegration] = useState<GitHubIntegration | null>(null)
@@ -1380,9 +1381,15 @@ export default function useDashboard() {
       
       // Only show error if we still don't have any integrations after loading
       if (currentIntegrations.length === 0) {
-        toast.error("No integrations found - please add an integration first")
+        setNoIntegrationsFound(true)
+        setShowTimeRangeDialog(true)
         return
       }
+    }
+
+    // Reset no integrations flag when integrations are available
+    if (currentIntegrations.length > 0) {
+      setNoIntegrationsFound(false)
     }
 
     // Always check localStorage for the latest selected organization
@@ -2220,6 +2227,8 @@ return {
   setSelectedTimeRange,
   dialogSelectedIntegration,
   setDialogSelectedIntegration,
+  noIntegrationsFound,
+  setNoIntegrationsFound,
 
   // delete modal
   deleteDialogOpen,

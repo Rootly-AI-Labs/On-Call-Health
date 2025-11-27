@@ -182,6 +182,8 @@ export default function Dashboard() {
   setSelectedTimeRange,
   dialogSelectedIntegration,
   setDialogSelectedIntegration,
+  noIntegrationsFound,
+  setNoIntegrationsFound,
 
   // delete modal
   deleteDialogOpen,
@@ -1824,6 +1826,32 @@ export default function Dashboard() {
               Configure your burnout analysis settings and data sources
             </DialogDescription>
           </DialogHeader>
+
+          {/* No Integrations State */}
+          {noIntegrationsFound ? (
+            <div className="space-y-4">
+              <Alert className="border-red-200 bg-red-50">
+                <AlertCircle className="w-4 h-4 text-red-600" />
+                <AlertDescription className="text-red-800">
+                  <strong>No Primary Integrations Connected</strong>
+                  <span className="block mt-2">
+                    To start a burnout analysis, you need to connect at least one primary integration (Rootly or PagerDuty).
+                  </span>
+                </AlertDescription>
+              </Alert>
+
+              <button
+                onClick={() => {
+                  setShowTimeRangeDialog(false)
+                  setNoIntegrationsFound(false)
+                  router.push('/integrations')
+                }}
+                className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors"
+              >
+                Go to Integrations
+              </button>
+            </div>
+          ) : (
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium text-gray-700 mb-2 block">
@@ -2193,6 +2221,7 @@ export default function Dashboard() {
               </Button>
             </div>
           </div>
+          )}
         </DialogContent>
       </Dialog>
 
