@@ -800,7 +800,8 @@ export default function IntegrationsPage() {
       setSelectedRecipients(new Set())
       setSavedRecipients(new Set())
     }
-  }, [selectedOrganization, teamMembersDrawerOpen])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedOrganization])
 
   // Auto-select first integration if none selected
   useEffect(() => {
