@@ -490,7 +490,7 @@ export function SlackSurveyTabs({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Confirm Schedule</DialogTitle>
-          <DialogDescription>
+          <div className="text-sm text-muted-foreground">
             {scheduleEnabled ? (
               <>
                 Are you sure you want to save this automated schedule?
@@ -518,7 +518,7 @@ export function SlackSurveyTabs({
                 </div>
               </>
             )}
-          </DialogDescription>
+          </div>
         </DialogHeader>
         <DialogFooter>
           <Button

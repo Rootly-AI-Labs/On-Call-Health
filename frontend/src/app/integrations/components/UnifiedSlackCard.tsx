@@ -422,7 +422,7 @@ export function UnifiedSlackCard({
               <AlertCircle className="w-5 h-5 text-orange-500" />
               Disable Slack Surveys?
             </DialogTitle>
-            <DialogDescription className="space-y-3 pt-2">
+            <div className="space-y-3 pt-2 text-sm text-muted-foreground">
               <p>This will disable all Slack survey features, including:</p>
               <ul className="list-disc list-inside space-y-1 text-sm">
                 <li>The <code className="bg-gray-100 px-1 rounded">/burnout-survey</code> command</li>
@@ -432,7 +432,7 @@ export function UnifiedSlackCard({
               <p className="text-sm font-medium text-orange-600">
                 You can re-enable surveys anytime by toggling this back on.
               </p>
-            </DialogDescription>
+            </div>
           </DialogHeader>
           <DialogFooter>
             <Button
