@@ -2,13 +2,13 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
-export default function JiraCallbackPage() {
+function JiraCallbackContent() {
   const searchParams = useSearchParams()
   const ranRef = useRef(false)
 
@@ -103,5 +103,20 @@ export default function JiraCallbackPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function JiraCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+          <h1 className="text-xl font-semibold">Loading...</h1>
+        </div>
+      </div>
+    }>
+      <JiraCallbackContent />
+    </Suspense>
   )
 }

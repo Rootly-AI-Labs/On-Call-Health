@@ -147,7 +147,17 @@ async def github_callback(
                 token_source="oauth"
             )
             db.add(integration)
-        
+
+        # Before assigning the GitHub username to any user, remove it from all other users (both tables)
+        from ...services.manual_mapping_service import ManualMappingService
+        service = ManualMappingService(db)
+
+        # Remove this GitHub username from any other users first (both UserMapping and UserCorrelation)
+        service.remove_github_from_all_other_users(
+            current_user.id,
+            github_username
+        )
+
         # Update user correlations (organization-scoped for multi-tenancy)
         for email in email_addresses:
             existing_correlation = db.query(UserCorrelation).filter(
@@ -165,9 +175,9 @@ async def github_callback(
                     github_username=github_username
                 )
                 db.add(correlation)
-        
+
         db.commit()
-        
+
         return {
             "success": True,
             "message": "GitHub integration connected successfully",

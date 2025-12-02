@@ -412,6 +412,11 @@ export default function IntegrationsPage() {
 
       const accountIdToSave = editingJiraAccountId === '__clear__' ? '' : editingJiraAccountId
 
+      // Get old account ID before update
+      const userBeforeUpdate = syncedUsers.find(u => u.id === userId)
+      const oldAccountId = userBeforeUpdate?.jira_account_id
+      const oldJiraEmail = userBeforeUpdate?.jira_email
+
       const jiraUser = jiraUsers.find(u => u.account_id === accountIdToSave)
 
       const response = await fetch(
@@ -425,11 +430,23 @@ export default function IntegrationsPage() {
       )
 
       if (response.ok) {
-        toast.success(accountIdToSave ? 'Jira mapping updated' : 'Jira mapping cleared')
-        // Refresh users
+        const data = await response.json()
+
+        // Show detailed message with removal info
+        if (accountIdToSave === '') {
+          toast.success('Jira mapping cleared')
+        } else {
+          // Use backend message which includes removal info
+          const message = data.message || 'Jira mapping updated'
+          toast.success(message)
+        }
+
+        // Refresh users from backend
+        // This ensures all deduplication from backend is reflected in UI
         const selectedOrg = selectedOrganization || integrations.find(i => i.is_default)?.id?.toString()
         if (selectedOrg) {
           syncedUsersCache.current.delete(selectedOrg)
+          // Force a full refresh to get the latest state from backend
           await fetchSyncedUsers(false, false, true)
         }
         cancelEditingJiraMapping()
@@ -479,6 +496,10 @@ export default function IntegrationsPage() {
       // Convert __clear__ sentinel to empty string
       const usernameToSave = editingUsername === '__clear__' ? '' : editingUsername
 
+      // Get old username before update
+      const userBeforeUpdate = syncedUsers.find(u => u.id === userId)
+      const oldUsername = userBeforeUpdate?.github_username
+
       const response = await fetch(
         `${API_BASE}/rootly/user-correlation/${userId}/github-username?github_username=${encodeURIComponent(usernameToSave)}`,
         {
@@ -491,16 +512,22 @@ export default function IntegrationsPage() {
 
       if (response.ok) {
         const data = await response.json()
+
+        // Show detailed message with removal info
         if (usernameToSave === '') {
           toast.success('GitHub username mapping cleared')
         } else {
-          toast.success(`GitHub username updated to ${usernameToSave}`)
+          // Use backend message which includes removal info
+          const message = data.message || `GitHub username updated to ${usernameToSave}`
+          toast.success(message)
         }
 
-        // Clear cache and refresh synced users list
+        // Clear cache and refresh synced users list from backend
+        // This ensures all deduplication from backend is reflected in UI
         const selectedOrg = selectedOrganization || integrations.find(i => i.is_default)?.id?.toString()
         if (selectedOrg) {
           syncedUsersCache.current.delete(selectedOrg)
+          // Force a full refresh to get the latest state from backend
           await fetchSyncedUsers(false, false, true)
         }
 

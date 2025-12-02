@@ -6,7 +6,8 @@ Includes smart GitHub username matching using ML/AI-powered matching.
 import logging
 from typing import Dict, List, Any, Optional
 from sqlalchemy.orm import Session
-from app.models import User, UserCorrelation, RootlyIntegration, GitHubIntegration
+from sqlalchemy import and_
+from app.models import User, UserCorrelation, RootlyIntegration, GitHubIntegration, UserMapping
 from app.core.rootly_client import RootlyAPIClient
 from app.core.pagerduty_client import PagerDutyAPIClient
 from app.services.enhanced_github_matcher import EnhancedGitHubMatcher
@@ -443,6 +444,23 @@ class UserSyncService:
                         skipped += 1
                         continue
 
+                    # Check if there's a manual mapping for this user's GitHub account
+                    # Manual mappings should take precedence over automatic matching
+                    manual_mapping = self.db.query(UserMapping).filter(
+                        and_(
+                            UserMapping.user_id == user.id,
+                            UserMapping.source_identifier == correlation.email,
+                            UserMapping.target_platform == "github",
+                            UserMapping.mapping_type == "manual"
+                        )
+                    ).first()
+
+                    if manual_mapping:
+                        # Manual mapping exists - respect it and don't overwrite
+                        logger.info(f"⚠️  Skipping {correlation.email} - manual GitHub mapping exists: {manual_mapping.target_identifier}")
+                        skipped += 1
+                        continue
+
                     # Use name for matching (email is secondary)
                     github_username = await matcher.match_name_to_github(
                         full_name=correlation.name,
@@ -550,6 +568,23 @@ class UserSyncService:
                         (ju for ju in jira_users if ju.get("email") and ju["email"].lower() == correlation.email.lower()),
                         None
                     )
+
+                # Check if there's a manual mapping for this user's Jira account
+                # Manual mappings should take precedence over automatic matching
+                manual_mapping = self.db.query(UserMapping).filter(
+                    and_(
+                        UserMapping.user_id == user.id,
+                        UserMapping.source_identifier == correlation.email,
+                        UserMapping.target_platform == "jira",
+                        UserMapping.mapping_type == "manual"
+                    )
+                ).first()
+
+                if manual_mapping:
+                    # Manual mapping exists - respect it and don't overwrite
+                    logger.info(f"⚠️  Skipping {correlation.email} - manual Jira mapping exists: {manual_mapping.target_identifier}")
+                    skipped += 1
+                    continue
 
                 # 2. Fall back to name-based fuzzy matching
                 if not jira_match and correlation.name:

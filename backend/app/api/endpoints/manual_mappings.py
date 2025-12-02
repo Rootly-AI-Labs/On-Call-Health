@@ -91,11 +91,18 @@ async def create_mapping(
     request: CreateMappingRequest,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
-) -> MappingResponse:
-    """Create a new manual mapping."""
+):
+    """Create a new manual mapping.
+
+    For GitHub and Jira mappings, automatically removes that account from any other users
+    to ensure each account is mapped to only one user at a time. This ensures that:
+    1. The account is removed from UserMapping table for other users
+    2. The account is removed from UserCorrelation table for other users
+    3. The new mapping is synced to UserCorrelation for the current user
+    """
     try:
         service = ManualMappingService(db)
-        
+
         mapping = service.create_mapping(
             user_id=current_user.id,
             source_platform=request.source_platform,
@@ -105,8 +112,22 @@ async def create_mapping(
             created_by=current_user.id,
             mapping_type=request.mapping_type
         )
-        
-        return MappingResponse(**mapping.to_dict())
+
+        response_data = MappingResponse(**mapping.to_dict())
+
+        # For GitHub and Jira mappings, include info about removal of conflicting mappings
+        if request.target_platform in ["github", "jira"]:
+            platform_name = "GitHub" if request.target_platform == "github" else "Jira"
+            return {
+                "mapping": response_data,
+                "message": f"{platform_name} account '{request.target_identifier}' successfully assigned. "
+                           "Any previous assignments of this account to other users have been removed. "
+                           "Changes will be reflected in team management after the next analysis.",
+                "target_platform": request.target_platform,
+                "refresh_needed": True  # Signal to frontend to refresh data
+            }
+
+        return response_data
     except Exception as e:
         logger.error(f"Error creating mapping: {e}")
         raise HTTPException(status_code=500, detail="Failed to create mapping")
@@ -117,27 +138,70 @@ async def update_mapping(
     request: UpdateMappingRequest,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
-) -> MappingResponse:
-    """Update an existing mapping."""
+):
+    """Update an existing mapping.
+
+    For GitHub and Jira mappings, automatically removes that account from any other users
+    to ensure each account is mapped to only one user at a time. This ensures that:
+    1. The account is removed from UserMapping table for other users
+    2. The account is removed from UserCorrelation table for other users
+    3. The updated mapping is synced to UserCorrelation for the current user
+    """
     try:
         # Get existing mapping
         mapping = db.query(UserMapping).filter(
             UserMapping.id == mapping_id,
             UserMapping.user_id == current_user.id
         ).first()
-        
+
         if not mapping:
             raise HTTPException(status_code=404, detail="Mapping not found")
-        
+
+        service = ManualMappingService(db)
+
+        # Remove this account from any other user (both UserMapping and UserCorrelation)
+        if mapping.target_platform == "github":
+            service.remove_github_from_all_other_users(
+                current_user.id,
+                request.target_identifier
+            )
+        elif mapping.target_platform == "jira":
+            service.remove_jira_from_all_other_users(
+                current_user.id,
+                request.target_identifier
+            )
+
         # Update mapping
         mapping.target_identifier = request.target_identifier
         mapping.updated_at = func.now()
         mapping.last_verified = func.now()  # Reset verification on update
-        
+
         db.commit()
         db.refresh(mapping)
-        
-        return MappingResponse(**mapping.to_dict())
+
+        # Sync to UserCorrelation table
+        service._sync_mapping_to_correlation(
+            current_user.id,
+            mapping.source_identifier,
+            mapping.target_platform,
+            request.target_identifier
+        )
+
+        response_data = MappingResponse(**mapping.to_dict())
+
+        # For GitHub and Jira mappings, include info about removal of conflicting mappings
+        if mapping.target_platform in ["github", "jira"]:
+            platform_name = "GitHub" if mapping.target_platform == "github" else "Jira"
+            return {
+                "mapping": response_data,
+                "message": f"{platform_name} account '{request.target_identifier}' successfully updated. "
+                           "Any previous assignments of this account to other users have been removed. "
+                           "Changes will be reflected in team management after the next analysis.",
+                "target_platform": mapping.target_platform,
+                "refresh_needed": True  # Signal to frontend to refresh data
+            }
+
+        return response_data
     except HTTPException:
         raise
     except Exception as e:
