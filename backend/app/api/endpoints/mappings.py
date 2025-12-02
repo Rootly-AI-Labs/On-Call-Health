@@ -599,17 +599,8 @@ async def validate_github_username(
                     "error": "Failed to decrypt token",
                     "message": "Token decryption error"
                 }
-        else:
-            # Try beta GitHub token from environment
-            beta_github_token = os.getenv('GITHUB_TOKEN')
-            if beta_github_token:
-                github_token = beta_github_token
-                is_beta_token = True
-                # Get organizations for beta token
-                beta_organizations = await _get_beta_github_organizations(github_token)
-                logger.info(f"Using beta GitHub token for validation by user {current_user.id}, orgs: {beta_organizations}")
-        
-        if not github_token:
+
+        if not github_integration or not github_token:
             return {
                 "valid": False,
                 "error": "No GitHub integration found",

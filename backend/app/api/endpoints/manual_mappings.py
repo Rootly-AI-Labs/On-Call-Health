@@ -570,15 +570,8 @@ async def run_github_mapping(
             from .github import decrypt_token
             github_token = decrypt_token(github_integration.github_token)
             logger.info(f"Using personal GitHub integration for user {current_user.id}")
-        else:
-            # Try beta GitHub token from environment
-            import os
-            beta_github_token = os.getenv('GITHUB_TOKEN')
-            if beta_github_token:
-                github_token = beta_github_token
-                logger.info(f"Using beta GitHub token for user {current_user.id}")
-        
-        if not github_token:
+
+        if not github_integration or not github_token:
             raise HTTPException(status_code=400, detail="GitHub integration not found")
         
         # Get unmapped Rootly users
