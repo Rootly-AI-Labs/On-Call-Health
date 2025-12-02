@@ -355,15 +355,15 @@ export default function Dashboard() {
                         <Clock className="w-5 h-5" />
                       ) : (
                         <div className="flex flex-col items-start w-full text-sm pr-8">
-                          <div className="flex justify-between items-center w-full mb-1">
-                            <div className="flex items-center space-x-2">
+                          <div className="flex justify-between items-center w-full mb-1 gap-2">
+                            <div className="flex items-center space-x-2 min-w-0">
                               {/* Always show platform dot if we have a color */}
                               {platformColor !== 'bg-gray-500' && (
-                                <div className={`w-2.5 h-2.5 rounded-full ${platformColor}`}></div>
+                                <div className={`w-2.5 h-2.5 rounded-full ${platformColor} flex-shrink-0`}></div>
                               )}
-                              <span className="font-medium">{organizationName}</span>
+                              <span className="font-medium truncate">{organizationName}</span>
                             </div>
-                            <span className="text-gray-500">{analysis.time_range || 30}d</span>
+                            <span className="text-gray-500 flex-shrink-0">{analysis.time_range || 30}d</span>
                           </div>
                           <div className="flex justify-between items-center w-full text-gray-400">
                             <span>{dateStr}</span>
