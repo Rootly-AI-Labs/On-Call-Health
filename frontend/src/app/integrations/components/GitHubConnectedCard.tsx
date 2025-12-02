@@ -63,9 +63,7 @@ export function GitHubConnectedCard({
               <CardTitle>GitHub Connected</CardTitle>
               <div className="space-y-1 text-sm text-muted-foreground">
                 <div>Username: {integration.github_username}</div>
-                {!integration.is_beta && (
-                  <div>Token: {integration.token_preview}</div>
-                )}
+                <div>Token: {integration.token_preview}</div>
               </div>
             </div>
           </div>
@@ -84,26 +82,14 @@ export function GitHubConnectedCard({
                 <RefreshCw className="w-4 h-4" />
               )}
             </Button>
-            {integration.is_beta ? (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={onTest}
-                className="bg-white text-purple-700 border-purple-200 hover:bg-purple-50 hover:text-purple-800 hover:border-purple-300"
-              >
-                <Zap className="w-4 h-4 mr-2" />
-                Test Connection
-              </Button>
-            ) : (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={onDisconnect}
-                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            )}
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={onDisconnect}
+              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
           </div>
         </div>
       </CardHeader>
@@ -114,9 +100,7 @@ export function GitHubConnectedCard({
             <div>
               <div className="font-medium">Token Source</div>
               <div className="text-gray-600">
-                {integration.is_beta
-                  ? "Beta"
-                  : integration.token_source === "oauth"
+                {integration.token_source === "oauth"
                     ? "OAuth"
                     : "Personal Access Token"
                 }
@@ -167,24 +151,6 @@ export function GitHubConnectedCard({
             </div>
           </div>
         </div>
-
-        {/* Beta Access Information */}
-        {integration.is_beta && (
-          <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <div className="flex items-start space-x-2">
-              <div className="w-5 h-5 text-blue-600 mt-0.5">
-                <CheckCircle className="w-5 h-5" />
-              </div>
-              <div className="flex-1 text-sm">
-                <div className="font-medium text-blue-800 mb-1">Beta Access Enabled</div>
-                <div className="text-blue-700">
-                  You're using a shared GitHub integration for testing purposes.
-                  No personal token setup required.
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
       </CardContent>
     </Card>

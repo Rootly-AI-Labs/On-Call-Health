@@ -101,15 +101,14 @@ export interface Integration {
 }
 
 export interface GitHubIntegration {
-  id: number | string // Can be "beta-github" for beta integration
+  id: number | string
   github_username: string
   organizations: string[]
-  token_source: "oauth" | "manual" | "beta"
+  token_source: "oauth" | "manual"
   is_oauth: boolean
   supports_refresh: boolean
   connected_at: string
   last_updated: string
-  is_beta?: boolean // Optional flag for beta integrations
   token_preview?: string // Token preview for display
 }
 

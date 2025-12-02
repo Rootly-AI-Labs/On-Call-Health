@@ -225,16 +225,10 @@ async def test_github_integration(
                 detail=f"Failed to decrypt token: {str(e)}"
             )
     else:
-        # Check for beta GitHub token from Railway
-        beta_github_token = os.getenv('GITHUB_TOKEN')
-        if beta_github_token:
-            access_token = beta_github_token
-            is_beta = True
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="No GitHub integration found"
-            )
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No GitHub integration found"
+        )
     
     try:
         # Test token with GitHub API
@@ -331,18 +325,13 @@ async def get_github_status(
     db: Session = Depends(get_db)
 ):
     """
-    Get GitHub integration status for current user, including beta token access.
+    Get GitHub integration status for current user.
     """
-    # Check for user's personal integration first
+    # Check for user's personal integration
     integration = db.query(GitHubIntegration).filter(
         GitHubIntegration.user_id == current_user.id
     ).first()
-    
-    # Check for beta GitHub token from Railway environment
-    beta_github_token = os.getenv('GITHUB_TOKEN')
-    logger.info(f"Beta GitHub token check: exists={beta_github_token is not None}, length={len(beta_github_token) if beta_github_token else 0}")
-    
-    # If user has personal integration, return that
+
     if integration:
         # Get token preview
         token_preview = None
@@ -368,64 +357,12 @@ async def get_github_status(
                 "is_beta": False
             }
         }
-    
-    # If no personal integration but beta token exists, provide beta access
-    elif beta_github_token:
-        try:
-            # Test the beta token and get basic info
-            import httpx
-            headers = {
-                "Authorization": f"token {beta_github_token}",
-                "Accept": "application/json"
-            }
-            
-            async with httpx.AsyncClient() as client:
-                # Get user info
-                user_response = await client.get("https://api.github.com/user", headers=headers)
-                if user_response.status_code == 200:
-                    user_info = user_response.json()
-                    github_username = user_info.get("login", "beta-user")
-                    
-                    # Get organizations
-                    try:
-                        orgs_response = await client.get("https://api.github.com/user/orgs", headers=headers)
-                        if orgs_response.status_code == 200:
-                            orgs = orgs_response.json()
-                            org_names = [org.get("login") for org in orgs if org.get("login")]
-                        else:
-                            org_names = []
-                    except Exception:
-                        org_names = []
-                    
-                    logger.info(f"Beta GitHub token working: {github_username}, orgs: {org_names}")
-                    
-                    return {
-                        "connected": True,
-                        "integration": {
-                            "id": "beta-github",
-                            "github_username": github_username,
-                            "organizations": org_names,
-                            "token_source": "beta",
-                            "is_oauth": False,
-                            "supports_refresh": False,
-                            "connected_at": datetime.now().isoformat(),
-                            "last_updated": datetime.now().isoformat(),
-                            "token_preview": f"***{beta_github_token[-4:]}",
-                            "is_beta": True
-                        }
-                    }
-                else:
-                    logger.warning(f"Beta GitHub token test failed: {user_response.status_code}")
-                    
-        except Exception as e:
-            # Only log as warning since this is just a connection test, not critical functionality
-            logger.warning(f"Beta GitHub token test failed: {str(e)[:100]}...")
-    
-    # No integration available
-    return {
-        "connected": False,
-        "integration": None
-    }
+    else:
+        # No integration available
+        return {
+            "connected": False,
+            "integration": None
+        }
 
 class TokenRequest(BaseModel):
     token: str
@@ -636,17 +573,10 @@ async def get_org_members(
                 detail=f"Failed to decrypt token: {str(e)}"
             )
     else:
-        # Check for beta GitHub token from Railway
-        beta_github_token = os.getenv('GITHUB_TOKEN')
-        if beta_github_token:
-            access_token = beta_github_token
-            # Default organizations for beta
-            organizations = ['rootlyhq', 'Rootly-AI-Labs']
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="No GitHub integration found"
-            )
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No GitHub integration found"
+        )
 
     if not organizations:
         return {

@@ -1436,14 +1436,8 @@ async def get_user_github_daily_commits(
         from ...api.endpoints.github import decrypt_token as decrypt_github_token
         github_token = decrypt_github_token(github_integration.github_token)
         logger.info(f"Using personal GitHub integration for user {current_user.id}")
-    else:
-        # Try beta GitHub token from environment
-        beta_github_token = os.getenv('GITHUB_TOKEN')
-        if beta_github_token:
-            github_token = beta_github_token
-            logger.info(f"Using beta GitHub token for user {current_user.id}")
-    
-    if not github_token:
+
+    if not github_integration or not github_token:
         return {
             "status": "error",
             "message": "GitHub integration not found. Please connect your GitHub account or contact support.",
@@ -1623,25 +1617,18 @@ async def get_analysis_github_commits_timeline(
         }
     
     # Get GitHub integration token or use beta token
-    # Prioritize beta token (more reliable) over personal tokens which may expire
-    beta_github_token = os.getenv('GITHUB_TOKEN')
     github_integration = db.query(GitHubIntegration).filter(
         GitHubIntegration.user_id == current_user.id
     ).first()
 
     github_token = None
 
-    # Prefer beta token if available (more reliable)
-    if beta_github_token:
-        github_token = beta_github_token
-        logger.info(f"Using beta GitHub token for timeline analysis")
-    elif github_integration and github_integration.github_token:
-        # Fallback to user's personal integration
+    if github_integration and github_integration.github_token:
         from ...api.endpoints.github import decrypt_token as decrypt_github_token
         github_token = decrypt_github_token(github_integration.github_token)
         logger.info(f"Using personal GitHub integration for timeline analysis")
 
-    if not github_token:
+    if not github_integration or not github_token:
         return {
             "status": "error",
             "message": "GitHub integration not configured. Please connect your GitHub account or contact support.",
@@ -2517,20 +2504,13 @@ async def run_analysis_task(
                 ).first()
                 logger.info(f"BACKGROUND_TASK: GitHub integration query result: {github_integration}")
 
-                # Try personal integration first
                 if github_integration and github_integration.github_token:
                     # Decrypt the token
                     from ...api.endpoints.github import decrypt_token as decrypt_github_token
                     github_token = decrypt_github_token(github_integration.github_token)
                     logger.info(f"BACKGROUND_TASK: Found personal GitHub integration for user {user_id}")
                 else:
-                    # Try beta GitHub token
-                    beta_github_token = os.getenv('GITHUB_TOKEN')
-                    if beta_github_token:
-                        github_token = beta_github_token
-                        logger.info(f"BACKGROUND_TASK: Using beta GitHub token for user {user_id}")
-                    else:
-                        logger.warning(f"BACKGROUND_TASK: No GitHub integration found for user {user_id}")
+                    logger.warning(f"BACKGROUND_TASK: No GitHub integration found for user {user_id}")
 
             if include_jira:
                 logger.info(f"BACKGROUND_TASK: Looking for Jira integration for user {user_id}")
