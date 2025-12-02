@@ -233,6 +233,26 @@ class JiraUserSyncService:
                     match_method = "name"
 
             if matched_correlation:
+                # Check if there's a manual mapping for this user's Jira account
+                # Manual mappings should take precedence over automatic matching
+                from ..models import UserMapping
+                manual_mapping = self.db.query(UserMapping).filter(
+                    and_(
+                        UserMapping.user_id == current_user.id,
+                        UserMapping.source_identifier == matched_correlation.email,
+                        UserMapping.target_platform == "jira",
+                        UserMapping.mapping_type == "manual"
+                    )
+                ).first()
+
+                if manual_mapping:
+                    # Manual mapping exists - respect it and don't overwrite
+                    logger.info(
+                        f"⚠️  Skipping Jira sync for {matched_correlation.email} - manual mapping exists: {manual_mapping.target_identifier}"
+                    )
+                    skipped += 1
+                    continue
+
                 # Update existing correlation with Jira data
                 needs_update = False
 

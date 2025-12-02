@@ -65,7 +65,7 @@ export async function syncUsersToCorrelation(
   fetchSyncedUsers: (showToast?: boolean, autoSync?: boolean) => Promise<void>,
   onProgress?: (message: string) => void,
   suppressToast?: boolean
-): Promise<{ created: number; updated: number; github_matched?: number }> {
+): Promise<{ created: number; updated: number; github_matched?: number; jira_matched?: number }> {
   if (!selectedOrganization) {
     toast.error('Please select an organization first')
     throw new Error('No organization selected')
@@ -101,11 +101,18 @@ export async function syncUsersToCorrelation(
         onProgress?.(`🐙 Matched ${stats.github_matched} users to GitHub`)
         onProgress?.(`⏭️  Skipped ${stats.github_skipped || 0} GitHub matches`)
       }
+      if (stats.jira_matched !== undefined) {
+        onProgress?.(`🔗 Matched ${stats.jira_matched} users to Jira`)
+        onProgress?.(`⏭️  Skipped ${stats.jira_skipped || 0} Jira matches`)
+      }
 
-      // Build success message with GitHub matching info
+      // Build success message with GitHub and Jira matching info
       let message = `Synced ${stats.created} new users, updated ${stats.updated} existing users.`
       if (stats.github_matched !== undefined) {
         message += ` Matched ${stats.github_matched} users to GitHub.`
+      }
+      if (stats.jira_matched !== undefined) {
+        message += ` Matched ${stats.jira_matched} users to Jira.`
       }
       message += ` All team members can now submit burnout surveys via Slack!`
 
@@ -121,7 +128,8 @@ export async function syncUsersToCorrelation(
       return {
         created: stats.created,
         updated: stats.updated,
-        github_matched: stats.github_matched
+        github_matched: stats.github_matched,
+        jira_matched: stats.jira_matched
       }
     } else {
       const errorData = await response.json()

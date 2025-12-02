@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
+import { Loader2 } from "lucide-react"
 
 // Hooks
 import { usePerformanceMonitor } from "@/hooks/use-performance-monitor"
@@ -17,7 +18,7 @@ import { IntegrationsCards } from "./integrations-cards"
 import { EnhancementCards } from "./enhancement-cards"
 import { MappingDrawer } from "@/components/mapping-drawer"
 
-export default function IntegrationsLayout() {
+function IntegrationsLayoutContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { startTiming, endTiming, trackCacheHit } = usePerformanceMonitor()
@@ -204,5 +205,20 @@ export default function IntegrationsLayout() {
         platform={state.dialogs.mappingDrawerPlatform}
       />
     </div>
+  )
+}
+
+export default function IntegrationsLayout() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-sm text-muted-foreground">Loading integrations...</p>
+        </div>
+      </div>
+    }>
+      <IntegrationsLayoutContent />
+    </Suspense>
   )
 }

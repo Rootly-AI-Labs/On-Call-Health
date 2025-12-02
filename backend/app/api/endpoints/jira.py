@@ -208,8 +208,16 @@ async def _process_callback(code: str, state: Optional[str], db: Session, curren
                 db.add(mapping)
                 logger.info("[Jira] Created workspace mapping for org %s", organization_id)
 
-        # 6) Correlate user
+        # 6) Correlate user - enforce one-to-one mapping across all users in org
         if jira_email and jira_account_id and organization_id:
+            # Before assigning this Jira account, remove it from any other users (both tables)
+            from ...services.manual_mapping_service import ManualMappingService
+            service = ManualMappingService(db)
+            service.remove_jira_from_all_other_users(
+                user_id,
+                jira_account_id
+            )
+
             corr = db.query(UserCorrelation).filter(
                 UserCorrelation.organization_id == organization_id,
                 UserCorrelation.email == jira_email,
@@ -512,8 +520,16 @@ async def select_jira_workspace(
                 mapping.jira_site_url = integration.jira_site_url
                 mapping.jira_site_name = integration.jira_site_name
 
-        # Update user correlation
+        # Update user correlation - enforce one-to-one mapping across all users in org
         if integration.jira_email and integration.jira_account_id and current_user.organization_id:
+            # Before assigning this Jira account, remove it from any other users (both tables)
+            from ...services.manual_mapping_service import ManualMappingService
+            service = ManualMappingService(db)
+            service.remove_jira_from_all_other_users(
+                current_user.id,
+                integration.jira_account_id
+            )
+
             corr = db.query(UserCorrelation).filter(
                 UserCorrelation.organization_id == current_user.organization_id,
                 UserCorrelation.email == integration.jira_email,

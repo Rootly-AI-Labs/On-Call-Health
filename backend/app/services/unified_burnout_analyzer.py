@@ -3621,7 +3621,6 @@ class UnifiedBurnoutAnalyzer:
             for user in team_analysis:
                 if user.get('user_email'):
                     user_key = user['user_email'].lower()
-                    # TODO: verify if correct - possibly add testcases
                     tzname = self._get_user_tz(user.get('user_id'), "UTC")
                     today_local = self._to_local(datetime.now(), tzname)
                     for day_offset in range(days_analyzed):
@@ -3677,7 +3676,6 @@ class UnifiedBurnoutAnalyzer:
                             
                         # Parse date
                         try:
-                            # TODO:double-check, possibly adjust timezone
                             incident_date_utc = self._parse_iso_utc(created_at)
                             tzname = self._get_user_tz(user.get('user_id'), "UTC")
                             incident_date = self._to_local(incident_date_utc, tzname)
@@ -4709,17 +4707,19 @@ class UnifiedBurnoutAnalyzer:
 
 
 
-    # TODO: finetune - fix so that we use deadline date, priority and number of tickets for user to contribute to the score
+        # TODO: finetune - fix so that we use deadline date, priority and number of tickets for user to contribute to the score
     def _calculate_jira_ocb_contribution(
         self,
         tickets: Optional[List[Dict[str, Any]]]
     ) -> float:
         """
-        Calculate OCB score contribution (0-100) based on Jira ticket workload.
-        Maps Jira workload to OCB metrics similar to incident-based calculation.
-
-        Returns: OCB score 0-100
+        Calculate Jira burnout contribution (0-100) using:
+        - Ticket count
+        - Priority mix
+        - Earliest deadline
+        Scaled so typical scores are around the 20s.
         """
+
         try:
             if not tickets:
                 return 0.0
@@ -4728,57 +4728,100 @@ class UnifiedBurnoutAnalyzer:
             if ticket_count == 0:
                 return 0.0
 
-            # Count high-priority tickets
-            critical_count = len([t for t in tickets if t.get("priority", "").lower() in ["critical", "blocker", "highest", "high"]])
-            critical_ratio = critical_count / ticket_count if ticket_count > 0 else 0
+            priority_counts = {}
+            for t in tickets:
+                p = (t.get("priority") or "Medium").capitalize()
+                priority_counts[p] = priority_counts.get(p, 0) + 1
 
-            # Map Jira workload to OCB-like metrics (0-100 scale)
-            # These roughly correspond to workload intensity
-
-            # Personal burnout factors based on ticket volume
-            work_hours_trend = min(100, ticket_count * 3)  # 2 tickets = 6, 20 tickets = 60, etc.
-            weekend_work = critical_ratio * 50  # High-priority tickets = likely weekend work
-            after_hours_activity = critical_ratio * 40
-            vacation_usage = min(100, ticket_count * 2)  # More tickets = less vacation
-            sleep_quality_proxy = min(100, critical_count * 8)  # Critical tickets disrupt sleep
-
-            # Work-related burnout factors based on urgency
-            sprint_completion = min(100, critical_count * 10)  # Urgent tickets impact sprint goals
-            code_review_speed = min(100, ticket_count * 2)
-            pr_frequency = min(100, ticket_count * 3)
-            deployment_frequency = min(100, critical_count * 8)
-            meeting_load = min(100, ticket_count * 2)  # More tickets = more coordination
-            oncall_burden = min(100, critical_count * 10)  # Critical tickets = oncall-like stress
-
-            jira_ocb_metrics = {
-                'work_hours_trend': work_hours_trend,
-                'weekend_work': weekend_work,
-                'after_hours_activity': after_hours_activity,
-                'vacation_usage': vacation_usage,
-                'sleep_quality_proxy': sleep_quality_proxy,
-                'sprint_completion': sprint_completion,
-                'code_review_speed': code_review_speed,
-                'pr_frequency': pr_frequency,
-                'deployment_frequency': deployment_frequency,
-                'meeting_load': meeting_load,
-                'oncall_burden': oncall_burden
+            PRIORITY_WEIGHTS = {
+                "Highest": 1.2,
+                "High": 1.0,
+                "Medium": 0.7,
+                "Low": 0.4,
+                "Lowest": 0.2,
             }
 
-            # Use same OCB calculation as incidents
-            from ..core.ocb_config import calculate_personal_burnout, calculate_work_related_burnout, calculate_composite_ocb_score
+            weighted_sum = 0.0
+            for p, count in priority_counts.items():
+                weight = PRIORITY_WEIGHTS.get(p, 0.7)
+                weighted_sum += weight * count
 
-            personal_ocb = calculate_personal_burnout(jira_ocb_metrics)
-            work_ocb = calculate_work_related_burnout(jira_ocb_metrics)
-            composite_ocb = calculate_composite_ocb_score(personal_ocb['score'], work_ocb['score'])
+            avg_priority_weight = weighted_sum / ticket_count
+            priority_score = min(avg_priority_weight / 1.2, 1.0)  
 
-            ocb_score = min(100, composite_ocb['composite_score'])
 
-            logger.info(f"🔍 JIRA OCB: tickets={ticket_count}, critical={critical_count}, personal={personal_ocb['score']:.1f}, work={work_ocb['score']:.1f}, composite={ocb_score:.1f}")
-            return ocb_score
+            earliest_due = None
+            from datetime import datetime, date
+
+            for t in tickets:
+                due = t.get("dueDate") or t.get("duedate") or t.get("due")
+                if not due:
+                    continue
+
+                try:
+                    parsed = datetime.fromisoformat(due).date()
+                except:
+                    continue
+
+                if earliest_due is None or parsed < earliest_due:
+                    earliest_due = parsed
+
+            today = datetime.utcnow().date()
+
+            if earliest_due is None:
+                deadline_score = 0.3
+            else:
+                days_until_due = (earliest_due - today).days
+
+                if days_until_due <= 0:
+                    deadline_score = 1.0
+                elif days_until_due <= 2:
+                    deadline_score = 0.9
+                elif days_until_due <= 7:
+                    deadline_score = 0.75
+                elif days_until_due <= 14:
+                    deadline_score = 0.55
+                elif days_until_due <= 30:
+                    deadline_score = 0.4
+                else:
+                    deadline_score = 0.2
+
+
+            MAX_LOAD = 15
+            ticket_load_score = min(ticket_count / MAX_LOAD, 1.0)
+
+
+            WEIGHT_TICKETS = 0.4
+            WEIGHT_PRIORITY = 0.35
+            WEIGHT_DEADLINE = 0.25
+
+            combined = (
+                WEIGHT_TICKETS * ticket_load_score +
+                WEIGHT_PRIORITY * priority_score +
+                WEIGHT_DEADLINE * deadline_score
+            )  # in [0, 1]
+
+            # Global scaling so Jira score is in ~5–30 range
+            JIRA_SCALING = 0.75
+            jira_score = max(0.0, min(100.0, combined * 100 * JIRA_SCALING))
+
+
+            logger.info(
+                f"📊 Jira Workload Score:"
+                f" tickets={ticket_count},"
+                f" priority_score={priority_score:.2f},"
+                f" deadline_score={deadline_score:.2f},"
+                f" load_score={ticket_load_score:.2f},"
+                f" combined_raw={(combined*100):.1f},"
+                f" final_scaled={jira_score:.1f}"
+            )
+
+            return round(jira_score, 1)
 
         except Exception as e:
             logger.error(f"Error calculating Jira OCB contribution: {e}")
             return 0.0
+
 
 
     def _calculate_github_burnout_score(

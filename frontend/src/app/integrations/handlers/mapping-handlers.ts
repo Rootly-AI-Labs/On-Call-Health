@@ -414,7 +414,17 @@ export async function createManualMapping(
     })
 
     if (response.ok) {
-      toast.success('Manual mapping created successfully')
+      const responseData = await response.json()
+
+      // Check if this is a GitHub/Jira mapping that requires refresh
+      if (responseData.refresh_needed) {
+        toast.success(responseData.message || 'Manual mapping created successfully', {
+          duration: 5000
+        })
+      } else {
+        toast.success('Manual mapping created successfully')
+      }
+
       // Reload mappings if dialog is open
       if (showManualMappingDialog && selectedManualMappingPlatform) {
         loadManualMappings(selectedManualMappingPlatform)
@@ -461,7 +471,17 @@ export async function updateManualMapping(
     })
 
     if (response.ok) {
-      toast.success('Manual mapping updated successfully')
+      const responseData = await response.json()
+
+      // Check if this is a GitHub/Jira mapping that requires refresh
+      if (responseData.refresh_needed) {
+        toast.success(responseData.message || 'Manual mapping updated successfully', {
+          duration: 5000
+        })
+      } else {
+        toast.success('Manual mapping updated successfully')
+      }
+
       // Reload mappings
       if (showManualMappingDialog && selectedManualMappingPlatform) {
         loadManualMappings(selectedManualMappingPlatform)

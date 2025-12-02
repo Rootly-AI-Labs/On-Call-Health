@@ -1134,9 +1134,30 @@ async def sync_integration_users(
                     f"{github_stats['skipped']} skipped"
                 )
 
+            # After syncing, try to match Jira accounts
+            jira_stats = await sync_service._match_jira_users(current_user)
+            if jira_stats:
+                stats['jira_matched'] = jira_stats['matched']
+                stats['jira_skipped'] = jira_stats['skipped']
+                logger.info(
+                    f"Jira matching: {jira_stats['matched']} users matched, "
+                    f"{jira_stats['skipped']} skipped"
+                )
+
+            # Build detailed message for beta integration (matching regular integration format)
+            message_parts = [f"Successfully synced {stats['total']} users from beta integration"]
+            if stats.get('github_matched'):
+                message_parts.append(f"GitHub: {stats['github_matched']} users matched")
+            if stats.get('github_skipped'):
+                message_parts.append(f"({stats['github_skipped']} skipped)")
+            if stats.get('jira_matched'):
+                message_parts.append(f"Jira: {stats['jira_matched']} users matched")
+            if stats.get('jira_skipped'):
+                message_parts.append(f"({stats['jira_skipped']} skipped)")
+
             return {
                 "success": True,
-                "message": f"Successfully synced {stats['total']} users from beta integration",
+                "message": ". ".join(message_parts),
                 "stats": stats
             }
 
@@ -1164,6 +1185,10 @@ async def sync_integration_users(
             message_parts.append(f"GitHub: {stats['github_matched']} users matched")
         if stats.get('github_skipped'):
             message_parts.append(f"({stats['github_skipped']} skipped)")
+        if stats.get('jira_matched'):
+            message_parts.append(f"Jira: {stats['jira_matched']} users matched")
+        if stats.get('jira_skipped'):
+            message_parts.append(f"({stats['jira_skipped']} skipped)")
 
         return {
             "success": True,
@@ -1635,6 +1660,9 @@ async def update_user_correlation_github_username(
     """
     Manually update GitHub username for a UserCorrelation.
     Used when automatic correlation fails and user needs to manually map.
+
+    Ensures that each GitHub username is assigned to only one user at a time.
+    If the same GitHub username is already assigned to another user, it will be removed from them.
     """
     try:
         # Fetch the correlation - ensure it belongs to current user
@@ -1665,14 +1693,37 @@ async def update_user_correlation_github_username(
             )
             message = "GitHub username mapping cleared"
         else:
+            # Before assigning the new username, remove it from any other UserCorrelation records
+            # NOTE: In UserCorrelation, all team members have the same user_id (org owner),
+            # so we need to identify "other users" by correlation_id, not user_id
+            removed_count = 0
+
+            # Find all OTHER correlations with this GitHub username (excluding current correlation)
+            conflicting_correlations = db.query(UserCorrelation).filter(
+                UserCorrelation.id != correlation_id,
+                UserCorrelation.github_username == github_username
+            ).all()
+
+            logger.info(f"🔍 Found {len(conflicting_correlations)} other UserCorrelation records with GitHub username '{github_username}'")
+
+            for other_correlation in conflicting_correlations:
+                logger.info(
+                    f"🗑️  Removing GitHub '{github_username}' from UserCorrelation {other_correlation.id}: "
+                    f"{other_correlation.name} ({other_correlation.email})"
+                )
+                other_correlation.github_username = None
+                removed_count += 1
+
             # Set the mapping
             correlation.github_username = github_username
             db.commit()
             logger.info(
-                f"User {current_user.id} manually updated GitHub username for {correlation.email}: "
-                f"{old_username} → {github_username}"
+                f"✅ User {current_user.id} manually updated GitHub username for {correlation.email}: "
+                f"{old_username} → {github_username} (removed from {removed_count} other records)"
             )
             message = f"GitHub username updated to {github_username}"
+            if removed_count > 0:
+                message += f" (removed from {removed_count} other user record(s))"
 
         return {
             "success": True,
@@ -1707,9 +1758,9 @@ async def update_user_correlation_jira_mapping(
 ):
     """
     Manually update Jira account mapping for a UserCorrelation.
-    Supports exclusive one-to-one mapping - if another user already has this Jira account_id,
-    that mapping will be cleared first.
+    Enforces exclusive one-to-one mapping across all users in the organization.
 
+    If ANY other user already has this Jira account_id, it will be removed from them first.
     Used for dropdown selection in Team Members panel.
     """
     try:
@@ -1739,30 +1790,39 @@ async def update_user_correlation_jira_mapping(
             )
             message = "Jira mapping cleared"
         else:
-            # Check if another user already has this Jira account_id
-            # If so, clear that user's mapping first (exclusive mapping)
-            existing = db.query(UserCorrelation).filter(
-                UserCorrelation.jira_account_id == jira_account_id,
-                UserCorrelation.id != correlation_id,
-                UserCorrelation.user_id == current_user.id  # Only within same user's org
-            ).first()
+            # Before assigning the new Jira account, remove it from any other UserCorrelation records
+            # NOTE: In UserCorrelation, all team members have the same user_id (org owner),
+            # so we need to identify "other users" by correlation_id, not user_id
+            removed_count = 0
 
-            if existing:
+            # Find all OTHER correlations with this Jira account (excluding current correlation)
+            conflicting_correlations = db.query(UserCorrelation).filter(
+                UserCorrelation.id != correlation_id,
+                UserCorrelation.jira_account_id == jira_account_id
+            ).all()
+
+            logger.info(f"🔍 Found {len(conflicting_correlations)} other UserCorrelation records with Jira account '{jira_account_id}'")
+
+            for other_correlation in conflicting_correlations:
                 logger.info(
-                    f"Clearing existing Jira mapping: {existing.email} had {jira_account_id}, now reassigning to {correlation.email}"
+                    f"🗑️  Removing Jira '{jira_account_id}' from UserCorrelation {other_correlation.id}: "
+                    f"{other_correlation.name} ({other_correlation.email})"
                 )
-                existing.jira_account_id = None
-                existing.jira_email = None
+                other_correlation.jira_account_id = None
+                other_correlation.jira_email = None
+                removed_count += 1
 
             # Set the new mapping
             correlation.jira_account_id = jira_account_id
             correlation.jira_email = jira_email or None
             db.commit()
             logger.info(
-                f"User {current_user.id} updated Jira mapping for {correlation.email}: "
-                f"{old_account_id} → {jira_account_id}"
+                f"✅ User {current_user.id} updated Jira mapping for {correlation.email}: "
+                f"{old_account_id} → {jira_account_id} (removed from {removed_count} other records)"
             )
             message = "Jira mapping updated"
+            if removed_count > 0:
+                message += f" (removed from {removed_count} other user record(s))"
 
         return {
             "success": True,
