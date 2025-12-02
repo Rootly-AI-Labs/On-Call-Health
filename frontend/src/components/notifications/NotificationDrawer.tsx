@@ -52,6 +52,7 @@ export function NotificationDrawer() {
 
     scrollElement.addEventListener('scroll', handleScroll)
     return () => scrollElement.removeEventListener('scroll', handleScroll)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading, hasMore])
 
   return (

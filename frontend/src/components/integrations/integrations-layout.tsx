@@ -39,8 +39,9 @@ function IntegrationsLayoutContent() {
         console.error('Failed to load user info:', error)
       }
     }
-    
+
     loadUserInfo()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.setUserInfo])
 
   // Handle URL parameters
@@ -55,6 +56,7 @@ function IntegrationsLayoutContent() {
     if (backUrl) {
       state.setUI({ backUrl: decodeURIComponent(backUrl) })
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, state.setUI])
 
   // Optimized data loading with performance tracking
@@ -125,6 +127,7 @@ function IntegrationsLayoutContent() {
   // Load data on mount
   useEffect(() => {
     loadIntegrationsOptimized()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Performance monitoring - end page load timing

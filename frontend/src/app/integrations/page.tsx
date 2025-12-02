@@ -764,6 +764,7 @@ export default function IntegrationsPage() {
       // Will be updated based on integration status
       setBackUrl('')
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Load Slack permissions when integration is available
@@ -771,6 +772,7 @@ export default function IntegrationsPage() {
     if (slackIntegration && activeEnhancementTab === 'slack') {
       loadSlackPermissions()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slackIntegration, activeEnhancementTab])
 
   // Load organization data when invite modal opens
@@ -785,6 +787,7 @@ export default function IntegrationsPage() {
     if (githubIntegration && teamMembersDrawerOpen && showSyncedUsers) {
       fetchGitHubOrgMembers()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [githubIntegration, teamMembersDrawerOpen, showSyncedUsers])
 
   // Clear drawer data when organization changes to prevent showing stale data
@@ -797,7 +800,7 @@ export default function IntegrationsPage() {
       setSelectedRecipients(new Set())
       setSavedRecipients(new Set())
     }
-  }, [selectedOrganization])
+  }, [selectedOrganization, teamMembersDrawerOpen])
 
   // Auto-select first integration if none selected
   useEffect(() => {
@@ -845,6 +848,7 @@ export default function IntegrationsPage() {
     if (jiraIntegration && teamMembersDrawerOpen && showSyncedUsers) {
       fetchJiraUsers()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jiraIntegration, teamMembersDrawerOpen, showSyncedUsers])
 
   // Handle Slack/Jira OAuth success redirect

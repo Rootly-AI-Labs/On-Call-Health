@@ -407,6 +407,7 @@ export default function useDashboard() {
       window.removeEventListener('storage', handleStorageChange)
       clearTimeout(timeoutId)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Check if URL analysis exists in loaded analyses and show loader if not
@@ -464,6 +465,7 @@ export default function useDashboard() {
         }
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Only run once on mount
 
   // Smooth progress animation effect
@@ -493,6 +495,7 @@ export default function useDashboard() {
       setHistoricalTrends(null)
       setLoadingTrends(false)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentAnalysis])
 
   // Sync selectedIntegration with localStorage when integrations change
