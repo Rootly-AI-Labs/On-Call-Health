@@ -1,4 +1,7 @@
 "use client"
+
+export const dynamic = 'force-dynamic'
+
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { MappingDrawer } from "@/components/mapping-drawer"

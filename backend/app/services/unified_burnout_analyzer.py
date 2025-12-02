@@ -3621,7 +3621,6 @@ class UnifiedBurnoutAnalyzer:
             for user in team_analysis:
                 if user.get('user_email'):
                     user_key = user['user_email'].lower()
-                    # TODO: verify if correct - possibly add testcases
                     tzname = self._get_user_tz(user.get('user_id'), "UTC")
                     today_local = self._to_local(datetime.now(), tzname)
                     for day_offset in range(days_analyzed):
@@ -3677,7 +3676,6 @@ class UnifiedBurnoutAnalyzer:
                             
                         # Parse date
                         try:
-                            # TODO:double-check, possibly adjust timezone
                             incident_date_utc = self._parse_iso_utc(created_at)
                             tzname = self._get_user_tz(user.get('user_id'), "UTC")
                             incident_date = self._to_local(incident_date_utc, tzname)
