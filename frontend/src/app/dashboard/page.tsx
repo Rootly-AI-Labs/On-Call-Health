@@ -1,7 +1,5 @@
 "use client"
 
-export const dynamic = 'force-dynamic'
-
 import { Suspense } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
