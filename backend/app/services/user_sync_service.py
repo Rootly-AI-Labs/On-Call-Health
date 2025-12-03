@@ -58,12 +58,8 @@ class UserSyncService:
             # This preserves manually mapped GitHub/Jira usernames across syncs
             # The _sync_users_to_correlation method handles both create and update
 
-            # Mark all existing users from this integration as potentially stale
-            # We'll update last_synced_at for users who are still present
-            self._mark_integration_users_for_sync_check(
-                integration_id=str(integration_id),
-                current_user=current_user
-            )
+            # Get list of emails from this sync
+            synced_emails = set(user.get("email", "").lower().strip() for user in users if user.get("email"))
 
             # Sync users to UserCorrelation
             stats = self._sync_users_to_correlation(
@@ -73,12 +69,13 @@ class UserSyncService:
                 integration_id=str(integration_id)  # Store which integration synced this user
             )
 
-            # Soft delete users not seen in this sync (older than 30 days)
-            stale_count = self._soft_delete_stale_users(
+            # Remove users who are no longer in Rootly/PagerDuty
+            removed_count = self._remove_missing_users(
                 integration_id=str(integration_id),
-                current_user=current_user
+                current_user=current_user,
+                synced_emails=synced_emails
             )
-            stats['stale_deactivated'] = stale_count
+            stats['removed'] = removed_count
 
             logger.info(
                 f"Synced {stats['created']} new users, updated {stats['updated']} existing users "
@@ -322,59 +319,45 @@ class UserSyncService:
 
         return 1 if updated else 0
 
-    def _mark_integration_users_for_sync_check(
+    def _remove_missing_users(
         self,
         integration_id: str,
-        current_user: User
-    ):
-        """
-        Mark all users from this integration for sync check.
-        This is called before syncing to prepare for stale user detection.
-        """
-        # We don't need to do anything here anymore since we update last_synced_at
-        # during the sync itself. This method is kept for clarity of the flow.
-        pass
-
-    def _soft_delete_stale_users(
-        self,
-        integration_id: str,
-        current_user: User
+        current_user: User,
+        synced_emails: set
     ) -> int:
         """
-        Soft delete (deactivate) users who haven't been seen in a sync for 30+ days.
+        Remove users who are no longer present in Rootly/PagerDuty.
+        This is a hard delete since the user is confirmed to be removed from the source.
+
+        Args:
+            integration_id: The integration ID
+            current_user: The user performing the sync
+            synced_emails: Set of email addresses that were in the sync
 
         Returns:
-            Number of users deactivated
+            Number of users removed
         """
-        from datetime import datetime, timedelta
-
-        # Calculate the cutoff date (30 days ago)
-        cutoff_date = datetime.utcnow() - timedelta(days=30)
-
-        # Find users from this integration who:
-        # 1. Have this integration_id in their integration_ids array
-        # 2. Haven't been synced in 30+ days (or never synced)
-        # 3. Are currently active
+        # Find all users from this integration
         correlations = self.db.query(UserCorrelation).filter(
-            UserCorrelation.user_id == current_user.id,
-            UserCorrelation.is_active == 1
+            UserCorrelation.user_id == current_user.id
         ).all()
 
-        deactivated = 0
+        removed = 0
         for correlation in correlations:
             # Check if this integration_id is in the array
             if correlation.integration_ids and integration_id in correlation.integration_ids:
-                # Check if user is stale (not synced in 30+ days)
-                if not correlation.last_synced_at or correlation.last_synced_at < cutoff_date:
-                    correlation.is_active = 0
-                    deactivated += 1
-                    logger.info(f"Deactivated stale user: {correlation.email} (last synced: {correlation.last_synced_at})")
+                # Check if user's email was NOT in this sync
+                if correlation.email not in synced_emails:
+                    # User was removed from Rootly/PagerDuty - delete them
+                    self.db.delete(correlation)
+                    removed += 1
+                    logger.info(f"Removed user no longer in {integration_id}: {correlation.email}")
 
-        if deactivated > 0:
+        if removed > 0:
             self.db.commit()
-            logger.info(f"Deactivated {deactivated} stale users from integration {integration_id}")
+            logger.info(f"Removed {removed} users no longer in integration {integration_id}")
 
-        return deactivated
+        return removed
 
     def sync_users_from_list(
         self,
