@@ -4446,6 +4446,10 @@ export default function IntegrationsPage() {
       <Dialog open={showSyncConfirmModal} onOpenChange={(open) => {
         if (!syncProgress?.isLoading) {
           setShowSyncConfirmModal(open)
+          if (!open) {
+            // Reset sync progress when closing modal
+            setSyncProgress(null)
+          }
         }
       }}>
         <DialogContent className="sm:max-w-md">
