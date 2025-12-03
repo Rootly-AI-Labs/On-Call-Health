@@ -58,6 +58,13 @@ class UserSyncService:
             # This preserves manually mapped GitHub/Jira usernames across syncs
             # The _sync_users_to_correlation method handles both create and update
 
+            # Mark all existing users from this integration as potentially stale
+            # We'll update last_synced_at for users who are still present
+            self._mark_integration_users_for_sync_check(
+                integration_id=str(integration_id),
+                current_user=current_user
+            )
+
             # Sync users to UserCorrelation
             stats = self._sync_users_to_correlation(
                 users=users,
@@ -65,7 +72,13 @@ class UserSyncService:
                 current_user=current_user,
                 integration_id=str(integration_id)  # Store which integration synced this user
             )
-            stats['deleted'] = deleted_count
+
+            # Soft delete users not seen in this sync (older than 30 days)
+            stale_count = self._soft_delete_stale_users(
+                integration_id=str(integration_id),
+                current_user=current_user
+            )
+            stats['stale_deactivated'] = stale_count
 
             logger.info(
                 f"Synced {stats['created']} new users, updated {stats['updated']} existing users "
@@ -272,7 +285,13 @@ class UserSyncService:
         Update a UserCorrelation record with platform-specific data.
         Returns 1 if updated, 0 if no changes.
         """
+        from datetime import datetime
         updated = False
+
+        # Update last_synced_at timestamp (user was seen in this sync)
+        correlation.last_synced_at = datetime.utcnow()
+        correlation.is_active = 1  # Mark as active
+        updated = True
 
         # Update integration_ids array - add if not already present
         if integration_id:
@@ -302,6 +321,60 @@ class UserSyncService:
                 updated = True
 
         return 1 if updated else 0
+
+    def _mark_integration_users_for_sync_check(
+        self,
+        integration_id: str,
+        current_user: User
+    ):
+        """
+        Mark all users from this integration for sync check.
+        This is called before syncing to prepare for stale user detection.
+        """
+        # We don't need to do anything here anymore since we update last_synced_at
+        # during the sync itself. This method is kept for clarity of the flow.
+        pass
+
+    def _soft_delete_stale_users(
+        self,
+        integration_id: str,
+        current_user: User
+    ) -> int:
+        """
+        Soft delete (deactivate) users who haven't been seen in a sync for 30+ days.
+
+        Returns:
+            Number of users deactivated
+        """
+        from datetime import datetime, timedelta
+
+        # Calculate the cutoff date (30 days ago)
+        cutoff_date = datetime.utcnow() - timedelta(days=30)
+
+        # Find users from this integration who:
+        # 1. Have this integration_id in their integration_ids array
+        # 2. Haven't been synced in 30+ days (or never synced)
+        # 3. Are currently active
+        correlations = self.db.query(UserCorrelation).filter(
+            UserCorrelation.user_id == current_user.id,
+            UserCorrelation.is_active == 1
+        ).all()
+
+        deactivated = 0
+        for correlation in correlations:
+            # Check if this integration_id is in the array
+            if correlation.integration_ids and integration_id in correlation.integration_ids:
+                # Check if user is stale (not synced in 30+ days)
+                if not correlation.last_synced_at or correlation.last_synced_at < cutoff_date:
+                    correlation.is_active = 0
+                    deactivated += 1
+                    logger.info(f"Deactivated stale user: {correlation.email} (last synced: {correlation.last_synced_at})")
+
+        if deactivated > 0:
+            self.db.commit()
+            logger.info(f"Deactivated {deactivated} stale users from integration {integration_id}")
+
+        return deactivated
 
     def sync_users_from_list(
         self,

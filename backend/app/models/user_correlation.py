@@ -23,6 +23,8 @@ class UserCorrelation(Base):
     jira_email = Column(String(255), nullable=True)  # Jira-specific email
     integration_ids = Column(JSON, nullable=True)  # Array of integration IDs this user belongs to
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    last_synced_at = Column(DateTime(timezone=True), nullable=True)  # Last time this user was seen in a sync
+    is_active = Column(Integer, default=1)  # Soft delete: 1 = active, 0 = inactive/stale
 
     # Relationships
     user = relationship("User", back_populates="user_correlations")
