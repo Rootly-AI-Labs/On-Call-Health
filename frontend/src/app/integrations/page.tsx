@@ -4486,19 +4486,19 @@ export default function IntegrationsPage() {
                           <span className="text-sm text-gray-700">Existing users updated</span>
                           <span className="font-semibold text-gray-900">{syncProgress.results.updated}</span>
                         </div>
-                        {syncProgress.results.github_matched !== undefined && syncProgress.results.github_matched > 0 && (
+                        {syncProgress.results.github_matched !== undefined && (
                           <div className="flex items-center justify-between py-2 border-b border-gray-200">
                             <span className="text-sm text-gray-700">GitHub accounts matched</span>
                             <span className="font-semibold text-gray-900">{syncProgress.results.github_matched}</span>
                           </div>
                         )}
-                        {syncProgress.results.slack_synced !== undefined && syncProgress.results.slack_synced > 0 && (
+                        {syncProgress.results.slack_synced !== undefined && (
                           <div className="flex items-center justify-between py-2 border-b border-gray-200">
                             <span className="text-sm text-gray-700">Slack accounts matched</span>
                             <span className="font-semibold text-gray-900">{syncProgress.results.slack_synced}</span>
                           </div>
                         )}
-                        {syncProgress.results.jira_matched !== undefined && syncProgress.results.jira_matched > 0 && (
+                        {syncProgress.results.jira_matched !== undefined && (
                           <div className="flex items-center justify-between py-2 border-b border-gray-200">
                             <span className="text-sm text-gray-700">Jira accounts matched</span>
                             <span className="font-semibold text-gray-900">{syncProgress.results.jira_matched}</span>
