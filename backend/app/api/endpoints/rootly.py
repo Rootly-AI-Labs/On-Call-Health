@@ -901,6 +901,7 @@ async def get_integration_users(
 
                     # Check for existing user correlations
                     user_correlations = db.query(UserCorrelation).filter(
+                        UserCorrelation.user_id == current_user.id,
                         UserCorrelation.email == user_email
                     ).all()
 
@@ -986,6 +987,7 @@ async def get_integration_users(
 
                 # Check for existing user correlations
                 user_correlations = db.query(UserCorrelation).filter(
+                    UserCorrelation.user_id == current_user.id,
                     UserCorrelation.email == user_email
                 ).all()
 
