@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request, Body
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from ...models import get_db, User, RootlyIntegration, UserCorrelation, GitHubIntegration
+from ...models import get_db, User, RootlyIntegration, UserCorrelation, GitHubIntegration, UserMapping
 from ...auth.dependencies import get_current_active_user
 from ...core.rootly_client import RootlyAPIClient
 from ...core.rate_limiting import integration_rate_limit
@@ -1023,6 +1023,7 @@ async def get_integration_users(
                 ]))
 
                 # Check if this is a manual mapping
+                # Note: Manual mappings are shared across all integrations for the same email
                 github_is_manual = False
                 if not github_usernames:
                     from ...models import UserMapping
@@ -1738,6 +1739,14 @@ async def update_user_correlation_github_username(
         if github_username == "":
             # Clear the mapping
             correlation.github_username = None
+
+            # Also delete from user_mappings table
+            db.query(UserMapping).filter(
+                UserMapping.user_id == current_user.id,
+                UserMapping.source_identifier == correlation.email,
+                UserMapping.target_platform == "github"
+            ).delete(synchronize_session=False)
+
             db.commit()
             logger.info(
                 f"User {current_user.id} cleared GitHub username for {correlation.email} "
@@ -1766,12 +1775,56 @@ async def update_user_correlation_github_username(
                 other_correlation.github_username = None
                 removed_count += 1
 
+                # Also remove from user_mappings to keep tables in sync
+                db.query(UserMapping).filter(
+                    UserMapping.user_id == current_user.id,
+                    UserMapping.source_identifier == other_correlation.email,
+                    UserMapping.target_platform == "github",
+                    UserMapping.target_identifier == github_username
+                ).delete(synchronize_session=False)
+
             # Set the mapping
             correlation.github_username = github_username
+
+            # Also sync to user_mappings table (for "Manual" badge detection)
+            # Determine source platform based on which ID is set
+            # Note: Default to "rootly" if both are set or neither is set, as that's the convention
+            if correlation.pagerduty_user_id and not correlation.rootly_user_id:
+                source_platform = "pagerduty"
+            else:
+                source_platform = "rootly"
+
+            existing_mapping = db.query(UserMapping).filter(
+                UserMapping.user_id == current_user.id,
+                UserMapping.source_identifier == correlation.email,
+                UserMapping.target_platform == "github"
+            ).first()
+
+            if existing_mapping:
+                # Update existing mapping
+                existing_mapping.target_identifier = github_username
+                existing_mapping.mapping_type = "manual"
+                existing_mapping.source_platform = source_platform  # Update in case platform changed
+                existing_mapping.last_verified = func.now()
+                existing_mapping.updated_at = func.now()
+            else:
+                # Create new mapping
+                new_mapping = UserMapping(
+                    user_id=current_user.id,
+                    source_platform=source_platform,
+                    source_identifier=correlation.email,
+                    target_platform="github",
+                    target_identifier=github_username,
+                    mapping_type="manual",
+                    created_by=current_user.id,
+                    last_verified=func.now()
+                )
+                db.add(new_mapping)
+
             db.commit()
             logger.info(
                 f"✅ User {current_user.id} manually updated GitHub username for {correlation.email}: "
-                f"{old_username} → {github_username} (removed from {removed_count} other records)"
+                f"{old_username} → {github_username} (removed from {removed_count} other records, synced to user_mappings)"
             )
             message = f"GitHub username updated to {github_username}"
             if removed_count > 0:
