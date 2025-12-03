@@ -273,6 +273,10 @@ class UserSyncService:
             logger.error(f"Error committing user sync: {e}")
             raise
 
+        # Restore GitHub usernames from user_mappings table after sync
+        # This ensures manually set GitHub usernames persist across syncs
+        self._restore_github_usernames_from_mappings(current_user)
+
         return {
             "created": created,
             "updated": updated,
@@ -293,11 +297,6 @@ class UserSyncService:
         """
         from datetime import datetime
         updated = False
-
-        # Update last_synced_at timestamp (user was seen in this sync)
-        correlation.last_synced_at = datetime.utcnow()
-        correlation.is_active = 1  # Mark as active
-        updated = True
 
         # Update integration_ids array - add if not already present
         if integration_id:
@@ -581,6 +580,55 @@ class UserSyncService:
             logger.error(f"Error in GitHub matching: {e}")
             self.db.rollback()
             return None
+
+    def _restore_github_usernames_from_mappings(self, current_user: User) -> int:
+        """
+        Restore GitHub usernames from user_mappings table to user_correlations.
+        This ensures manually set GitHub usernames persist across syncs.
+
+        Returns:
+            Number of GitHub usernames restored
+        """
+        from ..models import UserMapping
+
+        try:
+            restored = 0
+
+            # Get all manual GitHub mappings for this user
+            mappings = self.db.query(UserMapping).filter(
+                UserMapping.user_id == current_user.id,
+                UserMapping.target_platform == "github",
+                UserMapping.target_identifier.isnot(None),
+                UserMapping.target_identifier != ""
+            ).all()
+
+            logger.info(f"Found {len(mappings)} GitHub mappings to restore")
+
+            for mapping in mappings:
+                # Find the corresponding user_correlation by email
+                correlation = self.db.query(UserCorrelation).filter(
+                    UserCorrelation.user_id == current_user.id,
+                    UserCorrelation.email == mapping.source_identifier
+                ).first()
+
+                if correlation:
+                    # Restore GitHub username if missing or different
+                    if not correlation.github_username or correlation.github_username != mapping.target_identifier:
+                        correlation.github_username = mapping.target_identifier
+                        restored += 1
+                        logger.debug(f"Restored GitHub username for {mapping.source_identifier}: {mapping.target_identifier}")
+
+            # Commit all restorations
+            if restored > 0:
+                self.db.commit()
+                logger.info(f"✅ Restored {restored} GitHub usernames from user_mappings")
+
+            return restored
+
+        except Exception as e:
+            logger.error(f"Error restoring GitHub usernames: {e}")
+            self.db.rollback()
+            return 0
 
     async def _match_jira_users(self, user: User) -> Optional[Dict[str, int]]:
         """
