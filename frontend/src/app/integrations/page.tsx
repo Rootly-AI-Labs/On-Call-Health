@@ -225,6 +225,7 @@ export default function IntegrationsPage() {
       created?: number
       updated?: number
       github_matched?: number
+      github_total?: number
       slack_synced?: number
       slack_skipped?: number
       jira_matched?: number
@@ -4493,8 +4494,19 @@ export default function IntegrationsPage() {
                         </div>
                         {syncProgress.results.github_matched !== undefined && (
                           <div className="flex items-center justify-between py-2 border-b border-gray-200">
-                            <span className="text-sm text-gray-700">GitHub accounts matched</span>
-                            <span className="font-semibold text-gray-900">{syncProgress.results.github_matched}</span>
+                            <span className="text-sm text-gray-700">
+                              GitHub accounts matched
+                              {syncProgress.results.github_total !== undefined && (
+                                <span className="text-xs text-gray-500 ml-1">
+                                  ({syncProgress.results.github_matched} new, {syncProgress.results.github_total} total)
+                                </span>
+                              )}
+                            </span>
+                            <span className="font-semibold text-gray-900">
+                              {syncProgress.results.github_total !== undefined
+                                ? syncProgress.results.github_total
+                                : syncProgress.results.github_matched}
+                            </span>
                           </div>
                         )}
                         {syncProgress.results.slack_synced !== undefined && (

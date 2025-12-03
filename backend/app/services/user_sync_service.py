@@ -89,9 +89,18 @@ class UserSyncService:
                 if github_stats:
                     stats['github_matched'] = github_stats['matched']
                     stats['github_skipped'] = github_stats['skipped']
+
+                    # Also count total users with GitHub usernames (for display)
+                    total_with_github = self.db.query(UserCorrelation).filter(
+                        UserCorrelation.user_id == current_user.id,
+                        UserCorrelation.github_username.isnot(None),
+                        UserCorrelation.github_username != ''
+                    ).count()
+                    stats['github_total'] = total_with_github
+
                     logger.info(
-                        f"GitHub matching: {github_stats['matched']} users matched, "
-                        f"{github_stats['skipped']} skipped"
+                        f"GitHub matching: {github_stats['matched']} new matches, "
+                        f"{github_stats['skipped']} skipped, {total_with_github} total"
                     )
                 # If None is returned (no GitHub integration), don't set stats
                 # This prevents frontend from showing "Matched 0 users to GitHub"
