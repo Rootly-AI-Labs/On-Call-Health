@@ -600,9 +600,34 @@ class MigrationRunner:
                     """
                 ]
             },
+            {
+                "name": "018_add_user_correlation_active_tracking",
+                "description": "Add last_synced_at and is_active columns to user_correlations for sync tracking",
+                "sql": [
+                    """
+                    ALTER TABLE user_correlations
+                    ADD COLUMN IF NOT EXISTS last_synced_at TIMESTAMP WITH TIME ZONE
+                    """,
+                    """
+                    ALTER TABLE user_correlations
+                    ADD COLUMN IF NOT EXISTS is_active INTEGER DEFAULT 1
+                    """,
+                    """
+                    COMMENT ON COLUMN user_correlations.last_synced_at IS 'Last time this user was seen in a sync operation'
+                    """,
+                    """
+                    COMMENT ON COLUMN user_correlations.is_active IS 'Soft delete flag: 1 = active, 0 = inactive/stale'
+                    """,
+                    """
+                    UPDATE user_correlations
+                    SET is_active = 1, last_synced_at = created_at
+                    WHERE is_active IS NULL
+                    """
+                ]
+            },
             # Add future migrations here with incrementing numbers
             # {
-            #     "name": "018_add_user_preferences",
+            #     "name": "019_add_user_preferences",
             #     "description": "Add user preferences table",
             #     "sql": ["CREATE TABLE IF NOT EXISTS user_preferences (...)"]
             # }
