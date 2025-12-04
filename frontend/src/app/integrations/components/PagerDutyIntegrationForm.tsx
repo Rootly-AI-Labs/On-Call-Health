@@ -20,6 +20,7 @@ interface PagerDutyIntegrationFormProps {
   isValidToken: (token: string) => boolean
   onCopyToken: (token: string) => void
   copied: boolean
+  errorDetails?: { user_message: string; user_guidance: string; error_code: string } | null
 }
 
 export function PagerDutyIntegrationForm({
@@ -33,7 +34,8 @@ export function PagerDutyIntegrationForm({
   isAdding,
   isValidToken,
   onCopyToken,
-  copied
+  copied,
+  errorDetails
 }: PagerDutyIntegrationFormProps) {
   const [showInstructions, setShowInstructions] = useState(false)
   const [showToken, setShowToken] = useState(false)
@@ -197,7 +199,17 @@ export function PagerDutyIntegrationForm({
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  ❌ Invalid API token. Please verify your PagerDuty token and try again.
+                  {errorDetails ? (
+                    <div className="space-y-2">
+                      <p className="font-semibold">❌ {errorDetails.user_message}</p>
+                      <div className="text-sm whitespace-pre-line">{errorDetails.user_guidance}</div>
+                      {errorDetails.error_code && (
+                        <p className="text-xs text-red-700 mt-2">Error Code: {errorDetails.error_code}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <p>❌ Invalid API token. Please verify your PagerDuty token and try again.</p>
+                  )}
                 </AlertDescription>
               </Alert>
             )}

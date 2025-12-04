@@ -87,38 +87,79 @@ async def test_pagerduty_token(
     """Test a PagerDuty API token and get account information."""
     client = PagerDutyAPIClient(request.token)
     result = await client.test_connection()
-    
-    if result["valid"]:
-        # Check if this organization is already connected
-        org_name = result["account_info"]["organization_name"]
-        logger.info(f"PagerDuty organization: {org_name}")
-        
-        # Get all existing integrations for debugging
-        all_existing = db.query(RootlyIntegration).filter(
-            RootlyIntegration.user_id == current_user.id
-        ).all()
-        logger.debug(f"Existing integrations: {len(all_existing)} found for user {current_user.id}")
-        
-        existing = db.query(RootlyIntegration).filter(
-            and_(
-                RootlyIntegration.user_id == current_user.id,
-                RootlyIntegration.organization_name == org_name,
-                RootlyIntegration.platform == "pagerduty"
-            )
-        ).first()
-        
-        if existing:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail={
-                    "message": "This PagerDuty account is already connected",
-                    "existing_integration": existing.name
-                }
-            )
-        
-        # Add can_add flag
-        result["account_info"]["can_add"] = True
-    
+
+    if not result["valid"]:
+        # Map error codes to user-friendly messages with actionable guidance
+        error_code = result.get("error_code")
+        error_details = {
+            "error_code": error_code,
+            "technical_message": result.get("error", "Unknown error")
+        }
+
+        # Determine appropriate HTTP status code and user message
+        if error_code == "UNAUTHORIZED":
+            status_code = status.HTTP_401_UNAUTHORIZED
+            user_message = "Invalid PagerDuty API token"
+            user_guidance = "Please verify that:\n• Your token is a valid PagerDuty API token\n• The token hasn't been revoked in PagerDuty\n• You copied the entire token without extra spaces"
+        elif error_code == "FORBIDDEN":
+            status_code = status.HTTP_403_FORBIDDEN
+            user_message = "PagerDuty API token lacks required permissions"
+            user_guidance = "The token needs read access to users and incidents. Please use a token with sufficient permissions."
+        elif error_code == "NOT_FOUND":
+            status_code = status.HTTP_404_NOT_FOUND
+            user_message = "Cannot connect to PagerDuty API"
+            user_guidance = "This may indicate:\n• The API endpoint is incorrect\n• Your token doesn't have access to the users endpoint"
+        elif error_code == "CONNECTION_ERROR":
+            status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+            user_message = "Cannot reach PagerDuty servers"
+            user_guidance = "Please check:\n• Your internet connection is working\n• api.pagerduty.com is accessible from your network\n• Your firewall/proxy isn't blocking the connection"
+        elif error_code == "API_ERROR":
+            status_code = status.HTTP_502_BAD_GATEWAY
+            user_message = "PagerDuty API returned an error"
+            user_guidance = "The PagerDuty API is experiencing issues. Please try again in a few moments."
+        else:  # UNKNOWN_ERROR or other
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+            user_message = "Unexpected error connecting to PagerDuty"
+            user_guidance = "An unexpected error occurred. Please contact support if this persists."
+
+        error_details["user_message"] = user_message
+        error_details["user_guidance"] = user_guidance
+
+        raise HTTPException(
+            status_code=status_code,
+            detail=error_details
+        )
+
+    # Check if this organization is already connected
+    org_name = result["account_info"]["organization_name"]
+    logger.info(f"PagerDuty organization: {org_name}")
+
+    # Get all existing integrations for debugging
+    all_existing = db.query(RootlyIntegration).filter(
+        RootlyIntegration.user_id == current_user.id
+    ).all()
+    logger.debug(f"Existing integrations: {len(all_existing)} found for user {current_user.id}")
+
+    existing = db.query(RootlyIntegration).filter(
+        and_(
+            RootlyIntegration.user_id == current_user.id,
+            RootlyIntegration.organization_name == org_name,
+            RootlyIntegration.platform == "pagerduty"
+        )
+    ).first()
+
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "message": "This PagerDuty account is already connected",
+                "existing_integration": existing.name
+            }
+        )
+
+    # Add can_add flag
+    result["account_info"]["can_add"] = True
+
     return result
 
 @router.get("/integrations")
@@ -184,11 +225,47 @@ async def add_pagerduty_integration(
     # Test the token first
     client = PagerDutyAPIClient(request.token)
     test_result = await client.test_connection()
-    
+
     if not test_result["valid"]:
+        # Map error codes to user-friendly messages with actionable guidance
+        error_code = test_result.get("error_code")
+        error_details = {
+            "error_code": error_code,
+            "technical_message": test_result.get("error", "Unknown error")
+        }
+
+        # Determine appropriate HTTP status code and user message
+        if error_code == "UNAUTHORIZED":
+            status_code = status.HTTP_401_UNAUTHORIZED
+            user_message = "PagerDuty API token is no longer valid"
+            user_guidance = "The token may have been revoked. Please generate a new token from PagerDuty and try again."
+        elif error_code == "FORBIDDEN":
+            status_code = status.HTTP_403_FORBIDDEN
+            user_message = "PagerDuty API token lacks required permissions"
+            user_guidance = "The token needs read access to users and incidents. Please use a token with sufficient permissions."
+        elif error_code == "NOT_FOUND":
+            status_code = status.HTTP_404_NOT_FOUND
+            user_message = "Cannot connect to PagerDuty API"
+            user_guidance = "This may indicate:\n• The API endpoint is incorrect\n• Your token doesn't have access to the users endpoint"
+        elif error_code == "CONNECTION_ERROR":
+            status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+            user_message = "Cannot reach PagerDuty servers"
+            user_guidance = "Please check:\n• Your internet connection is working\n• api.pagerduty.com is accessible from your network\n• Your firewall/proxy isn't blocking the connection"
+        elif error_code == "API_ERROR":
+            status_code = status.HTTP_502_BAD_GATEWAY
+            user_message = "PagerDuty API returned an error"
+            user_guidance = "The PagerDuty API is experiencing issues. Please try again in a few moments."
+        else:  # UNKNOWN_ERROR or other
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+            user_message = "Unexpected error connecting to PagerDuty"
+            user_guidance = "An unexpected error occurred. Please contact support if this persists."
+
+        error_details["user_message"] = user_message
+        error_details["user_guidance"] = user_guidance
+
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid PagerDuty API token"
+            status_code=status_code,
+            detail=error_details
         )
     
     account_info = test_result["account_info"]

@@ -2229,6 +2229,7 @@ export default function IntegrationsPage() {
                 isValidToken={isValidPagerDutyToken}
                 onCopyToken={copyToClipboard}
                 copied={copied}
+                errorDetails={errorDetails}
               />
             )}
 
