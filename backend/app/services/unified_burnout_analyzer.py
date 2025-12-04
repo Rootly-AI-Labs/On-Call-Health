@@ -2939,7 +2939,7 @@ class UnifiedBurnoutAnalyzer:
             logger.warning(f"🏥 TEAM_HEALTH: No member analyses provided, returning neutral baseline")
             return {
                 "overall_score": 6.5,  # Neutral baseline if no data (not perfect health)
-                "risk_distribution": {"low": 0, "medium": 0, "high": 0},
+                "risk_distribution": {"low": 0, "medium": 0, "high": 0, "critical": 0},
                 "average_burnout_score": 0,
                 "health_status": "fair",
                 "members_at_risk": 0
