@@ -54,13 +54,45 @@ async def test_rootly_token_preview(
     logger.info(f"Rootly test connection: {test_result.get('status', 'unknown')} - {test_result.get('organization_name', 'N/A')}")
     
     if test_result["status"] != "success":
+        # Map error codes to user-friendly messages with actionable guidance
+        error_code = test_result.get("error_code")
+        error_details = {
+            "error_code": error_code,
+            "technical_message": test_result["message"]
+        }
+
+        # Determine appropriate HTTP status code and user message
+        if error_code == "UNAUTHORIZED":
+            status_code = status.HTTP_401_UNAUTHORIZED
+            user_message = "Invalid Rootly API token"
+            user_guidance = "Please verify that:\n• Your token starts with 'rootly_'\n• The token hasn't been revoked in Rootly\n• You copied the entire token without extra spaces"
+        elif error_code == "NOT_FOUND":
+            status_code = status.HTTP_404_NOT_FOUND
+            user_message = "Cannot connect to Rootly API"
+            user_guidance = "This may indicate:\n• Your organization uses a self-hosted Rootly instance (contact support)\n• The API endpoint is incorrect\n• Your token doesn't have access to the users endpoint"
+        elif error_code == "CONNECTION_ERROR":
+            status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+            user_message = "Cannot reach Rootly servers"
+            user_guidance = "Please check:\n• Your internet connection is working\n• api.rootly.com is accessible from your network\n• Your firewall/proxy isn't blocking the connection"
+        elif error_code == "API_ERROR":
+            status_code = status.HTTP_502_BAD_GATEWAY
+            user_message = "Rootly API returned an error"
+            user_guidance = "The Rootly API is experiencing issues. Please try again in a few moments."
+        elif error_code == "INVALID_RESPONSE":
+            status_code = status.HTTP_502_BAD_GATEWAY
+            user_message = "Received invalid response from Rootly"
+            user_guidance = "This may be a temporary issue with Rootly's API. Please try again."
+        else:  # UNKNOWN_ERROR or other
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+            user_message = "Unexpected error connecting to Rootly"
+            user_guidance = "An unexpected error occurred. Please contact support if this persists."
+
+        error_details["user_message"] = user_message
+        error_details["user_guidance"] = user_guidance
+
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={
-                "message": "Invalid Rootly token",
-                "error": test_result["message"],
-                "error_code": test_result.get("error_code")
-            }
+            status_code=status_code,
+            detail=error_details
         )
     
     # Extract organization info from test result
@@ -142,13 +174,45 @@ async def add_rootly_integration(
     test_result = await client.test_connection()
     
     if test_result["status"] != "success":
+        # Map error codes to user-friendly messages with actionable guidance
+        error_code = test_result.get("error_code")
+        error_details = {
+            "error_code": error_code,
+            "technical_message": test_result["message"]
+        }
+
+        # Determine appropriate HTTP status code and user message
+        if error_code == "UNAUTHORIZED":
+            status_code = status.HTTP_401_UNAUTHORIZED
+            user_message = "Rootly API token is no longer valid"
+            user_guidance = "The token may have been revoked. Please generate a new token from Rootly and try again."
+        elif error_code == "NOT_FOUND":
+            status_code = status.HTTP_404_NOT_FOUND
+            user_message = "Cannot connect to Rootly API"
+            user_guidance = "This may indicate:\n• Your organization uses a self-hosted Rootly instance (contact support)\n• The API endpoint is incorrect\n• Your token doesn't have access to the users endpoint"
+        elif error_code == "CONNECTION_ERROR":
+            status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+            user_message = "Cannot reach Rootly servers"
+            user_guidance = "Please check:\n• Your internet connection is working\n• api.rootly.com is accessible from your network\n• Your firewall/proxy isn't blocking the connection"
+        elif error_code == "API_ERROR":
+            status_code = status.HTTP_502_BAD_GATEWAY
+            user_message = "Rootly API returned an error"
+            user_guidance = "The Rootly API is experiencing issues. Please try again in a few moments."
+        elif error_code == "INVALID_RESPONSE":
+            status_code = status.HTTP_502_BAD_GATEWAY
+            user_message = "Received invalid response from Rootly"
+            user_guidance = "This may be a temporary issue with Rootly's API. Please try again."
+        else:  # UNKNOWN_ERROR or other
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+            user_message = "Unexpected error connecting to Rootly"
+            user_guidance = "An unexpected error occurred. Please contact support if this persists."
+
+        error_details["user_message"] = user_message
+        error_details["user_guidance"] = user_guidance
+
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={
-                "message": "Token is no longer valid",
-                "error": test_result["message"],
-                "error_code": test_result.get("error_code")
-            }
+            status_code=status_code,
+            detail=error_details
         )
     
     # Check if user already has this exact token (prevent duplicates, only active integrations)

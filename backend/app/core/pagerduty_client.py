@@ -43,7 +43,22 @@ class PagerDutyAPIClient:
                 ) as response:
                     if response.status != 200:
                         error_text = await response.text()
-                        return {"valid": False, "error": f"HTTP {response.status}: {error_text}"}
+                        # Map HTTP status codes to error codes
+                        if response.status == 401:
+                            error_code = "UNAUTHORIZED"
+                        elif response.status == 403:
+                            error_code = "FORBIDDEN"
+                        elif response.status == 404:
+                            error_code = "NOT_FOUND"
+                        elif response.status >= 500:
+                            error_code = "API_ERROR"
+                        else:
+                            error_code = "API_ERROR"
+                        return {
+                            "valid": False,
+                            "error": f"HTTP {response.status}: {error_text}",
+                            "error_code": error_code
+                        }
                     
                     users_data = await response.json()
                     
@@ -98,13 +113,25 @@ class PagerDutyAPIClient:
             error_msg = str(e)
             if "ssl" in error_msg.lower() or "cannot connect to host" in error_msg.lower():
                 logger.warning(f"PagerDuty connection failed (network/SSL): {error_msg[:100]}...")
-                return {"valid": False, "error": "Network connectivity issue - check internet connection"}
+                return {
+                    "valid": False,
+                    "error": "Network connectivity issue - check internet connection",
+                    "error_code": "CONNECTION_ERROR"
+                }
             elif "timeout" in error_msg.lower():
                 logger.warning(f"PagerDuty connection timed out: {error_msg[:100]}...")
-                return {"valid": False, "error": "Connection timeout - PagerDuty may be temporarily unavailable"}
+                return {
+                    "valid": False,
+                    "error": "Connection timeout - PagerDuty may be temporarily unavailable",
+                    "error_code": "CONNECTION_ERROR"
+                }
             else:
                 logger.error(f"PagerDuty connection test failed: {error_msg}")
-                return {"valid": False, "error": error_msg}
+                return {
+                    "valid": False,
+                    "error": error_msg,
+                    "error_code": "UNKNOWN_ERROR"
+                }
     
     async def _get_total_count(self, resource: str) -> int:
         """Get total count of a resource (users, services, etc)."""

@@ -624,6 +624,7 @@ export default function IntegrationsPage() {
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'success' | 'error' | 'duplicate'>('idle')
   const [previewData, setPreviewData] = useState<PreviewData | null>(null)
   const [duplicateInfo, setDuplicateInfo] = useState<any>(null)
+  const [errorDetails, setErrorDetails] = useState<{ user_message: string; user_guidance: string; error_code: string } | null>(null)
   const [isAddingRootly, setIsAddingRootly] = useState(false)
   const [isAddingPagerDuty, setIsAddingPagerDuty] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -1508,7 +1509,8 @@ export default function IntegrationsPage() {
       setIsTestingConnection,
       setConnectionStatus,
       setPreviewData,
-      setDuplicateInfo
+      setDuplicateInfo,
+      setErrorDetails
     )
   }
 
@@ -2209,6 +2211,7 @@ export default function IntegrationsPage() {
                 isValidToken={isValidRootlyToken}
                 onCopyToken={copyToClipboard}
                 copied={copied}
+                errorDetails={errorDetails}
               />
             )}
 
@@ -2226,6 +2229,7 @@ export default function IntegrationsPage() {
                 isValidToken={isValidPagerDutyToken}
                 onCopyToken={copyToClipboard}
                 copied={copied}
+                errorDetails={errorDetails}
               />
             )}
 

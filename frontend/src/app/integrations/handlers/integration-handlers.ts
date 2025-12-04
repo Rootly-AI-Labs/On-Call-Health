@@ -10,11 +10,13 @@ export async function testConnection(
   setIsTestingConnection: (loading: boolean) => void,
   setConnectionStatus: React.Dispatch<React.SetStateAction<"error" | "success" | "idle" | "duplicate">>,
   setPreviewData: (data: any) => void,
-  setDuplicateInfo: (info: any) => void
+  setDuplicateInfo: (info: any) => void,
+  setErrorDetails?: (details: { user_message: string; user_guidance: string; error_code: string } | null) => void
 ): Promise<void> {
   setIsTestingConnection(true)
   setConnectionStatus('idle')
   setPreviewData(null)
+  if (setErrorDetails) setErrorDetails(null)
 
   try {
     const authToken = localStorage.getItem('auth_token')
@@ -63,10 +65,26 @@ export async function testConnection(
       setDuplicateInfo(data.detail)
     } else {
       setConnectionStatus('error')
+      // Extract detailed error information from backend response
+      if (setErrorDetails && data.detail) {
+        setErrorDetails({
+          user_message: data.detail.user_message || 'Connection failed',
+          user_guidance: data.detail.user_guidance || 'Please try again.',
+          error_code: data.detail.error_code || 'UNKNOWN'
+        })
+      }
     }
   } catch (error) {
     console.error('Connection test error:', error)
     setConnectionStatus('error')
+    // Network or parsing error
+    if (setErrorDetails) {
+      setErrorDetails({
+        user_message: 'Network error',
+        user_guidance: 'Unable to connect to the server. Please check your internet connection and try again.',
+        error_code: 'NETWORK_ERROR'
+      })
+    }
   } finally {
     setIsTestingConnection(false)
   }
