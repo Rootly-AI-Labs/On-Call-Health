@@ -650,7 +650,7 @@ class GitHubOnlyBurnoutAnalyzer:
         if not member_analyses:
             return {
                 "overall_score": 5.0,
-                "risk_distribution": {"low": 0, "medium": 0, "high": 0},
+                "risk_distribution": {"low": 0, "medium": 0, "high": 0, "critical": 0},
                 "average_burnout_score": 0.0,
                 "health_status": "unknown",
                 "members_at_risk": 0,
@@ -1107,7 +1107,7 @@ class GitHubOnlyBurnoutAnalyzer:
             "error": reason,
             "team_health": {
                 "overall_score": 0.0,
-                "risk_distribution": {"low": 0, "medium": 0, "high": 0},
+                "risk_distribution": {"low": 0, "medium": 0, "high": 0, "critical": 0},
                 "health_status": "unknown",
                 "members_at_risk": 0,
                 "confidence_level": "none"

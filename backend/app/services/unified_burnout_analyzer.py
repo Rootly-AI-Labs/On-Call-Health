@@ -5078,7 +5078,7 @@ class UnifiedBurnoutAnalyzer:
                 "overall_score": None,
                 "health_status": "error",
                 "members_at_risk": 0,
-                "risk_distribution": {"low": 0, "medium": 0, "high": 0},
+                "risk_distribution": {"low": 0, "medium": 0, "high": 0, "critical": 0},
                 "error": error_message
             },
             "daily_trends": [],
