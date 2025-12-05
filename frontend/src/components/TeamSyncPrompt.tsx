@@ -67,8 +67,8 @@ export function TeamSyncPrompt({
           {/* Header with icon and close button */}
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 ring-2 ring-blue-100 ring-offset-2">
-                <RefreshCw className="h-6 w-6 text-blue-600 animate-pulse" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
+                <RefreshCw className="h-4 w-4 text-blue-600" />
               </div>
               <div className="flex-1">
                 <h3 className="text-base font-bold text-gray-900 mb-0.5">
