@@ -49,7 +49,7 @@ export function TeamSyncPrompt({
   if (!show) return null
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div className="fixed bottom-24 right-6 z-[100]">
       <Card
         className={`
           w-96 shadow-2xl border-blue-200 bg-white
