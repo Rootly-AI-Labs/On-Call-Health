@@ -98,6 +98,7 @@ import { NotificationDrawer } from "@/components/notifications"
 import ManualSurveyDeliveryModal from "@/components/ManualSurveyDeliveryModal"
 import { SlackSurveyTabs } from "@/components/SlackSurveyTabs"
 import { TopPanel } from "@/components/TopPanel"
+import { TeamSyncPrompt } from "@/components/TeamSyncPrompt"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
@@ -276,6 +277,10 @@ export default function IntegrationsPage() {
   const [teamMembersDrawerOpen, setTeamMembersDrawerOpen] = useState(false)
   const [refreshingOnCall, setRefreshingOnCall] = useState(false)
   const [oncallCacheInfo, setOncallCacheInfo] = useState<any>(null)
+
+  // Team sync prompt state
+  const [showSyncPrompt, setShowSyncPrompt] = useState(false)
+  const [syncPromptMessage, setSyncPromptMessage] = useState("Team members affected - Resync recommended")
 
   // Cache to track which integrations have already been loaded
   const syncedUsersCache = useRef<Map<string, any[]>>(new Map())
@@ -1563,13 +1568,16 @@ export default function IntegrationsPage() {
 
   // GitHub integration handlers
   const handleGitHubConnect = async (token: string) => {
-    return GithubHandlers.handleGitHubConnect(
+    await GithubHandlers.handleGitHubConnect(
       token,
       setIsConnectingGithub,
       setGithubToken,
       setActiveEnhancementTab,
       loadGitHubIntegration
     )
+    // Show sync prompt after successful connection
+    setSyncPromptMessage("GitHub connected! Sync team members to enable accurate burnout analysis")
+    setShowSyncPrompt(true)
   }
 
   const handleGitHubDisconnect = async () => {
@@ -1586,7 +1594,7 @@ export default function IntegrationsPage() {
 
   // Slack integration handlers
   const handleSlackConnect = async (webhookUrl: string, botToken: string) => {
-    return SlackHandlers.handleSlackConnect(
+    await SlackHandlers.handleSlackConnect(
       webhookUrl,
       botToken,
       setIsConnectingSlack,
@@ -1595,6 +1603,9 @@ export default function IntegrationsPage() {
       setActiveEnhancementTab,
       loadSlackIntegration
     )
+    // Show sync prompt after successful connection
+    setSyncPromptMessage("Slack connected! Sync team members to link Slack users with your team")
+    setShowSyncPrompt(true)
   }
 
   const handleSlackDisconnect = async () => {
@@ -1633,11 +1644,14 @@ export default function IntegrationsPage() {
 
   // Jira integration handlers
   const handleJiraConnect = async () => {
-    return JiraHandlers.handleJiraConnect(
+    await JiraHandlers.handleJiraConnect(
       setIsConnectingJira,
       setActiveEnhancementTab,
       loadJiraIntegration
     )
+    // Show sync prompt after successful connection
+    setSyncPromptMessage("Jira connected! Sync team members to track workload and incidents")
+    setShowSyncPrompt(true)
   }
 
   const handleJiraDisconnect = async () => {
@@ -1708,6 +1722,20 @@ export default function IntegrationsPage() {
       undefined,
       suppressToast
     )
+  }
+
+  // Handle sync prompt actions
+  const handleSyncPromptAction = async () => {
+    setShowSyncPrompt(false)
+    // Open team members drawer first
+    await fetchSyncedUsers(false, false)
+    setTeamMembersDrawerOpen(true)
+    // Then trigger the sync
+    await syncUsersToCorrelation(false)
+  }
+
+  const handleDismissSyncPrompt = () => {
+    setShowSyncPrompt(false)
   }
 
   // Sync Slack user IDs to UserCorrelation records
@@ -4644,6 +4672,14 @@ export default function IntegrationsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Team Sync Prompt - floating bottom-right */}
+      <TeamSyncPrompt
+        isVisible={showSyncPrompt}
+        message={syncPromptMessage}
+        onSync={handleSyncPromptAction}
+        onDismiss={handleDismissSyncPrompt}
+      />
     </div>
   )
 }
