@@ -63,8 +63,8 @@ export function AccountSettingsDialog({
       // Success - clear all localStorage and redirect
       localStorage.clear()
 
-      // Redirect to home page
-      router.push("/")
+      // Redirect to home page with full reload to clear Dialog state
+      window.location.href = "/"
     } catch (error) {
       console.error("Error deleting account:", error)
       setDeleteError(
