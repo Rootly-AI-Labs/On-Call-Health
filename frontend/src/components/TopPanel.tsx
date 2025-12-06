@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { NotificationDrawer } from "@/components/notifications"
-import { LogOut, BookOpen } from "lucide-react"
+import { LogOut, BookOpen, HelpCircle } from "lucide-react"
 
 interface UserInfo {
   name: string
@@ -21,7 +21,11 @@ interface UserInfo {
   avatar?: string
 }
 
-export function TopPanel() {
+interface TopPanelProps {
+  onGettingStarted?: () => void
+}
+
+export function TopPanel({ onGettingStarted }: TopPanelProps) {
   const router = useRouter()
   const pathname = usePathname()
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null)
@@ -114,6 +118,13 @@ export function TopPanel() {
                     <p className="text-xs text-gray-500 mt-0.5">{userInfo.email}</p>
                   </div>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={onGettingStarted}
+                    className="cursor-pointer"
+                  >
+                    <HelpCircle className="w-4 h-4 mr-2" />
+                    Getting Started
+                  </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => router.push("/methodology")}
                     className="cursor-pointer"
