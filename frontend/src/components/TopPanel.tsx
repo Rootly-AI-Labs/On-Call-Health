@@ -31,6 +31,7 @@ export function TopPanel({ onGettingStarted }: TopPanelProps) {
   const pathname = usePathname()
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null)
   const [showAccountSettings, setShowAccountSettings] = useState(false)
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 
   useEffect(() => {
     const userName = localStorage.getItem("user_name")
@@ -96,7 +97,13 @@ export function TopPanel({ onGettingStarted }: TopPanelProps) {
           <div className="flex items-center gap-3">
             <NotificationDrawer />
             {userInfo && (
-              <DropdownMenu>
+              <DropdownMenu open={isDropdownOpen} onOpenChange={(open) => {
+                setIsDropdownOpen(open)
+                // Close dropdown when dialog opens
+                if (showAccountSettings) {
+                  setIsDropdownOpen(false)
+                }
+              }}>
                 <DropdownMenuTrigger asChild>
                   <button className="flex items-center gap-3 px-2.5 py-1.5 rounded-full border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 shadow-sm hover:shadow">
                     <Avatar className="h-8 w-8 ring-2 ring-white">
@@ -136,7 +143,10 @@ export function TopPanel({ onGettingStarted }: TopPanelProps) {
                     Methodology
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => setShowAccountSettings(true)}
+                    onClick={() => {
+                      setShowAccountSettings(true)
+                      setIsDropdownOpen(false)
+                    }}
                     className="cursor-pointer"
                   >
                     <Settings className="w-4 h-4 mr-2" />
