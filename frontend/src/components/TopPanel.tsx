@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { NotificationDrawer } from "@/components/notifications"
 import { AccountSettingsDialog } from "@/components/AccountSettingsDialog"
+import { useGettingStarted } from "@/contexts/GettingStartedContext"
 import { LogOut, BookOpen, HelpCircle, Settings } from "lucide-react"
 
 interface UserInfo {
@@ -22,13 +23,10 @@ interface UserInfo {
   avatar?: string
 }
 
-interface TopPanelProps {
-  onGettingStarted?: () => void
-}
-
-export function TopPanel({ onGettingStarted }: TopPanelProps) {
+export function TopPanel() {
   const router = useRouter()
   const pathname = usePathname()
+  const { openGettingStarted } = useGettingStarted()
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null)
   const [showAccountSettings, setShowAccountSettings] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
@@ -129,7 +127,10 @@ export function TopPanel({ onGettingStarted }: TopPanelProps) {
                   </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={onGettingStarted}
+                    onClick={() => {
+                      openGettingStarted()
+                      setIsDropdownOpen(false)
+                    }}
                     className="cursor-pointer"
                   >
                     <HelpCircle className="w-4 h-4 mr-2" />

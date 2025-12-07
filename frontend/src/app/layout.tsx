@@ -5,6 +5,8 @@ import './globals.css'
 import ErrorBoundary from '@/components/error-boundary'
 import NewRelicProvider from '@/components/NewRelicProvider'
 import ClientToaster from '@/components/ClientToaster'
+import { GettingStartedProvider } from '@/contexts/GettingStartedContext'
+import { GettingStartedDialog } from '@/components/GettingStartedDialog'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -49,10 +51,13 @@ export default function RootLayout({
           </>
         )}
         <NewRelicProvider>
-          <ErrorBoundary>
-            {children}
-          </ErrorBoundary>
-          <ClientToaster />
+          <GettingStartedProvider>
+            <ErrorBoundary>
+              {children}
+            </ErrorBoundary>
+            <GettingStartedDialog />
+            <ClientToaster />
+          </GettingStartedProvider>
         </NewRelicProvider>
       </body>
     </html>

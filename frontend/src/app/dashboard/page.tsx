@@ -215,14 +215,16 @@ function DashboardContent() {
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
-      <TopPanel onGettingStarted={onboarding.restartOnboarding} />
-      <IntroGuide
-        isOpen={onboarding.isOpen}
-        currentStep={onboarding.currentStep}
-        onNext={onboarding.nextStep}
-        onPrev={onboarding.prevStep}
-        onClose={onboarding.skipOnboarding}
-      />
+      <TopPanel />
+      {!onboarding.hasSeenOnboarding && (
+        <IntroGuide
+          isOpen={onboarding.isOpen}
+          currentStep={onboarding.currentStep}
+          onNext={onboarding.nextStep}
+          onPrev={onboarding.prevStep}
+          onClose={onboarding.skipOnboarding}
+        />
+      )}
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
         <div
