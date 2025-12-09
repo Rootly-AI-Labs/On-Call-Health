@@ -303,7 +303,7 @@ async def list_integrations(
     List all Rootly integrations for the current user with permissions.
 
     Permission caching:
-    - Returns cached permissions if < 24 hours old (instant response)
+    - Returns cached permissions if < 8 hours old (instant response)
     - Refreshes permissions if cache is stale or missing (slower, 10s timeout per integration)
     - Users can manually refresh via the refresh button on integrations page
     """
@@ -337,12 +337,12 @@ async def list_integrations(
         }
         result_integrations.append(integration_data)
 
-        # Check if we have cached permissions (cache for 24 hours)
+        # Check if we have cached permissions (cache for 8 hours)
         # Permissions rarely change - only when token is revoked/modified
         cache_valid = False
         if integration.cached_permissions and integration.permissions_checked_at:
             cache_age = datetime.now(timezone.utc) - integration.permissions_checked_at
-            cache_valid = cache_age < timedelta(hours=24)
+            cache_valid = cache_age < timedelta(hours=8)
             if cache_valid:
                 integration_data["permissions"] = integration.cached_permissions
                 logger.info(f"✅ Using cached permissions for '{integration.name}' (ID={integration.id}) - cached {int(cache_age.total_seconds())}s ago")
