@@ -393,23 +393,29 @@ async def list_integrations(
 
         async def refresh_permissions_background():
             """Background task to check permissions and update cache"""
+            from app.models.base import SessionLocal
             perm_start = time.time()
             results = await asyncio.gather(*[check_with_timeout(idx, task, int_id) for idx, task, int_id in background_tasks])
 
-            for idx, permissions, error, integration_id in results:
-                if permissions:
-                    try:
-                        integration = db.query(RootlyIntegration).filter(RootlyIntegration.id == integration_id).first()
-                        if integration:
-                            integration.cached_permissions = permissions
-                            integration.permissions_checked_at = datetime.now(timezone.utc)
-                            db.commit()
-                            logger.info(f"💾 Background: Cached permissions for integration ID={integration_id}")
-                    except Exception as e:
-                        logger.warning(f"⚠️ Background cache failed: {e}")
-                        db.rollback()
-                elif error:
-                    logger.warning(f"⚠️ Integration ID={integration_id} - Permission check {error}")
+            # Create new DB session for background task (request session will be closed)
+            background_db = SessionLocal()
+            try:
+                for idx, permissions, error, integration_id in results:
+                    if permissions:
+                        try:
+                            integration = background_db.query(RootlyIntegration).filter(RootlyIntegration.id == integration_id).first()
+                            if integration:
+                                integration.cached_permissions = permissions
+                                integration.permissions_checked_at = datetime.now(timezone.utc)
+                                background_db.commit()
+                                logger.info(f"💾 Background: Cached permissions for integration ID={integration_id}")
+                        except Exception as e:
+                            logger.warning(f"⚠️ Background cache failed: {e}")
+                            background_db.rollback()
+                    elif error:
+                        logger.warning(f"⚠️ Integration ID={integration_id} - Permission check {error}")
+            finally:
+                background_db.close()
 
             logger.info(f"🔍 [ROOTLY] Background permission checks completed in {time.time() - perm_start:.2f}s")
 
