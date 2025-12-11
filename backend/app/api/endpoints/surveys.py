@@ -293,13 +293,8 @@ async def manual_survey_delivery(
 ):
     """
     Manually trigger survey delivery.
-    Only admins can trigger manual deliveries.
     Requires confirmation to prevent accidental sends.
     """
-    # Check if user is an admin (super_admin or org_admin)
-    if not current_user.is_admin():
-        raise HTTPException(status_code=403, detail="Only admins can manually trigger survey delivery")
-
     organization_id = current_user.organization_id
 
     # First call without confirmation - return preview
