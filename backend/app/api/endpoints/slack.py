@@ -1281,13 +1281,15 @@ async def handle_slack_interactions(
 
                 # Get stress factors (checkboxes)
                 stress_factors_options = values.get("stress_factors_block", {}).get("stress_factors_input", {}).get("selected_options", [])
-                stress_factors = [opt.get("value") for opt in stress_factors_options]
+                stress_factors = [opt.get("value") for opt in (stress_factors_options or [])]
 
                 # Get personal circumstances (optional)
-                personal_circumstances = values.get("personal_circumstances_block", {}).get("personal_circumstances_input", {}).get("selected_option", {}).get("value")
+                personal_circumstances_option = values.get("personal_circumstances_block", {}).get("personal_circumstances_input", {}).get("selected_option")
+                personal_circumstances = personal_circumstances_option.get("value") if personal_circumstances_option else None
 
                 # Get optional comments
-                comments = values.get("comments_block", {}).get("comments_input", {}).get("value", "")
+                comments_input = values.get("comments_block", {}).get("comments_input")
+                comments = comments_input.get("value", "") if comments_input else ""
 
                 # Extract user and organization IDs from private_metadata
                 metadata = json.loads(view.get("private_metadata", "{}"))
