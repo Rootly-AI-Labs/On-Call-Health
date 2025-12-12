@@ -1264,10 +1264,16 @@ async def handle_slack_interactions(
                 values = view.get("state", {}).get("values", {})
 
                 # Get burnout score (0-100 scale) - already in correct format
-                self_reported_score = int(values.get("burnout_score_block", {}).get("burnout_score_input", {}).get("selected_option", {}).get("value", "50"))
+                burnout_score_block = values.get("burnout_score_block") or {}
+                burnout_score_input = burnout_score_block.get("burnout_score_input") or {}
+                burnout_score_option = burnout_score_input.get("selected_option") or {}
+                self_reported_score = int(burnout_score_option.get("value", "50"))
 
                 # Get energy level (radio buttons) - convert to 1-5 integer
-                energy_level_str = values.get("energy_level_block", {}).get("energy_level_input", {}).get("selected_option", {}).get("value", "moderate")
+                energy_level_block = values.get("energy_level_block") or {}
+                energy_level_input = energy_level_block.get("energy_level_input") or {}
+                energy_level_option = energy_level_input.get("selected_option") or {}
+                energy_level_str = energy_level_option.get("value", "moderate")
                 energy_level_map = {
                     "very_low": 1,
                     "low": 2,
