@@ -1294,21 +1294,27 @@ async def handle_slack_interactions(
                 # Extract user and organization IDs from private_metadata
                 metadata = json.loads(view.get("private_metadata", "{}"))
                 user_id = metadata.get("user_id")
-                organization_id = metadata.get("organization_id")
+                organization_id = metadata.get("organization_id")  # Optional now
                 analysis_id = metadata.get("analysis_id")  # Optional - may be None
 
-                if not user_id or not organization_id:
+                if not user_id:
                     return {"response_action": "errors", "errors": {"comments_block": "Invalid survey data"}}
 
                 # Check if user already submitted today (within last 24 hours)
                 from datetime import datetime, timedelta
                 today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
 
-                existing_report = db.query(UserBurnoutReport).filter(
+                # Query for existing report, handling NULL organization_id
+                query = db.query(UserBurnoutReport).filter(
                     UserBurnoutReport.user_id == user_id,
-                    UserBurnoutReport.organization_id == organization_id,
                     UserBurnoutReport.submitted_at >= today_start
-                ).order_by(UserBurnoutReport.submitted_at.desc()).first()
+                )
+                if organization_id:
+                    query = query.filter(UserBurnoutReport.organization_id == organization_id)
+                else:
+                    query = query.filter(UserBurnoutReport.organization_id.is_(None))
+
+                existing_report = query.order_by(UserBurnoutReport.submitted_at.desc()).first()
 
                 is_update = False
                 if existing_report:

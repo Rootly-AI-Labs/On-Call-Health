@@ -625,9 +625,25 @@ class MigrationRunner:
                     """
                 ]
             },
+            {
+                "name": "019_make_survey_organization_nullable",
+                "description": "Make organization_id nullable in user_burnout_reports to allow surveys without org constraint",
+                "sql": [
+                    """
+                    -- Drop the foreign key constraint if it exists
+                    ALTER TABLE user_burnout_reports
+                    DROP CONSTRAINT IF EXISTS user_burnout_reports_organization_id_fkey
+                    """,
+                    """
+                    -- Make organization_id nullable
+                    ALTER TABLE user_burnout_reports
+                    ALTER COLUMN organization_id DROP NOT NULL
+                    """
+                ]
+            },
             # Add future migrations here with incrementing numbers
             # {
-            #     "name": "019_add_user_preferences",
+            #     "name": "020_add_user_preferences",
             #     "description": "Add user preferences table",
             #     "sql": ["CREATE TABLE IF NOT EXISTS user_preferences (...)"]
             # }
