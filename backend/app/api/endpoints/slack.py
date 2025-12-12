@@ -1217,11 +1217,17 @@ async def handle_slack_interactions(
                     from datetime import datetime
                     today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
 
-                    existing_report = db.query(UserBurnoutReport).filter(
+                    # Handle NULL organization_id properly
+                    query = db.query(UserBurnoutReport).filter(
                         UserBurnoutReport.user_id == user_id,
-                        UserBurnoutReport.organization_id == organization_id,
                         UserBurnoutReport.submitted_at >= today_start
-                    ).first()
+                    )
+                    if organization_id:
+                        query = query.filter(UserBurnoutReport.organization_id == organization_id)
+                    else:
+                        query = query.filter(UserBurnoutReport.organization_id.is_(None))
+
+                    existing_report = query.first()
 
                     # Open modal
                     modal_view = create_burnout_survey_modal(
@@ -1331,6 +1337,7 @@ async def handle_slack_interactions(
                     existing_report.additional_comments = comments
                     existing_report.submitted_via = 'slack'
                     existing_report.analysis_id = analysis_id  # Update linked analysis if provided
+                    existing_report.email_domain = user.email_domain  # Refresh email_domain in case it changed
                     existing_report.updated_at = datetime.utcnow()
                     logging.info(f"Updated existing report ID {existing_report.id} for user {user_id}")
                     is_update = True
@@ -1454,9 +1461,14 @@ async def submit_slack_burnout_survey(
                 detail="Survey already submitted for this analysis"
             )
 
+        # Get user for email_domain
+        user = db.query(User).filter(User.id == user_correlation.user_id).first()
+
         # Create new burnout report
         new_report = UserBurnoutReport(
             user_id=user_correlation.user_id,
+            organization_id=None,  # No org_id for this endpoint
+            email_domain=user.email_domain if user else None,
             analysis_id=submission.analysis_id,
             self_reported_score=submission.self_reported_score,
             energy_level=submission.energy_level,

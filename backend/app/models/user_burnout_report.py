@@ -40,7 +40,7 @@ class UserBurnoutReport(Base):
 
     # Relationships
     user = relationship("User", backref="burnout_reports")
-    organization = relationship("Organization")
+    # Note: organization_id FK was removed in migration 019 - no relationship
     analysis = relationship("Analysis", backref="user_burnout_reports")
 
     def to_dict(self):

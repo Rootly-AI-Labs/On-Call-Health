@@ -199,11 +199,17 @@ class SurveyScheduler:
                         from datetime import datetime
                         today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
 
-                        already_completed = db.query(UserBurnoutReport).filter(
+                        # Handle NULL organization_id properly
+                        query = db.query(UserBurnoutReport).filter(
                             UserBurnoutReport.user_id == user['user_id'],
-                            UserBurnoutReport.organization_id == organization_id,
                             UserBurnoutReport.submitted_at >= today_start
-                        ).first()
+                        )
+                        if organization_id:
+                            query = query.filter(UserBurnoutReport.organization_id == organization_id)
+                        else:
+                            query = query.filter(UserBurnoutReport.organization_id.is_(None))
+
+                        already_completed = query.first()
 
                         if already_completed:
                             skipped_count += 1
