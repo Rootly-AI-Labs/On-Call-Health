@@ -119,9 +119,10 @@ async def get_analysis_status(
     db: Session = Depends(get_db)
 ):
     """Get analysis status and progress."""
-    analysis = db.query(Analysis).filter(
+    # Allow users with same email domain to see each other's analyses
+    analysis = db.query(Analysis).join(User, Analysis.user_id == User.id).filter(
         Analysis.id == analysis_id,
-        Analysis.user_id == current_user.id
+        User.email_domain == current_user.email_domain
     ).first()
     
     if not analysis:
@@ -160,9 +161,10 @@ async def get_analysis_results(
     db: Session = Depends(get_db)
 ):
     """Get complete analysis results."""
-    analysis = db.query(Analysis).filter(
+    # Allow users with same email domain to see each other's analyses
+    analysis = db.query(Analysis).join(User, Analysis.user_id == User.id).filter(
         Analysis.id == analysis_id,
-        Analysis.user_id == current_user.id
+        User.email_domain == current_user.email_domain
     ).first()
     
     if not analysis:
@@ -184,9 +186,10 @@ async def get_current_analysis(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    """Get the most recent analysis for the user."""
-    analysis = db.query(Analysis).filter(
-        Analysis.user_id == current_user.id
+    """Get the most recent analysis for the domain."""
+    # Get most recent analysis from anyone in the same email domain
+    analysis = db.query(Analysis).join(User, Analysis.user_id == User.id).filter(
+        User.email_domain == current_user.email_domain
     ).order_by(Analysis.created_at.desc()).first()
     
     if not analysis:
@@ -216,9 +219,10 @@ async def get_analysis_history(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    """Get user's analysis history."""
-    analyses = db.query(Analysis).filter(
-        Analysis.user_id == current_user.id
+    """Get analysis history for the domain."""
+    # Get analysis history from anyone in the same email domain
+    analyses = db.query(Analysis).join(User, Analysis.user_id == User.id).filter(
+        User.email_domain == current_user.email_domain
     ).order_by(Analysis.created_at.desc()).limit(limit).all()
     
     return [

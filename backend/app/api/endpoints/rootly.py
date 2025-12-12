@@ -1446,9 +1446,9 @@ async def get_synced_users(
     try:
         from sqlalchemy import func, cast, String
 
-        # Fetch all user correlations for this user
+        # Fetch all user correlations for this email domain (shared across users)
         query = db.query(UserCorrelation).filter(
-            UserCorrelation.user_id == current_user.id
+            UserCorrelation.email_domain == current_user.email_domain
         )
 
         # Get all correlations, then filter in Python
