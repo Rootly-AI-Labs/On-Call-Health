@@ -309,7 +309,19 @@ def calculate_severity_breakdown(incidents: List[Dict[str, Any]]) -> Dict[str, i
                 severity_map = {
                     "critical": "sev1",
                     "emergency": "sev0",
-                    "medium": "sev3"
+                    "medium": "sev3",
+                    # Support custom L-prefixed severities (L0, L1, L2, L3, L4)
+                    "l0": "sev0",
+                    "l1": "sev1",
+                    "l2": "sev2",
+                    "l3": "sev3",
+                    "l4": "sev4",
+                    # Support P-prefixed severities (P0, P1, P2, P3, P4)
+                    "p0": "sev0",
+                    "p1": "sev1",
+                    "p2": "sev2",
+                    "p3": "sev3",
+                    "p4": "sev4"
                 }
                 severity_name = severity_map.get(severity_name.lower(), "sev4")
 
