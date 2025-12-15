@@ -289,11 +289,18 @@ def calculate_severity_breakdown(incidents: List[Dict[str, Any]]) -> Dict[str, i
                 attrs = incident.get("attributes", {})
                 severity_info = attrs.get("severity", {})
 
-                if isinstance(severity_info, dict) and "data" in severity_info:
+                # Check if severity is already a string (slimmed format)
+                if isinstance(severity_info, str):
+                    severity_name = severity_info.lower()
+                elif isinstance(severity_info, dict) and "data" in severity_info:
                     severity_data = severity_info.get("data", {})
                     if isinstance(severity_data, dict) and "attributes" in severity_data:
                         severity_attrs = severity_data["attributes"]
                         severity_name = severity_attrs.get("name", "sev4").lower()
+                elif severity_info == {} or severity_info is None:
+                    # Severity data is missing - log for debugging
+                    incident_id = incident.get("id", "unknown")
+                    logger.warning(f"Severity data missing for incident {incident_id} - defaulting to sev4. severity_info={severity_info}")
 
             # Normalize severity name if not already in sev format
             if not severity_name.startswith("sev"):
