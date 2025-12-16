@@ -29,10 +29,12 @@ router = APIRouter()
 
 class SurveyScheduleCreate(BaseModel):
     """Schema for creating/updating survey schedule."""
-    enabled: bool = True
-    send_time: str  # Format: "HH:MM" (e.g., "09:00")
+    is_active: bool = True
+    time_utc: str  # Format: "HH:MM" (e.g., "09:00")
     timezone: str = "America/New_York"
-    send_weekdays_only: bool = True
+    frequency_type: str = "daily"  # 'daily', 'weekday', 'weekly', 'biweekly', 'monthly'
+    day_of_week: Optional[int] = None  # 0-6 (Monday=0), required for weekly/biweekly
+    day_of_month: Optional[int] = None  # 1-31, required for monthly
     send_reminder: bool = True
     reminder_time: Optional[str] = None  # Format: "HH:MM" or None
     reminder_hours_after: int = 5
@@ -44,10 +46,12 @@ class SurveyScheduleResponse(BaseModel):
     """Schema for survey schedule response."""
     id: int
     organization_id: int
-    enabled: bool
-    send_time: str
+    is_active: bool
+    time_utc: str
     timezone: str
-    send_weekdays_only: bool
+    frequency_type: str
+    day_of_week: Optional[int]
+    day_of_month: Optional[int]
     send_reminder: bool
     reminder_time: Optional[str]
     reminder_hours_after: int
@@ -64,15 +68,52 @@ class UserPreferenceUpdate(BaseModel):
     custom_timezone: Optional[str] = None
 
 
-@router.post("/survey-schedule")
-async def create_or_update_survey_schedule(
+@router.get("/schedules")
+async def list_survey_schedules(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all survey schedules for user's organization."""
+    schedules = db.query(SurveySchedule).filter(
+        SurveySchedule.organization_id == current_user.organization_id
+    ).order_by(SurveySchedule.created_at).all()
+
+    return {
+        "schedules": [
+            {
+                "id": schedule.id,
+                "organization_id": schedule.organization_id,
+                "is_active": schedule.is_active,
+                "time_utc": str(schedule.time_utc),
+                "timezone": schedule.timezone,
+                "frequency_type": schedule.frequency_type,
+                "day_of_week": schedule.day_of_week,
+                "day_of_month": schedule.day_of_month,
+                "send_reminder": schedule.send_reminder,
+                "reminder_time": str(schedule.reminder_time) if schedule.reminder_time else None,
+                "reminder_hours_after": schedule.reminder_hours_after,
+                "message_template": schedule.message_template,
+                "reminder_message_template": schedule.reminder_message_template,
+                "created_at": schedule.created_at.isoformat() if schedule.created_at else None,
+                "updated_at": schedule.updated_at.isoformat() if schedule.updated_at else None
+            }
+            for schedule in schedules
+        ],
+        "count": len(schedules),
+        "max_schedules": 3
+    }
+
+
+@router.post("/schedules")
+async def create_survey_schedule(
     schedule_data: SurveyScheduleCreate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
-    Create or update survey schedule for an organization.
+    Create a new survey schedule for an organization.
     Only org admins can configure schedules.
+    Maximum 3 schedules per organization.
     """
     # Check if user is admin (super_admin or org_admin)
     if not current_user.is_admin():
@@ -80,10 +121,34 @@ async def create_or_update_survey_schedule(
 
     organization_id = current_user.organization_id
 
+    # Check schedule limit
+    existing_count = db.query(SurveySchedule).filter(
+        SurveySchedule.organization_id == organization_id
+    ).count()
+
+    if existing_count >= 3:
+        raise HTTPException(
+            status_code=400,
+            detail="Maximum of 3 schedules per organization. Delete an existing schedule to add a new one."
+        )
+
+    # Validate frequency-specific requirements
+    if schedule_data.frequency_type in ['weekly', 'biweekly']:
+        if schedule_data.day_of_week is None:
+            raise HTTPException(status_code=400, detail="day_of_week required for weekly/biweekly schedules")
+        if not 0 <= schedule_data.day_of_week <= 6:
+            raise HTTPException(status_code=400, detail="day_of_week must be 0-6 (Monday=0, Sunday=6)")
+
+    if schedule_data.frequency_type == 'monthly':
+        if schedule_data.day_of_month is None:
+            raise HTTPException(status_code=400, detail="day_of_month required for monthly schedules")
+        if not 1 <= schedule_data.day_of_month <= 31:
+            raise HTTPException(status_code=400, detail="day_of_month must be 1-31")
+
     # Parse time strings
     try:
-        hour, minute = map(int, schedule_data.send_time.split(":"))
-        send_time = time(hour=hour, minute=minute)
+        hour, minute = map(int, schedule_data.time_utc.split(":"))
+        time_utc = time(hour=hour, minute=minute)
 
         reminder_time = None
         if schedule_data.reminder_time:
@@ -92,52 +157,29 @@ async def create_or_update_survey_schedule(
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid time format. Use HH:MM (e.g., 09:00)")
 
-    # Check if schedule exists
-    existing_schedule = db.query(SurveySchedule).filter(
-        SurveySchedule.organization_id == organization_id
-    ).first()
+    # Create new schedule
+    schedule = SurveySchedule(
+        organization_id=organization_id,
+        is_active=schedule_data.is_active,
+        time_utc=time_utc,
+        timezone=schedule_data.timezone,
+        frequency_type=schedule_data.frequency_type,
+        day_of_week=schedule_data.day_of_week,
+        day_of_month=schedule_data.day_of_month,
+        send_reminder=schedule_data.send_reminder,
+        reminder_time=reminder_time,
+        reminder_hours_after=schedule_data.reminder_hours_after
+    )
 
-    if existing_schedule:
-        # Update existing
-        existing_schedule.enabled = schedule_data.enabled
-        existing_schedule.send_time = send_time
-        existing_schedule.timezone = schedule_data.timezone
-        existing_schedule.send_weekdays_only = schedule_data.send_weekdays_only
-        existing_schedule.send_reminder = schedule_data.send_reminder
-        existing_schedule.reminder_time = reminder_time
-        existing_schedule.reminder_hours_after = schedule_data.reminder_hours_after
+    if schedule_data.message_template:
+        schedule.message_template = schedule_data.message_template
+    if schedule_data.reminder_message_template:
+        schedule.reminder_message_template = schedule_data.reminder_message_template
 
-        if schedule_data.message_template:
-            existing_schedule.message_template = schedule_data.message_template
-        if schedule_data.reminder_message_template:
-            existing_schedule.reminder_message_template = schedule_data.reminder_message_template
-
-        db.commit()
-        db.refresh(existing_schedule)
-        schedule = existing_schedule
-        logger.info(f"Updated survey schedule for org {organization_id}")
-    else:
-        # Create new
-        schedule = SurveySchedule(
-            organization_id=organization_id,
-            enabled=schedule_data.enabled,
-            send_time=send_time,
-            timezone=schedule_data.timezone,
-            send_weekdays_only=schedule_data.send_weekdays_only,
-            send_reminder=schedule_data.send_reminder,
-            reminder_time=reminder_time,
-            reminder_hours_after=schedule_data.reminder_hours_after
-        )
-
-        if schedule_data.message_template:
-            schedule.message_template = schedule_data.message_template
-        if schedule_data.reminder_message_template:
-            schedule.reminder_message_template = schedule_data.reminder_message_template
-
-        db.add(schedule)
-        db.commit()
-        db.refresh(schedule)
-        logger.info(f"Created survey schedule for org {organization_id}")
+    db.add(schedule)
+    db.commit()
+    db.refresh(schedule)
+    logger.info(f"Created survey schedule {schedule.id} for org {organization_id}")
 
     # Reload scheduler with new schedule
     if SCHEDULER_AVAILABLE and survey_scheduler:
@@ -145,59 +187,160 @@ async def create_or_update_survey_schedule(
             survey_scheduler.schedule_organization_surveys(db)
         except Exception as e:
             logger.error(f"Failed to reload scheduler: {e}")
-            # Continue anyway - schedule is saved in DB
 
     return {
         "id": schedule.id,
         "organization_id": schedule.organization_id,
-        "enabled": schedule.enabled,
-        "send_time": str(schedule.send_time),
+        "is_active": schedule.is_active,
+        "time_utc": str(schedule.time_utc),
         "timezone": schedule.timezone,
-        "send_weekdays_only": schedule.send_weekdays_only,
+        "frequency_type": schedule.frequency_type,
+        "day_of_week": schedule.day_of_week,
+        "day_of_month": schedule.day_of_month,
         "send_reminder": schedule.send_reminder,
         "reminder_time": str(schedule.reminder_time) if schedule.reminder_time else None,
         "reminder_hours_after": schedule.reminder_hours_after,
         "message_template": schedule.message_template,
         "reminder_message_template": schedule.reminder_message_template,
-        "message": "Survey schedule configured successfully"
+        "message": "Survey schedule created successfully"
     }
 
 
-@router.get("/survey-schedule")
-async def get_survey_schedule(
+@router.put("/schedules/{schedule_id}")
+async def update_survey_schedule(
+    schedule_id: int,
+    schedule_data: SurveyScheduleCreate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Get current survey schedule for user's organization."""
+    """
+    Update an existing survey schedule.
+    Only org admins can configure schedules.
+    """
+    # Check if user is admin
+    if not current_user.is_admin():
+        raise HTTPException(status_code=403, detail="Only admins can configure survey schedules")
+
+    organization_id = current_user.organization_id
+
+    # Get existing schedule
     schedule = db.query(SurveySchedule).filter(
-        SurveySchedule.organization_id == current_user.organization_id
+        SurveySchedule.id == schedule_id,
+        SurveySchedule.organization_id == organization_id
     ).first()
 
     if not schedule:
-        # Return consistent structure even when no schedule exists
-        return {
-            "enabled": False,
-            "send_time": None,
-            "timezone": "America/New_York",
-            "send_weekdays_only": True,
-            "send_reminder": False,
-            "reminder_time": None,
-            "reminder_hours_after": 5,
-            "message": "No survey schedule configured"
-        }
+        raise HTTPException(status_code=404, detail="Schedule not found")
+
+    # Validate frequency-specific requirements
+    if schedule_data.frequency_type in ['weekly', 'biweekly']:
+        if schedule_data.day_of_week is None:
+            raise HTTPException(status_code=400, detail="day_of_week required for weekly/biweekly schedules")
+        if not 0 <= schedule_data.day_of_week <= 6:
+            raise HTTPException(status_code=400, detail="day_of_week must be 0-6 (Monday=0, Sunday=6)")
+
+    if schedule_data.frequency_type == 'monthly':
+        if schedule_data.day_of_month is None:
+            raise HTTPException(status_code=400, detail="day_of_month required for monthly schedules")
+        if not 1 <= schedule_data.day_of_month <= 31:
+            raise HTTPException(status_code=400, detail="day_of_month must be 1-31")
+
+    # Parse time strings
+    try:
+        hour, minute = map(int, schedule_data.time_utc.split(":"))
+        time_utc = time(hour=hour, minute=minute)
+
+        reminder_time = None
+        if schedule_data.reminder_time:
+            r_hour, r_minute = map(int, schedule_data.reminder_time.split(":"))
+            reminder_time = time(hour=r_hour, minute=r_minute)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid time format. Use HH:MM (e.g., 09:00)")
+
+    # Update schedule
+    schedule.is_active = schedule_data.is_active
+    schedule.time_utc = time_utc
+    schedule.timezone = schedule_data.timezone
+    schedule.frequency_type = schedule_data.frequency_type
+    schedule.day_of_week = schedule_data.day_of_week
+    schedule.day_of_month = schedule_data.day_of_month
+    schedule.send_reminder = schedule_data.send_reminder
+    schedule.reminder_time = reminder_time
+    schedule.reminder_hours_after = schedule_data.reminder_hours_after
+
+    if schedule_data.message_template:
+        schedule.message_template = schedule_data.message_template
+    if schedule_data.reminder_message_template:
+        schedule.reminder_message_template = schedule_data.reminder_message_template
+
+    db.commit()
+    db.refresh(schedule)
+    logger.info(f"Updated survey schedule {schedule_id} for org {organization_id}")
+
+    # Reload scheduler
+    if SCHEDULER_AVAILABLE and survey_scheduler:
+        try:
+            survey_scheduler.schedule_organization_surveys(db)
+        except Exception as e:
+            logger.error(f"Failed to reload scheduler: {e}")
 
     return {
         "id": schedule.id,
         "organization_id": schedule.organization_id,
-        "enabled": schedule.enabled,
-        "send_time": str(schedule.send_time),
+        "is_active": schedule.is_active,
+        "time_utc": str(schedule.time_utc),
         "timezone": schedule.timezone,
-        "send_weekdays_only": schedule.send_weekdays_only,
+        "frequency_type": schedule.frequency_type,
+        "day_of_week": schedule.day_of_week,
+        "day_of_month": schedule.day_of_month,
         "send_reminder": schedule.send_reminder,
         "reminder_time": str(schedule.reminder_time) if schedule.reminder_time else None,
         "reminder_hours_after": schedule.reminder_hours_after,
         "message_template": schedule.message_template,
-        "reminder_message_template": schedule.reminder_message_template
+        "reminder_message_template": schedule.reminder_message_template,
+        "message": "Survey schedule updated successfully"
+    }
+
+
+@router.delete("/schedules/{schedule_id}")
+async def delete_survey_schedule(
+    schedule_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Delete a survey schedule.
+    Only org admins can delete schedules.
+    """
+    # Check if user is admin
+    if not current_user.is_admin():
+        raise HTTPException(status_code=403, detail="Only admins can configure survey schedules")
+
+    organization_id = current_user.organization_id
+
+    # Get schedule
+    schedule = db.query(SurveySchedule).filter(
+        SurveySchedule.id == schedule_id,
+        SurveySchedule.organization_id == organization_id
+    ).first()
+
+    if not schedule:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+
+    db.delete(schedule)
+    db.commit()
+    logger.info(f"Deleted survey schedule {schedule_id} for org {organization_id}")
+
+    # Reload scheduler
+    if SCHEDULER_AVAILABLE and survey_scheduler:
+        try:
+            survey_scheduler.schedule_organization_surveys(db)
+        except Exception as e:
+            logger.error(f"Failed to reload scheduler: {e}")
+
+    return {
+        "success": True,
+        "message": "Survey schedule deleted successfully"
     }
 
 

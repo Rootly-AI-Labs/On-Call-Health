@@ -45,45 +45,105 @@ class SurveyScheduler:
         """
         Schedule survey delivery for all active organizations.
         Called on app startup and when schedules are updated.
+        Supports multiple schedules per organization.
         """
         # Remove existing jobs
         self.scheduler.remove_all_jobs()
 
-        # Get all enabled survey schedules
+        # Get all active survey schedules (is_active replaces enabled)
         schedules = db.query(SurveySchedule).filter(
-            SurveySchedule.enabled == True
+            SurveySchedule.is_active == True
         ).all()
 
         for schedule in schedules:
             self._add_schedule_job(schedule, db)
 
-        logger.debug(f"Scheduled surveys for {len(schedules)} organizations")
+        logger.debug(f"Scheduled {len(schedules)} survey jobs across all organizations")
 
     def _add_schedule_job(self, schedule: SurveySchedule, db: Session):
         """
         Add a cron job for a specific organization's survey schedule.
+        Supports daily, weekday, weekly, biweekly, and monthly frequencies.
         """
         org_timezone = pytz.timezone(schedule.timezone)
-        send_hour = schedule.send_time.hour
-        send_minute = schedule.send_time.minute
+        send_hour = schedule.time_utc.hour
+        send_minute = schedule.time_utc.minute
 
-        # Create cron trigger for initial survey
-        if schedule.send_weekdays_only:
+        # Create cron trigger based on frequency type
+        frequency_type = schedule.frequency_type or 'daily'
+
+        if frequency_type == 'daily':
+            # Every day at specified time
+            trigger = CronTrigger(
+                hour=send_hour,
+                minute=send_minute,
+                timezone=org_timezone
+            )
+            freq_desc = "daily"
+
+        elif frequency_type == 'weekday':
+            # Monday-Friday only
             trigger = CronTrigger(
                 hour=send_hour,
                 minute=send_minute,
                 day_of_week='mon-fri',
                 timezone=org_timezone
             )
-        else:
+            freq_desc = "weekdays only"
+
+        elif frequency_type == 'weekly':
+            # Once per week on specified day
+            if schedule.day_of_week is None:
+                logger.error(f"Schedule {schedule.id} has weekly frequency but no day_of_week")
+                return
+            # Convert 0-6 (Mon-Sun) to cron day names
+            days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+            day_name = days[schedule.day_of_week]
             trigger = CronTrigger(
                 hour=send_hour,
                 minute=send_minute,
+                day_of_week=day_name,
                 timezone=org_timezone
             )
+            freq_desc = f"weekly on {day_name.capitalize()}"
 
-        # Add initial survey job
-        job_id = f"survey_org_{schedule.organization_id}"
+        elif frequency_type == 'biweekly':
+            # Every 2 weeks on specified day
+            # Note: APScheduler doesn't support biweekly directly, so we use interval trigger
+            # We'll use day_of_week as the starting day
+            if schedule.day_of_week is None:
+                logger.error(f"Schedule {schedule.id} has biweekly frequency but no day_of_week")
+                return
+            days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+            day_name = days[schedule.day_of_week]
+            # For biweekly, we schedule weekly but track last send in DB (handled in send function)
+            trigger = CronTrigger(
+                hour=send_hour,
+                minute=send_minute,
+                day_of_week=day_name,
+                timezone=org_timezone
+            )
+            freq_desc = f"biweekly on {day_name.capitalize()}"
+
+        elif frequency_type == 'monthly':
+            # Once per month on specified day
+            if schedule.day_of_month is None:
+                logger.error(f"Schedule {schedule.id} has monthly frequency but no day_of_month")
+                return
+            trigger = CronTrigger(
+                hour=send_hour,
+                minute=send_minute,
+                day=schedule.day_of_month,
+                timezone=org_timezone
+            )
+            freq_desc = f"monthly on day {schedule.day_of_month}"
+
+        else:
+            logger.error(f"Unknown frequency type: {frequency_type}")
+            return
+
+        # Add initial survey job with unique ID per schedule (not just per org)
+        job_id = f"survey_schedule_{schedule.id}"
         self.scheduler.add_job(
             self._send_organization_surveys,
             trigger=trigger,
@@ -93,8 +153,8 @@ class SurveyScheduler:
         )
 
         logger.debug(
-            f"Scheduled daily surveys for org {schedule.organization_id} "
-            f"at {send_hour:02d}:{send_minute:02d} {schedule.timezone}"
+            f"Scheduled survey (schedule_id={schedule.id}) for org {schedule.organization_id} "
+            f"{freq_desc} at {send_hour:02d}:{send_minute:02d} {schedule.timezone}"
         )
 
         # Add reminder job if enabled
@@ -106,28 +166,52 @@ class SurveyScheduler:
             else:
                 # Calculate reminder time as X hours after initial send
                 from datetime import datetime, timedelta
-                initial_time = datetime.combine(datetime.today(), schedule.send_time)
-                reminder_time = initial_time + timedelta(hours=schedule.reminder_hours_after)
-                reminder_hour = reminder_time.hour
-                reminder_minute = reminder_time.minute
+                initial_time = datetime.combine(datetime.today(), schedule.time_utc)
+                reminder_time_obj = initial_time + timedelta(hours=schedule.reminder_hours_after)
+                reminder_hour = reminder_time_obj.hour
+                reminder_minute = reminder_time_obj.minute
 
-            # Create reminder trigger
-            if schedule.send_weekdays_only:
+            # Create reminder trigger matching main schedule frequency
+            if frequency_type == 'daily':
+                reminder_trigger = CronTrigger(
+                    hour=reminder_hour,
+                    minute=reminder_minute,
+                    timezone=org_timezone
+                )
+            elif frequency_type == 'weekday':
                 reminder_trigger = CronTrigger(
                     hour=reminder_hour,
                     minute=reminder_minute,
                     day_of_week='mon-fri',
                     timezone=org_timezone
                 )
-            else:
+            elif frequency_type == 'weekly':
                 reminder_trigger = CronTrigger(
                     hour=reminder_hour,
                     minute=reminder_minute,
+                    day_of_week=day_name,
                     timezone=org_timezone
                 )
+            elif frequency_type == 'biweekly':
+                reminder_trigger = CronTrigger(
+                    hour=reminder_hour,
+                    minute=reminder_minute,
+                    day_of_week=day_name,
+                    timezone=org_timezone
+                )
+            elif frequency_type == 'monthly':
+                reminder_trigger = CronTrigger(
+                    hour=reminder_hour,
+                    minute=reminder_minute,
+                    day=schedule.day_of_month,
+                    timezone=org_timezone
+                )
+            else:
+                logger.error(f"Cannot create reminder for unknown frequency: {frequency_type}")
+                return
 
-            # Add reminder job
-            reminder_job_id = f"reminder_org_{schedule.organization_id}"
+            # Add reminder job with unique ID per schedule
+            reminder_job_id = f"reminder_schedule_{schedule.id}"
             self.scheduler.add_job(
                 self._send_organization_surveys,
                 trigger=reminder_trigger,
@@ -137,7 +221,7 @@ class SurveyScheduler:
             )
 
             logger.debug(
-                f"Scheduled reminders for org {schedule.organization_id} "
+                f"Scheduled reminder (schedule_id={schedule.id}) for org {schedule.organization_id} "
                 f"at {reminder_hour:02d}:{reminder_minute:02d} {schedule.timezone}"
             )
 

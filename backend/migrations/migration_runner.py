@@ -710,9 +710,44 @@ class MigrationRunner:
                     """
                 ]
             },
+            {
+                "name": "023_add_recurring_survey_schedules",
+                "description": "Add recurring schedule fields to survey_schedules",
+                "sql": [
+                    """
+                    -- Add frequency fields for recurring schedules
+                    ALTER TABLE survey_schedules
+                    ADD COLUMN IF NOT EXISTS frequency_type VARCHAR(20) DEFAULT 'daily',
+                    ADD COLUMN IF NOT EXISTS day_of_week INTEGER,
+                    ADD COLUMN IF NOT EXISTS day_of_month INTEGER,
+                    ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    """,
+                    """
+                    -- Rename 'enabled' to 'is_active' for consistency
+                    ALTER TABLE survey_schedules
+                    RENAME COLUMN enabled TO is_active
+                    """,
+                    """
+                    -- Rename 'send_time' to 'time_utc' for clarity
+                    ALTER TABLE survey_schedules
+                    RENAME COLUMN send_time TO time_utc
+                    """,
+                    """
+                    -- Drop send_weekdays_only since frequency_type handles this
+                    ALTER TABLE survey_schedules
+                    DROP COLUMN IF EXISTS send_weekdays_only
+                    """,
+                    """
+                    -- Add constraint to limit schedules per organization to 3
+                    -- Note: This is a soft limit - will be enforced in application code
+                    -- as PostgreSQL doesn't support row count constraints easily
+                    """
+                ]
+            },
             # Add future migrations here with incrementing numbers
             # {
-            #     "name": "023_add_user_preferences",
+            #     "name": "024_add_user_preferences",
             #     "description": "Add user preferences table",
             #     "sql": ["CREATE TABLE IF NOT EXISTS user_preferences (...)"]
             # }
