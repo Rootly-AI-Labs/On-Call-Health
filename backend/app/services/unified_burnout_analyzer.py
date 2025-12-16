@@ -839,6 +839,8 @@ class UnifiedBurnoutAnalyzer:
             
             result = {
                 "analysis_timestamp": datetime.now().isoformat(),
+                # or manually set to running_average, normal
+                "chart_mode": "normal",
                 "metadata": {
                     **{k: v for k, v in metadata.items() if not (k == "organization_name" and v is None)},
                     "organization_name": self.organization_name if self.organization_name else (metadata.get("organization_name") or "Organization"),

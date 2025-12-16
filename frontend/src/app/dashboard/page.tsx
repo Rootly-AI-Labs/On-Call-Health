@@ -54,6 +54,7 @@ import { TeamHealthOverview } from "@/components/dashboard/TeamHealthOverview"
 import { AnalysisProgressSection } from "@/components/dashboard/AnalysisProgressSection"
 import { TeamMembersList } from "@/components/dashboard/TeamMembersList"
 import { HealthTrendsChart } from "@/components/dashboard/HealthTrendsChart"
+import { ObjectiveDataCard } from "@/components/dashboard/ObjectiveDataCard"
 import { MemberDetailModal } from "@/components/dashboard/MemberDetailModal"
 import { GitHubCommitsTimeline } from "@/components/dashboard/charts/GitHubCommitsTimeline"
 import { AIInsightsCard } from "@/components/dashboard/insights/AIInsightsCard"
@@ -680,11 +681,17 @@ function DashboardContent() {
                 </Card>
               )}
 
-              <TeamHealthOverview 
+              <TeamHealthOverview
                 currentAnalysis={currentAnalysis}
                 historicalTrends={historicalTrends}
                 expandedDataSources={expandedDataSources}
                 setExpandedDataSources={setExpandedDataSources}
+              />
+
+              {/* Objective Data Card */}
+              <ObjectiveDataCard
+                currentAnalysis={currentAnalysis}
+                loadingTrends={loadingTrends}
               />
 
               {/* Partial Data Warning */}
