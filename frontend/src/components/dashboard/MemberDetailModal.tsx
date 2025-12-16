@@ -238,6 +238,7 @@ interface MemberDetailModalProps {
   members: any[]
   analysisId?: number | string
   currentAnalysis?: any
+  timeRange?: number | string
 }
 
 export function MemberDetailModal({
@@ -245,7 +246,8 @@ export function MemberDetailModal({
   setSelectedMember,
   members,
   analysisId,
-  currentAnalysis
+  currentAnalysis,
+  timeRange
 }: MemberDetailModalProps) {
   if (!selectedMember) return null
 
@@ -398,7 +400,7 @@ export function MemberDetailModal({
                           <div className="text-2xl font-bold text-blue-600">
                             {memberData?.incident_count || 0}
                           </div>
-                          <p className="text-xs text-gray-500">Past 30 days</p>
+                          <p className="text-xs text-gray-500">Past {timeRange || 30} days</p>
                         </CardContent>
                       </Card>
                     </div>
