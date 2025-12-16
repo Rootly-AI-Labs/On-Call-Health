@@ -92,8 +92,12 @@ def get_cors_origins():
     if production_frontend:
         origins.append(production_frontend)
     
-    # Add the production domain explicitly
+    # Add the production domains explicitly (support both old and new during transition)
     origins.extend([
+        # New domain
+        "https://www.oncallhealth.ai",
+        "https://oncallhealth.ai",
+        # Legacy domain (will be decommissioned)
         "https://www.oncallburnout.com",
         "https://oncallburnout.com"
     ])

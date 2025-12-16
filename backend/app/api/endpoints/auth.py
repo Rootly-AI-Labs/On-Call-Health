@@ -27,6 +27,10 @@ ALLOWED_OAUTH_ORIGINS = [
     "http://localhost:3001",
     "http://localhost:3002",
     settings.FRONTEND_URL,
+    # New domain
+    "https://www.oncallhealth.ai",
+    "https://oncallhealth.ai",
+    # Legacy domain (support during transition period)
     "https://www.oncallburnout.com",
     "https://oncallburnout.com"
 ]
