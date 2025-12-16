@@ -2,46 +2,29 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
+import { useState, useEffect } from "react"
 
-interface ObjectiveDataCardProps {
-  currentAnalysis: any
-  loadingTrends: boolean
+interface UserObjectiveDataCardProps {
+  memberData: any
+  analysisId?: number | string
+  timeRange?: number | string
+  currentAnalysis?: any
 }
 
-export function ObjectiveDataCard({
-  currentAnalysis,
-  loadingTrends
-}: ObjectiveDataCardProps) {
+export function UserObjectiveDataCard({
+  memberData,
+  analysisId,
+  timeRange = 30,
+  currentAnalysis
+}: UserObjectiveDataCardProps) {
 
-  // Calculate statistics from daily trends
-  const calculateStats = (dailyTrends: any[]) => {
-    if (!dailyTrends || dailyTrends.length === 0) {
-      return { mean: 0, min: 0, max: 0, trend: 'neutral' };
-    }
-
-    const scores = dailyTrends.map(d => {
-      // Convert 0-10 scale to 0-100 OCB scale
-      return Math.max(0, Math.min(100, Math.round(d.overall_score * 10)));
-    });
-
-    const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
-    const min = Math.min(...scores);
-    const max = Math.max(...scores);
-
-    // Determine trend: compare first third vs last third
-    const third = Math.floor(scores.length / 3);
-    const firstThirdAvg = scores.slice(0, third).reduce((a, b) => a + b, 0) / third;
-    const lastThirdAvg = scores.slice(-third).reduce((a, b) => a + b, 0) / third;
-    const trend = lastThirdAvg < firstThirdAvg ? 'improving' : lastThirdAvg > firstThirdAvg ? 'declining' : 'stable';
-
-    return { mean, min, max, trend };
-  };
+  const [dailyHealthData, setDailyHealthData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
   // Calculate 7-day running average
   const calculate7DayRunningAverage = (scores: number[]) => {
     return scores.map((score, index) => {
       // For points with < 7 previous data points, use average up to that point (inclusive)
-      // edit running average here
       const windowSize = Math.min(7, index + 1);
       const start = Math.max(0, index - windowSize + 1);
       const window = scores.slice(start, index + 1);
@@ -50,74 +33,123 @@ export function ObjectiveDataCard({
     });
   };
 
-  // Get chart mode from backend analysis data (default to 'normal')
-  const chartMode = currentAnalysis?.analysis_data?.chart_mode || 'normal';
+  useEffect(() => {
+    const fetchDailyHealth = async () => {
+      if (!memberData?.user_email || !analysisId) {
+        return;
+      }
+
+      setLoading(true);
+
+      try {
+        const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+        const url = `${API_BASE}/analyses/${analysisId}/members/${encodeURIComponent(memberData.user_email)}/daily-health`;
+
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.status === 'success' && result.data?.daily_health) {
+            setDailyHealthData(result.data.daily_health);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching user daily health:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDailyHealth();
+  }, [memberData?.user_email, analysisId]);
+
+  // Calculate statistics from daily health data
+  const calculateStats = (data: any[]) => {
+    if (!data || data.length === 0) {
+      return { mean: 0 };
+    }
+
+    const scores = data.map(d => d.health_score || 0);
+    const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
+
+    return { mean };
+  };
 
   // Get the chart data
   const getChartData = () => {
-    const dailyTrends = currentAnalysis?.analysis_data?.daily_trends;
-
-    if (!dailyTrends || !Array.isArray(dailyTrends) || dailyTrends.length === 0) {
+    if (!dailyHealthData || dailyHealthData.length === 0) {
       return [];
     }
 
-    // Convert daily trends to chart format
-    const chartData = dailyTrends.map((trend: any) => {
-      // Convert overall_score from 0-10 to 0-100 OCB scale
-      const dailyScore = Math.max(0, Math.min(100, Math.round(trend.overall_score * 10)));
+    // Convert daily health data to chart format
+    const chartData = dailyHealthData.map((trend: any) => {
+      // Daily health score is already on 0-100 scale
+      const dailyScore = trend.health_score || 0;
 
       return {
         date: new Date(trend.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
         originalDate: trend.date,
         dailyScore: dailyScore,
         incidentCount: trend.incident_count || 0,
-        afterHours: trend.after_hours_count || 0,
         hasData: trend.incident_count > 0
       };
     });
 
-    // Calculate mean line
+    // Calculate mean
     const scores = chartData.map(d => d.dailyScore);
     const mean = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
 
-    // Apply running average if mode is set to 'running_average'
-    let displayScores = scores;
-    if (chartMode === 'running_average') {
-      displayScores = calculate7DayRunningAverage(scores);
-    }
-
-    // Add mean and display score to each data point
-    const dataWithMean = chartData.map((d, index) => ({
+    // Add mean to each data point
+    const dataWithMean = chartData.map(d => ({
       ...d,
-      dailyScore: displayScores[index], // Use either normal or running average based on mode
       meanScore: Math.round(mean)
     }));
 
     return dataWithMean;
   };
 
-  const chartData = getChartData();
-  const stats = calculateStats(currentAnalysis?.analysis_data?.daily_trends || []);
-  const timeRange = currentAnalysis?.time_range || currentAnalysis?.analysis_data?.metadata?.days_analyzed || 30;
+  // Get chart mode from backend analysis data (default to 'normal')
+  const chartMode = currentAnalysis?.analysis_data?.chart_mode || 'normal';
 
+  // Apply running average if mode is set
+  const processedChartData = (() => {
+    const data = getChartData();
+    if (chartMode === 'running_average' && data.length > 0) {
+      const scores = data.map(d => d.dailyScore);
+      const averagedScores = calculate7DayRunningAverage(scores);
+      return data.map((d, index) => ({
+        ...d,
+        dailyScore: averagedScores[index]
+      }));
+    }
+    return data;
+  })();
+
+  const chartData = getChartData();
+  const stats = calculateStats(dailyHealthData);
   const hasData = chartData.length > 0;
 
   return (
-    <Card className="mb-6 flex flex-col min-h-full">
+    <Card className="mb-6">
       <CardHeader>
-        <CardTitle>Team Objective Data</CardTitle>
+        <CardTitle>User Objective Data</CardTitle>
         <CardDescription>
           {hasData
-            ? `Over the last ${timeRange} days, your average workload index was ${Math.round(stats.mean)} points.`
-            : "No daily trend data available for this analysis"
+            ? `Over the last ${timeRange} days, average workload index was ${Math.round(stats.mean)} points.`
+            : "No daily trend data available for this user"
           }
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col pb-4">
-        <div className="space-y-3 flex-1 flex flex-col">
+      <CardContent>
+        <div className="space-y-4">
           {/* Chart */}
           <div className="h-[300px]">
-            {loadingTrends ? (
+            {loading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
                   <div className="animate-spin w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-2"></div>
@@ -132,14 +164,14 @@ export function ObjectiveDataCard({
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                     </svg>
                   </div>
-                  <p className="text-sm text-gray-500 font-medium">No Objective Data Available</p>
-                  <p className="text-xs text-gray-400 mt-1">Run an analysis to view health trends</p>
+                  <p className="text-sm text-gray-500 font-medium">No User Objective Data Available</p>
+                  <p className="text-xs text-gray-400 mt-1">This user had no incident involvement during the analysis period</p>
                 </div>
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
-                  data={chartData}
+                  data={processedChartData}
                   margin={{ top: 20, right: 30, left: 30, bottom: 60 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -151,7 +183,7 @@ export function ObjectiveDataCard({
                     angle={-45}
                     textAnchor="end"
                     height={50}
-                    interval={Math.floor(chartData.length / 7) || 0}
+                    interval={Math.floor(processedChartData.length / 7) || 0}
                   />
                   <Tooltip
                     content={({ payload, label }) => {
@@ -186,7 +218,7 @@ export function ObjectiveDataCard({
                       return null;
                     }}
                   />
-                  {/* Daily Team Health Score Line */}
+                  {/* Daily User Health Score Line */}
                   <Line
                     type="monotone"
                     dataKey="dailyScore"
@@ -194,7 +226,7 @@ export function ObjectiveDataCard({
                     strokeWidth={2}
                     dot={false}
                     isAnimationActive={true}
-                    name="Daily Team Health Score"
+                    name="Daily User Health Score"
                     connectNulls={true}
                   />
                   {/* Mean Score Line */}

@@ -7,6 +7,7 @@ import NewRelicProvider from '@/components/NewRelicProvider'
 import ClientToaster from '@/components/ClientToaster'
 import { GettingStartedProvider } from '@/contexts/GettingStartedContext'
 import { GettingStartedDialog } from '@/components/GettingStartedDialog'
+import { ChartModeProvider } from '@/context/ChartModeContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -52,11 +53,13 @@ export default function RootLayout({
         )}
         <NewRelicProvider>
           <GettingStartedProvider>
-            <ErrorBoundary>
-              {children}
-            </ErrorBoundary>
-            <GettingStartedDialog />
-            <ClientToaster />
+            <ChartModeProvider>
+              <ErrorBoundary>
+                {children}
+              </ErrorBoundary>
+              <GettingStartedDialog />
+              <ClientToaster />
+            </ChartModeProvider>
           </GettingStartedProvider>
         </NewRelicProvider>
       </body>

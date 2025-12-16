@@ -681,6 +681,7 @@ function DashboardContent() {
                 </Card>
               )}
 
+              {/* Summary Cards */}
               <TeamHealthOverview
                 currentAnalysis={currentAnalysis}
                 historicalTrends={historicalTrends}
@@ -688,11 +689,13 @@ function DashboardContent() {
                 setExpandedDataSources={setExpandedDataSources}
               />
 
-              {/* Objective Data Card */}
+              {/* Objective Data Card - Commented Out (moved to Charts Section) */}
+              {/*
               <ObjectiveDataCard
                 currentAnalysis={currentAnalysis}
                 loadingTrends={loadingTrends}
               />
+              */}
 
               {/* Partial Data Warning */}
               {currentAnalysis?.analysis_data?.error && currentAnalysis?.analysis_data?.partial_data && (
@@ -850,8 +853,14 @@ function DashboardContent() {
               }
               {/* Charts Section */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                {/* Team Objective Data */}
+                <ObjectiveDataCard
+                  currentAnalysis={currentAnalysis}
+                  loadingTrends={loadingTrends}
+                />
+
                 {/* Burnout Journey Map */}
-                <Card>
+                <Card className="flex flex-col">
                   <CardHeader>
                     <CardTitle>Burnout Timeline</CardTitle>
                     <CardDescription>
@@ -866,7 +875,7 @@ function DashboardContent() {
                             const next = dailyTrends[i+1];
                             const score = Math.round(curr.overall_score * 10);
                             const prevChange = prev ? score - Math.round(prev.overall_score * 10) : 0;
-                            
+
                             if ((prev && next && score > Math.round(prev.overall_score * 10) && score > Math.round(next.overall_score * 10) && score >= 75) ||
                                 (prev && next && score < Math.round(prev.overall_score * 10) && score < Math.round(next.overall_score * 10) && score <= 60) ||
                                 Math.abs(prevChange) >= 20 ||
@@ -881,8 +890,8 @@ function DashboardContent() {
                       })()}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-6">
+                  <CardContent className="flex-1 flex flex-col overflow-hidden pb-4">
+                    <div className="space-y-3">
                       {loadingTrends ? (
                         <div className="flex items-center justify-center h-32">
                           <div className="text-center">
@@ -1111,11 +1120,11 @@ function DashboardContent() {
                   </CardContent>
                 </Card>
 
-                <HealthTrendsChart
+                {/* <HealthTrendsChart
                   currentAnalysis={currentAnalysis}
                   historicalTrends={historicalTrends}
                   loadingTrends={loadingTrends}
-                />
+                /> */}
               </div>
 
               {/* Burnout Factors Section */}

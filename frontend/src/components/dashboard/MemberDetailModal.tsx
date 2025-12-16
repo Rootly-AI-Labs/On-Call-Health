@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, Cell } from "recharts"
 import { Info, RefreshCw, BarChart3 } from "lucide-react"
 import { useState, useEffect } from "react"
+import { UserObjectiveDataCard } from "@/components/dashboard/UserObjectiveDataCard"
 
 // Individual Daily Health Chart component
 function IndividualDailyHealthChart({ memberData, analysisId, currentAnalysis }: {
@@ -507,6 +508,14 @@ export function MemberDetailModal({
                         </div>
                       </CardContent>
                     </Card>
+
+                    {/* User Objective Data Card */}
+                    <UserObjectiveDataCard
+                      memberData={memberData}
+                      analysisId={analysisId}
+                      timeRange={timeRange}
+                      currentAnalysis={currentAnalysis}
+                    />
 
                     {/* Daily Health Chart */}
                     <IndividualDailyHealthChart
