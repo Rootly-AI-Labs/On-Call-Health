@@ -206,9 +206,15 @@ export function UserObjectiveDataCard({
 
                         return (
                           <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
-                            <p className={`text-sm font-bold mb-2 ${percentageChange >= 0 ? 'text-red-600' : 'text-green-600'}`}>
-                              {percentageChange >= 0 ? '+' : ''}{percentageChange.toFixed(1)}%
+                            {/* Percentage change with arrow */}
+                            <p className={`text-base font-bold mb-2 ${percentageChange >= 0 ? 'text-red-600' : 'text-green-600'}`}>
+                              {percentageChange >= 0 ? '↑' : '↓'} {Math.abs(percentageChange).toFixed(1)}%
                             </p>
+
+                            {/* Incidents count */}
+                            <p className="text-sm text-gray-600">Incidents: {data.incidentCount || 0}</p>
+
+                            {/* Date at bottom */}
                             <p className="text-xs text-gray-500 pt-2 border-t">
                               {formattedDate}
                             </p>

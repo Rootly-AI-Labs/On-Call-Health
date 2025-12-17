@@ -1113,11 +1113,11 @@ function DashboardContent() {
                   </CardContent>
                 </Card>
 
-                { <HealthTrendsChart
+                {/* { <HealthTrendsChart
                   currentAnalysis={currentAnalysis}
                   historicalTrends={historicalTrends}
                   loadingTrends={loadingTrends}
-                />}
+                />} */}
               </div>
 
               {/* Burnout Factors Section */}

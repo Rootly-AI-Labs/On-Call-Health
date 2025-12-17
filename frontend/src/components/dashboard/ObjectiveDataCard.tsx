@@ -177,7 +177,7 @@ export function ObjectiveDataCard({
                         return (
                           <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
                             {/* Percentage change with arrow */}
-                            <p className={`text-sm font-bold mb-2 ${percentageChange >= 0 ? 'text-red-600' : 'text-green-600'}`}>
+                            <p className={`text-base font-bold mb-2 ${percentageChange >= 0 ? 'text-red-600' : 'text-green-600'}`}>
                               {percentageChange >= 0 ? '↑' : '↓'} {Math.abs(percentageChange).toFixed(1)}%
                             </p>
 
