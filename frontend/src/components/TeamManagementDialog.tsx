@@ -43,7 +43,7 @@ export function TeamManagementDialog({ isOpen, onClose }: TeamManagementDialogPr
 
       // Fetch organization members
       const membersResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/organizations/members`,
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/organizations/members`,
         { headers }
       )
       if (membersResponse.ok) {
