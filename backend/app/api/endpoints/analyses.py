@@ -129,13 +129,6 @@ async def run_burnout_analysis(
     db: Session = Depends(get_db)
 ):
     """Run a new burnout analysis for a specific integration and time range."""
-    # Check if user can run analyses (member or admin, not viewer)
-    if current_user.role == 'viewer':
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Viewers cannot run analyses. Please ask an admin to promote you to member."
-        )
-
     try:
         logger.info(f"Starting analysis for integration {request.integration_id}, user {current_user.id}")
         logger.info(f"Analysis request: integration={request.integration_id}, github={request.include_github}, slack={request.include_slack}")

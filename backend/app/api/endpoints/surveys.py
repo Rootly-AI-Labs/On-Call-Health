@@ -294,12 +294,13 @@ async def manual_survey_delivery(
     """
     Manually trigger survey delivery.
     Requires confirmation to prevent accidental sends.
+    Only admins can send surveys.
     """
-    # Check if user can send surveys (member or admin, not viewer)
-    if current_user.role == 'viewer':
+    # Check if user is admin
+    if current_user.role not in ['admin', 'org_admin', 'super_admin']:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Viewers cannot send surveys. Please ask an admin to promote you to member."
+            detail="Only admins can send surveys."
         )
 
     organization_id = current_user.organization_id
