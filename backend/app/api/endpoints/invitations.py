@@ -87,21 +87,34 @@ async def list_pending_invitations(
     db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
     """
-    List pending invitations for current user's organization.
+    List pending invitations for users with the same email domain or organization.
     """
-    if not current_user.organization_id:
-        raise HTTPException(status_code=400, detail="You must be part of an organization")
+    if not current_user.email:
+        raise HTTPException(status_code=400, detail="User email not found")
+
+    # Extract domain from current user's email
+    email_domain = current_user.email.split('@')[1] if '@' in current_user.email else None
+
+    if not email_domain:
+        raise HTTPException(status_code=400, detail="Invalid email format")
 
     # Check if user can view invitations (admin or super_admin)
     if current_user.role not in ['admin', 'org_admin', 'super_admin']:  # Support both during transition
         raise HTTPException(status_code=403, detail="Only organization admins can view invitations")
 
     try:
-        # Get pending invitations for this organization
-        invitations = db.query(OrganizationInvitation).filter(
-            OrganizationInvitation.organization_id == current_user.organization_id,
+        # Get pending invitations for this email domain or organization
+        query = db.query(OrganizationInvitation).filter(
             OrganizationInvitation.status == "pending"
-        ).order_by(OrganizationInvitation.created_at.desc()).all()
+        )
+
+        # Filter by organization_id if user has one, otherwise by email domain
+        if current_user.organization_id:
+            query = query.filter(OrganizationInvitation.organization_id == current_user.organization_id)
+        else:
+            query = query.filter(OrganizationInvitation.email.like(f'%@{email_domain}'))
+
+        invitations = query.order_by(OrganizationInvitation.created_at.desc()).all()
 
         invitation_list = []
         for invitation in invitations:
