@@ -689,13 +689,6 @@ function DashboardContent() {
                 setExpandedDataSources={setExpandedDataSources}
               />
 
-              {/* Objective Data Card - Commented Out (moved to Charts Section) */}
-              {/*
-              <ObjectiveDataCard
-                currentAnalysis={currentAnalysis}
-                loadingTrends={loadingTrends}
-              />
-              */}
 
               {/* Partial Data Warning */}
               {currentAnalysis?.analysis_data?.error && currentAnalysis?.analysis_data?.partial_data && (
@@ -1120,11 +1113,11 @@ function DashboardContent() {
                   </CardContent>
                 </Card>
 
-                {/* <HealthTrendsChart
+                { <HealthTrendsChart
                   currentAnalysis={currentAnalysis}
                   historicalTrends={historicalTrends}
                   loadingTrends={loadingTrends}
-                /> */}
+                />}
               </div>
 
               {/* Burnout Factors Section */}
