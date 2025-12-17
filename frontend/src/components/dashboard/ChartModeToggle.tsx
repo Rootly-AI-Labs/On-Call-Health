@@ -1,6 +1,6 @@
 "use client"
 
-import { useChartMode } from "@/context/ChartModeContext"
+import { useChartMode } from "@/contexts/ChartModeContext"
 import { Button } from "@/components/ui/button"
 
 export function ChartModeToggle() {

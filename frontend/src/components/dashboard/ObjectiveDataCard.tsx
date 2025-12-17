@@ -20,8 +20,8 @@ export function ObjectiveDataCard({
     }
 
     const scores = dailyTrends.map(d => {
-      // Convert 0-10 scale to 0-100 OCB scale
-      return Math.max(0, Math.min(100, Math.round(d.overall_score * 10)));
+      // Convert health score (0-10) to OCB scale (0-100): OCB = 100 - (health * 10)
+      return Math.max(0, Math.min(100, 100 - Math.round(d.overall_score * 10)));
     });
 
     const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
@@ -63,8 +63,8 @@ export function ObjectiveDataCard({
 
     // Convert daily trends to chart format
     const chartData = dailyTrends.map((trend: any) => {
-      // Convert overall_score from 0-10 to 0-100 OCB scale
-      const dailyScore = Math.max(0, Math.min(100, Math.round(trend.overall_score * 10)));
+      // Convert health score (0-10) to OCB scale (0-100): OCB = 100 - (health * 10)
+      const dailyScore = Math.max(0, Math.min(100, 100 - Math.round(trend.overall_score * 10)));
 
       return {
         date: new Date(trend.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
@@ -72,6 +72,8 @@ export function ObjectiveDataCard({
         dailyScore: dailyScore,
         incidentCount: trend.incident_count || 0,
         afterHours: trend.after_hours_count || 0,
+        membersAtRisk: trend.members_at_risk || 0,
+        totalMembers: trend.total_members || 0,
         hasData: trend.incident_count > 0
       };
     });
@@ -174,9 +176,22 @@ export function ObjectiveDataCard({
 
                         return (
                           <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+                            {/* Percentage change with arrow */}
                             <p className={`text-sm font-bold mb-2 ${percentageChange >= 0 ? 'text-red-600' : 'text-green-600'}`}>
-                              {percentageChange >= 0 ? '+' : ''}{percentageChange.toFixed(1)}%
+                              {percentageChange >= 0 ? '↑' : '↓'} {Math.abs(percentageChange).toFixed(1)}%
                             </p>
+
+                            {/* Incidents count */}
+                            <p className="text-sm text-gray-600">Incidents: {data.incidentCount || 0}</p>
+
+                            {/* At-risk members (conditional) */}
+                            {data.membersAtRisk > 0 && (
+                              <p className="text-sm text-orange-600">
+                                At Risk: {data.membersAtRisk}/{data.totalMembers} members
+                              </p>
+                            )}
+
+                            {/* Date at bottom */}
                             <p className="text-xs text-gray-500 pt-2 border-t">
                               {formattedDate}
                             </p>
@@ -186,7 +201,7 @@ export function ObjectiveDataCard({
                       return null;
                     }}
                   />
-                  {/* Daily Team Health Score Line */}
+                  {/* Daily Team OCB Score Line */}
                   <Line
                     type="monotone"
                     dataKey="dailyScore"
@@ -194,7 +209,7 @@ export function ObjectiveDataCard({
                     strokeWidth={2}
                     dot={false}
                     isAnimationActive={true}
-                    name="Daily Team Health Score"
+                    name="Daily OCB Score"
                     connectNulls={true}
                   />
                   {/* Mean Score Line */}

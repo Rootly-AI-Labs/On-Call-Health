@@ -7,7 +7,7 @@ import NewRelicProvider from '@/components/NewRelicProvider'
 import ClientToaster from '@/components/ClientToaster'
 import { GettingStartedProvider } from '@/contexts/GettingStartedContext'
 import { GettingStartedDialog } from '@/components/GettingStartedDialog'
-import { ChartModeProvider } from '@/context/ChartModeContext'
+import { ChartModeProvider } from '@/contexts/ChartModeContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
