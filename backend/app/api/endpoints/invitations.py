@@ -27,15 +27,15 @@ async def create_invitation(
     db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
     """
-    Create new organization invitation (for org admins and managers).
+    Create new organization invitation (for organization admins).
     """
     # Check if user has an organization
     if not current_user.organization_id:
         raise HTTPException(status_code=400, detail="You must be part of an organization to invite others")
 
-    # Check if user can invite (org_admin, manager, or super_admin)
-    if current_user.role not in ['org_admin', 'manager', 'super_admin']:
-        raise HTTPException(status_code=403, detail="Only organization admins and managers can invite users")
+    # Check if user can invite (admin or super_admin)
+    if current_user.role not in ['admin', 'org_admin', 'super_admin']:  # Support both during transition
+        raise HTTPException(status_code=403, detail="Only organization admins can invite users")
 
     # Check if user already exists with this email
     existing_user = db.query(User).filter(User.email.ilike(request.email)).first()
@@ -92,9 +92,9 @@ async def list_pending_invitations(
     if not current_user.organization_id:
         raise HTTPException(status_code=400, detail="You must be part of an organization")
 
-    # Check if user can view invitations (org_admin, manager, or super_admin)
-    if current_user.role not in ['org_admin', 'manager', 'super_admin']:
-        raise HTTPException(status_code=403, detail="Only organization admins and managers can view invitations")
+    # Check if user can view invitations (admin or super_admin)
+    if current_user.role not in ['admin', 'org_admin', 'super_admin']:  # Support both during transition
+        raise HTTPException(status_code=403, detail="Only organization admins can view invitations")
 
     try:
         # Get pending invitations for this organization
@@ -379,8 +379,8 @@ async def resend_invitation(
     if not invitation:
         raise HTTPException(status_code=404, detail="Invitation not found")
 
-    # Check if current user can resend (org admin or super admin)
-    if not current_user.organization_id == invitation.organization_id or current_user.role not in ['org_admin', 'super_admin']:
+    # Check if current user can resend (admin or super admin)
+    if not current_user.organization_id == invitation.organization_id or current_user.role not in ['admin', 'org_admin', 'super_admin']:
         raise HTTPException(status_code=403, detail="Not authorized to resend this invitation")
 
     if invitation.status == "accepted":
@@ -493,7 +493,7 @@ async def revoke_invitation(
     # Check if current user can revoke (org admin of same org, or person who sent it)
     if not (
         (current_user.organization_id == invitation.organization_id and
-         current_user.role in ['org_admin', 'manager', 'super_admin']) or
+         current_user.role in ['admin', 'org_admin', 'super_admin']) or
         current_user.id == invitation.invited_by
     ):
         raise HTTPException(status_code=403, detail="Not authorized to revoke this invitation")

@@ -72,9 +72,9 @@ async def create_or_update_survey_schedule(
 ):
     """
     Create or update survey schedule for an organization.
-    Only org admins can configure schedules.
+    Only organization admins can configure schedules.
     """
-    # Check if user is admin (super_admin or org_admin)
+    # Check if user is admin
     if not current_user.is_admin():
         raise HTTPException(status_code=403, detail="Only admins can configure survey schedules")
 

@@ -545,7 +545,7 @@ async def toggle_slack_feature(
     """
     Toggle a Slack feature (survey or communication patterns analysis) for the workspace.
     Only works for OAuth-based integrations.
-    Requires: workspace owner, org admin, or manager role.
+    Requires: workspace owner or admin role.
     """
     try:
         # Find workspace mapping - check by organization first, then by owner

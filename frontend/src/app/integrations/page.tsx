@@ -198,7 +198,7 @@ export default function IntegrationsPage() {
   // Invite modal state
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [inviteEmail, setInviteEmail] = useState("")
-  const [inviteRole, setInviteRole] = useState("manager")
+  const [inviteRole, setInviteRole] = useState("member")
   const [isInviting, setIsInviting] = useState(false)
 
   // Organization members and invitations state

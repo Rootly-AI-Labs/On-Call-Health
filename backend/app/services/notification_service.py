@@ -60,7 +60,7 @@ class NotificationService:
         # Also notify org admins (but not the inviter again or the person who accepted)
         org_admins = self.db.query(User).filter(
             User.organization_id == invitation.organization_id,
-            User.role.in_(['org_admin', 'super_admin']),
+            User.role.in_(['admin', 'org_admin', 'super_admin']),  # Support both during transition
             User.id != invitation.invited_by,  # Don't duplicate notification for inviter
             User.id != accepted_by.id  # Don't notify the person who accepted
         ).all()
@@ -89,7 +89,7 @@ class NotificationService:
         # Get org admins for the organization
         org_admins = self.db.query(User).filter(
             User.organization_id == organization_id,
-            User.role.in_(['org_admin', 'super_admin']),
+            User.role.in_(['admin', 'org_admin', 'super_admin']),
             User.id != user.id  # Don't notify the user who submitted
         ).all()
 
@@ -167,7 +167,7 @@ class NotificationService:
         # Get org admins and owner
         org_admins = self.db.query(User).filter(
             User.organization_id == organization_id,
-            User.role.in_(['org_admin', 'super_admin']),
+            User.role.in_(['admin', 'org_admin', 'super_admin']),
             User.id != toggled_by.id  # Don't notify the person who toggled
         ).all()
 
@@ -323,7 +323,7 @@ class NotificationService:
         # Get org admins (include the person who triggered - they want confirmation)
         org_admins = self.db.query(User).filter(
             User.organization_id == organization_id,
-            User.role.in_(['org_admin', 'super_admin'])
+            User.role.in_(['admin', 'org_admin', 'super_admin'])
         ).all()
 
         if is_manual and triggered_by:

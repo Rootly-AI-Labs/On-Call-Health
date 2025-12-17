@@ -504,16 +504,16 @@ async def exchange_auth_code_for_token(
 @router.patch("/users/{user_id}/role")
 async def update_user_role(
     user_id: int,
-    new_role: str = Query(..., regex="^(member|manager|org_admin)$"),
+    new_role: str = Query(..., regex="^(member|admin|viewer)$"),
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
     """
     Update a user's role within the organization.
-    Only org_admin can change roles.
+    Only admin can change roles.
     """
-    # Check if current user is org_admin
-    if current_user.role != "org_admin":
+    # Check if current user is admin (support both old and new role names during transition)
+    if current_user.role not in ['admin', 'org_admin']:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only organization admins can change user roles"
@@ -540,6 +540,21 @@ async def update_user_role(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Cannot change your own role"
         )
+
+    # Prevent demoting the last admin
+    if target_user.role in ['admin', 'org_admin'] and new_role not in ['admin', 'org_admin']:
+        admin_count = db.query(User).filter(
+            User.organization_id == current_user.organization_id,
+            User.role.in_(['admin', 'org_admin']),
+            User.status == 'active',
+            User.id != target_user.id
+        ).count()
+
+        if admin_count == 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot demote the last admin. Promote another member to admin first."
+            )
 
     # Update the role
     old_role = target_user.role
@@ -729,3 +744,42 @@ async def delete_current_user_account(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete account. Please contact support."
         )
+
+
+@router.get("/organizations/members")
+async def get_organization_members(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+) -> list[Dict[str, Any]]:
+    """
+    Get all users with the same email domain as the current user.
+    Shows organization members based on email domain matching.
+    """
+    if not current_user.email:
+        raise HTTPException(status_code=400, detail="User email not found")
+
+    # Extract domain from current user's email
+    email_domain = current_user.email.split('@')[1] if '@' in current_user.email else None
+
+    if not email_domain:
+        raise HTTPException(status_code=400, detail="Invalid email format")
+
+    # Get all users with the same email domain
+    users = db.query(User).filter(
+        User.email.like(f'%@{email_domain}'),
+        User.status == 'active'
+    ).order_by(User.name).all()
+
+    # Format response
+    members = []
+    for user in users:
+        members.append({
+            "id": user.id,
+            "name": user.name,
+            "email": user.email,
+            "role": user.role,
+            "is_current_user": user.id == current_user.id,
+            "joined_at": user.joined_org_at.isoformat() if user.joined_org_at else None
+        })
+
+    return members
