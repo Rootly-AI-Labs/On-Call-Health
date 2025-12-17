@@ -299,7 +299,14 @@ async def list_integrations(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    """List all Rootly integrations for the current user with permissions."""
+    """
+    List all Rootly integrations for the current user with permissions.
+
+    Permission caching:
+    - Returns cached permissions if < 8 hours old (instant response)
+    - Refreshes permissions if cache is stale or missing (slower, 10s timeout per integration)
+    - Users can manually refresh via the refresh button on integrations page
+    """
     import time
     start_time = time.time()
     logger.info(f"🔍 [ROOTLY] Starting list_integrations for user {current_user.id}")
@@ -330,31 +337,50 @@ async def list_integrations(
         }
         result_integrations.append(integration_data)
 
-        # Check if we have cached permissions (cache for 1 hour)
+        # Check if we have cached permissions (cache for 8 hours)
+        # Permissions rarely change - only when token is revoked/modified
         cache_valid = False
         if integration.cached_permissions and integration.permissions_checked_at:
             cache_age = datetime.now(timezone.utc) - integration.permissions_checked_at
-            cache_valid = cache_age < timedelta(hours=1)
+            cache_valid = cache_age < timedelta(hours=8)
             if cache_valid:
                 integration_data["permissions"] = integration.cached_permissions
                 logger.info(f"✅ Using cached permissions for '{integration.name}' (ID={integration.id}) - cached {int(cache_age.total_seconds())}s ago")
 
-        # Queue permission check task if token exists and cache is stale/missing
-        if integration.api_token and not cache_valid:
-            client = RootlyAPIClient(integration.api_token)
-            permission_tasks.append((idx, client.check_permissions(), integration.id))
-        elif not integration.api_token:
-            # No token - set immediately
+        # Permission checking logic: Check now if never checked, background refresh if stale
+        never_checked = integration.permissions_checked_at is None
+
+        if integration.api_token:
+            if not cache_valid:
+                # Show "checking" placeholder
+                integration_data["permissions"] = {
+                    "users": {"access": None, "checking": True},
+                    "incidents": {"access": None, "checking": True}
+                }
+                client = RootlyAPIClient(integration.api_token)
+
+                # Always refresh in background - return immediately with "checking" placeholder
+                permission_tasks.append((idx, client.check_permissions(), integration.id, "background"))
+                if never_checked:
+                    logger.info(f"🔍 Queueing BACKGROUND permission check for '{integration.name}' (new integration)")
+                else:
+                    logger.info(f"🔍 Queueing BACKGROUND permission check for '{integration.name}' (stale cache)")
+        else:
+            # No token configured
             integration_data["permissions"] = {
                 "users": {"access": None, "error": "No API token configured"},
                 "incidents": {"access": None, "error": "No API token configured"}
             }
 
-    # Run all permission checks in parallel with 10s timeout each
+    # 🚀 OPTIMIZATION: All permission checks run in background
+    # Return immediately with "checking" status, permissions update in cache for next load
     if permission_tasks:
         import asyncio
-        logger.info(f"🔍 [ROOTLY] Checking permissions for {len(permission_tasks)} integrations in parallel...")
-        perm_start = time.time()
+
+        # All tasks are background tasks now (extract without mode filter)
+        background_tasks = [(idx, task, int_id) for idx, task, int_id, mode in permission_tasks]
+
+        logger.info(f"🔍 [ROOTLY] Scheduling {len(background_tasks)} background permission checks...")
 
         async def check_with_timeout(idx, task, integration_id):
             try:
@@ -365,44 +391,36 @@ async def list_integrations(
             except Exception as e:
                 return (idx, None, str(e), integration_id)
 
-        # Run all checks concurrently
-        results = await asyncio.gather(*[check_with_timeout(idx, task, int_id) for idx, task, int_id in permission_tasks])
+        async def refresh_permissions_background():
+            """Background task to check permissions and update cache"""
+            from app.models.base import SessionLocal
+            perm_start = time.time()
+            results = await asyncio.gather(*[check_with_timeout(idx, task, int_id) for idx, task, int_id in background_tasks])
 
-        # Apply results and cache them
-        for idx, permissions, error, integration_id in results:
-            if error == "timeout":
-                result_integrations[idx]["permissions"] = {
-                    "users": {"access": None, "error": "Rootly API timeout - check back later"},
-                    "incidents": {"access": None, "error": "Rootly API timeout - check back later"}
-                }
-                logger.warning(f"⚠️ Integration '{result_integrations[idx]['name']}' (ID={result_integrations[idx]['id']}) - Permission check TIMEOUT")
-                # Don't cache timeouts
-            elif error:
-                result_integrations[idx]["permissions"] = {
-                    "users": {"access": None, "error": f"Rootly API unavailable: {error}"},
-                    "incidents": {"access": None, "error": f"Rootly API unavailable: {error}"}
-                }
-                logger.warning(f"⚠️ Integration '{result_integrations[idx]['name']}' (ID={result_integrations[idx]['id']}) - Permission check ERROR: {error}")
-                # Don't cache errors
-            else:
-                result_integrations[idx]["permissions"] = permissions
-                users_access = permissions.get('users', {}).get('access', False)
-                incidents_access = permissions.get('incidents', {}).get('access', False)
-                logger.info(f"✅ Integration '{result_integrations[idx]['name']}' (ID={result_integrations[idx]['id']}) - Permissions: users={users_access}, incidents={incidents_access}")
+            # Create new DB session for background task (request session will be closed)
+            background_db = SessionLocal()
+            try:
+                for idx, permissions, error, integration_id in results:
+                    if permissions:
+                        try:
+                            integration = background_db.query(RootlyIntegration).filter(RootlyIntegration.id == integration_id).first()
+                            if integration:
+                                integration.cached_permissions = permissions
+                                integration.permissions_checked_at = datetime.now(timezone.utc)
+                                background_db.commit()
+                                logger.info(f"💾 Background: Cached permissions for integration ID={integration_id}")
+                        except Exception as e:
+                            logger.warning(f"⚠️ Background cache failed: {e}")
+                            background_db.rollback()
+                    elif error:
+                        logger.warning(f"⚠️ Integration ID={integration_id} - Permission check {error}")
+            finally:
+                background_db.close()
 
-                # Cache successful permission checks
-                try:
-                    integration = db.query(RootlyIntegration).filter(RootlyIntegration.id == integration_id).first()
-                    if integration:
-                        integration.cached_permissions = permissions
-                        integration.permissions_checked_at = datetime.now(timezone.utc)
-                        db.commit()
-                        logger.info(f"💾 Cached permissions for integration ID={integration_id}")
-                except Exception as cache_error:
-                    logger.warning(f"⚠️ Failed to cache permissions for integration ID={integration_id}: {cache_error}")
-                    db.rollback()
+            logger.info(f"🔍 [ROOTLY] Background permission checks completed in {time.time() - perm_start:.2f}s")
 
-        logger.info(f"🔍 [ROOTLY] All permission checks completed in {time.time() - perm_start:.2f}s")
+        # Fire and forget
+        asyncio.create_task(refresh_permissions_background())
 
     total_time = time.time() - start_time
     logger.info(f"🔍 [ROOTLY] COMPLETE: Returning {len(result_integrations)} integrations, total time: {total_time:.2f}s")

@@ -33,6 +33,9 @@ class User(Base):
     last_active_at = Column(DateTime(timezone=True))
     status = Column(String(20), default="active")  # 'active', 'suspended', 'pending'
 
+    # Domain-based data sharing
+    email_domain = Column(String(255), nullable=True, index=True)  # Extracted from email for grouping users
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
@@ -67,7 +70,13 @@ class User(Base):
     def all_emails(self):
         """Get all verified emails for this user."""
         return [email.email for email in self.emails if email.is_verified]
-    
+
+    def update_email_domain(self):
+        """Extract and update email_domain from email address."""
+        if self.email and '@' in self.email:
+            self.email_domain = self.email.split('@')[1].lower()
+        return self.email_domain
+
     def has_provider(self, provider_name: str) -> bool:
         """Check if user has a specific OAuth provider linked."""
         return any(p.provider == provider_name for p in self.oauth_providers)

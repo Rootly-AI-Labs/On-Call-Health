@@ -1081,13 +1081,12 @@ async def handle_burnout_survey_command(
                 "response_type": "ephemeral"
             }
 
-        # Check for existing survey response today
+        # Check for existing survey response today (scoped by user only)
         from datetime import datetime
         today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
 
         existing_report = db.query(UserBurnoutReport).filter(
             UserBurnoutReport.user_id == user_correlation.user_id,
-            UserBurnoutReport.organization_id == organization.id,
             UserBurnoutReport.submitted_at >= today_start
         ).first()
 
@@ -1213,19 +1212,18 @@ async def handle_slack_interactions(
                     slack_user_id = slack_user.get("id")
                     trigger_id = data.get("trigger_id")
 
-                    # Get organization and check for existing report
+                    # Check for existing report today (scoped by user only)
                     from datetime import datetime
                     today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
 
                     existing_report = db.query(UserBurnoutReport).filter(
                         UserBurnoutReport.user_id == user_id,
-                        UserBurnoutReport.organization_id == organization_id,
                         UserBurnoutReport.submitted_at >= today_start
                     ).first()
 
-                    # Open modal
+                    # Open modal (organization_id kept for backwards compatibility with old buttons)
                     modal_view = create_burnout_survey_modal(
-                        organization_id=organization_id,
+                        organization_id=organization_id,  # Still passed but ignored in logic
                         user_id=user_id,
                         analysis_id=None,  # No specific analysis for daily check-ins
                         is_update=bool(existing_report)
@@ -1265,46 +1263,69 @@ async def handle_slack_interactions(
                 # Extract form values from modal
                 values = view.get("state", {}).get("values", {})
 
-                # Get burnout score (0-100 scale) - already in correct format
-                self_reported_score = int(values.get("burnout_score_block", {}).get("burnout_score_input", {}).get("selected_option", {}).get("value", "50"))
+                try:
+                    # Get burnout score (0-100 scale) - already in correct format
+                    burnout_score_block = values.get("burnout_score_block") or {}
+                    burnout_score_input = burnout_score_block.get("burnout_score_input") or {}
+                    burnout_score_option = burnout_score_input.get("selected_option") or {}
+                    self_reported_score = int(burnout_score_option.get("value", "50"))
 
-                # Get energy level (radio buttons) - convert to 1-5 integer
-                energy_level_str = values.get("energy_level_block", {}).get("energy_level_input", {}).get("selected_option", {}).get("value", "moderate")
-                energy_level_map = {
-                    "very_low": 1,
-                    "low": 2,
-                    "moderate": 3,
-                    "high": 4,
-                    "very_high": 5
-                }
-                energy_level = energy_level_map.get(energy_level_str, 3)
+                    # Get energy level (radio buttons) - convert to 1-5 integer
+                    energy_level_block = values.get("energy_level_block") or {}
+                    energy_level_input = energy_level_block.get("energy_level_input") or {}
+                    energy_level_option = energy_level_input.get("selected_option") or {}
+                    energy_level_str = energy_level_option.get("value", "moderate")
+                    energy_level_map = {
+                        "very_low": 1,
+                        "low": 2,
+                        "moderate": 3,
+                        "high": 4,
+                        "very_high": 5
+                    }
+                    energy_level = energy_level_map.get(energy_level_str, 3)
 
-                # Get stress factors (checkboxes)
-                stress_factors_options = values.get("stress_factors_block", {}).get("stress_factors_input", {}).get("selected_options", [])
-                stress_factors = [opt.get("value") for opt in stress_factors_options]
+                    # Get stress factors (checkboxes)
+                    stress_factors_block = values.get("stress_factors_block") or {}
+                    stress_factors_input = stress_factors_block.get("stress_factors_input") or {}
+                    stress_factors_options = stress_factors_input.get("selected_options", [])
+                    stress_factors = [opt.get("value") for opt in (stress_factors_options or [])]
 
-                # Get personal circumstances (optional)
-                personal_circumstances = values.get("personal_circumstances_block", {}).get("personal_circumstances_input", {}).get("selected_option", {}).get("value")
+                    # Get personal circumstances (optional)
+                    personal_circumstances_block = values.get("personal_circumstances_block") or {}
+                    personal_circumstances_input = personal_circumstances_block.get("personal_circumstances_input") or {}
+                    personal_circumstances_option = personal_circumstances_input.get("selected_option")
+                    personal_circumstances = personal_circumstances_option.get("value") if personal_circumstances_option else None
 
-                # Get optional comments
-                comments = values.get("comments_block", {}).get("comments_input", {}).get("value", "")
+                    # Get optional comments
+                    comments_block = values.get("comments_block") or {}
+                    comments_input = comments_block.get("comments_input")
+                    comments = comments_input.get("value", "") if comments_input else ""
 
-                # Extract user and organization IDs from private_metadata
-                metadata = json.loads(view.get("private_metadata", "{}"))
-                user_id = metadata.get("user_id")
-                organization_id = metadata.get("organization_id")
-                analysis_id = metadata.get("analysis_id")  # Optional - may be None
+                    # Extract user and organization IDs from private_metadata
+                    metadata = json.loads(view.get("private_metadata", "{}"))
+                    user_id = metadata.get("user_id")
+                    organization_id = metadata.get("organization_id")  # Optional now
+                    analysis_id = metadata.get("analysis_id")  # Optional - may be None
 
-                if not user_id or not organization_id:
-                    return {"response_action": "errors", "errors": {"comments_block": "Invalid survey data"}}
+                    if not user_id:
+                        return {"response_action": "errors", "errors": {"comments_block": "Invalid survey data"}}
+                except Exception as e:
+                    logging.error(f"Error parsing survey values: {str(e)}", exc_info=True)
+                    return {"response_action": "errors", "errors": {"comments_block": "Error submitting survey. Please try again."}}
 
                 # Check if user already submitted today (within last 24 hours)
                 from datetime import datetime, timedelta
                 today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
 
+                # Get user info once for both report creation and notifications
+                user = db.query(User).filter(User.id == user_id).first()
+                if not user:
+                    return {"response_action": "errors", "errors": {"comments_block": "User not found"}}
+
+                # Check if user already submitted today (scoped by user only, not org)
+                # This allows only 1 survey per user per day, regardless of organization
                 existing_report = db.query(UserBurnoutReport).filter(
                     UserBurnoutReport.user_id == user_id,
-                    UserBurnoutReport.organization_id == organization_id,
                     UserBurnoutReport.submitted_at >= today_start
                 ).order_by(UserBurnoutReport.submitted_at.desc()).first()
 
@@ -1318,14 +1339,16 @@ async def handle_slack_interactions(
                     existing_report.additional_comments = comments
                     existing_report.submitted_via = 'slack'
                     existing_report.analysis_id = analysis_id  # Update linked analysis if provided
+                    existing_report.email_domain = user.email_domain  # Refresh email_domain in case it changed
                     existing_report.updated_at = datetime.utcnow()
                     logging.info(f"Updated existing report ID {existing_report.id} for user {user_id}")
                     is_update = True
                 else:
-                    # Create new burnout report
+                    # Create new burnout report with email_domain for domain-based sharing
                     new_report = UserBurnoutReport(
                         user_id=user_id,
                         organization_id=organization_id,
+                        email_domain=user.email_domain,
                         analysis_id=analysis_id,  # Optional - may be None
                         self_reported_score=self_reported_score,
                         energy_level=energy_level,
@@ -1336,7 +1359,7 @@ async def handle_slack_interactions(
                         submitted_at=datetime.utcnow()
                     )
                     db.add(new_report)
-                    logging.info(f"Created new report for user {user_id}")
+                    logging.info(f"Created new report for user {user_id} with email_domain {user.email_domain}")
 
                 db.commit()
 
@@ -1344,9 +1367,7 @@ async def handle_slack_interactions(
                 if not is_update:
                     try:
                         notification_service = NotificationService(db)
-                        # Get user info for notification
-                        user = db.query(User).filter(User.id == user_id).first()
-                        if user and analysis_id:
+                        if analysis_id:
                             # Get analysis for notification context
                             analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
                             if analysis:
@@ -1442,9 +1463,14 @@ async def submit_slack_burnout_survey(
                 detail="Survey already submitted for this analysis"
             )
 
+        # Get user for email_domain
+        user = db.query(User).filter(User.id == user_correlation.user_id).first()
+
         # Create new burnout report
         new_report = UserBurnoutReport(
             user_id=user_correlation.user_id,
+            organization_id=None,  # No org_id for this endpoint
+            email_domain=user.email_domain if user else None,
             analysis_id=submission.analysis_id,
             self_reported_score=submission.self_reported_score,
             energy_level=submission.energy_level,

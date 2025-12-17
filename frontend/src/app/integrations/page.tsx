@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -140,6 +140,7 @@ import { JiraConnectedCard } from "./components/JiraConnectedCard"
 import { RootlyIntegrationForm } from "./components/RootlyIntegrationForm"
 import { SurveyFeedbackSection } from "./components/SurveyFeedbackSection"
 import { PagerDutyIntegrationForm } from "./components/PagerDutyIntegrationForm"
+import { IntegrationCardItem } from "./components/IntegrationCardItem"
 import { DeleteIntegrationDialog } from "./dialogs/DeleteIntegrationDialog"
 import { GitHubDisconnectDialog } from "./dialogs/GitHubDisconnectDialog"
 import { SlackDisconnectDialog } from "./dialogs/SlackDisconnectDialog"
@@ -474,7 +475,8 @@ export default function IntegrationsPage() {
     }
   }
 
-  const toggleIntegrationExpanded = (integrationId: number) => {
+  // 🚀 PHASE 3: Wrap with useCallback for stable reference (prevents child re-renders)
+  const toggleIntegrationExpanded = useCallback((integrationId: number) => {
     setExpandedIntegrations(prev => {
       const newSet = new Set(prev)
       if (newSet.has(integrationId)) {
@@ -484,7 +486,7 @@ export default function IntegrationsPage() {
       }
       return newSet
     })
-  }
+  }, [])
 
   const startEditingGitHubUsername = (userId: number, currentUsername: string | null) => {
     setEditingUserId(userId)
@@ -1237,8 +1239,8 @@ export default function IntegrationsPage() {
     )
   }
 
-  // Refresh permissions for a specific integration
-  const refreshIntegrationPermissions = async (integrationId: number) => {
+  // 🚀 PHASE 3: Refresh permissions for a specific integration (wrapped with useCallback)
+  const refreshIntegrationPermissions = useCallback(async (integrationId: number) => {
     setRefreshingPermissions(integrationId)
     try {
       const authToken = localStorage.getItem('auth_token')
@@ -1263,7 +1265,7 @@ export default function IntegrationsPage() {
     } finally {
       setRefreshingPermissions(null)
     }
-  }
+  }, [])
 
   // Background API loading - does NOT change loading states (for silent refresh)
   const loadAllIntegrationsAPIBackground = async () => {
@@ -1273,6 +1275,7 @@ export default function IntegrationsPage() {
         return
       }
 
+      // 🚀 PHASE 2: Backend now caches permissions for 24 hours
       const [rootlyResponse, pagerdutyResponse, githubResponse, slackResponse, jiraResponse] = await Promise.all([
         fetch(`${API_BASE}/rootly/integrations`, {
           headers: { 'Authorization': `Bearer ${authToken}` }
@@ -1372,7 +1375,8 @@ export default function IntegrationsPage() {
     }
   }
   
-  // Original API loading logic (extracted for reuse)
+  // 🚀 PHASE 1 OPTIMIZATION: Progressive section loading
+  // Each integration section loads and renders independently as data arrives
   const loadAllIntegrationsAPI = async () => {
     // Prevent concurrent calls using a ref (not state, since state starts as true)
     if (isLoadingRef.current) {
@@ -1406,102 +1410,167 @@ export default function IntegrationsPage() {
         ])
       }
 
-      const [rootlyResponse, pagerdutyResponse, githubResponse, slackResponse, jiraResponse] = await Promise.all([
-        fetchWithTimeout(`${API_BASE}/rootly/integrations`, {
-          headers: { 'Authorization': `Bearer ${authToken}` }
-        }).catch((error) => {
-          console.error('Rootly API request failed:', error.message)
-          return { ok: false, error: error.message }
-        }),
+      // 🚀 OPTIMIZATION: Start all requests in parallel but process them as they complete
+      // 🚀 PHASE 2: Backend caches permissions for 24 hours for fast responses
+      const rootlyPromise = fetchWithTimeout(`${API_BASE}/rootly/integrations`, {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      }).catch((error) => {
+        console.error('Rootly API request failed:', error.message)
+        return { ok: false, error: error.message }
+      })
 
+      const pagerdutyPromise = fetchWithTimeout(`${API_BASE}/pagerduty/integrations`, {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      }).catch((error) => {
+        console.error('PagerDuty API request failed:', error.message)
+        return { ok: false, error: error.message }
+      })
 
-        fetchWithTimeout(`${API_BASE}/pagerduty/integrations`, {
-          headers: { 'Authorization': `Bearer ${authToken}` }
-        }).catch((error) => {
-          console.error('PagerDuty API request failed:', error.message)
-          return { ok: false, error: error.message }
-        }),
+      const githubPromise = fetchWithTimeout(`${API_BASE}/integrations/github/status`, {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      }).catch(() => {
+        return { ok: false }
+      })
 
+      const slackPromise = fetchWithTimeout(`${API_BASE}/integrations/slack/status`, {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      }).catch(() => {
+        return { ok: false }
+      })
 
-        fetchWithTimeout(`${API_BASE}/integrations/github/status`, {
-          headers: { 'Authorization': `Bearer ${authToken}` }
-        }).catch(() => {
-          return { ok: false }
-        }),
+      const jiraPromise = fetchWithTimeout(`${API_BASE}/integrations/jira/status`, {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      }).catch(() => {
+        return { ok: false }
+      })
 
+      // 🚀 PROGRESSIVE LOADING: Process each response as it arrives (non-blocking)
+      // Process Rootly data as soon as it's available
+      rootlyPromise.then(async (rootlyResponse) => {
+        try {
+          const rootlyData = (rootlyResponse as any).ok && (rootlyResponse as Response).json
+            ? await (rootlyResponse as Response).json()
+            : { integrations: [] }
+          const rootlyIntegrations = (rootlyData.integrations || []).map((i: Integration) => ({ ...i, platform: 'rootly' }))
 
-        fetchWithTimeout(`${API_BASE}/integrations/slack/status`, {
-          headers: { 'Authorization': `Bearer ${authToken}` }
+          // Update Rootly integrations immediately (merge with existing PagerDuty data if available)
+          setIntegrations(prev => {
+            const pagerdutyOnly = prev.filter(i => i.platform === 'pagerduty')
+            const merged = [...rootlyIntegrations, ...pagerdutyOnly]
 
-        }).catch(() => {
-          return { ok: false }
-        }),
-                fetchWithTimeout(`${API_BASE}/integrations/jira/status`, {
-          headers: { 'Authorization': `Bearer ${authToken}` }
+            // Update cache
+            localStorage.setItem('all_integrations', JSON.stringify(merged))
+            localStorage.setItem('all_integrations_timestamp', Date.now().toString())
 
-        }).catch(() => {
-          return { ok: false }
-        }),
+            return merged
+          })
+        } catch (error) {
+          console.error('Error processing Rootly data:', error)
+        } finally {
+          setLoadingRootly(false)
+        }
+      })
 
+      // Process PagerDuty data as soon as it's available
+      pagerdutyPromise.then(async (pagerdutyResponse) => {
+        try {
+          const pagerdutyData = (pagerdutyResponse as any).ok && (pagerdutyResponse as Response).json
+            ? await (pagerdutyResponse as Response).json()
+            : { integrations: [] }
+          const pagerdutyIntegrations = (pagerdutyData.integrations || []).map((i: Integration) => ({ ...i, platform: 'pagerduty' }))
 
-      ])
+          // Update PagerDuty integrations immediately (merge with existing Rootly data if available)
+          setIntegrations(prev => {
+            const rootlyOnly = prev.filter(i => i.platform === 'rootly')
+            const merged = [...rootlyOnly, ...pagerdutyIntegrations]
 
-      const rootlyData = (rootlyResponse as any).ok && (rootlyResponse as Response).json ? await (rootlyResponse as Response).json() : { integrations: [] }
-      const pagerdutyData = (pagerdutyResponse as any).ok && (pagerdutyResponse as Response).json ? await (pagerdutyResponse as Response).json() : { integrations: [] }
-      const githubData = (githubResponse as any).ok && (githubResponse as Response).json ? await (githubResponse as Response).json() : { connected: false, integration: null }
-      const slackData = (slackResponse as any).ok && (slackResponse as Response).json ? await (slackResponse as Response).json() : { integration: null }
-      const jiraData = (jiraResponse as any).ok && (jiraResponse as Response).json ? await (jiraResponse as Response).json() : { connected: false, integration: null }
-      const rootlyIntegrations = (rootlyData.integrations || []).map((i: Integration) => ({ ...i, platform: 'rootly' }))
-      const pagerdutyIntegrations = (pagerdutyData.integrations || []).map((i: Integration) => ({ ...i, platform: 'pagerduty' }))
+            // Update cache
+            localStorage.setItem('all_integrations', JSON.stringify(merged))
+            localStorage.setItem('all_integrations_timestamp', Date.now().toString())
 
-      const allIntegrations = [...rootlyIntegrations, ...pagerdutyIntegrations]
+            return merged
+          })
+        } catch (error) {
+          console.error('Error processing PagerDuty data:', error)
+        } finally {
+          setLoadingPagerDuty(false)
+        }
+      })
 
-      // Don't overwrite existing good data with empty responses from failed requests
-      // Only update if we got successful responses OR if we currently have no data
-      const shouldUpdate = (rootlyResponse as any).ok || (pagerdutyResponse as any).ok || integrations.length === 0
+      // Process GitHub data as soon as it's available
+      githubPromise.then(async (githubResponse) => {
+        try {
+          const githubData = (githubResponse as any).ok && (githubResponse as Response).json
+            ? await (githubResponse as Response).json()
+            : { connected: false, integration: null }
 
-      if (!shouldUpdate) {
-        isLoadingRef.current = false
-        setLoadingRootly(false)
-        setLoadingPagerDuty(false)
-        setLoadingGitHub(false)
-        setLoadingSlack(false)
-        return
-      }
+          setGithubIntegration(githubData.connected ? githubData.integration : null)
+          localStorage.setItem('github_integration', JSON.stringify(githubData))
+        } catch (error) {
+          console.error('Error processing GitHub data:', error)
+        } finally {
+          setLoadingGitHub(false)
+        }
+      })
 
-      setIntegrations(allIntegrations)
-      setGithubIntegration(githubData.connected ? githubData.integration : null)
-      setSlackIntegration(slackData.integration)
-      setJiraIntegration(jiraData.connected ? jiraData.integration : null)
+      // Process Slack data as soon as it's available
+      slackPromise.then(async (slackResponse) => {
+        try {
+          const slackData = (slackResponse as any).ok && (slackResponse as Response).json
+            ? await (slackResponse as Response).json()
+            : { integration: null }
 
-      // Cache the integrations (same as dashboard caching)
-      localStorage.setItem('all_integrations', JSON.stringify(allIntegrations))
-      localStorage.setItem('all_integrations_timestamp', Date.now().toString())
-      
-      // Cache GitHub and Slack and Jira integration status separately
-      localStorage.setItem('github_integration', JSON.stringify(githubData))
-      localStorage.setItem('slack_integration', JSON.stringify(slackData))
-      localStorage.setItem('jira_integration', JSON.stringify(jiraData))
+          setSlackIntegration(slackData.integration)
+          localStorage.setItem('slack_integration', JSON.stringify(slackData))
+        } catch (error) {
+          console.error('Error processing Slack data:', error)
+        } finally {
+          setLoadingSlack(false)
+        }
+      })
 
-      // Update back URL based on integration status
+      // Process Jira data as soon as it's available
+      jiraPromise.then(async (jiraResponse) => {
+        try {
+          const jiraData = (jiraResponse as any).ok && (jiraResponse as Response).json
+            ? await (jiraResponse as Response).json()
+            : { connected: false, integration: null }
+
+          setJiraIntegration(jiraData.connected ? jiraData.integration : null)
+          localStorage.setItem('jira_integration', JSON.stringify(jiraData))
+        } catch (error) {
+          console.error('Error processing Jira data:', error)
+        } finally {
+          setLoadingJira(false)
+        }
+      })
+
+      // Wait for all promises to complete (for back URL logic)
+      const [rootlyResponse, pagerdutyResponse] = await Promise.all([rootlyPromise, pagerdutyPromise])
+
+      // Update back URL based on integration status (only needs Rootly/PagerDuty)
       if (backUrl === '') {
-        // If user has no integrations, this is onboarding - don't show back button
-        // If user has integrations, they're managing them - show back to dashboard
-        if (allIntegrations.length > 0) {
+        const rootlyData = (rootlyResponse as any).ok && (rootlyResponse as Response).json
+          ? await (rootlyResponse as Response).json()
+          : { integrations: [] }
+        const pagerdutyData = (pagerdutyResponse as any).ok && (pagerdutyResponse as Response).json
+          ? await (pagerdutyResponse as Response).json()
+          : { integrations: [] }
+        const totalIntegrations = (rootlyData.integrations?.length || 0) + (pagerdutyData.integrations?.length || 0)
+
+        if (totalIntegrations > 0) {
           setBackUrl('/dashboard')
         }
-        // Otherwise keep backUrl empty to hide the back button
       }
     } catch (error) {
       toast.error("Failed to load integrations. Please try refreshing the page.")
-    } finally {
-      // Set all integration loading states to false
+      // Ensure loading states are cleared even on error
       setLoadingRootly(false)
       setLoadingPagerDuty(false)
       setLoadingGitHub(false)
       setLoadingSlack(false)
       setLoadingJira(false)
-
+    } finally {
       isLoadingRef.current = false
     }
   }
@@ -1575,7 +1644,8 @@ export default function IntegrationsPage() {
     )
   }
 
-  const updateIntegrationName = async (integration: Integration, newName: string) => {
+  // 🚀 PHASE 3: Wrap with useCallback for stable reference
+  const updateIntegrationName = useCallback(async (integration: Integration, newName: string) => {
     return IntegrationHandlers.updateIntegrationName(
       integration,
       newName,
@@ -1583,7 +1653,22 @@ export default function IntegrationsPage() {
       setIntegrations,
       setEditingIntegration
     )
-  }
+  }, [])
+
+  // 🚀 PHASE 3: Stable handlers for integration card actions
+  const handleEditIntegration = useCallback((id: number, name: string) => {
+    setEditingIntegration(id)
+    setEditingName(name)
+  }, [])
+
+  const handleCancelEdit = useCallback(() => {
+    setEditingIntegration(null)
+  }, [])
+
+  const handleDeleteIntegration = useCallback((integration: Integration) => {
+    setIntegrationToDelete(integration)
+    setDeleteDialogOpen(true)
+  }, [])
 
 
   const copyToClipboard = async (text: string) => {
@@ -2001,13 +2086,16 @@ export default function IntegrationsPage() {
     )
   }
 
-  const filteredIntegrations = integrations.filter(integration => {
-    if (activeTab === null) return true // Show all integrations when no tab selected
-    return integration.platform === activeTab
-  })
+  // 🚀 PHASE 3: Use useMemo to avoid recalculating filtered integrations on every render
+  const filteredIntegrations = useMemo(() => {
+    return integrations.filter(integration => {
+      if (activeTab === null) return true // Show all integrations when no tab selected
+      return integration.platform === activeTab
+    })
+  }, [integrations, activeTab])
 
-  const rootlyCount = integrations.filter(i => i.platform === 'rootly').length
-  const pagerdutyCount = integrations.filter(i => i.platform === 'pagerduty').length
+  const rootlyCount = useMemo(() => integrations.filter(i => i.platform === 'rootly').length, [integrations])
+  const pagerdutyCount = useMemo(() => integrations.filter(i => i.platform === 'pagerduty').length, [integrations])
 
   // Helper booleans to distinguish between Slack Survey (OAuth) and Enhanced Integration (webhook/token)
   // Note: Backend returns ONE integration at a time - either OAuth or manual, not both simultaneously

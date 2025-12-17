@@ -289,11 +289,18 @@ def calculate_severity_breakdown(incidents: List[Dict[str, Any]]) -> Dict[str, i
                 attrs = incident.get("attributes", {})
                 severity_info = attrs.get("severity", {})
 
-                if isinstance(severity_info, dict) and "data" in severity_info:
+                # Check if severity is already a string (slimmed format)
+                if isinstance(severity_info, str):
+                    severity_name = severity_info.lower()
+                elif isinstance(severity_info, dict) and "data" in severity_info:
                     severity_data = severity_info.get("data", {})
                     if isinstance(severity_data, dict) and "attributes" in severity_data:
                         severity_attrs = severity_data["attributes"]
                         severity_name = severity_attrs.get("name", "sev4").lower()
+                elif severity_info == {} or severity_info is None:
+                    # Severity data is missing - log for debugging
+                    incident_id = incident.get("id", "unknown")
+                    logger.warning(f"Severity data missing for incident {incident_id} - defaulting to sev4. severity_info={severity_info}")
 
             # Normalize severity name if not already in sev format
             if not severity_name.startswith("sev"):
@@ -302,7 +309,19 @@ def calculate_severity_breakdown(incidents: List[Dict[str, Any]]) -> Dict[str, i
                 severity_map = {
                     "critical": "sev1",
                     "emergency": "sev0",
-                    "medium": "sev3"
+                    "medium": "sev3",
+                    # Support custom L-prefixed severities (L0, L1, L2, L3, L4)
+                    "l0": "sev0",
+                    "l1": "sev1",
+                    "l2": "sev2",
+                    "l3": "sev3",
+                    "l4": "sev4",
+                    # Support P-prefixed severities (P0, P1, P2, P3, P4)
+                    "p0": "sev0",
+                    "p1": "sev1",
+                    "p2": "sev2",
+                    "p3": "sev3",
+                    "p4": "sev4"
                 }
                 severity_name = severity_map.get(severity_name.lower(), "sev4")
 

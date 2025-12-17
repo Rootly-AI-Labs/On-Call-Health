@@ -184,7 +184,7 @@ async def get_current_analysis(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    """Get the most recent analysis for the user."""
+    """Get the most recent analysis for the current user."""
     analysis = db.query(Analysis).filter(
         Analysis.user_id == current_user.id
     ).order_by(Analysis.created_at.desc()).first()
@@ -216,7 +216,7 @@ async def get_analysis_history(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    """Get user's analysis history."""
+    """Get analysis history for the current user."""
     analyses = db.query(Analysis).filter(
         Analysis.user_id == current_user.id
     ).order_by(Analysis.created_at.desc()).limit(limit).all()

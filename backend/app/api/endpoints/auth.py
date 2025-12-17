@@ -699,7 +699,7 @@ async def delete_current_user_account(
         ).count()
         db.query(JiraWorkspaceMapping).filter(
             JiraWorkspaceMapping.owner_user_id == current_user.id
-        ).update({"owner_user_id": None}, synchronize_session=False)
+        ).delete(synchronize_session=False)
 
         logger.info(f"Cleared {slack_workspaces_count} Slack workspace ownerships and {jira_workspaces_count} Jira workspace ownerships for user {current_user.id}")
 

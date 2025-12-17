@@ -273,6 +273,7 @@ class UserSyncService:
                 correlation = UserCorrelation(
                     user_id=current_user.id,  # Keep for backwards compatibility
                     organization_id=organization_id,  # Multi-tenancy key
+                    email_domain=current_user.email_domain,  # Domain-based data sharing
                     email=email,
                     name=user.get("name"),  # Store user's display name
                     integration_ids=[integration_id] if integration_id else []  # Initialize array
