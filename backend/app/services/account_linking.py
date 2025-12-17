@@ -393,15 +393,15 @@ class AccountLinkingService:
                 if invitation and not invitation.is_expired:
                     # Accept invitation automatically on OAuth
                     user.organization_id = invitation.organization_id
-                    # Beta: Everyone is org_admin to test all features
-                    user.role = 'org_admin'  # TODO: Change to invitation.role after beta
+                    # Use role from invitation (admin/member/viewer)
+                    user.role = invitation.role
                     user.joined_org_at = datetime.now()
 
                     # Mark invitation as accepted
                     invitation.status = 'accepted'
                     invitation.used_at = datetime.now()
 
-                    logger.info(f"Auto-accepted invitation for {email} to org {invitation.organization_id}")
+                    logger.info(f"Auto-accepted invitation for {email} to org {invitation.organization_id} as {user.role}")
                 else:
                     logger.info(f"No pending invitation found for {email}")
                 # else: Leave user unassigned, they need manual invitation
@@ -415,12 +415,13 @@ class AccountLinkingService:
                 if organization:
                     # Check if this is the first user from this domain (make them admin)
                     existing_users = self.db.query(User).filter(
-                        User.organization_id == organization.id
+                        User.organization_id == organization.id,
+                        User.status == 'active'
                     ).count()
 
                     user.organization_id = organization.id
-                    # Beta: Everyone is org_admin to test all features
-                    user.role = 'org_admin'  # TODO: Change to 'org_admin' if existing_users == 0 else 'user' after beta
+                    # First user is admin, subsequent users are viewers until promoted
+                    user.role = 'admin' if existing_users == 0 else 'viewer'
                     user.joined_org_at = datetime.now()
 
                     logger.info(f"Auto-assigned {email} to org {organization.id} as {user.role}")
