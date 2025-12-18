@@ -291,6 +291,37 @@ export function UnifiedSlackCard({
       <CardContent className="space-y-6">
         {!isConnected ? (
           <>
+            {/* Permissions Info Box */}
+            <div className="bg-amber-50 border border-amber-300 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div className="space-y-2 text-sm">
+                  <p className="font-semibold text-amber-900">⚠️ Workspace Admin/Owner Required</p>
+                  <p className="text-amber-800">
+                    This app requests sensitive permissions (reading channel history, slash commands) that <strong>typically require approval from a Workspace Owner or Admin</strong> to install.
+                  </p>
+                  <p className="text-amber-700 text-xs mt-2">
+                    If you're not an admin, clicking "Add to Slack" will send an approval request to your workspace admins.
+                  </p>
+                  <div className="mt-3 pt-3 border-t border-amber-300">
+                    <p className="text-amber-900 font-medium mb-2">Required permissions:</p>
+                    <ul className="list-disc list-inside space-y-1 text-amber-800 ml-2 text-xs">
+                      <li><strong>Read channel messages</strong> - Analyze communication patterns</li>
+                      <li><strong>Read user info</strong> - Match team members with survey responses</li>
+                      <li><strong>Send DMs & slash commands</strong> - Deliver burnout surveys</li>
+                    </ul>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-amber-300">
+                    <p className="text-amber-900 font-medium mb-2">After admin approval:</p>
+                    <ol className="list-decimal list-inside space-y-1 text-amber-800 ml-2 text-xs">
+                      <li>Invite the bot to channels you want analyzed (use <code className="bg-amber-100 px-1 rounded text-xs">/invite @bot-name</code>)</li>
+                      <li>Bot can only read messages from channels it's been added to</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Pre-Connection: Simple description and button */}
             <div className="space-y-4">
               {/* Connect Button */}

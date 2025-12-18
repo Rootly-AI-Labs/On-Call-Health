@@ -407,27 +407,38 @@ class AccountLinkingService:
                 # else: Leave user unassigned, they need manual invitation
 
             else:
-                # Company domain - auto-assign to organization
+                # Company domain - get or create organization
                 organization = self.db.query(Organization).filter(
                     Organization.domain == domain
                 ).first()
 
-                if organization:
-                    # Check if this is the first user from this domain (make them admin)
-                    existing_users = self.db.query(User).filter(
-                        User.organization_id == organization.id,
-                        User.status == 'active'
-                    ).count()
+                if not organization:
+                    # Auto-create organization for this domain
+                    org_name = domain.split('.')[0].title()  # "xyz.com" → "Xyz"
+                    org_slug = domain.replace('.', '-')  # "xyz.com" → "xyz-com"
 
-                    user.organization_id = organization.id
-                    # First user is admin, subsequent users are members
-                    user.role = 'admin' if existing_users == 0 else 'member'
-                    user.joined_org_at = datetime.now()
+                    organization = Organization(
+                        name=org_name,
+                        domain=domain,
+                        slug=org_slug,
+                        status='active'
+                    )
+                    self.db.add(organization)
+                    self.db.flush()  # Get the ID
+                    logger.info(f"Auto-created organization '{org_name}' (id={organization.id}) for domain {domain}")
 
-                    logger.info(f"Auto-assigned {email} to org {organization.id} as {user.role}")
-                else:
-                    logger.info(f"No organization found for domain {domain}")
-                # else: No organization exists for this domain yet
+                # Check if this is the first user from this domain (make them admin)
+                existing_users = self.db.query(User).filter(
+                    User.organization_id == organization.id,
+                    User.status == 'active'
+                ).count()
+
+                user.organization_id = organization.id
+                # First user is admin, subsequent users are members
+                user.role = 'admin' if existing_users == 0 else 'member'
+                user.joined_org_at = datetime.now()
+
+                logger.info(f"Auto-assigned {email} to org {organization.id} ({organization.name}) as {user.role}")
 
         except Exception as e:
             logger.error(f"Error in _assign_user_to_organization: {e}")

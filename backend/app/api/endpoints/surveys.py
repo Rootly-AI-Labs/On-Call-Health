@@ -4,7 +4,7 @@ Survey scheduling and preferences API endpoints.
 import logging
 from datetime import time
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
@@ -72,13 +72,43 @@ async def create_or_update_survey_schedule(
 ):
     """
     Create or update survey schedule for an organization.
-    Only organization admins can configure schedules.
+    Only admins in the organization that owns the Slack workspace can configure schedules.
     """
     # Check if user is admin
-    if not current_user.is_admin():
+    if current_user.role != 'admin':
         raise HTTPException(status_code=403, detail="Only admins can configure survey schedules")
 
+    # Ensure user belongs to an organization
     organization_id = current_user.organization_id
+    if not organization_id:
+        raise HTTPException(
+            status_code=400,
+            detail="You must belong to an organization to configure surveys."
+        )
+
+    # Verify user's organization has an active Slack workspace
+    from ...models.slack_workspace_mapping import SlackWorkspaceMapping
+    workspace_mapping = db.query(SlackWorkspaceMapping).filter(
+        SlackWorkspaceMapping.organization_id == organization_id,
+        SlackWorkspaceMapping.status == 'active',
+        SlackWorkspaceMapping.survey_enabled == True
+    ).order_by(SlackWorkspaceMapping.registered_at.desc()).first()
+
+    if not workspace_mapping:
+        raise HTTPException(
+            status_code=404,
+            detail="No active Slack workspace with surveys enabled found for your organization. Please connect Slack and enable surveys first."
+        )
+
+    # Verify workspace owner is in the same organization (prevent cross-org access)
+    if workspace_mapping.owner_user_id:
+        owner = db.query(User).filter(User.id == workspace_mapping.owner_user_id).first()
+        # Only block if owner has an org_id AND it doesn't match (allow legacy NULL org_id workspaces)
+        if owner and owner.organization_id is not None and owner.organization_id != organization_id:
+            raise HTTPException(
+                status_code=403,
+                detail="This Slack workspace was connected by a different organization."
+            )
 
     # Parse time strings
     try:
@@ -92,10 +122,10 @@ async def create_or_update_survey_schedule(
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid time format. Use HH:MM (e.g., 09:00)")
 
-    # Check if schedule exists
+    # Check if schedule exists (order by id desc for deterministic results)
     existing_schedule = db.query(SurveySchedule).filter(
         SurveySchedule.organization_id == organization_id
-    ).first()
+    ).order_by(SurveySchedule.id.desc()).first()
 
     if existing_schedule:
         # Update existing
@@ -294,16 +324,46 @@ async def manual_survey_delivery(
     """
     Manually trigger survey delivery.
     Requires confirmation to prevent accidental sends.
-    Only admins can send surveys.
+    Only admins in the organization that owns the Slack workspace can send surveys.
     """
     # Check if user is admin
-    if current_user.role not in ['admin', 'org_admin', 'super_admin']:
+    if current_user.role != 'admin':
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
+            status_code=403,
             detail="Only admins can send surveys."
         )
 
+    # Ensure user belongs to an organization
     organization_id = current_user.organization_id
+    if not organization_id:
+        raise HTTPException(
+            status_code=400,
+            detail="You must belong to an organization to send surveys."
+        )
+
+    # Verify user's organization has an active Slack workspace
+    from ...models.slack_workspace_mapping import SlackWorkspaceMapping
+    workspace_mapping = db.query(SlackWorkspaceMapping).filter(
+        SlackWorkspaceMapping.organization_id == organization_id,
+        SlackWorkspaceMapping.status == 'active',
+        SlackWorkspaceMapping.survey_enabled == True
+    ).order_by(SlackWorkspaceMapping.registered_at.desc()).first()
+
+    if not workspace_mapping:
+        raise HTTPException(
+            status_code=404,
+            detail="No active Slack workspace with surveys enabled found for your organization. Please connect Slack and enable surveys first."
+        )
+
+    # Verify workspace owner is in the same organization (prevent cross-org access)
+    if workspace_mapping.owner_user_id:
+        owner = db.query(User).filter(User.id == workspace_mapping.owner_user_id).first()
+        # Only block if owner has an org_id AND it doesn't match (allow legacy NULL org_id workspaces)
+        if owner and owner.organization_id is not None and owner.organization_id != organization_id:
+            raise HTTPException(
+                status_code=403,
+                detail="This Slack workspace was connected by a different organization."
+            )
 
     # First call without confirmation - return preview
     if not request.confirmed:
@@ -326,6 +386,19 @@ async def manual_survey_delivery(
     # Confirmed - trigger survey delivery
     try:
         logger.info(f"Manual survey delivery triggered by {current_user.email} for org {organization_id}")
+
+        # Re-verify workspace is still enabled (prevent TOCTOU race condition)
+        workspace_check = db.query(SlackWorkspaceMapping).filter(
+            SlackWorkspaceMapping.id == workspace_mapping.id,
+            SlackWorkspaceMapping.status == 'active',
+            SlackWorkspaceMapping.survey_enabled == True
+        ).first()
+
+        if not workspace_check:
+            raise HTTPException(
+                status_code=400,
+                detail="Slack workspace surveys have been disabled. Please enable surveys and try again."
+            )
 
         # Get recipients before sending
         recipients = survey_scheduler._get_survey_recipients(organization_id, db, is_reminder=False)

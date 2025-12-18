@@ -89,15 +89,37 @@ async def test_slack_endpoint():
 
 @router.get("/oauth/callback")
 async def slack_oauth_callback(
-    code: str,
+    code: str = None,
+    error: str = None,
     state: str = None,
     db: Session = Depends(get_db)
 ):
     """
     Handle Slack OAuth callback for workspace-level app installation.
     Creates a workspace mapping and redirects to the frontend with success status.
+    Handles errors when user cancels or denies authorization.
     """
-    logger.debug(f"Slack OAuth callback received - code: {code[:20]}..., state: {state[:50] if state else 'None'}...")
+    logger.debug(f"Slack OAuth callback received - code: {code[:20] if code else 'None'}..., error: {error}, state: {state[:50] if state else 'None'}...")
+
+    # Handle user denial/cancellation
+    if error:
+        logger.info(f"Slack OAuth denied or cancelled: {error}")
+        from fastapi.responses import RedirectResponse
+        frontend_url = settings.FRONTEND_URL or "http://localhost:3000"
+
+        if error == "access_denied":
+            redirect_url = f"{frontend_url}/integrations?slack_connected=false&error=user_cancelled&message=You cancelled the Slack authorization"
+        else:
+            redirect_url = f"{frontend_url}/integrations?slack_connected=false&error={error}"
+
+        return RedirectResponse(url=redirect_url, status_code=302)
+
+    # Require code if no error
+    if not code:
+        from fastapi.responses import RedirectResponse
+        frontend_url = settings.FRONTEND_URL or "http://localhost:3000"
+        redirect_url = f"{frontend_url}/integrations?slack_connected=false&error=missing_code&message=Missing authorization code"
+        return RedirectResponse(url=redirect_url, status_code=302)
 
     try:
         # Parse state parameter to get organization info and feature flags
@@ -218,6 +240,25 @@ async def slack_oauth_callback(
         if not organization_id and owner_user.organization_id:
             organization_id = owner_user.organization_id
             logger.info(f"Using owner's organization_id: {organization_id}")
+
+        # Verify owner is an admin in OUR app (not just Slack admin)
+        if owner_user.role != 'admin':
+            logger.warning(
+                f"User {owner_user.id} ({owner_user.email}) attempted Slack OAuth "
+                f"but is not an admin in our app (role={owner_user.role})"
+            )
+            from fastapi.responses import RedirectResponse
+            frontend_url = settings.FRONTEND_URL or "http://localhost:3000"
+            error_message = urllib.parse.quote(
+                "Only organization admins can connect Slack. Please ask your admin to set up the integration."
+            )
+            redirect_url = (
+                f"{frontend_url}/integrations?"
+                f"slack_connected=false&"
+                f"error=admin_required&"
+                f"message={error_message}"
+            )
+            return RedirectResponse(url=redirect_url, status_code=302)
 
         if existing_mapping:
             # Update existing mapping (reactivate if it was disconnected)
@@ -545,20 +586,28 @@ async def toggle_slack_feature(
     """
     Toggle a Slack feature (survey or communication patterns analysis) for the workspace.
     Only works for OAuth-based integrations.
-    Requires: workspace owner or admin role.
+    Requires: admin role.
     """
+    # Check if user is admin
+    if current_user.role != 'admin':
+        raise HTTPException(
+            status_code=403,
+            detail="Only admins can toggle Slack features"
+        )
+
     try:
-        # Find workspace mapping - check by organization first, then by owner
+        # Find workspace mapping by organization
+        # Handle both org-based and user-based (legacy) workspaces
         workspace_mapping = None
 
-        # If user has an organization, check for org's workspace
         if current_user.organization_id:
+            # Look for org's workspace
             workspace_mapping = db.query(SlackWorkspaceMapping).filter(
                 SlackWorkspaceMapping.organization_id == current_user.organization_id,
                 SlackWorkspaceMapping.status == 'active'
             ).first()
 
-        # If no org workspace, check if user is the owner
+        # Fallback: Look for workspace by owner (for legacy workspaces without org_id)
         if not workspace_mapping:
             workspace_mapping = db.query(SlackWorkspaceMapping).filter(
                 SlackWorkspaceMapping.owner_user_id == current_user.id,
@@ -568,18 +617,7 @@ async def toggle_slack_feature(
         if not workspace_mapping:
             raise HTTPException(
                 status_code=404,
-                detail="No OAuth Slack workspace found for your organization"
-            )
-
-        # Check permissions: must be in the same organization OR be the owner
-        # Anyone in the organization can toggle features since they're all using the same workspace
-        is_owner = workspace_mapping.owner_user_id == current_user.id
-        is_same_org = workspace_mapping.organization_id and workspace_mapping.organization_id == current_user.organization_id
-
-        if not (is_owner or is_same_org):
-            raise HTTPException(
-                status_code=403,
-                detail="You must be in the same organization as the Slack workspace to toggle features"
+                detail="No OAuth Slack workspace found for your account"
             )
 
         # Validate feature name
@@ -634,18 +672,38 @@ async def disconnect_slack(
     """
     Disconnect Slack OAuth integration by deactivating the workspace mapping.
     This keeps the data but marks the workspace as inactive.
+    Requires: admin role.
     """
+    # Check if user is admin
+    if current_user.role != 'admin':
+        raise HTTPException(
+            status_code=403,
+            detail="Only admins can disconnect Slack"
+        )
+
     try:
-        # Find the user's OAuth workspace mapping
-        workspace_mapping = db.query(SlackWorkspaceMapping).filter(
-            SlackWorkspaceMapping.owner_user_id == current_user.id,
-            SlackWorkspaceMapping.status == 'active'
-        ).first()
+        # Find the organization's OAuth workspace mapping
+        # Handle both org-based and user-based (legacy) workspaces
+        workspace_mapping = None
+
+        if current_user.organization_id:
+            # Look for org's workspace
+            workspace_mapping = db.query(SlackWorkspaceMapping).filter(
+                SlackWorkspaceMapping.organization_id == current_user.organization_id,
+                SlackWorkspaceMapping.status == 'active'
+            ).first()
+
+        # Fallback: Look for workspace by owner (for legacy workspaces without org_id)
+        if not workspace_mapping:
+            workspace_mapping = db.query(SlackWorkspaceMapping).filter(
+                SlackWorkspaceMapping.owner_user_id == current_user.id,
+                SlackWorkspaceMapping.status == 'active'
+            ).first()
 
         if not workspace_mapping:
             raise HTTPException(
                 status_code=404,
-                detail="No active Slack workspace found for this user"
+                detail="No active Slack workspace found for your account"
             )
 
         # Mark as inactive instead of deleting (preserves historical data)
