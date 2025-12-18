@@ -111,7 +111,7 @@ export function TeamManagementDialog({ isOpen, onClose }: TeamManagementDialogPr
     try {
       const token = localStorage.getItem("auth_token")
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/users/${userId}/role?new_role=${newRole}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/users/${userId}/role?new_role=${newRole}`,
         {
           method: "PATCH",
           headers: {
