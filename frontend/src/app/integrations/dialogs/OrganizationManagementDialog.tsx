@@ -188,15 +188,22 @@ export function OrganizationManagementDialog({
                                   {member.role?.replace('_', ' ') || 'member'}
                                 </span>
                               ) : (
-                                <select
-                                  value={member.role || 'member'}
-                                  onChange={(e) => onRoleChange(member.id, e.target.value)}
-                                  className="text-xs px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
-                                  disabled={userInfo?.role !== 'admin' && userInfo?.role !== 'org_admin'}
-                                >
-                                  <option value="member">Member</option>
-                                  <option value="admin">Admin</option>
-                                </select>
+                                <div className="relative group">
+                                  <select
+                                    value={member.role || 'member'}
+                                    onChange={(e) => onRoleChange(member.id, e.target.value)}
+                                    className="text-xs px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white disabled:opacity-60 disabled:cursor-not-allowed"
+                                    disabled={userInfo?.role !== 'admin' && userInfo?.role !== 'org_admin'}
+                                  >
+                                    <option value="member">Member</option>
+                                    <option value="admin">Admin</option>
+                                  </select>
+                                  {userInfo?.role !== 'admin' && userInfo?.role !== 'org_admin' && (
+                                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                                      Only admins can change roles
+                                    </div>
+                                  )}
+                                </div>
                               )}
                             </div>
                           </div>
