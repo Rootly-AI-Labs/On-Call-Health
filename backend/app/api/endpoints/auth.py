@@ -770,16 +770,27 @@ async def get_organization_members(
         User.status == 'active'
     ).order_by(User.name).all()
 
-    # Format response
-    members = []
+    # Format response with current user first
+    current_user_data = None
+    other_members = []
+
     for user in users:
-        members.append({
+        member_data = {
             "id": user.id,
             "name": user.name,
             "email": user.email,
             "role": user.role,
             "is_current_user": user.id == current_user.id,
             "joined_at": user.joined_org_at.isoformat() if user.joined_org_at else None
-        })
+        }
+
+        if user.id == current_user.id:
+            current_user_data = member_data
+        else:
+            other_members.append(member_data)
+
+    # Return current user first, then others
+    members = [current_user_data] if current_user_data else []
+    members.extend(other_members)
 
     return members
