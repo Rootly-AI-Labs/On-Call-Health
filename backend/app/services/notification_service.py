@@ -385,6 +385,38 @@ class NotificationService:
         self.db.commit()
         return notification
 
+    def create_role_change_notification(self, user: User, old_role: str, new_role: str, changed_by: User) -> UserNotification:
+        """Create notification when user's role is changed."""
+        is_promotion = new_role in ['admin'] and old_role in ['member', 'viewer']
+        is_demotion = old_role in ['admin'] and new_role in ['member', 'viewer']
+
+        if is_promotion:
+            title = f"You've been promoted to {new_role.replace('_', ' ').title()}"
+            message = f"{changed_by.name} promoted you from {old_role.replace('_', ' ')} to {new_role.replace('_', ' ')}."
+            priority = 'high'
+        elif is_demotion:
+            title = f"Your role has been changed to {new_role.replace('_', ' ').title()}"
+            message = f"{changed_by.name} changed your role from {old_role.replace('_', ' ')} to {new_role.replace('_', ' ')}."
+            priority = 'medium'
+        else:
+            title = f"Your role has been updated"
+            message = f"{changed_by.name} changed your role from {old_role.replace('_', ' ')} to {new_role.replace('_', ' ')}."
+            priority = 'medium'
+
+        notification = UserNotification(
+            user_id=user.id,
+            email=user.email,
+            organization_id=user.organization_id,
+            type='role_change',
+            title=title,
+            message=message,
+            priority=priority
+        )
+
+        self.db.add(notification)
+        self.db.commit()
+        return notification
+
     def cleanup_expired_notifications(self):
         """Clean up expired notifications."""
         expired = self.db.query(UserNotification).filter(

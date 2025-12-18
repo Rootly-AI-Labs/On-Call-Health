@@ -562,6 +562,20 @@ async def update_user_role(
     db.commit()
     db.refresh(target_user)
 
+    # Create notification for the user whose role changed
+    try:
+        from ...services.notification_service import NotificationService
+        notification_service = NotificationService(db)
+        notification_service.create_role_change_notification(
+            user=target_user,
+            old_role=old_role,
+            new_role=new_role,
+            changed_by=current_user
+        )
+    except Exception as e:
+        logger.error(f"Failed to create role change notification: {e}")
+        # Don't fail the role update if notification fails
+
     return {
         "success": True,
         "user_id": target_user.id,
