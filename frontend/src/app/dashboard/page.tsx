@@ -54,6 +54,7 @@ import { TeamHealthOverview } from "@/components/dashboard/TeamHealthOverview"
 import { AnalysisProgressSection } from "@/components/dashboard/AnalysisProgressSection"
 import { TeamMembersList } from "@/components/dashboard/TeamMembersList"
 import { HealthTrendsChart } from "@/components/dashboard/HealthTrendsChart"
+import { ObjectiveDataCard } from "@/components/dashboard/ObjectiveDataCard"
 import { MemberDetailModal } from "@/components/dashboard/MemberDetailModal"
 import { GitHubCommitsTimeline } from "@/components/dashboard/charts/GitHubCommitsTimeline"
 import { AIInsightsCard } from "@/components/dashboard/insights/AIInsightsCard"
@@ -680,12 +681,14 @@ function DashboardContent() {
                 </Card>
               )}
 
-              <TeamHealthOverview 
+              {/* Summary Cards */}
+              <TeamHealthOverview
                 currentAnalysis={currentAnalysis}
                 historicalTrends={historicalTrends}
                 expandedDataSources={expandedDataSources}
                 setExpandedDataSources={setExpandedDataSources}
               />
+
 
               {/* Partial Data Warning */}
               {currentAnalysis?.analysis_data?.error && currentAnalysis?.analysis_data?.partial_data && (
@@ -843,8 +846,14 @@ function DashboardContent() {
               }
               {/* Charts Section */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                {/* Team Objective Data */}
+                <ObjectiveDataCard
+                  currentAnalysis={currentAnalysis}
+                  loadingTrends={loadingTrends}
+                />
+
                 {/* Burnout Journey Map */}
-                <Card>
+                <Card className="flex flex-col">
                   <CardHeader>
                     <CardTitle>Burnout Timeline</CardTitle>
                     <CardDescription>
@@ -859,7 +868,7 @@ function DashboardContent() {
                             const next = dailyTrends[i+1];
                             const score = Math.round(curr.overall_score * 10);
                             const prevChange = prev ? score - Math.round(prev.overall_score * 10) : 0;
-                            
+
                             if ((prev && next && score > Math.round(prev.overall_score * 10) && score > Math.round(next.overall_score * 10) && score >= 75) ||
                                 (prev && next && score < Math.round(prev.overall_score * 10) && score < Math.round(next.overall_score * 10) && score <= 60) ||
                                 Math.abs(prevChange) >= 20 ||
@@ -874,8 +883,8 @@ function DashboardContent() {
                       })()}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-6">
+                  <CardContent className="flex-1 flex flex-col overflow-hidden pb-4">
+                    <div className="space-y-3">
                       {loadingTrends ? (
                         <div className="flex items-center justify-center h-32">
                           <div className="text-center">
@@ -1104,11 +1113,11 @@ function DashboardContent() {
                   </CardContent>
                 </Card>
 
-                <HealthTrendsChart
+                {/* { <HealthTrendsChart
                   currentAnalysis={currentAnalysis}
                   historicalTrends={historicalTrends}
                   loadingTrends={loadingTrends}
-                />
+                />} */}
               </div>
 
               {/* Burnout Factors Section */}
@@ -1407,60 +1416,6 @@ function DashboardContent() {
                                   )}
                                 </div>
                               </div>
-
-                              {/* Burnout Indicators */}
-                              {github.burnout_indicators && (
-                                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                                  <h4 className="text-sm font-semibold text-red-800 mb-2">Burnout Risk Indicators</h4>
-                                  {/* Show total high-risk member count if available */}
-                                  {(github as any).high_risk_member_count !== undefined && (github as any).high_risk_member_count > 0 && (
-                                    <div className="mb-2 pb-2 border-b border-red-200">
-                                      <div className="flex items-center space-x-2">
-                                        <AlertTriangle className="w-4 h-4 text-red-600" />
-                                        <span className="text-sm font-semibold text-red-800">
-                                          {(github as any).high_risk_member_count} members with GitHub burnout indicators
-                                        </span>
-                                      </div>
-                                      {/* Show risk distribution if available */}
-                                      {(github as any).risk_distribution && (
-                                        <div className="mt-1 text-xs text-gray-600">
-                                          Overall risk levels: {
-                                            (() => {
-                                              const dist = (github as any).risk_distribution
-                                              const parts = []
-                                              if (dist.high > 0) parts.push(`${dist.high} high`)
-                                              if (dist.medium > 0) parts.push(`${dist.medium} medium`)
-                                              if (dist.low > 0) parts.push(`${dist.low} low`)
-                                              
-                                              return parts.join(', ') || 'Risk distribution unavailable'
-                                            })()
-                                          }
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-                                  <div className="space-y-1 text-xs">
-                                    {github.burnout_indicators.excessive_late_night_commits > 0 && (
-                                      <div className="flex items-center space-x-2">
-                                        <AlertTriangle className="w-3 h-3 text-red-600" />
-                                        <span className="text-red-700">{github.burnout_indicators.excessive_late_night_commits} members with excessive late-night commits</span>
-                                      </div>
-                                    )}
-                                    {github.burnout_indicators.weekend_workers > 0 && (
-                                      <div className="flex items-center space-x-2">
-                                        <AlertTriangle className="w-3 h-3 text-red-600" />
-                                        <span className="text-red-700">{github.burnout_indicators.weekend_workers} members working weekends</span>
-                                      </div>
-                                    )}
-                                    {github.burnout_indicators.large_pr_pattern > 0 && (
-                                      <div className="flex items-center space-x-2">
-                                        <AlertTriangle className="w-3 h-3 text-red-600" />
-                                        <span className="text-red-700">{github.burnout_indicators.large_pr_pattern} members with large PR patterns</span>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
 
                             </>
                           )

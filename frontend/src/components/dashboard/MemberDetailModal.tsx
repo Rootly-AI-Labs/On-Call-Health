@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, Cell } from "recharts"
 import { Info, RefreshCw, BarChart3 } from "lucide-react"
 import { useState, useEffect } from "react"
+import { UserObjectiveDataCard } from "@/components/dashboard/UserObjectiveDataCard"
 
 // Individual Daily Health Chart component
 function IndividualDailyHealthChart({ memberData, analysisId, currentAnalysis }: {
@@ -401,6 +402,18 @@ export function MemberDetailModal({
                             {memberData?.incident_count || 0}
                           </div>
                           <p className="text-xs text-gray-500">Past {timeRange || 30} days</p>
+
+                          {/* Add spacing and additional metrics */}
+                          <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600">After Hours Work</span>
+                              <span className="font-medium">{(memberData?.metrics?.after_hours_percentage || 0).toFixed(1)}%</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600">Weekend Work</span>
+                              <span className="font-medium">{(memberData?.metrics?.weekend_percentage || 0).toFixed(1)}%</span>
+                            </div>
+                          </div>
                         </CardContent>
                       </Card>
                     </div>
@@ -438,6 +451,14 @@ export function MemberDetailModal({
                         </CardContent>
                       </Card>
                     )}
+
+                    {/* User Objective Data Card */}
+                    <UserObjectiveDataCard
+                      memberData={memberData}
+                      analysisId={analysisId}
+                      timeRange={timeRange}
+                      currentAnalysis={currentAnalysis}
+                    />
 
                     {/* Burnout Risk Factors – Radar */}
                     <Card>
@@ -488,7 +509,7 @@ export function MemberDetailModal({
                     </Card>
 
                     {/* Incident Response Metrics */}
-                    <Card>
+                    {/* <Card>
                       <CardHeader>
                         <CardTitle className="text-base">Incident Response Metrics</CardTitle>
                       </CardHeader>
@@ -506,14 +527,14 @@ export function MemberDetailModal({
                           <span className="font-medium">{(memberData?.metrics?.weekend_percentage || 0).toFixed(1)}%</span>
                         </div>
                       </CardContent>
-                    </Card>
+                    </Card> */}
 
                     {/* Daily Health Chart */}
-                    <IndividualDailyHealthChart
+                    {/* <IndividualDailyHealthChart
                       memberData={memberData}
                       analysisId={analysisId}
                       currentAnalysis={currentAnalysis}
-                    />
+                    /> */}
 
                     {/* GitHub / Slack Tabs (conditional) */}
                     {(() => {
