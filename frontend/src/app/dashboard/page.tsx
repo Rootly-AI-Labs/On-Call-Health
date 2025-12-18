@@ -1417,60 +1417,6 @@ function DashboardContent() {
                                 </div>
                               </div>
 
-                              {/* Burnout Indicators */}
-                              {github.burnout_indicators && (
-                                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                                  <h4 className="text-sm font-semibold text-red-800 mb-2">Burnout Risk Indicators</h4>
-                                  {/* Show total high-risk member count if available */}
-                                  {(github as any).high_risk_member_count !== undefined && (github as any).high_risk_member_count > 0 && (
-                                    <div className="mb-2 pb-2 border-b border-red-200">
-                                      <div className="flex items-center space-x-2">
-                                        <AlertTriangle className="w-4 h-4 text-red-600" />
-                                        <span className="text-sm font-semibold text-red-800">
-                                          {(github as any).high_risk_member_count} members with GitHub burnout indicators
-                                        </span>
-                                      </div>
-                                      {/* Show risk distribution if available */}
-                                      {(github as any).risk_distribution && (
-                                        <div className="mt-1 text-xs text-gray-600">
-                                          Overall risk levels: {
-                                            (() => {
-                                              const dist = (github as any).risk_distribution
-                                              const parts = []
-                                              if (dist.high > 0) parts.push(`${dist.high} high`)
-                                              if (dist.medium > 0) parts.push(`${dist.medium} medium`)
-                                              if (dist.low > 0) parts.push(`${dist.low} low`)
-                                              
-                                              return parts.join(', ') || 'Risk distribution unavailable'
-                                            })()
-                                          }
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-                                  <div className="space-y-1 text-xs">
-                                    {github.burnout_indicators.excessive_late_night_commits > 0 && (
-                                      <div className="flex items-center space-x-2">
-                                        <AlertTriangle className="w-3 h-3 text-red-600" />
-                                        <span className="text-red-700">{github.burnout_indicators.excessive_late_night_commits} members with excessive late-night commits</span>
-                                      </div>
-                                    )}
-                                    {github.burnout_indicators.weekend_workers > 0 && (
-                                      <div className="flex items-center space-x-2">
-                                        <AlertTriangle className="w-3 h-3 text-red-600" />
-                                        <span className="text-red-700">{github.burnout_indicators.weekend_workers} members working weekends</span>
-                                      </div>
-                                    )}
-                                    {github.burnout_indicators.large_pr_pattern > 0 && (
-                                      <div className="flex items-center space-x-2">
-                                        <AlertTriangle className="w-3 h-3 text-red-600" />
-                                        <span className="text-red-700">{github.burnout_indicators.large_pr_pattern} members with large PR patterns</span>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-
                             </>
                           )
                         })()}
