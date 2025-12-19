@@ -21,7 +21,7 @@ WITH unique_domains AS (
     WHERE email IS NOT NULL
       AND email LIKE '%@%'
       -- Exclude shared email domains
-      AND SPLIT_PART(email, '@', 2) NOT IN ('gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com')
+      AND SPLIT_PART(email, '@', 2) NOT IN ('gmail.com', 'googlemail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com', 'hey.com')
       -- Exclude users who already have an organization
       AND NOT EXISTS (
           SELECT 1 FROM organizations
@@ -53,7 +53,7 @@ WITH user_org_assignments AS (
       AND u.email IS NOT NULL
       AND u.email LIKE '%@%'
       -- Exclude shared domains (they need invitations)
-      AND SPLIT_PART(u.email, '@', 2) NOT IN ('gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com')
+      AND SPLIT_PART(u.email, '@', 2) NOT IN ('gmail.com', 'googlemail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com', 'hey.com')
 )
 UPDATE users
 SET

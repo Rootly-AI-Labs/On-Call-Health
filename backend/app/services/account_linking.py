@@ -382,7 +382,7 @@ class AccountLinkingService:
                 return
 
             # Shared domains (Gmail, etc.) - check for invitation
-            shared_domains = {'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com'}
+            shared_domains = {'gmail.com', 'googlemail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com', 'hey.com'}
             if domain in shared_domains:
                 # Look for pending invitation
                 invitation = self.db.query(OrganizationInvitation).filter(
