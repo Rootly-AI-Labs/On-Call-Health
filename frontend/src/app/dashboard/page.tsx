@@ -764,7 +764,7 @@ function DashboardContent() {
                 return (
                   <div className={`grid grid-cols-1 ${hasAIInsights ? 'lg:grid-cols-3' : 'lg:grid-cols-1'} gap-6 mb-6`}>
                     {/* Individual Burnout Scores - Takes 2/3 width on large screens, full width if no AI Insights */}
-                    <Card className={hasAIInsights ? "lg:col-span-2" : ""}>
+                    {/* <Card className={hasAIInsights ? "lg:col-span-2" : ""}>
                       <CardHeader>
                         <CardTitle>Individual Burnout Scores</CardTitle>
                         <CardDescription>Team member OCB burnout scores (higher = more burnout risk)</CardDescription>
@@ -832,14 +832,14 @@ function DashboardContent() {
                           </div>
                         )}
                       </CardContent>
-                    </Card>
+                    </Card> */}
 
                     {/* AI Insights Card - Takes 1/3 width on large screens */}
-                    {hasAIInsights && (
+                    {/* {hasAIInsights && (
                       <div className="lg:col-span-1">
                         <AIInsightsCard currentAnalysis={currentAnalysis} />
                       </div>
-                    )}
+                    )} */}
                   </div>
                 );
               })()
