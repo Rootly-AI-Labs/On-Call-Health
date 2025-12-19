@@ -1,19 +1,9 @@
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { AlertCircle, CheckCircle, Calendar, Globe, Key, Trash2, TestTube, Loader2, Users } from "lucide-react"
 import type { LinearIntegration } from "../types"
-
-// Linear logo SVG icon - official logo with half circle and diagonal stripes
-const LinearIcon = ({ className }: { className?: string }) => (
-  <svg
-    viewBox="0 0 100 100"
-    className={className}
-    fill="currentColor"
-  >
-    <path d="M50 0C77.6 0 100 22.4 100 50C100 77.6 77.6 100 50 100C22.4 100 0 77.6 0 50C0 22.4 22.4 0 50 0ZM81.5 68.6L31.4 18.5C25.9 21.2 21.2 25.9 18.5 31.4L68.6 81.5C74.1 78.8 78.8 74.1 81.5 68.6ZM87.9 53.3L46.7 12.1C43.9 11.7 41 11.5 38 11.5L88.5 62C88.5 59 88.3 56.1 87.9 53.3ZM11.5 62L62 11.5C59 11.5 56.1 11.7 53.3 12.1L12.1 53.3C11.7 56.1 11.5 59 11.5 62ZM18.5 68.6C21.2 74.1 25.9 78.8 31.4 81.5L81.5 31.4C78.8 25.9 74.1 21.2 68.6 18.5L18.5 68.6Z" />
-  </svg>
-)
 
 interface LinearConnectedCardProps {
   integration: LinearIntegration
@@ -33,8 +23,8 @@ export function LinearConnectedCard({
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center">
-              <LinearIcon className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center p-2">
+              <Image src="/images/linear-logo.png" alt="Linear" width={24} height={24} />
             </div>
             <div>
               <CardTitle className="text-lg flex items-center space-x-2">
