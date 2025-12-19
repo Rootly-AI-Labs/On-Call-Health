@@ -1377,6 +1377,7 @@ export default function IntegrationsPage() {
         setLoadingGitHub(false)
         setLoadingSlack(false)
         setLoadingJira(false)
+        setLoadingLinear(false)
 
         // Step 3: Check if cache is stale and refresh in background if needed
         const cacheIsStale = isCacheStale()
@@ -1397,10 +1398,10 @@ export default function IntegrationsPage() {
       setLoadingGitHub(false)
       setLoadingSlack(false)
       setLoadingJira(false)
-
+      setLoadingLinear(false)
     }
   }
-  
+
   // 🚀 PHASE 1 OPTIMIZATION: Progressive section loading
   // Each integration section loads and renders independently as data arrives
   const loadAllIntegrationsAPI = async () => {
@@ -1417,6 +1418,7 @@ export default function IntegrationsPage() {
     setLoadingGitHub(true)
     setLoadingSlack(true)
     setLoadingJira(true)
+    setLoadingLinear(true)
 
     try {
       const authToken = localStorage.getItem('auth_token')
@@ -1465,6 +1467,12 @@ export default function IntegrationsPage() {
       })
 
       const jiraPromise = fetchWithTimeout(`${API_BASE}/integrations/jira/status`, {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      }).catch(() => {
+        return { ok: false }
+      })
+
+      const linearPromise = fetchWithTimeout(`${API_BASE}/integrations/linear/status`, {
         headers: { 'Authorization': `Bearer ${authToken}` }
       }).catch(() => {
         return { ok: false }
@@ -1571,6 +1579,22 @@ export default function IntegrationsPage() {
         }
       })
 
+      // Process Linear data as soon as it's available
+      linearPromise.then(async (linearResponse) => {
+        try {
+          const linearData = (linearResponse as any).ok && (linearResponse as Response).json
+            ? await (linearResponse as Response).json()
+            : { connected: false, integration: null }
+
+          setLinearIntegration(linearData.connected ? linearData.integration : null)
+          localStorage.setItem('linear_integration', JSON.stringify(linearData))
+        } catch (error) {
+          console.error('Error processing Linear data:', error)
+        } finally {
+          setLoadingLinear(false)
+        }
+      })
+
       // Wait for all promises to complete (for back URL logic)
       const [rootlyResponse, pagerdutyResponse] = await Promise.all([rootlyPromise, pagerdutyPromise])
 
@@ -1596,6 +1620,7 @@ export default function IntegrationsPage() {
       setLoadingGitHub(false)
       setLoadingSlack(false)
       setLoadingJira(false)
+      setLoadingLinear(false)
     } finally {
       isLoadingRef.current = false
     }
