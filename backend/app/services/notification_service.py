@@ -143,22 +143,85 @@ class NotificationService:
         self.db.commit()
         return notifications
 
-    def create_slack_connected_notification(self, user: User, workspace_name: str) -> UserNotification:
-        """Notify when Slack workspace is connected."""
-        notification = UserNotification(
-            user_id=user.id,
-            organization_id=user.organization_id,
-            type='integration',
-            title="Slack workspace connected",
-            message=f"Successfully connected {workspace_name} to your organization.",
-            action_url="/integrations",
-            action_text="View Integrations",
-            priority='normal'
-        )
+    def create_slack_connected_notification(self, connected_by: User, workspace_name: str) -> List[UserNotification]:
+        """Notify all org members when Slack workspace is connected."""
+        notifications = []
 
-        self.db.add(notification)
+        if not connected_by.organization_id:
+            return notifications
+
+        # Get all org members
+        org_members = self.db.query(User).filter(
+            User.organization_id == connected_by.organization_id,
+            User.status == 'active'
+        ).all()
+
+        user_name = connected_by.name or connected_by.email
+
+        for member in org_members:
+            # Personalize message for the person who connected vs others
+            if member.id == connected_by.id:
+                title = "Slack workspace connected"
+                message = f"Successfully connected {workspace_name} to your organization."
+            else:
+                title = "Slack workspace connected"
+                message = f"{user_name} connected {workspace_name} to your organization."
+
+            notification = UserNotification(
+                user_id=member.id,
+                organization_id=connected_by.organization_id,
+                type='integration',
+                title=title,
+                message=message,
+                action_url="/integrations",
+                action_text="View Integrations",
+                priority='normal'
+            )
+            notifications.append(notification)
+            self.db.add(notification)
+
         self.db.commit()
-        return notification
+        return notifications
+
+    def create_slack_disconnected_notification(self, disconnected_by: User, workspace_name: str) -> List[UserNotification]:
+        """Notify all org members when Slack workspace is disconnected."""
+        notifications = []
+
+        if not disconnected_by.organization_id:
+            return notifications
+
+        # Get all org members
+        org_members = self.db.query(User).filter(
+            User.organization_id == disconnected_by.organization_id,
+            User.status == 'active'
+        ).all()
+
+        user_name = disconnected_by.name or disconnected_by.email
+
+        for member in org_members:
+            # Personalize message for the person who disconnected vs others
+            if member.id == disconnected_by.id:
+                title = "Slack workspace disconnected"
+                message = f"Successfully disconnected {workspace_name} from your organization."
+            else:
+                title = "Slack workspace disconnected"
+                message = f"{user_name} disconnected {workspace_name} from your organization."
+
+            notification = UserNotification(
+                user_id=member.id,
+                organization_id=disconnected_by.organization_id,
+                type='integration',
+                title=title,
+                message=message,
+                action_url="/integrations",
+                action_text="View Integrations",
+                priority='normal'
+            )
+            notifications.append(notification)
+            self.db.add(notification)
+
+        self.db.commit()
+        return notifications
 
     def create_slack_feature_toggle_notification(self, toggled_by: User, feature: str, enabled: bool, organization_id: int) -> List[UserNotification]:
         """Notify org admins when a Slack feature is toggled."""

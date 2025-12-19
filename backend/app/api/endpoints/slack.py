@@ -317,6 +317,10 @@ async def slack_oauth_callback(
         features_str = "+".join(features) if features else "none"
         logger.info(f"Slack OAuth successful - workspace: {workspace_name}, workspace_id: {workspace_id}, organization_id: {organization_id}, features: {features_str}")
 
+        # Notify all org members about connection
+        notification_service = NotificationService(db)
+        notification_service.create_slack_connected_notification(owner_user, workspace_name)
+
         # Redirect to frontend with success message
         frontend_url = settings.FRONTEND_URL or "http://localhost:3000"
         import urllib.parse
@@ -706,11 +710,18 @@ async def disconnect_slack(
                 detail="No active Slack workspace found for your account"
             )
 
+        # Store workspace name before marking inactive
+        workspace_name = workspace_mapping.workspace_name
+
         # Mark as inactive instead of deleting (preserves historical data)
         workspace_mapping.status = 'inactive'
         db.commit()
 
         logger.info(f"User {current_user.id} disconnected Slack workspace {workspace_mapping.workspace_id}")
+
+        # Notify all org members about disconnection
+        notification_service = NotificationService(db)
+        notification_service.create_slack_disconnected_notification(current_user, workspace_name)
 
         return {
             "success": True,
