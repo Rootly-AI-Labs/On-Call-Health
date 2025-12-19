@@ -116,9 +116,9 @@ export function InvitationAcceptanceModal({
         onAccepted?.()
         onClose()
 
-        // Refresh the page to update all org-based UI
+        // Redirect to integrations page after short delay
         setTimeout(() => {
-          window.location.reload()
+          window.location.href = '/integrations'
         }, 500)
       }
     } catch (error: any) {
