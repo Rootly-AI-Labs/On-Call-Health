@@ -1,20 +1,20 @@
 
-# On-call Burnout Detector
+# On-call Health
 
 Detects potential signs of overwork in incident responders, which could lead to burnout. To compute a per-responder risk score, it integrates with Rootly, PagerDuty, GitHub, and Slack.
 
-![Rootly AI Labs On-call Burnout Detector screenshot](https://raw.githubusercontent.com/Rootly-AI-Labs/On-Call-Burnout-Detector/main/assets/rootly-burnout-detector.png)
+![Rootly AI Labs On-call Health screenshot](https://raw.githubusercontent.com/Rootly-AI-Labs/On-Call-Health/main/assets/rootly-burnout-detector.png)
 
 Two ways to get started:
-* Use our hosted version [www.oncallburnout.com](https://www.oncallburnout.com/) (contains mock data to easily test it out)
+* Use our hosted version [www.oncallburnout.com](https://www.oncallhealth.ai/) (contains mock data to easily test it out)
 * Host it [locally](#Installation)
 
 ## Installation
 Use our Docker Compose file.
 ```
 # Clone the repo
-git clone https://github.com/Rootly-AI-Labs/on-call-burnout-detector
-cd on-call-burnout-detector
+git clone https://github.com/Rootly-AI-Labs/on-call-health
+cd on-call-health
 
 # Launch with Docker Compose
 docker compose up -d
@@ -47,7 +47,7 @@ cp backend/.env.example backend/.env
 
 1. **Visit [https://github.com/settings/developers](https://github.com/settings/developers)**
 	*  Click **OAuth Apps** → **New OAuth App**
-	* **Application name**: On-Call Burnout Detector
+	* **Application name**: On-Call Health
 	- **Homepage URL**: http://localhost:3000
 	- **Authorization callback URL**: http://localhost:8000/auth/github/callback
 2. **Create the app:**
@@ -96,12 +96,12 @@ The frontend will be available at `http://localhost:3000`
 ##  Features
 
 - **Multi Layer Signals**: Individual and team-level insights
-- **Interactive Dashboard**: Visual and AI-powered burnout risk analysis
+- **Interactive Dashboard**: Visual and AI-powered risk analysis for incident reponders at the team and individual level
 - **Tailor to Your organization**: Customize tool integration and signal weights
 
 ##  Methodology
 
-The On-call Burnout Detector takes inspiration from the [Copenhagen Burnout Inventory](https://nfa.dk/media/hl5nbers/cbi-first-edition.pdf) (CBI), a scientifically validated approach to measuring burnout risk in professional settings. The Burnout Detector isn’t a medical tool and doesn’t provide a diagnosis; it is designed to help identify patterns and trends that may suggest overwork.
+On-call Health takes inspiration from the [Copenhagen Burnout Inventory](https://nfa.dk/media/hl5nbers/cbi-first-edition.pdf) (CBI), a scientifically validated approach to measuring burnout risk in professional settings. The Burnout Detector isn’t a medical tool and doesn’t provide a diagnosis; it is designed to help identify patterns and trends that may suggest overwork.
 
 ### Methodology breakdown
 Our implementation uses the two core dimensions:
@@ -130,14 +130,14 @@ Our implementation uses the two core dimensions:
 * [GitHub](https://github.com/): For commit activity
 * [Slack](http://slack.com/): For communication patterns and collect self-reported data
 
-If you are interested in integrating with the On-call Burnout Detector, [get in touch](mailto:sylvain@rootly.com)!
+If you are interested in integrating with On-call Health, [get in touch](mailto:sylvain@rootly.com)!
 
 ## API
 
-On-call Burnout Detector also offers [an API](https://api.oncallburnout.com/docs) that can expose its findings. <br>
+On-call Health also offers [an API](https://api.oncallhealth.ai/docs) that can expose its findings. <br>
 [<img src="https://run.pstmn.io/button.svg" alt="Run In Postman" style="width: 128px; height: 32px;">](https://god.gw.postman.com/run-collection/45004446-1074ba3c-44fe-40e3-a932-af7c071b96eb?action=collection%2Ffork&source=rip_markdown&collection-url=entityId%3D45004446-1074ba3c-44fe-40e3-a932-af7c071b96eb%26entityType%3Dcollection%26workspaceId%3D4bec6e3c-50a0-4746-85f1-00a703c32f24)
 
 ## 🔗 About the Rootly AI Labs
-The On-call Burnout Detector is built with ❤️ by the [Rootly AI Labs](https://rootly.com/ai-labs) for engineering teams everywhere. The Rootly AI Labs is a fellow-led community designed to redefine reliability engineering. We develop innovative prototypes, create open-source tools, and produce research that's shared to advance the standards of operational excellence. We want to thank Anthropic, Google Cloud, and Google DeepMind for their support.
+On-call Health is built with ❤️ by the [Rootly AI Labs](https://rootly.com/ai-labs) for engineering teams everywhere. The Rootly AI Labs is a fellow-led community designed to redefine reliability engineering. We develop innovative prototypes, create open-source tools, and produce research that's shared to advance the standards of operational excellence. We want to thank Anthropic, Google Cloud, and Google DeepMind for their support.
 
 This project is licensed under the Apache License 2.0.
