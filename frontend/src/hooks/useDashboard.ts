@@ -1281,6 +1281,8 @@ export default function useDashboard() {
 
   const [showTimeRangeDialog, setShowTimeRangeDialog] = useState(false)
   const [selectedTimeRange, setSelectedTimeRange] = useState("30")
+  const [customStartDate, setCustomStartDate] = useState<Date | undefined>(undefined)
+  const [isCustomRange, setIsCustomRange] = useState(false)
   const [dialogSelectedIntegration, setDialogSelectedIntegration] = useState<string>("")
   const [noIntegrationsFound, setNoIntegrationsFound] = useState(false)
   
@@ -1486,6 +1488,29 @@ export default function useDashboard() {
     }
   }
 
+  // Validate custom date selection
+  const validateCustomDate = (date: Date | undefined): { valid: boolean; days?: number; error?: string } => {
+    if (!date) return { valid: false, error: "Please select a date" }
+
+    const today = new Date()
+    const diffTime = today.getTime() - date.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+    if (diffDays < 0) return { valid: false, error: "Cannot select future dates" }
+    if (diffDays > 365) return { valid: false, error: "Maximum lookback is 1 year (365 days)" }
+
+    return { valid: true, days: diffDays }
+  }
+
+  // Get the effective time range (either from preset or custom date)
+  const getEffectiveTimeRange = (): number => {
+    if (isCustomRange && customStartDate) {
+      const validation = validateCustomDate(customStartDate)
+      return validation.days || 30
+    }
+    return parseInt(selectedTimeRange)
+  }
+
   const runAnalysisWithTimeRange = async () => {
     // Check permissions before running - only for Rootly integrations
     const selectedIntegration = integrations.find(i => i.id.toString() === dialogSelectedIntegration);
@@ -1524,7 +1549,7 @@ export default function useDashboard() {
       
       const requestData = {
         integration_id: integrationId,
-        time_range: parseInt(selectedTimeRange),
+        time_range: getEffectiveTimeRange(),
         include_weekends: true,
         include_github: githubIntegration ? includeGithub : false,
         include_slack: slackIntegration ? includeSlack : false,
@@ -2237,6 +2262,11 @@ return {
   setShowTimeRangeDialog,
   selectedTimeRange,
   setSelectedTimeRange,
+  customStartDate,
+  setCustomStartDate,
+  isCustomRange,
+  setIsCustomRange,
+  validateCustomDate,
   dialogSelectedIntegration,
   setDialogSelectedIntegration,
   noIntegrationsFound,

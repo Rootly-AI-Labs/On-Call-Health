@@ -85,7 +85,7 @@ export default function LandingPage() {
                 </a>
               </div>
               <div className="flex items-center gap-3">
-                <div className="text-lg leading-[1rem] lg:text-2xl font-semibold text-slate-900">On-call burnout detector</div>
+                <div className="text-lg leading-[1rem] lg:text-2xl font-semibold text-slate-900">On-Call Health</div>
                 <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 border border-purple-300">
                   BETA
                 </span>
@@ -96,7 +96,7 @@ export default function LandingPage() {
         <div className="container flex flex-col lg:flex-row flex-grow mx-auto px-4">
           <main className="flex-grow px-5 lg:pr-10 text-white">
             <h1 className="text-3xl lg:text-5xl tracking-tight mb-6 leading-tight pt-10 lg:pt-20 lg:pb-1">
-              Stop on-call burnout
+              Stop on-call overload
               <br />
                before it starts.
             </h1>
@@ -107,7 +107,7 @@ export default function LandingPage() {
 
             {/* OAuth Login Buttons */}
             <p className="lg:text-lg font-semibold mt-10 lg:mt-20 mb-3">
-              Get started with the burnout detector, it's free.
+              Get started with the On-Call Health, it's free.
             </p>
             <div id="login" className="flex flex-col sm:flex-row gap-4 items-center mb-6">
               <Button
@@ -170,7 +170,7 @@ export default function LandingPage() {
           <div className="text-center mb-4">
             <h2 className="text-2xl md:text-3xl text-slate-900 mb-4">How it works</h2>
             <p className="text-lg text-slate-600 max-w-3xl mx-auto">
-              Based on scientifically validated burnout research methodology.
+              Inspired by scientifically burnout research methodology.
             </p>
           </div>
 
@@ -206,9 +206,9 @@ export default function LandingPage() {
                 <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border border-purple-100">
                   <Brain className="w-8 h-8 text-purple-600" />
                 </div>
-                <h3 className="text-xl font-semibold text-slate-900 mb-4">See who’s at risk, backed by research.</h3>
+                <h3 className="text-xl font-semibold text-slate-900 mb-4">See who’s at risk.</h3>
                 <p className="text-slate-600 leading-relaxed mb-4">
-                  The burnout detector calculates individual risk scores using our On-Call Burnout (OCB) score.
+                  On-Call Health shows individual risk scores using self-reported and observed data.
                 </p>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center space-x-2">
@@ -264,7 +264,7 @@ export default function LandingPage() {
         <div className="container mt-10">
           <div className="lg:columns-2 gap-12">
             <div className="py-10">
-              <h2 className="text-2xl md:text-3xl text-slate-900 mb-4">Burnout signals, backed by data.</h2>
+              <h2 className="text-2xl md:text-3xl text-slate-900 mb-4">Overload signals, backed by data.</h2>
               <p className="mb-2">
                 Our analysis combines workload pressure, after-hours activity, response time patterns, and communication sentiment to give a holistic view of burnout risk. 
               </p>
@@ -285,7 +285,7 @@ export default function LandingPage() {
               <h2 className="text-2xl md:text-3xl text-slate-900 mb-4">For engineers, by engineers.</h2>
               <p className="mb-2">
                 On-call engineers and SREs face a disproportionate risk of burnout. At Rootly, we want to help change that.
-              </p>
+		</p>
               <p className="mb-2">That’s why we built this as <strong>open source</strong>, in the open, for the community.</p>
               <p>
                 Spearheaded by Rootly AI Labs fellows Spencer Cheng and Sylvain Kalache, the project continues to evolve with contributions from engineers like you. Share feedback, file issues, or contribute code on GitHub—and help shape the future of burnout detection.
@@ -303,7 +303,7 @@ export default function LandingPage() {
             <div className="py-10">
               <h2 className="text-2xl md:text-3xl text-slate-900 mb-4">Hosted or self-hosted.</h2>
               <p className="mb-2">
-                The Rootly Burnout Detector is open source, giving you full flexibility. Use the hosted web version for instant setup, or customize it to fit your workflow.</p>
+                On-Call Health is open source, giving you full flexibility. Use the hosted web version for instant setup, or customize it to fit your workflow.</p>
               <p className="mb-2">That’s why we built this as open source, in the open, for the community.</p>
               <p>
 Skip the UI and pull results directly into your CLI via MCP, or fork the code to support niche use cases. That’s the power of open source, adapt it to your team, your way.              </p>
@@ -329,7 +329,7 @@ Skip the UI and pull results directly into your CLI via MCP, or fork the code to
                   Get started
                 </a>
                 <a
-                  href="https://github.com/Rootly-AI-Labs/On-Call-Burnout-Detector"
+                  href="https://github.com/Rootly-AI-Labs/On-Call-Health"
                   target="_blank"
                   className="w-full rounded-full sm:w-auto border-slate-300 px-8 py-4 text-lg hover:bg-slate-50 bg-transparent border border-input bg-background hover:bg-accent hover:text-accent-foreground"
                 >
@@ -355,7 +355,7 @@ Skip the UI and pull results directly into your CLI via MCP, or fork the code to
                       className="w-full brightness-0 invert"
                     />
                   </a>
-                <span className="text-lg leading-[1rem] lg:text-2xl font-semibold text-white">On-call burnout detector</span>
+                <span className="text-lg leading-[1rem] lg:text-2xl font-semibold text-white">On-Call Health</span>
               </div>
             </div>
 

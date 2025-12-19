@@ -13,6 +13,8 @@ import { Switch } from "@/components/ui/switch"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import {
   Bar,
   BarChart,
@@ -49,6 +51,7 @@ import {
   Star,
   Info,
   BarChart3,
+  CalendarIcon,
 } from "lucide-react"
 import { TeamHealthOverview } from "@/components/dashboard/TeamHealthOverview"
 import { AnalysisProgressSection } from "@/components/dashboard/AnalysisProgressSection"
@@ -60,6 +63,8 @@ import { GitHubCommitsTimeline } from "@/components/dashboard/charts/GitHubCommi
 import { AIInsightsCard } from "@/components/dashboard/insights/AIInsightsCard"
 import { DeleteAnalysisDialog } from "@/components/dashboard/dialogs/DeleteAnalysisDialog"
 import Image from "next/image"
+import { format } from "date-fns"
+import { cn } from "@/lib/utils"
 import useDashboard from "@/hooks/useDashboard"
 import { TopPanel } from "@/components/TopPanel"
 import { useOnboarding } from "@/hooks/useOnboarding"
@@ -185,6 +190,11 @@ function DashboardContent() {
   setShowTimeRangeDialog,
   selectedTimeRange,
   setSelectedTimeRange,
+  customStartDate,
+  setCustomStartDate,
+  isCustomRange,
+  setIsCustomRange,
+  validateCustomDate,
   dialogSelectedIntegration,
   setDialogSelectedIntegration,
   noIntegrationsFound,
@@ -764,7 +774,7 @@ function DashboardContent() {
                 return (
                   <div className={`grid grid-cols-1 ${hasAIInsights ? 'lg:grid-cols-3' : 'lg:grid-cols-1'} gap-6 mb-6`}>
                     {/* Individual Burnout Scores - Takes 2/3 width on large screens, full width if no AI Insights */}
-                    <Card className={hasAIInsights ? "lg:col-span-2" : ""}>
+                    {/* <Card className={hasAIInsights ? "lg:col-span-2" : ""}>
                       <CardHeader>
                         <CardTitle>Individual Burnout Scores</CardTitle>
                         <CardDescription>Team member OCB burnout scores (higher = more burnout risk)</CardDescription>
@@ -832,14 +842,14 @@ function DashboardContent() {
                           </div>
                         )}
                       </CardContent>
-                    </Card>
+                    </Card> */}
 
                     {/* AI Insights Card - Takes 1/3 width on large screens */}
-                    {hasAIInsights && (
+                    {/* {hasAIInsights && (
                       <div className="lg:col-span-1">
                         <AIInsightsCard currentAnalysis={currentAnalysis} />
                       </div>
-                    )}
+                    )} */}
                   </div>
                 );
               })()
@@ -2141,24 +2151,104 @@ function DashboardContent() {
               </div>
             </div>
             
-            <div>
+            <div className="space-y-3">
               <label className="text-sm font-medium text-gray-700 mb-2 block">
                 Analysis Time Range
               </label>
-              <Select value={selectedTimeRange} onValueChange={setSelectedTimeRange}>
+
+              {/* Preset Time Range Selector */}
+              <Select
+                value={isCustomRange ? "custom" : selectedTimeRange}
+                onValueChange={(value) => {
+                  if (value === "custom") {
+                    setIsCustomRange(true)
+                    // Set default to 30 days ago as starting point
+                    const defaultDate = new Date()
+                    defaultDate.setDate(defaultDate.getDate() - 30)
+                    setCustomStartDate(defaultDate)
+                  } else {
+                    setIsCustomRange(false)
+                    setSelectedTimeRange(value)
+                  }
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="7">Last 7 days</SelectItem>
-                  <SelectItem value="14">Last 14 days</SelectItem>
                   <SelectItem value="30">Last 30 days</SelectItem>
-                  <SelectItem value="60">Last 60 days</SelectItem>
                   <SelectItem value="90">Last 90 days</SelectItem>
-                  <SelectItem value="180">Last 6 months</SelectItem>
-                  <SelectItem value="365">Last year</SelectItem>
+                  <SelectItem value="custom">Custom Range</SelectItem>
                 </SelectContent>
               </Select>
+
+              {/* Custom Date Picker (shown when "Custom Range" is selected) */}
+              {isCustomRange && (
+                <div className="space-y-2">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !customStartDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {customStartDate ? (
+                          format(customStartDate, "PPP")
+                        ) : (
+                          <span>Pick a start date</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="range"
+                        selected={{
+                          from: customStartDate,
+                          to: new Date()
+                        }}
+                        onSelect={(range) => {
+                          if (range?.from) {
+                            setCustomStartDate(range.from)
+                          }
+                        }}
+                        disabled={(date) => {
+                          const today = new Date()
+                          const oneYearAgo = new Date()
+                          oneYearAgo.setFullYear(today.getFullYear() - 1)
+
+                          // Disable future dates and dates older than 1 year
+                          return date > today || date < oneYearAgo
+                        }}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+
+                  {/* Date Range Display and Validation */}
+                  {customStartDate && (() => {
+                    const validation = validateCustomDate(customStartDate)
+                    return (
+                      <div className="text-sm">
+                        {validation.valid ? (
+                          <p className="text-gray-600 flex items-center gap-2">
+                            <Info className="h-4 w-4" />
+                            Analyzing {validation.days} days (from {format(customStartDate, "MMM d, yyyy")} to today)
+                          </p>
+                        ) : (
+                          <p className="text-red-600 flex items-center gap-2">
+                            <AlertCircle className="h-4 w-4" />
+                            {validation.error}
+                          </p>
+                        )}
+                      </div>
+                    )
+                  })()}
+                </div>
+              )}
             </div>
             <div className="flex justify-end space-x-2 pt-4">
               <Button variant="outline" onClick={() => setShowTimeRangeDialog(false)}>
@@ -2167,24 +2257,28 @@ function DashboardContent() {
               <Button
                 onClick={runAnalysisWithTimeRange}
                 className="bg-purple-600 hover:bg-purple-700"
-                disabled={!dialogSelectedIntegration || (() => {
-                  const selectedIntegration = integrations.find(i => i.id.toString() === dialogSelectedIntegration);
+                disabled={
+                  !dialogSelectedIntegration ||
+                  (isCustomRange && !validateCustomDate(customStartDate).valid) ||
+                  (() => {
+                    const selectedIntegration = integrations.find(i => i.id.toString() === dialogSelectedIntegration);
 
-                  // Check if no team members synced
-                  if ((selectedIntegration?.total_users || 0) === 0) {
-                    return true;
-                  }
+                    // Check if no team members synced
+                    if ((selectedIntegration?.total_users || 0) === 0) {
+                      return true;
+                    }
 
-                  // Only check permissions for Rootly integrations, not PagerDuty
-                  if (selectedIntegration?.platform === 'rootly') {
-                    const hasUserPermission = selectedIntegration?.permissions?.users?.access;
-                    const hasIncidentPermission = selectedIntegration?.permissions?.incidents?.access;
-                    return !hasUserPermission || !hasIncidentPermission;
-                  }
+                    // Only check permissions for Rootly integrations, not PagerDuty
+                    if (selectedIntegration?.platform === 'rootly') {
+                      const hasUserPermission = selectedIntegration?.permissions?.users?.access;
+                      const hasIncidentPermission = selectedIntegration?.permissions?.incidents?.access;
+                      return !hasUserPermission || !hasIncidentPermission;
+                    }
 
-                  // For PagerDuty or other platforms, don't block based on permissions
-                  return false;
-                })()}
+                    // For PagerDuty or other platforms, don't block based on permissions
+                    return false;
+                  })()
+                }
               >
                 <>
                   <Play className="w-4 h-4 mr-2" />
