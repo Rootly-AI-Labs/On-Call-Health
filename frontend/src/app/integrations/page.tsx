@@ -3093,9 +3093,7 @@ export default function IntegrationsPage() {
                   </div>
                 )}
                 <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 rounded flex items-center justify-center bg-black p-1.5">
-                    <Image src="/images/linear-logo.png" alt="Linear" width={20} height={20} />
-                  </div>
+                  <Image src="/images/linear-logo.png" alt="Linear" width={28} height={28} />
                   <span className="text-xl font-semibold text-slate-900">Linear</span>
                 </div>
               </Card>
