@@ -6,7 +6,7 @@ Detects potential signs of overwork in incident responders, which could lead to 
 ![Rootly AI Labs On-call Health screenshot](https://raw.githubusercontent.com/Rootly-AI-Labs/On-Call-Health/main/assets/rootly-burnout-detector.png)
 
 Two ways to get started:
-* Use our hosted version [www.oncallburnout.com](https://www.oncallhealth.ai/) (contains mock data to easily test it out)
+* Use our hosted version [www.oncallhealth.ai](https://www.oncallhealth.ai/) (contains mock data to easily test it out)
 * Host it [locally](#Installation)
 
 ## Installation
