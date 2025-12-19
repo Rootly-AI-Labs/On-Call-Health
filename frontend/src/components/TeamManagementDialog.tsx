@@ -77,7 +77,7 @@ export function TeamManagementDialog({ isOpen, onClose }: TeamManagementDialogPr
     setIsInviting(true)
     try {
       const token = localStorage.getItem("auth_token")
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/invitations`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/invitations/create`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
