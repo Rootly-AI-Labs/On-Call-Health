@@ -986,7 +986,7 @@ export default function IntegrationsPage() {
               toast.dismiss(loadingToastId)
               if (status === 'pending_user_association') {
                 toast.success(`🎉 Slack app installed successfully!`, {
-                  description: `Connected to "${decodeURIComponent(workspace)}" workspace. The /burnout-survey command is now available.`,
+                  description: `Connected to "${decodeURIComponent(workspace)}" workspace. The /oncall-health command is now available.`,
                   duration: 6000,
                 })
               } else {
@@ -3949,7 +3949,7 @@ export default function IntegrationsPage() {
             </div>
             <div className="pt-3 border-t border-gray-200">
               <p className="text-xs text-gray-600">
-                💡 The <code className="bg-gray-100 px-1 rounded">/burnout-survey</code> command will only show analyses for your organization
+                💡 The <code className="bg-gray-100 px-1 rounded">/oncall-health</code> command will only show analyses for your organization
               </p>
             </div>
           </div>
@@ -3993,7 +3993,7 @@ export default function IntegrationsPage() {
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-2">
               <p className="text-sm font-medium text-red-900">This will:</p>
               <ul className="text-sm text-red-800 space-y-1 list-disc list-inside">
-                <li>Disable the <code className="bg-red-100 px-1 rounded font-mono text-xs">/burnout-survey</code> command in your Slack workspace</li>
+                <li>Disable the <code className="bg-red-100 px-1 rounded font-mono text-xs">/oncall-health</code> command in your Slack workspace</li>
                 <li>Stop all automated survey delivery</li>
                 <li>Remove access to survey features for all team members</li>
               </ul>

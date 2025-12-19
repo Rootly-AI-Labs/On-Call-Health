@@ -1038,8 +1038,8 @@ async def get_slack_user_info(
         )
 
 
-@router.post("/commands/burnout-survey")
-async def handle_burnout_survey_command(
+@router.post("/commands/oncall-health")
+async def handle_oncall_health_command(
     token: str = Form(...),
     team_id: str = Form(...),
     team_domain: str = Form(...),
@@ -1054,7 +1054,7 @@ async def handle_burnout_survey_command(
     db: Session = Depends(get_db)
 ):
     """
-    Handle /burnout-survey slash command from Slack.
+    Handle /oncall-health slash command from Slack.
     Opens a modal with the 3-question burnout survey.
     """
     try:
@@ -1884,7 +1884,7 @@ async def get_workspace_status(
                 "organization_exists": organization_info is not None,
                 "organization_active": organization_info.get("status") == "active" if organization_info else False,
                 "issue": None if (len(workspace_mappings) > 0 or len(org_mappings) > 0) else
-                        "No workspace mapping found. Slack /burnout-survey command will not work."
+                        "No workspace mapping found. Slack /oncall-health command will not work."
             }
         }
 
@@ -1905,7 +1905,7 @@ async def register_workspace_manual(
 ):
     """
     Manually register a Slack workspace that wasn't properly registered during OAuth.
-    This fixes the "workspace not registered" error for /burnout-survey command.
+    This fixes the "workspace not registered" error for /oncall-health command.
     """
     try:
         # Check if workspace mapping already exists
@@ -1946,7 +1946,7 @@ async def register_workspace_manual(
 
             return {
                 "success": True,
-                "message": "Workspace registered successfully! /burnout-survey command should now work.",
+                "message": "Workspace registered successfully! /oncall-health command should now work.",
                 "mapping": {
                     "workspace_id": new_mapping.workspace_id,
                     "workspace_name": new_mapping.workspace_name,

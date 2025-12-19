@@ -131,7 +131,7 @@ export function UnifiedSlackCard({
         const workspaceName = statusData.organization_workspace_mappings?.[0]?.workspace_name ||
                              statusData.user_workspace_mappings?.[0]?.workspace_name ||
                              'Unknown workspace'
-        toast.success(`✅ Workspace is properly registered! /burnout-survey command should work.\n\nRegistered workspace: ${workspaceName}`)
+        toast.success(`✅ Workspace is properly registered! /oncall-health command should work.\n\nRegistered workspace: ${workspaceName}`)
       } else {
         if (!slackIntegration?.workspace_id) {
           toast.error('No workspace ID found. Please reconnect Slack.')
@@ -151,7 +151,7 @@ export function UnifiedSlackCard({
         })
 
         if (registerResponse.ok) {
-          toast.success('✅ Workspace registered! /burnout-survey command should now work.')
+          toast.success('✅ Workspace registered! /oncall-health command should now work.')
           if (loadSlackPermissions) {
             loadSlackPermissions()
           }
@@ -456,7 +456,7 @@ export function UnifiedSlackCard({
             <div className="space-y-3 pt-2 text-sm text-muted-foreground">
               <p>This will disable all Slack survey features, including:</p>
               <ul className="list-disc list-inside space-y-1 text-sm">
-                <li>The <code className="bg-gray-100 px-1 rounded">/burnout-survey</code> command</li>
+                <li>The <code className="bg-gray-100 px-1 rounded">/oncall-health</code> command</li>
                 <li>Automated survey delivery (scheduled surveys will stop)</li>
                 <li>Manual survey sending</li>
               </ul>
