@@ -99,10 +99,21 @@ def get_cors_origins():
     ])
     
     # Add Vercel preview URLs if in development/staging
-    vercel_url = os.getenv("VERCEL_URL") 
+    vercel_url = os.getenv("VERCEL_URL")
     if vercel_url:
         origins.append(f"https://{vercel_url}")
-    
+
+    # Add Railway URLs
+    railway_url = os.getenv("RAILWAY_PUBLIC_DOMAIN")
+    if railway_url:
+        origins.append(f"https://{railway_url}")
+
+    # Add Railway testing/staging URLs explicitly
+    origins.extend([
+        "https://rootly-burnout-detector-web-testing.up.railway.app",
+        "https://on-call-health-web-testing.up.railway.app",
+    ])
+
     # Remove duplicates while preserving order
     origins = list(dict.fromkeys(origins))
 
