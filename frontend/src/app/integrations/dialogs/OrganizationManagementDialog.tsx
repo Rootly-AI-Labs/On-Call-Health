@@ -5,11 +5,16 @@ import { Users, Mail, Loader2 } from "lucide-react"
 import { UserInfo } from "../types"
 
 interface OrganizationMember {
-  id: number
+  id: number | string
+  invitation_id?: number
   name: string
   email: string
   role: string
+  status: 'active' | 'pending'
   is_current_user: boolean
+  joined_at?: string
+  invited_at?: string
+  expires_at?: string
 }
 
 interface PendingInvitation {
@@ -165,16 +170,17 @@ export function OrganizationManagementDialog({
                   </h3>
                   <div className="border rounded-lg overflow-hidden">
                     <div className="bg-gray-50 px-4 py-2 border-b">
-                      <div className="grid grid-cols-3 gap-4 text-sm font-medium text-gray-700">
+                      <div className="grid grid-cols-4 gap-4 text-sm font-medium text-gray-700">
                         <div>Name</div>
                         <div>Email</div>
+                        <div>Status</div>
                         <div>Role</div>
                       </div>
                     </div>
                     <div className="max-h-60 overflow-y-auto">
                       {orgMembers.map((member) => (
-                        <div key={member.id} className="px-4 py-3 border-b last:border-b-0 bg-white hover:bg-gray-50">
-                          <div className="grid grid-cols-3 gap-4 text-sm items-center">
+                        <div key={member.id} className={`px-4 py-3 border-b last:border-b-0 hover:bg-gray-50 ${member.status === 'pending' ? 'bg-yellow-50' : 'bg-white'}`}>
+                          <div className="grid grid-cols-4 gap-4 text-sm items-center">
                             <div className="font-medium text-gray-900">
                               {member.name}
                               {member.is_current_user && (
@@ -183,15 +189,30 @@ export function OrganizationManagementDialog({
                             </div>
                             <div className="text-gray-600">{member.email}</div>
                             <div>
-                              {member.is_current_user ? (
-                                <span className="inline-block px-2 py-1 text-xs rounded-full bg-green-100 text-green-800 capitalize">
+                              {member.status === 'pending' ? (
+                                <span className="inline-block px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">
+                                  Pending
+                                </span>
+                              ) : (
+                                <span className="inline-block px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
+                                  Active
+                                </span>
+                              )}
+                            </div>
+                            <div>
+                              {member.status === 'pending' ? (
+                                <span className="text-xs text-gray-500 capitalize">
+                                  {member.role?.replace('_', ' ') || 'member'}
+                                </span>
+                              ) : member.is_current_user ? (
+                                <span className="inline-block px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-800 capitalize">
                                   {member.role?.replace('_', ' ') || 'member'}
                                 </span>
                               ) : (
                                 <div className="relative group">
                                   <select
                                     value={member.role || 'member'}
-                                    onChange={(e) => onRoleChange(member.id, e.target.value)}
+                                    onChange={(e) => onRoleChange(member.id as number, e.target.value)}
                                     className="text-xs px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white disabled:opacity-60 disabled:cursor-not-allowed"
                                     disabled={userInfo?.role !== 'admin' && userInfo?.role !== 'org_admin'}
                                   >

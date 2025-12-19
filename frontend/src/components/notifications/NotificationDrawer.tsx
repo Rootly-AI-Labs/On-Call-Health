@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/sheet'
 import { useNotifications } from '@/hooks/useNotifications'
 import NotificationItem from './NotificationItem'
+import { InvitationAcceptanceModal } from '@/components/InvitationAcceptanceModal'
 
 export function NotificationDrawer() {
   const [isOpen, setIsOpen] = useState(false)
@@ -24,14 +25,19 @@ export function NotificationDrawer() {
     dismiss,
     markAllAsRead,
     clearAll,
-    handleAction
+    handleAction,
+    invitationModalId,
+    setInvitationModalId
   } = useNotifications()
   const scrollRef = useRef<HTMLDivElement>(null)
 
   // Handle notification action and close panel
   const onAction = async (notification: any) => {
     await handleAction(notification)
-    setIsOpen(false)
+    // Only close drawer if not opening invitation modal
+    if (!notification.action_url?.includes('/invitations/accept/')) {
+      setIsOpen(false)
+    }
   }
 
   // Handle scroll for infinite loading
@@ -161,6 +167,18 @@ export function NotificationDrawer() {
           </div>
         </div>
       </SheetContent>
+
+      {/* Invitation Acceptance Modal */}
+      <InvitationAcceptanceModal
+        invitationId={invitationModalId}
+        isOpen={!!invitationModalId}
+        onClose={() => setInvitationModalId(null)}
+        onAccepted={() => {
+          setInvitationModalId(null)
+          // Refresh notifications after accepting
+          loadMoreNotifications()
+        }}
+      />
     </Sheet>
   )
 }

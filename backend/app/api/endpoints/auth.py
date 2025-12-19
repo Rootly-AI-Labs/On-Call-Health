@@ -8,7 +8,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 
-from ...models import get_db, User, OAuthProvider, UserEmail
+from ...models import get_db, User, OAuthProvider, UserEmail, OrganizationInvitation
 from ...auth.oauth import google_oauth, github_oauth
 from ...auth.jwt import create_access_token
 from ...auth.dependencies import get_current_active_user
@@ -766,34 +766,35 @@ async def get_organization_members(
     db: Session = Depends(get_db)
 ) -> list[Dict[str, Any]]:
     """
-    Get all users with the same email domain as the current user.
-    Shows organization members based on email domain matching.
+    Get all members and pending invitations for the current user's organization.
     """
-    if not current_user.email:
-        raise HTTPException(status_code=400, detail="User email not found")
+    if not current_user.organization_id:
+        raise HTTPException(status_code=400, detail="You must be part of an organization")
 
-    # Extract domain from current user's email
-    email_domain = current_user.email.split('@')[1] if '@' in current_user.email else None
-
-    if not email_domain:
-        raise HTTPException(status_code=400, detail="Invalid email format")
-
-    # Get all users with the same email domain
+    # Get all users in the organization
     users = db.query(User).filter(
-        User.email.like(f'%@{email_domain}'),
+        User.organization_id == current_user.organization_id,
         User.status == 'active'
     ).order_by(User.name).all()
+
+    # Get pending invitations for the organization
+    pending_invitations = db.query(OrganizationInvitation).filter(
+        OrganizationInvitation.organization_id == current_user.organization_id,
+        OrganizationInvitation.status == 'pending'
+    ).all()
 
     # Format response with current user first
     current_user_data = None
     other_members = []
 
+    # Add actual users
     for user in users:
         member_data = {
             "id": user.id,
             "name": user.name,
             "email": user.email,
             "role": user.role,
+            "status": "active",
             "is_current_user": user.id == current_user.id,
             "joined_at": user.joined_org_at.isoformat() if user.joined_org_at else None
         }
@@ -803,7 +804,24 @@ async def get_organization_members(
         else:
             other_members.append(member_data)
 
-    # Return current user first, then others
+    # Add pending invitations
+    for invitation in pending_invitations:
+        if not invitation.is_expired:
+            invitation_data = {
+                "id": f"invitation_{invitation.id}",  # Prefix to distinguish from users
+                "invitation_id": invitation.id,
+                "name": invitation.email.split('@')[0],  # Use email username as name
+                "email": invitation.email,
+                "role": invitation.role,
+                "status": "pending",
+                "is_current_user": False,
+                "joined_at": None,
+                "invited_at": invitation.created_at.isoformat() if invitation.created_at else None,
+                "expires_at": invitation.expires_at.isoformat() if invitation.expires_at else None
+            }
+            other_members.append(invitation_data)
+
+    # Return current user first, then others (users + pending invitations)
     members = [current_user_data] if current_user_data else []
     members.extend(other_members)
 
