@@ -3072,8 +3072,8 @@ export default function IntegrationsPage() {
               <Card
                 className={`border-2 transition-all cursor-pointer hover:shadow-md ${
                   activeEnhancementTab === 'linear'
-                    ? 'border-indigo-500 shadow-md bg-indigo-50'
-                    : 'border-gray-200 hover:border-indigo-300'
+                    ? 'border-gray-800 shadow-md bg-gray-50'
+                    : 'border-gray-200 hover:border-gray-400'
                 } p-4 flex items-center justify-center relative h-20`}
                 onClick={() => {
                   setActiveEnhancementTab(activeEnhancementTab === 'linear' ? null : 'linear')
@@ -3089,17 +3089,17 @@ export default function IntegrationsPage() {
                 ) : null}
                 {activeEnhancementTab === 'linear' && (
                   <div className="absolute top-2 left-2">
-                    <CheckCircle className="w-5 h-5 text-indigo-600" />
+                    <CheckCircle className="w-5 h-5 text-gray-800" />
                   </div>
                 )}
                 <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 rounded flex items-center justify-center bg-indigo-600">
+                  <div className="w-8 h-8 rounded flex items-center justify-center bg-black">
                     <svg
                       viewBox="0 0 100 100"
                       className="w-5 h-5 text-white"
                       fill="currentColor"
                     >
-                      <path d="M1.22541 61.5228c-.2225-.9485.90748-1.5459 1.59638-.857L39.3342 97.1782c.6889.6889.0915 1.8189-.857 1.5765-13.0866-3.3387-23.0959-13.3478-26.4324-26.4324zm13.1628 17.3372L97.1782 39.3342c.6889-.6889.0915-1.8189-.857-1.5765-13.0866 3.3387-23.0959 13.3478-26.4324 26.4324-.2225.9485.90748 1.5459 1.5964.857L10.0948 26.66a1.05 1.05 0 0 1 1.485 1.485l47.2596 47.2596c.6889-.6889.0915-1.8189-.857-1.5765A36.0291 36.0291 0 0 0 31.55 100.26 36.0291 36.0291 0 0 0 58.2252 73.828c.6889.6889 1.8189.0915 1.5765-.857A36.0291 36.0291 0 0 1 86.2349 46.539a36.0291 36.0291 0 0 1 11.5869-3.8038c.9485-.2225 1.5459.9075.857 1.5964L14.388 78.86z" fillRule="evenodd" />
+                      <path fillRule="evenodd" clipRule="evenodd" d="M50 100C77.6142 100 100 77.6142 100 50C100 22.3858 77.6142 0 50 0C22.3858 0 0 22.3858 0 50C0 77.6142 22.3858 100 50 100ZM70.7 16.8L16.8 70.7C14.5 66.2 13.2 61.1 12.9 55.8L55.8 12.9C61.1 13.2 66.2 14.5 70.7 16.8ZM83.2 29.3L29.3 83.2C33.8 85.5 38.9 86.8 44.2 87.1L87.1 44.2C86.8 38.9 85.5 33.8 83.2 29.3ZM22.3 77.7L77.7 22.3C75.1 19.9 72.2 17.9 69 16.3L16.3 69C17.9 72.2 19.9 75.1 22.3 77.7ZM30.9 83.7L83.7 30.9C82.1 27.7 80.1 24.8 77.7 22.3L22.3 77.7C24.8 80.1 27.7 82.1 30.9 83.7Z" />
                     </svg>
                   </div>
                   <span className="text-xl font-semibold text-slate-900">Linear</span>
