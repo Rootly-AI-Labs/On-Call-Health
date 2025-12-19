@@ -558,7 +558,307 @@ class JiraIntegrationOAuth:
         return perms
 
 
+class LinearIntegrationOAuth:
+    """
+    Linear OAuth provider for integration purposes with PKCE support.
+
+    Notes:
+    - Uses OAuth 2.0 with optional PKCE for enhanced security.
+    - Linear uses GraphQL API at https://api.linear.app/graphql
+    - Access tokens expire in 24 hours (vs Jira's 1 hour).
+    - Scopes: "read" for basic access to issues, teams, users.
+    """
+
+    def __init__(self):
+        self.client_id = settings.LINEAR_CLIENT_ID
+        self.client_secret = settings.LINEAR_CLIENT_SECRET
+        self.redirect_uri = f"{settings.FRONTEND_URL}/setup/linear/callback"
+        self.auth_url = "https://linear.app/oauth/authorize"
+        self.token_url = "https://api.linear.app/oauth/token"
+        self.graphql_url = "https://api.linear.app/graphql"
+
+    @staticmethod
+    def generate_pkce_pair() -> tuple:
+        """Generate PKCE code_verifier and code_challenge pair."""
+        import secrets
+        import hashlib
+        import base64
+
+        # Generate a cryptographically random code_verifier (43-128 chars)
+        code_verifier = secrets.token_urlsafe(32)
+
+        # Create SHA256 hash and base64url encode it for code_challenge
+        code_challenge = base64.urlsafe_b64encode(
+            hashlib.sha256(code_verifier.encode()).digest()
+        ).decode().rstrip("=")
+
+        return code_verifier, code_challenge
+
+    def get_authorization_url(self, state: str = "", code_challenge: str = None) -> str:
+        """Generate Linear OAuth authorization URL with optional PKCE."""
+        params = {
+            "client_id": self.client_id,
+            "redirect_uri": self.redirect_uri,
+            "scope": "read",  # Minimal scope for burnout analysis
+            "response_type": "code",
+            "state": state or "",
+        }
+
+        # Add PKCE parameters if provided
+        if code_challenge:
+            params["code_challenge"] = code_challenge
+            params["code_challenge_method"] = "S256"
+
+        return f"{self.auth_url}?{urlencode(params)}"
+
+    async def exchange_code_for_token(self, code: str, code_verifier: str = None) -> Dict[str, Any]:
+        """Exchange Linear authorization code for access token."""
+        data = {
+            "grant_type": "authorization_code",
+            "client_id": self.client_id,
+            "client_secret": self.client_secret,
+            "code": code,
+            "redirect_uri": self.redirect_uri,
+        }
+
+        # Add PKCE verifier if provided
+        if code_verifier:
+            data["code_verifier"] = code_verifier
+
+        headers = {"Content-Type": "application/x-www-form-urlencoded"}
+
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(self.token_url, data=data, headers=headers)
+
+        if resp.status_code != 200:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Failed to exchange code for token: {resp.text}",
+            )
+        return resp.json()
+
+    async def refresh_access_token(self, refresh_token: str) -> Dict[str, Any]:
+        """Refresh Linear access token."""
+        data = {
+            "grant_type": "refresh_token",
+            "client_id": self.client_id,
+            "client_secret": self.client_secret,
+            "refresh_token": refresh_token,
+        }
+        headers = {"Content-Type": "application/x-www-form-urlencoded"}
+
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(self.token_url, data=data, headers=headers)
+
+        if resp.status_code != 200:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Failed to refresh access token: {resp.text}",
+            )
+        return resp.json()
+
+    async def _graphql_query(self, access_token: str, query: str, variables: dict = None) -> Dict[str, Any]:
+        """Execute a GraphQL query against Linear API."""
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json",
+        }
+
+        payload = {"query": query}
+        if variables:
+            payload["variables"] = variables
+
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(self.graphql_url, json=payload, headers=headers)
+
+        if resp.status_code != 200:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"GraphQL request failed: {resp.text}",
+            )
+
+        result = resp.json()
+        if "errors" in result:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"GraphQL errors: {result['errors']}",
+            )
+
+        return result.get("data", {})
+
+    async def get_viewer(self, access_token: str) -> Dict[str, Any]:
+        """Get current user (viewer) info from Linear."""
+        query = """
+        query Viewer {
+            viewer {
+                id
+                name
+                email
+                active
+            }
+        }
+        """
+        data = await self._graphql_query(access_token, query)
+        return data.get("viewer", {})
+
+    async def get_organization(self, access_token: str) -> Dict[str, Any]:
+        """Get organization (workspace) info from Linear."""
+        query = """
+        query Organization {
+            organization {
+                id
+                name
+                urlKey
+            }
+        }
+        """
+        data = await self._graphql_query(access_token, query)
+        return data.get("organization", {})
+
+    async def get_teams(self, access_token: str) -> List[Dict[str, Any]]:
+        """Get all teams in the Linear workspace."""
+        query = """
+        query Teams {
+            teams {
+                nodes {
+                    id
+                    name
+                    key
+                }
+            }
+        }
+        """
+        data = await self._graphql_query(access_token, query)
+        return data.get("teams", {}).get("nodes", [])
+
+    async def get_users(self, access_token: str, first: int = 100, after: str = None) -> Dict[str, Any]:
+        """Get users from Linear workspace with pagination."""
+        query = """
+        query Users($first: Int, $after: String) {
+            users(first: $first, after: $after) {
+                pageInfo {
+                    hasNextPage
+                    endCursor
+                }
+                nodes {
+                    id
+                    name
+                    email
+                    active
+                }
+            }
+        }
+        """
+        variables = {"first": first}
+        if after:
+            variables["after"] = after
+
+        data = await self._graphql_query(access_token, query, variables)
+        return data.get("users", {})
+
+    async def get_issues(
+        self,
+        access_token: str,
+        *,
+        first: int = 100,
+        after: str = None,
+        filter_dict: dict = None,
+    ) -> Dict[str, Any]:
+        """
+        Get issues from Linear with filters and pagination.
+
+        Args:
+            access_token: Linear API access token
+            first: Number of issues to fetch (max 100)
+            after: Cursor for pagination
+            filter_dict: GraphQL filter object for issues
+
+        Returns:
+            Dict with pageInfo and nodes (issues)
+        """
+        query = """
+        query Issues($first: Int, $after: String, $filter: IssueFilter) {
+            issues(first: $first, after: $after, filter: $filter) {
+                pageInfo {
+                    hasNextPage
+                    endCursor
+                }
+                nodes {
+                    id
+                    identifier
+                    title
+                    priority
+                    dueDate
+                    updatedAt
+                    assignee {
+                        id
+                        name
+                        email
+                    }
+                    state {
+                        name
+                        type
+                    }
+                }
+            }
+        }
+        """
+        variables = {"first": min(first, 100)}  # Linear max is 100
+        if after:
+            variables["after"] = after
+        if filter_dict:
+            variables["filter"] = filter_dict
+
+        data = await self._graphql_query(access_token, query, variables)
+        return data.get("issues", {})
+
+    async def test_permissions(self, access_token: str) -> Dict[str, Any]:
+        """Test Linear token permissions."""
+        perms = {
+            "viewer_access": False,
+            "organization_access": False,
+            "teams_access": False,
+            "issues_access": False,
+            "errors": [],
+        }
+
+        # Test viewer access
+        try:
+            viewer = await self.get_viewer(access_token)
+            perms["viewer_access"] = bool(viewer.get("id"))
+            if not perms["viewer_access"]:
+                perms["errors"].append("Could not fetch viewer info")
+        except Exception as e:
+            perms["errors"].append(f"Viewer access failed: {str(e)}")
+
+        # Test organization access
+        try:
+            org = await self.get_organization(access_token)
+            perms["organization_access"] = bool(org.get("id"))
+            if not perms["organization_access"]:
+                perms["errors"].append("Could not fetch organization info")
+        except Exception as e:
+            perms["errors"].append(f"Organization access failed: {str(e)}")
+
+        # Test teams access
+        try:
+            teams = await self.get_teams(access_token)
+            perms["teams_access"] = isinstance(teams, list)
+        except Exception as e:
+            perms["errors"].append(f"Teams access failed: {str(e)}")
+
+        # Test issues access
+        try:
+            issues = await self.get_issues(access_token, first=1)
+            perms["issues_access"] = "nodes" in issues or "pageInfo" in issues
+        except Exception as e:
+            perms["errors"].append(f"Issues access failed: {str(e)}")
+
+        return perms
+
+
 # Provider instances
 github_integration_oauth = GitHubIntegrationOAuth()
 slack_integration_oauth = SlackIntegrationOAuth()
 jira_integration_oauth = JiraIntegrationOAuth()
+linear_integration_oauth = LinearIntegrationOAuth()

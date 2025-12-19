@@ -169,6 +169,34 @@ export interface JiraWorkspacesResponse {
   message?: string
 }
 
+export interface LinearIntegration {
+  id: number
+  workspace_id: string
+  workspace_name?: string
+  workspace_url_key?: string
+  linear_user_id: string
+  linear_display_name?: string
+  linear_email?: string
+  token_source: "oauth" | "manual"
+  is_oauth: boolean
+  supports_refresh: boolean
+  token_expires_at?: string
+  updated_at: string
+  token_preview?: string
+}
+
+export interface LinearTeam {
+  id: string
+  name: string
+  key: string
+  is_selected: boolean
+}
+
+export interface LinearTeamsResponse {
+  teams: LinearTeam[]
+  total_count: number
+}
+
 export interface PreviewData {
   organization_name: string
   total_users: number

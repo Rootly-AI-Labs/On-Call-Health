@@ -71,6 +71,7 @@ class UnifiedBurnoutAnalyzer:
         github_token: Optional[str] = None,
         slack_token: Optional[str] = None,
         jira_token: Optional[str] = None,
+        linear_token: Optional[str] = None,
         organization_name: Optional[str] = None,
         synced_users: Optional[List[Dict[str, Any]]] = None,
         current_user_id: Optional[int] = None
@@ -109,6 +110,7 @@ class UnifiedBurnoutAnalyzer:
         self.github_token = github_token
         self.slack_token = slack_token
         self.jira_token = jira_token
+        self.linear_token = linear_token
 
         # Using Copenhagen Burnout Inventory (OCB) methodology
         logger.info("Unified analyzer using Copenhagen Burnout Inventory methodology")
@@ -136,6 +138,7 @@ class UnifiedBurnoutAnalyzer:
                 'github': True,  # Always enable for mock data
                 'slack': True,   # Always enable for mock data
                 'jira': jira_token is not None,
+                'linear': linear_token is not None,
                 'mock': self.use_mock_data
             }
             # Set dummy tokens if not provided (mock data doesn't need real tokens)
@@ -149,6 +152,7 @@ class UnifiedBurnoutAnalyzer:
                 'github': github_token is not None,
                 'slack': slack_token is not None,
                 'jira': jira_token is not None,
+                'linear': linear_token is not None,
                 'mock': self.use_mock_data
             }
 
@@ -773,6 +777,39 @@ class UnifiedBurnoutAnalyzer:
                     logger.info(f"⚠️ JIRA BURNOUT: Skipping Jira data - Jira feature disabled (no jira_token provided)")
                 if not self.current_user_id:
                     logger.info(f"⚠️ JIRA BURNOUT: Skipping Jira data - no current_user_id provided to analyzer")
+
+            # --- LINEAR INTEGRATION (similar to Jira) ---
+            if self.features.get('linear') and self.current_user_id:
+                try:
+                    logger.info(f"\n{'='*80}")
+                    logger.info(f"LINEAR BURNOUT ANALYSIS: Starting Linear integration for current_user_id={self.current_user_id}")
+                    logger.info(f"{'='*80}")
+                    logger.info(f"LINEAR BURNOUT: Fetching Linear issue data for burnout analysis")
+
+                    linear_workload = await self._fetch_linear_workload_data(self.current_user_id)
+
+                    if linear_workload:
+                        logger.info(f"LINEAR BURNOUT: ✅ Successfully fetched Linear workload for {len(linear_workload)} assignees")
+                        logger.info(f"LINEAR BURNOUT: Correlating Linear data with team members")
+                        team_analysis["members"] = self._correlate_linear_data(
+                            team_analysis["members"],
+                            linear_workload
+                        )
+
+                        logger.info(f"LINEAR BURNOUT: Recalculating scores with Linear issue workload")
+                        team_analysis["members"] = self._recalculate_burnout_with_linear(team_analysis["members"], metadata)
+                    else:
+                        logger.info(f"❌ LINEAR BURNOUT: No Linear workload data found - Linear integration may not be configured")
+                        logger.info(f"{'='*80}\n")
+
+                except Exception as e:
+                    logger.warning(f"❌ LINEAR BURNOUT: Could not integrate Linear data: {e}")
+                    logger.warning(f"{'='*80}\n")
+            else:
+                if not self.features.get('linear'):
+                    logger.info(f"⚠️ LINEAR BURNOUT: Skipping Linear data - Linear feature disabled (no linear_token provided)")
+                if not self.current_user_id:
+                    logger.info(f"⚠️ LINEAR BURNOUT: Skipping Linear data - no current_user_id provided to analyzer")
 
             # DEBUG: Check GitHub data AFTER Jira processing
             logger.info(f"🔍 POST_JIRA_CHECK: Checking GitHub data after Jira processing")
@@ -4832,7 +4869,374 @@ class UnifiedBurnoutAnalyzer:
             logger.error(f"Error calculating Jira OCB contribution: {e}")
             return 0.0
 
+    # ============================================================
+    # LINEAR INTEGRATION METHODS
+    # ============================================================
 
+    async def _fetch_linear_workload_data(self, current_user_id: int) -> Dict[str, Any]:
+        """
+        Fetch Linear issue workload data for all team members.
+
+        Returns:
+            Dict mapping assignee user_id to issue list
+        """
+        db = None
+        try:
+            from ..models import LinearIntegration
+            from ..auth.integration_oauth import linear_integration_oauth
+            from ..api.endpoints.linear import decrypt_token, needs_refresh, encrypt_token
+            from datetime import datetime as dt_datetime, timezone as dt_timezone, timedelta as dt_timedelta
+            from sqlalchemy.orm import Session
+            from ..models import get_db
+
+            db: Session = next(get_db())
+
+            integration = db.query(LinearIntegration).filter(
+                LinearIntegration.user_id == current_user_id
+            ).first()
+
+            if not integration or integration.workspace_id == "pending":
+                logger.info(f"LINEAR WORKLOAD: No Linear integration found for user {current_user_id}")
+                return {}
+
+            access_token = decrypt_token(integration.access_token)
+
+            # Refresh token if needed (Linear tokens expire in 24 hours)
+            if needs_refresh(integration.token_expires_at) and integration.refresh_token:
+                logger.info(f"LINEAR WORKLOAD: Refreshing Linear access token")
+                try:
+                    refresh_token = decrypt_token(integration.refresh_token)
+                    token_data = await linear_integration_oauth.refresh_access_token(refresh_token)
+                    new_access_token = token_data.get("access_token")
+
+                    if new_access_token:
+                        access_token = new_access_token
+                        integration.access_token = encrypt_token(new_access_token)
+                        new_refresh_token = token_data.get("refresh_token") or refresh_token
+                        integration.refresh_token = encrypt_token(new_refresh_token)
+                        expires_in = token_data.get("expires_in", 86400)
+                        integration.token_expires_at = dt_datetime.now(dt_timezone.utc) + dt_timedelta(seconds=expires_in)
+                        db.commit()
+                except Exception as e:
+                    logger.warning(f"LINEAR WORKLOAD: Token refresh failed: {e}")
+
+            # Fetch Linear issues - active issues not in completed/canceled states
+            filter_dict = {
+                "state": {"type": {"nin": ["completed", "canceled"]}},
+            }
+
+            linear_workload = {}
+            cursor = None
+            max_pages = 10
+
+            for page in range(max_pages):
+                try:
+                    result = await linear_integration_oauth.get_issues(
+                        access_token,
+                        first=100,
+                        after=cursor,
+                        filter_dict=filter_dict,
+                    )
+
+                    nodes = result.get("nodes", [])
+
+                    for issue in nodes:
+                        assignee = issue.get("assignee") or {}
+                        assignee_id = assignee.get("id")
+
+                        if not assignee_id:
+                            continue
+
+                        if assignee_id not in linear_workload:
+                            linear_workload[assignee_id] = {
+                                "user_id": assignee_id,
+                                "name": assignee.get("name"),
+                                "email": assignee.get("email"),
+                                "issues": []
+                            }
+
+                        issue_data = {
+                            "id": issue.get("id"),
+                            "identifier": issue.get("identifier"),
+                            "title": issue.get("title"),
+                            "priority": issue.get("priority", 0),
+                            "dueDate": issue.get("dueDate"),
+                            "state": issue.get("state", {}).get("name"),
+                        }
+                        linear_workload[assignee_id]["issues"].append(issue_data)
+
+                    page_info = result.get("pageInfo", {})
+                    if not page_info.get("hasNextPage"):
+                        break
+                    cursor = page_info.get("endCursor")
+
+                except Exception as e:
+                    logger.error(f"LINEAR WORKLOAD: Error fetching page {page}: {e}")
+                    break
+
+            logger.info(f"LINEAR WORKLOAD: Fetched issues for {len(linear_workload)} assignees")
+            return linear_workload
+
+        except Exception as e:
+            logger.error(f"LINEAR WORKLOAD: Error fetching Linear workload data: {e}")
+            return {}
+        finally:
+            if db:
+                db.close()
+
+    def _correlate_linear_data(self, members: List[Dict[str, Any]], linear_workload: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        Correlate Linear issue data with team members by matching linear_user_id.
+
+        Args:
+            members: List of team members with linear_user_id field
+            linear_workload: Dict mapping user_id to issue data
+
+        Returns:
+            Updated members list with linear_issues field populated
+        """
+        try:
+            updated_members = []
+            members_with_linear = 0
+            members_with_linear_mapping = 0
+
+            for member in members:
+                if not isinstance(member, dict):
+                    updated_members.append(member)
+                    continue
+
+                updated_member = member.copy()
+
+                linear_user_id = member.get("linear_user_id")
+                member_name = member.get("user_name") or member.get("name") or "Unknown"
+
+                if linear_user_id:
+                    members_with_linear_mapping += 1
+
+                    if linear_user_id in linear_workload:
+                        workload_data = linear_workload[linear_user_id]
+                        issues = workload_data.get("issues", [])
+                        updated_member["linear_issues"] = issues
+                        members_with_linear += 1
+
+                        logger.info(
+                            f"LINEAR CORRELATE: ✅ {member_name} → {len(issues)} issues "
+                            f"(linear_user_id={linear_user_id[:8]}...)"
+                        )
+                    else:
+                        updated_member["linear_issues"] = []
+                        logger.debug(
+                            f"LINEAR CORRELATE: {member_name} has mapping but no issues "
+                            f"(linear_user_id={linear_user_id[:8]}...)"
+                        )
+                else:
+                    updated_member["linear_issues"] = []
+
+                updated_members.append(updated_member)
+
+            logger.info(
+                f"LINEAR CORRELATE: {members_with_linear}/{members_with_linear_mapping} "
+                f"members with mapping have issues"
+            )
+
+            return updated_members
+
+        except Exception as e:
+            logger.error(f"Error correlating Linear data: {e}")
+            return members
+
+    def _recalculate_burnout_with_linear(self, members: List[Dict[str, Any]], metadata: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        Recalculate OCB scores incorporating Linear issue workload data.
+
+        Linear is treated as an increasing burnout factor (same as Jira):
+        - It can never reduce the original OCB score
+        - It can increase the score up to a maximum of 100
+        """
+        try:
+            updated_members = []
+            linear_adjustments_made = 0
+
+            for member in members:
+                if not isinstance(member, dict):
+                    updated_members.append(member)
+                    continue
+
+                updated_member = member.copy()
+                linear_issues = member.get("linear_issues", [])
+                member_name = member.get("user_name") or member.get("name") or "Unknown"
+
+                if linear_issues:
+                    original_ocb = float(member.get("ocb_score") or 0.0)
+                    original_ocb = max(0.0, min(100.0, original_ocb))
+
+                    linear_ocb_contribution = self._calculate_linear_ocb_contribution(linear_issues)
+                    linear_ocb_contribution = max(0.0, min(100.0, linear_ocb_contribution))
+
+                    # Combine using "headroom" model (same as Jira)
+                    final_ocb = original_ocb + (100.0 - original_ocb) * (linear_ocb_contribution / 100.0)
+                    final_ocb = max(original_ocb, min(100.0, final_ocb))
+
+                    linear_added_risk = final_ocb - original_ocb
+                    updated_member["ocb_score"] = round(final_ocb, 2)
+
+                    logger.info(
+                        f"🔍 LINEAR OCB {member_name}: "
+                        f"issues={len(linear_issues)}, "
+                        f"original_ocb={original_ocb:.2f}, "
+                        f"linear_ocb={linear_ocb_contribution:.2f}, "
+                        f"linear_added_risk={linear_added_risk:.2f}, "
+                        f"final_ocb={final_ocb:.2f}"
+                    )
+
+                    issue_count = len(linear_issues)
+                    # Linear priorities: 1=Urgent, 2=High, 3=Medium, 4=Low, 0=None
+                    urgent_high_count = len([
+                        i for i in linear_issues
+                        if i.get("priority", 0) in [1, 2]
+                    ])
+                    urgent_high_ratio = (urgent_high_count / issue_count * 100) if issue_count > 0 else 0.0
+
+                    updated_member["linear_burnout_breakdown"] = {
+                        "linear_ocb_score": round(linear_ocb_contribution, 2),
+                        "original_ocb": round(original_ocb, 2),
+                        "final_ocb": round(final_ocb, 2),
+                        "linear_added_risk": round(linear_added_risk, 2),
+                        "linear_indicators": {
+                            "issue_count": issue_count,
+                            "urgent_high_priority_count": urgent_high_count,
+                            "urgent_high_ratio": round(urgent_high_ratio, 1),
+                            "high_workload": issue_count >= 20,
+                            "urgent_ratio_high": urgent_high_ratio > 30,
+                        },
+                    }
+
+                    linear_adjustments_made += 1
+
+                updated_members.append(updated_member)
+
+            logger.info(
+                f"LINEAR OCB: Updated OCB scores for {linear_adjustments_made}/{len(members)} members with Linear workload"
+            )
+
+            return updated_members
+
+        except Exception as e:
+            logger.error(f"Error in _recalculate_burnout_with_linear: {e}")
+            return members
+
+    def _calculate_linear_ocb_contribution(
+        self,
+        issues: Optional[List[Dict[str, Any]]]
+    ) -> float:
+        """
+        Calculate Linear burnout contribution (0-100) using:
+        - Issue count
+        - Priority mix (Linear: 1=Urgent, 2=High, 3=Medium, 4=Low, 0=None)
+        - Earliest deadline
+        """
+        try:
+            if not issues:
+                return 0.0
+
+            issue_count = len(issues)
+            if issue_count == 0:
+                return 0.0
+
+            # Priority weights - Linear uses numeric priorities
+            # 1=Urgent (highest), 2=High, 3=Medium, 4=Low, 0=None (lowest)
+            PRIORITY_WEIGHTS = {
+                1: 1.2,   # Urgent
+                2: 1.0,   # High
+                3: 0.7,   # Medium
+                4: 0.4,   # Low
+                0: 0.2,   # No priority
+            }
+
+            weighted_sum = 0.0
+            for issue in issues:
+                priority = issue.get("priority", 0)
+                weight = PRIORITY_WEIGHTS.get(priority, 0.7)
+                weighted_sum += weight
+
+            avg_priority_weight = weighted_sum / issue_count
+            priority_score = min(avg_priority_weight / 1.2, 1.0)
+
+            # Deadline scoring
+            earliest_due = None
+            from datetime import datetime, date
+
+            for issue in issues:
+                due = issue.get("dueDate")
+                if not due:
+                    continue
+
+                try:
+                    # Linear dates are ISO format strings
+                    if isinstance(due, str):
+                        parsed = datetime.fromisoformat(due.replace('Z', '+00:00')).date()
+                    else:
+                        parsed = due
+                except:
+                    continue
+
+                if earliest_due is None or parsed < earliest_due:
+                    earliest_due = parsed
+
+            today = datetime.utcnow().date()
+
+            if earliest_due is None:
+                deadline_score = 0.3
+            else:
+                days_until_due = (earliest_due - today).days
+
+                if days_until_due <= 0:
+                    deadline_score = 1.0
+                elif days_until_due <= 2:
+                    deadline_score = 0.9
+                elif days_until_due <= 7:
+                    deadline_score = 0.75
+                elif days_until_due <= 14:
+                    deadline_score = 0.55
+                elif days_until_due <= 30:
+                    deadline_score = 0.4
+                else:
+                    deadline_score = 0.2
+
+            # Issue load score
+            MAX_LOAD = 15
+            issue_load_score = min(issue_count / MAX_LOAD, 1.0)
+
+            # Combine scores (same weights as Jira)
+            WEIGHT_ISSUES = 0.4
+            WEIGHT_PRIORITY = 0.35
+            WEIGHT_DEADLINE = 0.25
+
+            combined = (
+                WEIGHT_ISSUES * issue_load_score +
+                WEIGHT_PRIORITY * priority_score +
+                WEIGHT_DEADLINE * deadline_score
+            )
+
+            # Global scaling (same as Jira)
+            LINEAR_SCALING = 0.75
+            linear_score = max(0.0, min(100.0, combined * 100 * LINEAR_SCALING))
+
+            logger.info(
+                f"📊 Linear Workload Score:"
+                f" issues={issue_count},"
+                f" priority_score={priority_score:.2f},"
+                f" deadline_score={deadline_score:.2f},"
+                f" load_score={issue_load_score:.2f},"
+                f" combined_raw={(combined*100):.1f},"
+                f" final_scaled={linear_score:.1f}"
+            )
+
+            return round(linear_score, 1)
+
+        except Exception as e:
+            logger.error(f"Error calculating Linear OCB contribution: {e}")
+            return 0.0
 
     def _calculate_github_burnout_score(
         self,

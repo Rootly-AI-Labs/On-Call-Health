@@ -54,6 +54,8 @@ class User(Base):
     owned_slack_workspaces = relationship("SlackWorkspaceMapping", back_populates="owner")
     jira_integrations = relationship("JiraIntegration", back_populates="user", cascade="all, delete-orphan")
     owned_jira_workspaces = relationship("JiraWorkspaceMapping", back_populates="owner")
+    linear_integrations = relationship("LinearIntegration", back_populates="user", cascade="all, delete-orphan")
+    owned_linear_workspaces = relationship("LinearWorkspaceMapping", back_populates="owner")
 
     def __repr__(self):
         return f"<User(id={self.id}, email='{self.email}', providers={len(self.oauth_providers)})>"
@@ -95,6 +97,11 @@ class User(Base):
     def jira_integration(self):
         """Get the Jira integration for this user."""
         return self.jira_integrations[0] if self.jira_integrations else None
+
+    @property
+    def linear_integration(self):
+        """Get the Linear integration for this user."""
+        return self.linear_integrations[0] if self.linear_integrations else None
     
     @property
     def primary_correlation(self):
@@ -117,6 +124,10 @@ class User(Base):
         """Check if user has Jira integration set up."""
         return len(self.jira_integrations) > 0
 
+    def has_linear_integration(self) -> bool:
+        """Check if user has Linear integration set up."""
+        return len(self.linear_integrations) > 0
+
     @property
     def connected_platforms(self) -> list:
         """Get list of all connected platforms for this user."""
@@ -130,6 +141,10 @@ class User(Base):
         # Check for PagerDuty through correlations
         if self.user_correlations and any(c.pagerduty_user_id for c in self.user_correlations):
             platforms.append("pagerduty")
+        if self.jira_integrations:
+            platforms.append("jira")
+        if self.linear_integrations:
+            platforms.append("linear")
         return platforms
 
     # Role-based properties

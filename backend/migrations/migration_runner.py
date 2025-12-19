@@ -710,12 +710,96 @@ class MigrationRunner:
                     """
                 ]
             },
+            {
+                "name": "023_create_linear_integration_tables",
+                "description": "Create Linear integration and workspace mapping tables",
+                "sql": [
+                    """
+                    CREATE TABLE IF NOT EXISTS linear_integrations (
+                        id SERIAL PRIMARY KEY,
+                        user_id INTEGER NOT NULL REFERENCES users(id),
+                        access_token TEXT,
+                        refresh_token TEXT,
+                        workspace_id VARCHAR(100) NOT NULL,
+                        workspace_name VARCHAR(255),
+                        workspace_url_key VARCHAR(255),
+                        linear_user_id VARCHAR(100),
+                        linear_display_name VARCHAR(255),
+                        linear_email VARCHAR(255),
+                        accessible_workspaces JSONB DEFAULT '[]'::jsonb,
+                        token_source VARCHAR(20) DEFAULT 'oauth',
+                        token_expires_at TIMESTAMP WITH TIME ZONE,
+                        pkce_code_verifier TEXT,
+                        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                    )
+                    """,
+                    """
+                    CREATE INDEX IF NOT EXISTS idx_linear_integrations_user_id ON linear_integrations(user_id)
+                    """,
+                    """
+                    CREATE INDEX IF NOT EXISTS idx_linear_integrations_workspace_id ON linear_integrations(workspace_id)
+                    """,
+                    """
+                    CREATE INDEX IF NOT EXISTS idx_linear_integrations_linear_user_id ON linear_integrations(linear_user_id)
+                    """,
+                    """
+                    DO $$
+                    BEGIN
+                        IF NOT EXISTS (
+                            SELECT 1 FROM pg_constraint WHERE conname = 'uq_linear_integrations_user_workspace'
+                        ) THEN
+                            ALTER TABLE linear_integrations
+                            ADD CONSTRAINT uq_linear_integrations_user_workspace
+                            UNIQUE (user_id, workspace_id);
+                        END IF;
+                    END $$;
+                    """,
+                    """
+                    CREATE TABLE IF NOT EXISTS linear_workspace_mappings (
+                        id SERIAL PRIMARY KEY,
+                        workspace_id VARCHAR(100) NOT NULL UNIQUE,
+                        workspace_name VARCHAR(255),
+                        workspace_url_key VARCHAR(255),
+                        owner_user_id INTEGER NOT NULL REFERENCES users(id),
+                        organization_id INTEGER REFERENCES organizations(id),
+                        team_ids JSONB DEFAULT '[]'::jsonb,
+                        team_names JSONB DEFAULT '[]'::jsonb,
+                        registered_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                        registered_via VARCHAR(20) DEFAULT 'oauth',
+                        status VARCHAR(20) DEFAULT 'active',
+                        collection_enabled BOOLEAN DEFAULT TRUE,
+                        workload_metrics_enabled BOOLEAN DEFAULT TRUE,
+                        granted_scopes VARCHAR(500),
+                        last_collection_at TIMESTAMP WITH TIME ZONE,
+                        last_collection_status VARCHAR(50)
+                    )
+                    """,
+                    """
+                    CREATE INDEX IF NOT EXISTS idx_linear_workspace_mappings_workspace_id ON linear_workspace_mappings(workspace_id)
+                    """,
+                    """
+                    CREATE INDEX IF NOT EXISTS idx_linear_workspace_mappings_organization_id ON linear_workspace_mappings(organization_id)
+                    """,
+                    """
+                    ALTER TABLE user_correlations
+                    ADD COLUMN IF NOT EXISTS linear_user_id VARCHAR(100)
+                    """,
+                    """
+                    ALTER TABLE user_correlations
+                    ADD COLUMN IF NOT EXISTS linear_email VARCHAR(255)
+                    """,
+                    """
+                    CREATE INDEX IF NOT EXISTS idx_user_correlations_linear_user_id
+                    ON user_correlations(linear_user_id) WHERE linear_user_id IS NOT NULL
+                    """,
+                    """
+                    CREATE INDEX IF NOT EXISTS idx_user_correlations_linear_email
+                    ON user_correlations(linear_email) WHERE linear_email IS NOT NULL
+                    """
+                ]
+            },
             # Add future migrations here with incrementing numbers
-            # {
-            #     "name": "023_add_user_preferences",
-            #     "description": "Add user preferences table",
-            #     "sql": ["CREATE TABLE IF NOT EXISTS user_preferences (...)"]
-            # }
         ]
 
         success_count = 0
