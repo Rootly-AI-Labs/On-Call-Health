@@ -96,6 +96,13 @@ export function UnifiedSlackCard({
 
     const slackAuthUrl = `https://slack.com/oauth/v2/authorize?client_id=${clientId}&scope=${scopes}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(state)}`
 
+    // Debug logging
+    console.log('🔍 Slack OAuth Debug Info:')
+    console.log('  - Backend URL:', backendUrl)
+    console.log('  - Redirect URI:', redirectUri)
+    console.log('  - Client ID:', clientId?.substring(0, 10) + '...' + clientId?.substring(clientId.length - 4))
+    console.log('  - Full Auth URL:', slackAuthUrl)
+
     setIsConnectingSlackOAuth(true)
     localStorage.setItem('slack_oauth_in_progress', 'true')
     toast.info('Redirecting to Slack...')

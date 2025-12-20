@@ -166,7 +166,14 @@ async def slack_oauth_callback(
                     backend_url = "http://localhost:8000"
 
             redirect_uri = f"{backend_url}/api/integrations/slack/oauth/callback"
-            logger.debug(f"Using redirect_uri for token exchange: {redirect_uri}")
+
+            # Enhanced debugging for OAuth configuration
+            logger.info(f"🔍 OAuth Debug Info:")
+            logger.info(f"  - Backend URL: {backend_url}")
+            logger.info(f"  - Redirect URI: {redirect_uri}")
+            logger.info(f"  - Client ID: {settings.SLACK_CLIENT_ID[:10]}...{settings.SLACK_CLIENT_ID[-4:]}")
+            logger.info(f"  - Authorization code: {code[:10]}...{code[-4:]}")
+            logger.info(f"  - Database URL contains: {'production' if 'production' in str(settings.DATABASE_URL) else 'staging' if 'staging' in str(settings.DATABASE_URL) else 'unknown'}")
 
             token_response = await client.post(
                 "https://slack.com/api/oauth.v2.access",
