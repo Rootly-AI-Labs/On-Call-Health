@@ -303,6 +303,7 @@ class SurveyScheduler:
 
         # Query users with preferences
         # Prefer correlations where emails match to handle duplicate correlation records
+        # Order by correlation.id DESC to get the most recent correlation if duplicates exist
         users = db.query(User, UserCorrelation, UserSurveyPreference).join(
             UserCorrelation, User.id == UserCorrelation.user_id
         ).outerjoin(
@@ -311,13 +312,23 @@ class SurveyScheduler:
             User.organization_id == organization_id,
             UserCorrelation.slack_user_id.isnot(None),  # Must have Slack ID
             User.email == UserCorrelation.email  # Match emails to avoid wrong correlation
-        ).all()
+        ).order_by(UserCorrelation.id.desc()).all()
 
         # Use a dict to deduplicate by user_id (in case user has multiple UserCorrelation records)
         recipients_dict = {}
         for user, correlation, preference in users:
+            # CRITICAL: Validate email matching to prevent wrong user mapping
+            if user.email != correlation.email:
+                logger.error(
+                    f"CRITICAL: Email mismatch! User {user.id} email={user.email} "
+                    f"but correlation {correlation.id} email={correlation.email}. "
+                    f"Skipping to prevent sending to wrong Slack user."
+                )
+                continue
+
             # Skip if we already processed this user
             if user.id in recipients_dict:
+                logger.debug(f"Duplicate correlation for user {user.id}, keeping first (most recent)")
                 continue
 
             # NEW: Filter by saved recipient selections if configured

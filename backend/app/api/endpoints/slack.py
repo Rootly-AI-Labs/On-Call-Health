@@ -842,17 +842,23 @@ async def sync_slack_user_ids(
 
             logger.debug(f"Built mapping for {len(email_to_slack_id)} Slack users with emails")
 
-            # Get all UserCorrelation records for this user
+            # SECURITY: Only update correlations for the current user's actual email
+            # to prevent accidentally updating correlations for other people
             correlations = db.query(UserCorrelation).filter(
-                UserCorrelation.user_id == current_user.id
+                UserCorrelation.user_id == current_user.id,
+                UserCorrelation.email == current_user.email  # CRITICAL: Match current user's email only
             ).all()
 
             updated_count = 0
             skipped_count = 0
 
             for correlation in correlations:
-                # Use the correlation's email directly
-                if not correlation.email:
+                # Double-check email matches current user (defense in depth)
+                if correlation.email.lower() != current_user.email.lower():
+                    logger.error(
+                        f"SECURITY: Skipping correlation {correlation.id} with email {correlation.email} "
+                        f"that doesn't match current user {current_user.email}"
+                    )
                     skipped_count += 1
                     continue
 
