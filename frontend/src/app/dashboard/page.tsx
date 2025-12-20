@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense } from "react"
+import { Suspense, useState, useMemo } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { MappingDrawer } from "@/components/mapping-drawer"
@@ -60,6 +60,7 @@ import { HealthTrendsChart } from "@/components/dashboard/HealthTrendsChart"
 import { ObjectiveDataCard } from "@/components/dashboard/ObjectiveDataCard"
 import { MemberDetailModal } from "@/components/dashboard/MemberDetailModal"
 import { GitHubCommitsTimeline } from "@/components/dashboard/charts/GitHubCommitsTimeline"
+import GitHubMetricPopup from "@/components/dashboard/GitHubMetricPopup"
 import { AIInsightsCard } from "@/components/dashboard/insights/AIInsightsCard"
 import { DeleteAnalysisDialog } from "@/components/dashboard/dialogs/DeleteAnalysisDialog"
 import Image from "next/image"
@@ -215,6 +216,20 @@ function DashboardContent() {
   // Get userId from localStorage for user-specific onboarding tracking
   const userId = typeof window !== 'undefined' ? localStorage.getItem("user_id") : null
   const onboarding = useOnboarding(userId)
+
+  // GitHub Metric Popup State
+  const [githubMetricPopup, setGithubMetricPopup] = useState<{
+    isOpen: boolean
+    metricType: string
+    metricLabel: string
+  }>({ isOpen: false, metricType: '', metricLabel: '' })
+
+  // Extract members array from current analysis
+  const membersArray = useMemo(() => {
+    if (!currentAnalysis?.analysis_data?.team_analysis) return []
+    const teamAnalysis = currentAnalysis.analysis_data.team_analysis
+    return Array.isArray(teamAnalysis) ? teamAnalysis : (teamAnalysis as any)?.members || []
+  }, [currentAnalysis])
 
   // Map the hook's meta to actual Lucide icons
   const renderTrendIcon = (trend?: string) => {
@@ -1379,7 +1394,15 @@ function DashboardContent() {
 
                               {/* GitHub Metrics Grid */}
                               <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-gray-50 rounded-lg p-3">
+                                <div
+                                  className="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 hover:shadow-md transition-all duration-200 relative group"
+                                  onClick={() => setGithubMetricPopup({
+                                    isOpen: true,
+                                    metricType: 'high_commits',
+                                    metricLabel: 'High Commit Volume'
+                                  })}
+                                >
+                                  <Info className="absolute top-2 right-2 w-3.5 h-3.5 text-gray-400 group-hover:text-blue-600 transition-colors" />
                                   <p className="text-xs text-gray-600 font-medium">Total Commits</p>
                                   {github.total_commits ? (
                                     <p className="text-lg font-bold text-gray-900">{github.total_commits.toLocaleString()}</p>
@@ -1387,7 +1410,15 @@ function DashboardContent() {
                                     <p className="text-lg font-bold text-gray-400 italic">No data</p>
                                   )}
                                 </div>
-                                <div className="bg-gray-50 rounded-lg p-3">
+                                <div
+                                  className="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 hover:shadow-md transition-all duration-200 relative group"
+                                  onClick={() => setGithubMetricPopup({
+                                    isOpen: true,
+                                    metricType: 'pull_requests',
+                                    metricLabel: 'High Pull Request Activity'
+                                  })}
+                                >
+                                  <Info className="absolute top-2 right-2 w-3.5 h-3.5 text-gray-400 group-hover:text-blue-600 transition-colors" />
                                   <p className="text-xs text-gray-600 font-medium">Pull Requests</p>
                                   {github.total_pull_requests ? (
                                     <p className="text-lg font-bold text-gray-900">{github.total_pull_requests.toLocaleString()}</p>
@@ -1395,7 +1426,15 @@ function DashboardContent() {
                                     <p className="text-lg font-bold text-gray-400 italic">No data</p>
                                   )}
                                 </div>
-                                <div className="bg-gray-50 rounded-lg p-3">
+                                <div
+                                  className="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 hover:shadow-md transition-all duration-200 relative group"
+                                  onClick={() => setGithubMetricPopup({
+                                    isOpen: true,
+                                    metricType: 'code_reviews',
+                                    metricLabel: 'High Code Review Load'
+                                  })}
+                                >
+                                  <Info className="absolute top-2 right-2 w-3.5 h-3.5 text-gray-400 group-hover:text-blue-600 transition-colors" />
                                   <p className="text-xs text-gray-600 font-medium">Code Reviews</p>
                                   {github.total_reviews ? (
                                     <p className="text-lg font-bold text-gray-900">{github.total_reviews.toLocaleString()}</p>
@@ -1403,7 +1442,15 @@ function DashboardContent() {
                                     <p className="text-lg font-bold text-gray-400 italic">No data</p>
                                   )}
                                 </div>
-                                <div className="bg-gray-50 rounded-lg p-3">
+                                <div
+                                  className="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 hover:shadow-md transition-all duration-200 relative group"
+                                  onClick={() => setGithubMetricPopup({
+                                    isOpen: true,
+                                    metricType: 'after_hours',
+                                    metricLabel: 'After Hours Activity'
+                                  })}
+                                >
+                                  <Info className="absolute top-2 right-2 w-3.5 h-3.5 text-gray-400 group-hover:text-blue-600 transition-colors" />
                                   <p className="text-xs text-gray-600 font-medium">After Hours</p>
                                   {github.after_hours_activity_percentage !== undefined && github.after_hours_activity_percentage !== null ? (
                                     <p className="text-lg font-bold text-gray-900">{github.after_hours_activity_percentage.toFixed(1)}%</p>
@@ -1411,9 +1458,17 @@ function DashboardContent() {
                                     <p className="text-lg font-bold text-gray-400 italic">No data</p>
                                   )}
                                 </div>
-                                <div className="bg-gray-50 rounded-lg p-3">
+                                <div
+                                  className="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 hover:shadow-md transition-all duration-200 relative group"
+                                  onClick={() => setGithubMetricPopup({
+                                    isOpen: true,
+                                    metricType: 'weekend_work',
+                                    metricLabel: 'Weekend Work Activity'
+                                  })}
+                                >
+                                  <Info className="absolute top-2 right-2 w-3.5 h-3.5 text-gray-400 group-hover:text-blue-600 transition-colors" />
                                   <p className="text-xs text-gray-600 font-medium">Weekend Commits</p>
-                                  {(github.weekend_activity_percentage !== undefined && github.weekend_activity_percentage !== null) || 
+                                  {(github.weekend_activity_percentage !== undefined && github.weekend_activity_percentage !== null) ||
                                    (github.weekend_commit_percentage !== undefined && github.weekend_commit_percentage !== null) ? (
                                     <div>
                                       <p className="text-lg font-bold text-gray-900">{(github.weekend_activity_percentage || github.weekend_commit_percentage || 0).toFixed(1)}%</p>
@@ -1433,6 +1488,19 @@ function DashboardContent() {
                       </CardContent>
                     </Card>
                   )}
+
+                  {/* GitHub Metric Popup */}
+                  <GitHubMetricPopup
+                    isOpen={githubMetricPopup.isOpen}
+                    onClose={() => setGithubMetricPopup({ ...githubMetricPopup, isOpen: false })}
+                    metricType={githubMetricPopup.metricType as any}
+                    metricLabel={githubMetricPopup.metricLabel}
+                    members={membersArray}
+                    onMemberClick={(member) => {
+                      setSelectedMember(member)
+                      setGithubMetricPopup({ ...githubMetricPopup, isOpen: false })
+                    }}
+                  />
 
                   {/* Slack Metrics Card */}
                   {currentAnalysis?.analysis_data?.slack_insights && (

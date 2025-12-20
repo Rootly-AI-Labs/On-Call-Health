@@ -250,6 +250,43 @@ export function MemberDetailModal({
   currentAnalysis,
   timeRange
 }: MemberDetailModalProps) {
+  const [dailyCommitsData, setDailyCommitsData] = useState<any[]>([]);
+  const [loadingCommits, setLoadingCommits] = useState(false);
+
+  useEffect(() => {
+    const fetchDailyCommits = async () => {
+      if (!selectedMember?.email || !analysisId) {
+        return;
+      }
+
+      setLoadingCommits(true);
+      try {
+        const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+        const url = `${API_BASE}/users/${encodeURIComponent(selectedMember.email)}/github-daily-commits?analysis_id=${analysisId}`;
+
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.status === 'success' && result.data?.daily_commits) {
+            setDailyCommitsData(result.data.daily_commits);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching daily commits:', err);
+      } finally {
+        setLoadingCommits(false);
+      }
+    };
+
+    fetchDailyCommits();
+  }, [selectedMember?.email, analysisId]);
+
   if (!selectedMember) return null
 
   return (
@@ -557,7 +594,7 @@ export function MemberDetailModal({
 
                           <TabsContent value="github" className="space-y-4">
                             {selectedMember.github_activity ? (
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <Card>
                                   <CardHeader>
                                     <CardTitle className="text-sm">Development Activity</CardTitle>
@@ -582,70 +619,125 @@ export function MemberDetailModal({
                                   </CardContent>
                                 </Card>
 
-                                {selectedMember.github_activity?.daily_commits && (
-                                  <Card>
-                                    <CardHeader>
-                                      <CardTitle className="text-sm">Commit Pattern (Last 30 Days)</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                      <div className="h-32">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                          <AreaChart data={selectedMember.github_activity.daily_commits}>
-                                            <XAxis
-                                              dataKey="date"
-                                              fontSize={10}
-                                              tick={{ fontSize: 10 }}
-                                              domain={[0, 'dataMax']}
-                                            />
-                                            <YAxis
-                                              fontSize={10}
-                                              tick={{ fontSize: 10 }}
-                                              domain={[0, 'dataMax']}
-                                            />
-                                            <Tooltip
-                                              content={({ payload, label }) => {
-                                                if (payload && payload.length > 0) {
-                                                  const data = payload[0].payload;
-                                                  return (
-                                                    <div className="bg-white p-2 border border-gray-200 rounded-lg shadow-lg">
-                                                      <p className="text-xs font-semibold text-gray-900">{label}</p>
-                                                      <p className="text-xs text-indigo-600">
-                                                        {data.commits} commits
-                                                        {data.isWeekend && <span className="text-gray-500 ml-1">(Weekend)</span>}
-                                                      </p>
-                                                      {data.afterHours > 0 && (
-                                                        <p className="text-xs text-gray-500">
-                                                          {data.afterHours} after hours
+                                <Card>
+                                  <CardHeader>
+                                    <CardTitle className="text-sm">Commit Pattern</CardTitle>
+                                  </CardHeader>
+                                  <CardContent>
+                                    {loadingCommits ? (
+                                      <div className="text-center py-8">
+                                        <RefreshCw className="w-4 h-4 animate-spin text-gray-400 mx-auto mb-2" />
+                                        <p className="text-xs text-gray-500">Loading commit data...</p>
+                                      </div>
+                                    ) : dailyCommitsData && dailyCommitsData.length > 0 ? (
+                                      <div className="space-y-3">
+                                        <div className="h-32">
+                                          <ResponsiveContainer width="100%" height="100%">
+                                            <AreaChart data={dailyCommitsData}>
+                                              <XAxis
+                                                dataKey="date"
+                                                fontSize={10}
+                                                tick={{ fontSize: 10 }}
+                                                domain={[0, 'dataMax']}
+                                              />
+                                              <YAxis
+                                                fontSize={10}
+                                                tick={{ fontSize: 10 }}
+                                                domain={[0, 'dataMax']}
+                                              />
+                                              <Tooltip
+                                                content={({ payload, label }) => {
+                                                  if (payload && payload.length > 0) {
+                                                    const data = payload[0].payload;
+                                                    return (
+                                                      <div className="bg-white p-2 border border-gray-200 rounded-lg shadow-lg">
+                                                        <p className="text-xs font-semibold text-gray-900">{label}</p>
+                                                        <p className="text-xs text-indigo-600">
+                                                          {data.commits} commits
+                                                          {data.weekend_commits > 0 && <span className="text-gray-500 ml-1">(Weekend)</span>}
                                                         </p>
-                                                      )}
-                                                    </div>
-                                                  );
-                                                }
-                                                return null;
-                                              }}
-                                            />
-                                            <Area
-                                              type="monotone"
-                                              dataKey="commits"
-                                              stroke="#6366F1"
-                                              strokeWidth={2}
-                                              fillOpacity={1}
-                                              fill="url(#colorCommits)"
-                                            />
-                                          </AreaChart>
-                                        </ResponsiveContainer>
+                                                        {data.after_hours_commits > 0 && (
+                                                          <p className="text-xs text-gray-500">
+                                                            {data.after_hours_commits} after hours
+                                                          </p>
+                                                        )}
+                                                      </div>
+                                                    );
+                                                  }
+                                                  return null;
+                                                }}
+                                              />
+                                              <Area
+                                                type="monotone"
+                                                dataKey="commits"
+                                                stroke="#6366F1"
+                                                strokeWidth={2}
+                                                fillOpacity={1}
+                                                fill="url(#colorCommits)"
+                                              />
+                                            </AreaChart>
+                                          </ResponsiveContainer>
+                                        </div>
+                                        <div className="text-xs text-indigo-600 text-center">
+                                          Average: {selectedMember.github_activity.commits_per_week?.toFixed(1) || '0'} commits/week
+                                          {selectedMember.github_activity.after_hours_commits > 0 && (
+                                            <span className="ml-2">
+                                              • {((selectedMember.github_activity.after_hours_commits / selectedMember.github_activity.commits_count) * 100).toFixed(0)}% after hours
+                                            </span>
+                                          )}
+                                        </div>
                                       </div>
-                                      <div className="mt-2 text-xs text-indigo-600 text-center">
-                                        Average: {selectedMember.github_activity.commits_per_week?.toFixed(1) || '0'} commits/week
-                                        {selectedMember.github_activity.after_hours_commits > 0 && (
-                                          <span className="ml-2">
-                                            • {((selectedMember.github_activity.after_hours_commits / selectedMember.github_activity.commits_count) * 100).toFixed(0)}% after hours
-                                          </span>
-                                        )}
+                                    ) : (
+                                      <div className="text-center py-4">
+                                        <p className="text-xs text-gray-500">Daily commit data not available</p>
+                                        <p className="text-xs text-gray-400 mt-1">
+                                          Total: {selectedMember.github_activity?.commits_count || 0} commits
+                                        </p>
                                       </div>
-                                    </CardContent>
-                                  </Card>
-                                )}
+                                    )}
+                                  </CardContent>
+                                </Card>
+
+                                {/* GitHub Activity Timeline */}
+                                <Card>
+                                  <CardHeader>
+                                    <CardTitle className="text-sm">GitHub Activity Timeline</CardTitle>
+                                  </CardHeader>
+                                  <CardContent className="space-y-3">
+                                    <div className="flex justify-between">
+                                      <span className="text-sm">Pull Requests</span>
+                                      <span className="font-medium">{selectedMember.github_activity?.pull_requests_count || 0}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-sm">Code Reviews</span>
+                                      <span className="font-medium">{selectedMember.github_activity?.reviews_count || 0}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-sm">Avg PR Size</span>
+                                      <span className="font-medium">{selectedMember.github_activity?.avg_pr_size || 0} lines</span>
+                                    </div>
+                                    <Separator className="my-2" />
+                                    <div className="space-y-2">
+                                      <p className="text-xs font-semibold text-gray-700">Work-life Balance</p>
+                                      <div className="flex items-center justify-between text-xs">
+                                        <span className="text-gray-600">After-Hours</span>
+                                        <span className="font-medium text-orange-600">
+                                          {selectedMember.github_activity?.commits_count > 0
+                                            ? ((selectedMember.github_activity.after_hours_commits / selectedMember.github_activity.commits_count) * 100).toFixed(1)
+                                            : 0}%
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center justify-between text-xs">
+                                        <span className="text-gray-600">Weekend</span>
+                                        <span className="font-medium text-purple-600">
+                                          {selectedMember.github_activity?.commits_count > 0
+                                            ? ((selectedMember.github_activity.weekend_commits / selectedMember.github_activity.commits_count) * 100).toFixed(1)
+                                            : 0}%
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
                               </div>
                             ) : (
                               <Card>
