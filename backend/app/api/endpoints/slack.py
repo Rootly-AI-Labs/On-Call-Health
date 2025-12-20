@@ -165,7 +165,9 @@ async def slack_oauth_callback(
                     # Local development
                     backend_url = "http://localhost:8000"
 
-            redirect_uri = f"{backend_url}/api/integrations/slack/oauth/callback"
+            # Production uses /api prefix, staging/dev don't
+            use_api_prefix = "production" in backend_url
+            redirect_uri = f"{backend_url}{'/api' if use_api_prefix else ''}/integrations/slack/oauth/callback"
 
             # Enhanced debugging for OAuth configuration
             logger.info(f"🔍 OAuth Debug Info:")
