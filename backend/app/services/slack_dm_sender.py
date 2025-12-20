@@ -96,10 +96,13 @@ class SlackDMSender:
                 )
                 msg_data = msg_response.json()
 
+                logger.info(f"Slack API response: {msg_data}")
+
                 if not msg_data.get("ok"):
+                    logger.error(f"Slack API error: {msg_data.get('error')} - Full response: {msg_data}")
                     raise Exception(f"Failed to send message: {msg_data.get('error')}")
 
-                logger.info(f"Survey DM sent successfully to {slack_user_id}")
+                logger.info(f"Survey DM sent successfully to {slack_user_id} - Message TS: {msg_data.get('ts')}")
                 return True
 
         except Exception as e:
