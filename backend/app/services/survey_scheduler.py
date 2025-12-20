@@ -302,13 +302,15 @@ class SurveyScheduler:
             logger.warning(f"No users found for organization {organization_id}")
 
         # Query users with preferences
+        # Prefer correlations where emails match to handle duplicate correlation records
         users = db.query(User, UserCorrelation, UserSurveyPreference).join(
             UserCorrelation, User.id == UserCorrelation.user_id
         ).outerjoin(
             UserSurveyPreference, User.id == UserSurveyPreference.user_id
         ).filter(
             User.organization_id == organization_id,
-            UserCorrelation.slack_user_id.isnot(None)  # Must have Slack ID
+            UserCorrelation.slack_user_id.isnot(None),  # Must have Slack ID
+            User.email == UserCorrelation.email  # Match emails to avoid wrong correlation
         ).all()
 
         # Use a dict to deduplicate by user_id (in case user has multiple UserCorrelation records)
