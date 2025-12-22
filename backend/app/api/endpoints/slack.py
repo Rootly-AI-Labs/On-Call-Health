@@ -89,15 +89,37 @@ async def test_slack_endpoint():
 
 @router.get("/oauth/callback")
 async def slack_oauth_callback(
-    code: str,
+    code: str = None,
+    error: str = None,
     state: str = None,
     db: Session = Depends(get_db)
 ):
     """
     Handle Slack OAuth callback for workspace-level app installation.
     Creates a workspace mapping and redirects to the frontend with success status.
+    Handles errors when user cancels or denies authorization.
     """
-    logger.debug(f"Slack OAuth callback received - code: {code[:20]}..., state: {state[:50] if state else 'None'}...")
+    logger.debug(f"Slack OAuth callback received - code: {code[:20] if code else 'None'}..., error: {error}, state: {state[:50] if state else 'None'}...")
+
+    # Handle user denial/cancellation
+    if error:
+        logger.info(f"Slack OAuth denied or cancelled: {error}")
+        from fastapi.responses import RedirectResponse
+        frontend_url = settings.FRONTEND_URL or "http://localhost:3000"
+
+        if error == "access_denied":
+            redirect_url = f"{frontend_url}/integrations?slack_connected=false&error=user_cancelled&message=You cancelled the Slack authorization"
+        else:
+            redirect_url = f"{frontend_url}/integrations?slack_connected=false&error={error}"
+
+        return RedirectResponse(url=redirect_url, status_code=302)
+
+    # Require code if no error
+    if not code:
+        from fastapi.responses import RedirectResponse
+        frontend_url = settings.FRONTEND_URL or "http://localhost:3000"
+        redirect_url = f"{frontend_url}/integrations?slack_connected=false&error=missing_code&message=Missing authorization code"
+        return RedirectResponse(url=redirect_url, status_code=302)
 
     try:
         # Parse state parameter to get organization info and feature flags
@@ -143,8 +165,17 @@ async def slack_oauth_callback(
                     # Local development
                     backend_url = "http://localhost:8000"
 
-            redirect_uri = f"{backend_url}/integrations/slack/oauth/callback"
-            logger.debug(f"Using redirect_uri for token exchange: {redirect_uri}")
+            # Production uses /api prefix, staging/dev don't
+            use_api_prefix = "production" in backend_url
+            redirect_uri = f"{backend_url}{'/api' if use_api_prefix else ''}/integrations/slack/oauth/callback"
+
+            # Enhanced debugging for OAuth configuration
+            logger.info(f"🔍 OAuth Debug Info:")
+            logger.info(f"  - Backend URL: {backend_url}")
+            logger.info(f"  - Redirect URI: {redirect_uri}")
+            logger.info(f"  - Client ID: {settings.SLACK_CLIENT_ID[:10]}...{settings.SLACK_CLIENT_ID[-4:]}")
+            logger.info(f"  - Authorization code: {code[:10]}...{code[-4:]}")
+            logger.info(f"  - Database URL contains: {'production' if 'production' in str(settings.DATABASE_URL) else 'staging' if 'staging' in str(settings.DATABASE_URL) else 'unknown'}")
 
             token_response = await client.post(
                 "https://slack.com/api/oauth.v2.access",
@@ -219,6 +250,25 @@ async def slack_oauth_callback(
             organization_id = owner_user.organization_id
             logger.info(f"Using owner's organization_id: {organization_id}")
 
+        # Verify owner is an admin in OUR app (not just Slack admin)
+        if owner_user.role != 'admin':
+            logger.warning(
+                f"User {owner_user.id} ({owner_user.email}) attempted Slack OAuth "
+                f"but is not an admin in our app (role={owner_user.role})"
+            )
+            from fastapi.responses import RedirectResponse
+            frontend_url = settings.FRONTEND_URL or "http://localhost:3000"
+            error_message = urllib.parse.quote(
+                "Only organization admins can connect Slack. Please ask your admin to set up the integration."
+            )
+            redirect_url = (
+                f"{frontend_url}/integrations?"
+                f"slack_connected=false&"
+                f"error=admin_required&"
+                f"message={error_message}"
+            )
+            return RedirectResponse(url=redirect_url, status_code=302)
+
         if existing_mapping:
             # Update existing mapping (reactivate if it was disconnected)
             existing_mapping.workspace_name = workspace_name
@@ -275,6 +325,10 @@ async def slack_oauth_callback(
             features.append("communication_patterns")
         features_str = "+".join(features) if features else "none"
         logger.info(f"Slack OAuth successful - workspace: {workspace_name}, workspace_id: {workspace_id}, organization_id: {organization_id}, features: {features_str}")
+
+        # Notify all org members about connection
+        notification_service = NotificationService(db)
+        notification_service.create_slack_connected_notification(owner_user, workspace_name)
 
         # Redirect to frontend with success message
         frontend_url = settings.FRONTEND_URL or "http://localhost:3000"
@@ -545,20 +599,28 @@ async def toggle_slack_feature(
     """
     Toggle a Slack feature (survey or communication patterns analysis) for the workspace.
     Only works for OAuth-based integrations.
-    Requires: workspace owner, org admin, or manager role.
+    Requires: admin role.
     """
+    # Check if user is admin
+    if current_user.role != 'admin':
+        raise HTTPException(
+            status_code=403,
+            detail="Only admins can toggle Slack features"
+        )
+
     try:
-        # Find workspace mapping - check by organization first, then by owner
+        # Find workspace mapping by organization
+        # Handle both org-based and user-based (legacy) workspaces
         workspace_mapping = None
 
-        # If user has an organization, check for org's workspace
         if current_user.organization_id:
+            # Look for org's workspace
             workspace_mapping = db.query(SlackWorkspaceMapping).filter(
                 SlackWorkspaceMapping.organization_id == current_user.organization_id,
                 SlackWorkspaceMapping.status == 'active'
             ).first()
 
-        # If no org workspace, check if user is the owner
+        # Fallback: Look for workspace by owner (for legacy workspaces without org_id)
         if not workspace_mapping:
             workspace_mapping = db.query(SlackWorkspaceMapping).filter(
                 SlackWorkspaceMapping.owner_user_id == current_user.id,
@@ -568,18 +630,7 @@ async def toggle_slack_feature(
         if not workspace_mapping:
             raise HTTPException(
                 status_code=404,
-                detail="No OAuth Slack workspace found for your organization"
-            )
-
-        # Check permissions: must be in the same organization OR be the owner
-        # Anyone in the organization can toggle features since they're all using the same workspace
-        is_owner = workspace_mapping.owner_user_id == current_user.id
-        is_same_org = workspace_mapping.organization_id and workspace_mapping.organization_id == current_user.organization_id
-
-        if not (is_owner or is_same_org):
-            raise HTTPException(
-                status_code=403,
-                detail="You must be in the same organization as the Slack workspace to toggle features"
+                detail="No OAuth Slack workspace found for your account"
             )
 
         # Validate feature name
@@ -634,25 +685,52 @@ async def disconnect_slack(
     """
     Disconnect Slack OAuth integration by deactivating the workspace mapping.
     This keeps the data but marks the workspace as inactive.
+    Requires: admin role.
     """
+    # Check if user is admin
+    if current_user.role != 'admin':
+        raise HTTPException(
+            status_code=403,
+            detail="Only admins can disconnect Slack"
+        )
+
     try:
-        # Find the user's OAuth workspace mapping
-        workspace_mapping = db.query(SlackWorkspaceMapping).filter(
-            SlackWorkspaceMapping.owner_user_id == current_user.id,
-            SlackWorkspaceMapping.status == 'active'
-        ).first()
+        # Find the organization's OAuth workspace mapping
+        # Handle both org-based and user-based (legacy) workspaces
+        workspace_mapping = None
+
+        if current_user.organization_id:
+            # Look for org's workspace
+            workspace_mapping = db.query(SlackWorkspaceMapping).filter(
+                SlackWorkspaceMapping.organization_id == current_user.organization_id,
+                SlackWorkspaceMapping.status == 'active'
+            ).first()
+
+        # Fallback: Look for workspace by owner (for legacy workspaces without org_id)
+        if not workspace_mapping:
+            workspace_mapping = db.query(SlackWorkspaceMapping).filter(
+                SlackWorkspaceMapping.owner_user_id == current_user.id,
+                SlackWorkspaceMapping.status == 'active'
+            ).first()
 
         if not workspace_mapping:
             raise HTTPException(
                 status_code=404,
-                detail="No active Slack workspace found for this user"
+                detail="No active Slack workspace found for your account"
             )
+
+        # Store workspace name before marking inactive
+        workspace_name = workspace_mapping.workspace_name
 
         # Mark as inactive instead of deleting (preserves historical data)
         workspace_mapping.status = 'inactive'
         db.commit()
 
         logger.info(f"User {current_user.id} disconnected Slack workspace {workspace_mapping.workspace_id}")
+
+        # Notify all org members about disconnection
+        notification_service = NotificationService(db)
+        notification_service.create_slack_disconnected_notification(current_user, workspace_name)
 
         return {
             "success": True,
@@ -764,20 +842,17 @@ async def sync_slack_user_ids(
 
             logger.debug(f"Built mapping for {len(email_to_slack_id)} Slack users with emails")
 
-            # Get all UserCorrelation records for this user
+            # Update correlations for all users in the organization
+            # Match by organization + email to support team roster (user_id=NULL)
             correlations = db.query(UserCorrelation).filter(
-                UserCorrelation.user_id == current_user.id
+                UserCorrelation.organization_id == current_user.organization_id,
+                UserCorrelation.email.in_(list(email_to_slack_id.keys()))
             ).all()
 
             updated_count = 0
             skipped_count = 0
 
             for correlation in correlations:
-                # Use the correlation's email directly
-                if not correlation.email:
-                    skipped_count += 1
-                    continue
-
                 user_email = correlation.email.lower()
                 slack_id = email_to_slack_id.get(user_email)
 
@@ -969,8 +1044,8 @@ async def get_slack_user_info(
         )
 
 
-@router.post("/commands/burnout-survey")
-async def handle_burnout_survey_command(
+@router.post("/commands/oncall-health")
+async def handle_oncall_health_command(
     token: str = Form(...),
     team_id: str = Form(...),
     team_domain: str = Form(...),
@@ -985,7 +1060,7 @@ async def handle_burnout_survey_command(
     db: Session = Depends(get_db)
 ):
     """
-    Handle /burnout-survey slash command from Slack.
+    Handle /oncall-health slash command from Slack.
     Opens a modal with the 3-question burnout survey.
     """
     try:
@@ -1264,37 +1339,33 @@ async def handle_slack_interactions(
                 values = view.get("state", {}).get("values", {})
 
                 try:
-                    # Get burnout score (0-100 scale) - already in correct format
-                    burnout_score_block = values.get("burnout_score_block") or {}
-                    burnout_score_input = burnout_score_block.get("burnout_score_input") or {}
-                    burnout_score_option = burnout_score_input.get("selected_option") or {}
-                    self_reported_score = int(burnout_score_option.get("value", "50"))
-
-                    # Get energy level (radio buttons) - convert to 1-5 integer
-                    energy_level_block = values.get("energy_level_block") or {}
-                    energy_level_input = energy_level_block.get("energy_level_input") or {}
-                    energy_level_option = energy_level_input.get("selected_option") or {}
-                    energy_level_str = energy_level_option.get("value", "moderate")
-                    energy_level_map = {
-                        "very_low": 1,
-                        "low": 2,
-                        "moderate": 3,
-                        "high": 4,
-                        "very_high": 5
+                    # Question 1: How are you feeling today? (1-5 scale)
+                    feeling_str = values.get("feeling_block", {}).get("feeling_input", {}).get("selected_option", {}).get("value", "okay")
+                    feeling_map = {
+                        "very_good": 5,
+                        "good": 4,
+                        "okay": 3,
+                        "not_great": 2,
+                        "struggling": 1
                     }
-                    energy_level = energy_level_map.get(energy_level_str, 3)
+                    # Store feeling as feeling_score (1-5 scale: higher = feeling better)
+                    feeling_score = feeling_map.get(feeling_str, 3)
 
-                    # Get stress factors (checkboxes)
-                    stress_factors_block = values.get("stress_factors_block") or {}
-                    stress_factors_input = stress_factors_block.get("stress_factors_input") or {}
-                    stress_factors_options = stress_factors_input.get("selected_options", [])
-                    stress_factors = [opt.get("value") for opt in (stress_factors_options or [])]
+                    # Question 2: How manageable does your workload feel? (1-5 scale)
+                    workload_str = values.get("workload_block", {}).get("workload_input", {}).get("selected_option", {}).get("value", "somewhat_manageable")
+                    workload_map = {
+                        "very_manageable": 5,
+                        "manageable": 4,
+                        "somewhat_manageable": 3,
+                        "barely_manageable": 2,
+                        "overwhelming": 1
+                    }
+                    # Store workload as workload_score (1-5 scale: higher = more manageable)
+                    workload_score = workload_map.get(workload_str, 3)
 
-                    # Get personal circumstances (optional)
-                    personal_circumstances_block = values.get("personal_circumstances_block") or {}
-                    personal_circumstances_input = personal_circumstances_block.get("personal_circumstances_input") or {}
-                    personal_circumstances_option = personal_circumstances_input.get("selected_option")
-                    personal_circumstances = personal_circumstances_option.get("value") if personal_circumstances_option else None
+                    # No longer collecting stress factors or personal circumstances
+                    stress_factors = []
+                    personal_circumstances = None
 
                     # Get optional comments
                     comments_block = values.get("comments_block") or {}
@@ -1332,8 +1403,8 @@ async def handle_slack_interactions(
                 is_update = False
                 if existing_report:
                     # Update existing report
-                    existing_report.self_reported_score = self_reported_score
-                    existing_report.energy_level = energy_level
+                    existing_report.feeling_score = feeling_score
+                    existing_report.workload_score = workload_score
                     existing_report.stress_factors = stress_factors
                     existing_report.personal_circumstances = personal_circumstances
                     existing_report.additional_comments = comments
@@ -1350,8 +1421,8 @@ async def handle_slack_interactions(
                         organization_id=organization_id,
                         email_domain=user.email_domain,
                         analysis_id=analysis_id,  # Optional - may be None
-                        self_reported_score=self_reported_score,
-                        energy_level=energy_level,
+                        feeling_score=feeling_score,
+                        workload_score=workload_score,
                         stress_factors=stress_factors,
                         personal_circumstances=personal_circumstances,
                         additional_comments=comments,
@@ -1383,9 +1454,9 @@ async def handle_slack_interactions(
 
                 # Return success response with different message for updates
                 if is_update:
-                    success_message = f"✅ *Survey updated successfully*\n\n_You already submitted a survey today. Your burnout score has been updated to {self_reported_score}/100._\n\nYour updated feedback helps us:\n• Validate automated burnout detection\n• Catch stress before it impacts you\n• Make data-driven team improvements\n\nThank you for contributing to a healthier team."
+                    success_message = "*Check-in updated successfully*\n\n_You already submitted today. Your response has been updated._\n\nYour feedback helps us:\n• Monitor team well-being\n• Identify workload issues early\n• Support a healthier on-call experience\n\nThank you for contributing to a healthier team."
                 else:
-                    success_message = "✅ *Survey submitted successfully*\n\nYour feedback helps us:\n• Validate automated burnout detection\n• Catch stress before it impacts you\n• Make data-driven team improvements\n\nThank you for contributing to a healthier team."
+                    success_message = "*Check-in submitted successfully*\n\nYour feedback helps us:\n• Monitor team well-being\n• Identify workload issues early\n• Support a healthier on-call experience\n\nThank you for contributing to a healthier team."
 
                 return {
                     "response_action": "update",
@@ -1603,8 +1674,8 @@ def create_burnout_survey_modal(organization_id: int, user_id: int, analysis_id:
         "analysis_id": analysis_id
     }
 
-    modal_title = "Update Check-in" if is_update else "Burnout Check-in"
-    intro_text = "📋 *Update your burnout check-in*\n\nYou already submitted today. Your previous response will be updated." if is_update else "📋 *2-minute burnout check-in*\n\nYour responses help improve team health and workload distribution. All responses are confidential."
+    modal_title = "Update Check-in" if is_update else "On-Call Health Check-in"
+    intro_text = "*Update your health check-in*\n\nYou already submitted today. Your previous response will be updated." if is_update else "*Quick health check-in*\n\nYour responses help improve team health and workload distribution. All responses are confidential."
 
     return {
         "type": "modal",
@@ -1638,103 +1709,49 @@ def create_burnout_survey_modal(organization_id: int, user_id: int, analysis_id:
             },
             {
                 "type": "input",
-                "block_id": "burnout_score_block",
+                "block_id": "feeling_block",
                 "element": {
                     "type": "static_select",
-                    "action_id": "burnout_score_input",
+                    "action_id": "feeling_input",
                     "placeholder": {
                         "type": "plain_text",
-                        "text": "Select level (0-10)"
+                        "text": "Select how you're feeling"
                     },
                     "options": [
-                        {"text": {"type": "plain_text", "text": "0 - Not at all"}, "value": "0"},
-                        {"text": {"type": "plain_text", "text": "1 - Very slightly"}, "value": "10"},
-                        {"text": {"type": "plain_text", "text": "2 - Slightly"}, "value": "20"},
-                        {"text": {"type": "plain_text", "text": "3 - Somewhat"}, "value": "30"},
-                        {"text": {"type": "plain_text", "text": "4 - Moderately"}, "value": "40"},
-                        {"text": {"type": "plain_text", "text": "5 - Considerably"}, "value": "50"},
-                        {"text": {"type": "plain_text", "text": "6 - Quite a bit"}, "value": "60"},
-                        {"text": {"type": "plain_text", "text": "7 - Very much"}, "value": "70"},
-                        {"text": {"type": "plain_text", "text": "8 - Extremely"}, "value": "80"},
-                        {"text": {"type": "plain_text", "text": "9 - Almost completely"}, "value": "90"},
-                        {"text": {"type": "plain_text", "text": "10 - Completely"}, "value": "100"}
+                        {"text": {"type": "plain_text", "text": "Very good"}, "value": "very_good"},
+                        {"text": {"type": "plain_text", "text": "Good"}, "value": "good"},
+                        {"text": {"type": "plain_text", "text": "Okay"}, "value": "okay"},
+                        {"text": {"type": "plain_text", "text": "Not great"}, "value": "not_great"},
+                        {"text": {"type": "plain_text", "text": "Struggling"}, "value": "struggling"}
                     ]
                 },
                 "label": {
                     "type": "plain_text",
-                    "text": "Question 1: How burned out do you feel right now?"
+                    "text": "How are you feeling today?"
                 }
             },
             {
                 "type": "input",
-                "block_id": "energy_level_block",
+                "block_id": "workload_block",
                 "element": {
                     "type": "static_select",
-                    "action_id": "energy_level_input",
+                    "action_id": "workload_input",
                     "placeholder": {
                         "type": "plain_text",
-                        "text": "Select energy level"
+                        "text": "Select workload level"
                     },
                     "options": [
-                        {"text": {"type": "plain_text", "text": "Very Low"}, "value": "very_low"},
-                        {"text": {"type": "plain_text", "text": "Low"}, "value": "low"},
-                        {"text": {"type": "plain_text", "text": "Moderate"}, "value": "moderate"},
-                        {"text": {"type": "plain_text", "text": "High"}, "value": "high"},
-                        {"text": {"type": "plain_text", "text": "Very High"}, "value": "very_high"}
+                        {"text": {"type": "plain_text", "text": "Very manageable"}, "value": "very_manageable"},
+                        {"text": {"type": "plain_text", "text": "Manageable"}, "value": "manageable"},
+                        {"text": {"type": "plain_text", "text": "Somewhat manageable"}, "value": "somewhat_manageable"},
+                        {"text": {"type": "plain_text", "text": "Barely manageable"}, "value": "barely_manageable"},
+                        {"text": {"type": "plain_text", "text": "Overwhelming"}, "value": "overwhelming"}
                     ]
                 },
                 "label": {
                     "type": "plain_text",
-                    "text": "Question 2: What's your energy level this week?"
+                    "text": "How manageable does your workload feel?"
                 }
-            },
-            {
-                "type": "input",
-                "block_id": "stress_factors_block",
-                "element": {
-                    "type": "multi_static_select",
-                    "action_id": "stress_factors_input",
-                    "placeholder": {
-                        "type": "plain_text",
-                        "text": "Select stress factors"
-                    },
-                    "options": [
-                        {"text": {"type": "plain_text", "text": "Incident volume"}, "value": "incident_volume"},
-                        {"text": {"type": "plain_text", "text": "Work hours"}, "value": "work_hours"},
-                        {"text": {"type": "plain_text", "text": "On-call burden"}, "value": "on_call_burden"},
-                        {"text": {"type": "plain_text", "text": "Workload"}, "value": "workload"},
-                        {"text": {"type": "plain_text", "text": "Team dynamics"}, "value": "team_dynamics"},
-                        {"text": {"type": "plain_text", "text": "Other"}, "value": "other"}
-                    ]
-                },
-                "label": {
-                    "type": "plain_text",
-                    "text": "Question 3: Main stress factors? (select all that apply)"
-                },
-                "optional": True
-            },
-            {
-                "type": "input",
-                "block_id": "personal_circumstances_block",
-                "element": {
-                    "type": "static_select",
-                    "action_id": "personal_circumstances_input",
-                    "placeholder": {
-                        "type": "plain_text",
-                        "text": "Select option"
-                    },
-                    "options": [
-                        {"text": {"type": "plain_text", "text": "Yes, significantly"}, "value": "significantly"},
-                        {"text": {"type": "plain_text", "text": "Yes, somewhat"}, "value": "somewhat"},
-                        {"text": {"type": "plain_text", "text": "No, this is work-related"}, "value": "no"},
-                        {"text": {"type": "plain_text", "text": "Prefer not to say"}, "value": "prefer_not_say"}
-                    ]
-                },
-                "label": {
-                    "type": "plain_text",
-                    "text": "Question 4: Are personal circumstances (e.g., sleep, family matters) affecting how you feel today?"
-                },
-                "optional": True
             },
             {
                 "type": "input",
@@ -1744,13 +1761,13 @@ def create_burnout_survey_modal(organization_id: int, user_id: int, analysis_id:
                     "action_id": "comments_input",
                     "placeholder": {
                         "type": "plain_text",
-                        "text": "Anything else affecting your stress? (optional)"
+                        "text": "Share any additional context (optional)"
                     },
                     "multiline": True
                 },
                 "label": {
                     "type": "plain_text",
-                    "text": "Additional Comments (Optional)"
+                    "text": "Would you like to share any additional context?"
                 },
                 "optional": True
             }
@@ -1841,7 +1858,7 @@ async def get_workspace_status(
                 "organization_exists": organization_info is not None,
                 "organization_active": organization_info.get("status") == "active" if organization_info else False,
                 "issue": None if (len(workspace_mappings) > 0 or len(org_mappings) > 0) else
-                        "No workspace mapping found. Slack /burnout-survey command will not work."
+                        "No workspace mapping found. Slack /oncall-health command will not work."
             }
         }
 
@@ -1862,7 +1879,7 @@ async def register_workspace_manual(
 ):
     """
     Manually register a Slack workspace that wasn't properly registered during OAuth.
-    This fixes the "workspace not registered" error for /burnout-survey command.
+    This fixes the "workspace not registered" error for /oncall-health command.
     """
     try:
         # Check if workspace mapping already exists
@@ -1903,7 +1920,7 @@ async def register_workspace_manual(
 
             return {
                 "success": True,
-                "message": "Workspace registered successfully! /burnout-survey command should now work.",
+                "message": "Workspace registered successfully! /oncall-health command should now work.",
                 "mapping": {
                     "workspace_id": new_mapping.workspace_id,
                     "workspace_name": new_mapping.workspace_name,

@@ -231,9 +231,9 @@ export function SlackSurveyTabs({
                   <span className="text-green-600 text-xs font-bold">2</span>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-700"><strong>Team members receive surveys</strong> via automated DMs or by typing <code className="bg-gray-100 px-1 rounded text-xs">/burnout-survey</code></p>
+                  <p className="text-sm text-gray-700"><strong>Team members receive surveys</strong> via automated DMs or by typing <code className="bg-gray-100 px-1 rounded text-xs">/oncall-health</code></p>
                   <div className="bg-slate-800 rounded p-3 font-mono text-sm text-green-400 mt-2">
-                    <div>/burnout-survey</div>
+                    <div>/oncall-health</div>
                     <div className="text-slate-400 mt-1">→ Opens interactive modal with 3 scored questions + optional text</div>
                   </div>
                 </div>
@@ -272,7 +272,7 @@ export function SlackSurveyTabs({
           <div className="mb-4">
             <h4 className="font-medium text-gray-900 mb-2">Survey Correlation</h4>
             <p className="text-sm text-gray-600 mb-3">
-              When team members submit a <code className="bg-gray-100 px-1 rounded text-xs">/burnout-survey</code>,
+              When team members submit a <code className="bg-gray-100 px-1 rounded text-xs">/oncall-health</code>,
               we match them to their profile using:
             </p>
             <div className="space-y-2 text-sm">
@@ -513,7 +513,7 @@ export function SlackSurveyTabs({
                 Are you sure you want to disable the automated schedule?
                 <div className="mt-3 p-3 bg-amber-50 rounded-md border border-amber-100">
                   <div className="text-sm text-amber-900">
-                    Surveys will no longer be sent automatically. Team members can still use the <code className="bg-amber-100 px-1 rounded">/burnout-survey</code> command.
+                    Surveys will no longer be sent automatically. Team members can still use the <code className="bg-amber-100 px-1 rounded">/oncall-health</code> command.
                   </div>
                 </div>
               </>

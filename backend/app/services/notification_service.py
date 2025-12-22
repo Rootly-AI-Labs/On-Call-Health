@@ -60,7 +60,7 @@ class NotificationService:
         # Also notify org admins (but not the inviter again or the person who accepted)
         org_admins = self.db.query(User).filter(
             User.organization_id == invitation.organization_id,
-            User.role.in_(['org_admin', 'super_admin']),
+            User.role.in_(['admin', 'org_admin', 'super_admin']),  # Support both during transition
             User.id != invitation.invited_by,  # Don't duplicate notification for inviter
             User.id != accepted_by.id  # Don't notify the person who accepted
         ).all()
@@ -89,7 +89,7 @@ class NotificationService:
         # Get org admins for the organization
         org_admins = self.db.query(User).filter(
             User.organization_id == organization_id,
-            User.role.in_(['org_admin', 'super_admin']),
+            User.role.in_(['admin', 'org_admin', 'super_admin']),
             User.id != user.id  # Don't notify the user who submitted
         ).all()
 
@@ -143,22 +143,85 @@ class NotificationService:
         self.db.commit()
         return notifications
 
-    def create_slack_connected_notification(self, user: User, workspace_name: str) -> UserNotification:
-        """Notify when Slack workspace is connected."""
-        notification = UserNotification(
-            user_id=user.id,
-            organization_id=user.organization_id,
-            type='integration',
-            title="Slack workspace connected",
-            message=f"Successfully connected {workspace_name} to your organization.",
-            action_url="/integrations",
-            action_text="View Integrations",
-            priority='normal'
-        )
+    def create_slack_connected_notification(self, connected_by: User, workspace_name: str) -> List[UserNotification]:
+        """Notify all org members when Slack workspace is connected."""
+        notifications = []
 
-        self.db.add(notification)
+        if not connected_by.organization_id:
+            return notifications
+
+        # Get all org members
+        org_members = self.db.query(User).filter(
+            User.organization_id == connected_by.organization_id,
+            User.status == 'active'
+        ).all()
+
+        user_name = connected_by.name or connected_by.email
+
+        for member in org_members:
+            # Personalize message for the person who connected vs others
+            if member.id == connected_by.id:
+                title = "Slack workspace connected"
+                message = f"Successfully connected {workspace_name} to your organization."
+            else:
+                title = "Slack workspace connected"
+                message = f"{user_name} connected {workspace_name} to your organization."
+
+            notification = UserNotification(
+                user_id=member.id,
+                organization_id=connected_by.organization_id,
+                type='integration',
+                title=title,
+                message=message,
+                action_url="/integrations",
+                action_text="View Integrations",
+                priority='normal'
+            )
+            notifications.append(notification)
+            self.db.add(notification)
+
         self.db.commit()
-        return notification
+        return notifications
+
+    def create_slack_disconnected_notification(self, disconnected_by: User, workspace_name: str) -> List[UserNotification]:
+        """Notify all org members when Slack workspace is disconnected."""
+        notifications = []
+
+        if not disconnected_by.organization_id:
+            return notifications
+
+        # Get all org members
+        org_members = self.db.query(User).filter(
+            User.organization_id == disconnected_by.organization_id,
+            User.status == 'active'
+        ).all()
+
+        user_name = disconnected_by.name or disconnected_by.email
+
+        for member in org_members:
+            # Personalize message for the person who disconnected vs others
+            if member.id == disconnected_by.id:
+                title = "Slack workspace disconnected"
+                message = f"Successfully disconnected {workspace_name} from your organization."
+            else:
+                title = "Slack workspace disconnected"
+                message = f"{user_name} disconnected {workspace_name} from your organization."
+
+            notification = UserNotification(
+                user_id=member.id,
+                organization_id=disconnected_by.organization_id,
+                type='integration',
+                title=title,
+                message=message,
+                action_url="/integrations",
+                action_text="View Integrations",
+                priority='normal'
+            )
+            notifications.append(notification)
+            self.db.add(notification)
+
+        self.db.commit()
+        return notifications
 
     def create_slack_feature_toggle_notification(self, toggled_by: User, feature: str, enabled: bool, organization_id: int) -> List[UserNotification]:
         """Notify org admins when a Slack feature is toggled."""
@@ -167,7 +230,7 @@ class NotificationService:
         # Get org admins and owner
         org_admins = self.db.query(User).filter(
             User.organization_id == organization_id,
-            User.role.in_(['org_admin', 'super_admin']),
+            User.role.in_(['admin', 'org_admin', 'super_admin']),
             User.id != toggled_by.id  # Don't notify the person who toggled
         ).all()
 
@@ -323,7 +386,7 @@ class NotificationService:
         # Get org admins (include the person who triggered - they want confirmation)
         org_admins = self.db.query(User).filter(
             User.organization_id == organization_id,
-            User.role.in_(['org_admin', 'super_admin'])
+            User.role.in_(['admin', 'org_admin', 'super_admin'])
         ).all()
 
         if is_manual and triggered_by:
@@ -381,6 +444,38 @@ class NotificationService:
             action_text=None,
             priority='normal'
         )
+        self.db.add(notification)
+        self.db.commit()
+        return notification
+
+    def create_role_change_notification(self, user: User, old_role: str, new_role: str, changed_by: User) -> UserNotification:
+        """Create notification when user's role is changed."""
+        is_promotion = new_role in ['admin'] and old_role in ['member', 'viewer']
+        is_demotion = old_role in ['admin'] and new_role in ['member', 'viewer']
+
+        if is_promotion:
+            title = f"You've been promoted to {new_role.replace('_', ' ').title()}"
+            message = f"{changed_by.name} promoted you from {old_role.replace('_', ' ')} to {new_role.replace('_', ' ')}."
+            priority = 'high'
+        elif is_demotion:
+            title = f"Your role has been changed to {new_role.replace('_', ' ').title()}"
+            message = f"{changed_by.name} changed your role from {old_role.replace('_', ' ')} to {new_role.replace('_', ' ')}."
+            priority = 'medium'
+        else:
+            title = f"Your role has been updated"
+            message = f"{changed_by.name} changed your role from {old_role.replace('_', ' ')} to {new_role.replace('_', ' ')}."
+            priority = 'medium'
+
+        notification = UserNotification(
+            user_id=user.id,
+            email=user.email,
+            organization_id=user.organization_id,
+            type='role_change',
+            title=title,
+            message=message,
+            priority=priority
+        )
+
         self.db.add(notification)
         self.db.commit()
         return notification

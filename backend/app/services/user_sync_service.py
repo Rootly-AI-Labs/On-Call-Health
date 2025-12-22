@@ -259,19 +259,56 @@ class UserSyncService:
             email = email.lower().strip()
 
             # Check if correlation already exists
-            # Check by (user_id, email) to match the unique constraint
-            correlation = self.db.query(UserCorrelation).filter(
-                UserCorrelation.user_id == user_id,
-                UserCorrelation.email == email
-            ).first()
+            # SECURITY: Separate lookup logic for self vs team members
+            # - For current user's email: use (user_id, email) - personal correlation
+            # - For team members: use (organization_id, email, user_id=NULL) - org-scoped roster
+            # This prevents one user from overwriting another user's correlations
+            if email.lower() == current_user.email.lower():
+                # This is the current user's own correlation
+                # First check if we have an existing user_id correlation
+                correlation = self.db.query(UserCorrelation).filter(
+                    UserCorrelation.user_id == user_id,
+                    UserCorrelation.email == email
+                ).first()
+
+                # If not found, check if there's a NULL user_id correlation we should migrate
+                if not correlation:
+                    null_correlation = self.db.query(UserCorrelation).filter(
+                        UserCorrelation.organization_id == organization_id,
+                        UserCorrelation.email == email,
+                        UserCorrelation.user_id.is_(None)
+                    ).first()
+
+                    if null_correlation:
+                        # Migrate org-scoped correlation to personal correlation
+                        null_correlation.user_id = current_user.id
+                        correlation = null_correlation
+                        logger.info(f"Migrated org-scoped correlation {correlation.id} to user {current_user.id}")
+            else:
+                # This is a team member - check by organization and email
+                correlation = self.db.query(UserCorrelation).filter(
+                    UserCorrelation.organization_id == organization_id,
+                    UserCorrelation.email == email,
+                    UserCorrelation.user_id.is_(None)  # Only match org-scoped records
+                ).first()
 
             if correlation:
                 # Update existing correlation
                 updated += self._update_correlation(correlation, user, platform, integration_id)
             else:
+                # SECURITY FIX: Only set user_id if this email belongs to the current user
+                # This prevents assigning other people's correlation data to the wrong user_id
+                # For team roster data, user_id should be NULL (organization-scoped only)
+                assigned_user_id = None
+                if email.lower() == current_user.email.lower():
+                    assigned_user_id = current_user.id
+                    logger.info(f"Assigning correlation for {email} to current user {current_user.id}")
+                else:
+                    logger.debug(f"Creating org-scoped correlation for {email} (not current user)")
+
                 # Create new correlation
                 correlation = UserCorrelation(
-                    user_id=current_user.id,  # Keep for backwards compatibility
+                    user_id=assigned_user_id,  # NULL for others, current_user.id for self
                     organization_id=organization_id,  # Multi-tenancy key
                     email_domain=current_user.email_domain,  # Domain-based data sharing
                     email=email,

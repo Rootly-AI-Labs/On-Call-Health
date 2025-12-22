@@ -84,7 +84,9 @@ export function UnifiedSlackCard({
     const scopes = 'commands,chat:write,team:read,channels:history,channels:read,users:read,users:read.email'
 
     // Include feature flags in state parameter - both enabled by default
-    const redirectUri = `${backendUrl}/integrations/slack/oauth/callback`
+    // Production uses /api prefix, staging/dev don't
+    const useApiPrefix = backendUrl.includes('production')
+    const redirectUri = `${backendUrl}${useApiPrefix ? '/api' : ''}/integrations/slack/oauth/callback`
     const stateData = {
       orgId: userInfo?.organization_id,
       userId: userInfo?.id,
@@ -95,6 +97,13 @@ export function UnifiedSlackCard({
     const state = userInfo ? btoa(JSON.stringify(stateData)) : ''
 
     const slackAuthUrl = `https://slack.com/oauth/v2/authorize?client_id=${clientId}&scope=${scopes}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(state)}`
+
+    // Debug logging
+    console.log('🔍 Slack OAuth Debug Info:')
+    console.log('  - Backend URL:', backendUrl)
+    console.log('  - Redirect URI:', redirectUri)
+    console.log('  - Client ID:', clientId?.substring(0, 10) + '...' + clientId?.substring(clientId.length - 4))
+    console.log('  - Full Auth URL:', slackAuthUrl)
 
     setIsConnectingSlackOAuth(true)
     localStorage.setItem('slack_oauth_in_progress', 'true')
@@ -131,7 +140,7 @@ export function UnifiedSlackCard({
         const workspaceName = statusData.organization_workspace_mappings?.[0]?.workspace_name ||
                              statusData.user_workspace_mappings?.[0]?.workspace_name ||
                              'Unknown workspace'
-        toast.success(`✅ Workspace is properly registered! /burnout-survey command should work.\n\nRegistered workspace: ${workspaceName}`)
+        toast.success(`✅ Workspace is properly registered! /oncall-health command should work.\n\nRegistered workspace: ${workspaceName}`)
       } else {
         if (!slackIntegration?.workspace_id) {
           toast.error('No workspace ID found. Please reconnect Slack.')
@@ -151,7 +160,7 @@ export function UnifiedSlackCard({
         })
 
         if (registerResponse.ok) {
-          toast.success('✅ Workspace registered! /burnout-survey command should now work.')
+          toast.success('✅ Workspace registered! /oncall-health command should now work.')
           if (loadSlackPermissions) {
             loadSlackPermissions()
           }
@@ -291,6 +300,37 @@ export function UnifiedSlackCard({
       <CardContent className="space-y-6">
         {!isConnected ? (
           <>
+            {/* Permissions Info Box */}
+            <div className="bg-amber-50 border border-amber-300 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div className="space-y-2 text-sm">
+                  <p className="font-semibold text-amber-900">⚠️ Workspace Admin/Owner Required</p>
+                  <p className="text-amber-800">
+                    This app requests sensitive permissions (reading channel history, slash commands) that <strong>typically require approval from a Workspace Owner or Admin</strong> to install.
+                  </p>
+                  <p className="text-amber-700 text-xs mt-2">
+                    If you're not an admin, clicking "Add to Slack" will send an approval request to your workspace admins.
+                  </p>
+                  <div className="mt-3 pt-3 border-t border-amber-300">
+                    <p className="text-amber-900 font-medium mb-2">Required permissions:</p>
+                    <ul className="list-disc list-inside space-y-1 text-amber-800 ml-2 text-xs">
+                      <li><strong>Read channel messages</strong> - Analyze communication patterns</li>
+                      <li><strong>Read user info</strong> - Match team members with survey responses</li>
+                      <li><strong>Send DMs & slash commands</strong> - Deliver burnout surveys</li>
+                    </ul>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-amber-300">
+                    <p className="text-amber-900 font-medium mb-2">After admin approval:</p>
+                    <ol className="list-decimal list-inside space-y-1 text-amber-800 ml-2 text-xs">
+                      <li>Invite the bot to channels you want analyzed (use <code className="bg-amber-100 px-1 rounded text-xs">/invite @bot-name</code>)</li>
+                      <li>Bot can only read messages from channels it's been added to</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Pre-Connection: Simple description and button */}
             <div className="space-y-4">
               {/* Connect Button */}
@@ -425,7 +465,7 @@ export function UnifiedSlackCard({
             <div className="space-y-3 pt-2 text-sm text-muted-foreground">
               <p>This will disable all Slack survey features, including:</p>
               <ul className="list-disc list-inside space-y-1 text-sm">
-                <li>The <code className="bg-gray-100 px-1 rounded">/burnout-survey</code> command</li>
+                <li>The <code className="bg-gray-100 px-1 rounded">/oncall-health</code> command</li>
                 <li>Automated survey delivery (scheduled surveys will stop)</li>
                 <li>Manual survey sending</li>
               </ul>

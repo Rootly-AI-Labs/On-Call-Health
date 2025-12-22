@@ -8,7 +8,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 
-from ...models import get_db, User, OAuthProvider, UserEmail
+from ...models import get_db, User, OAuthProvider, UserEmail, OrganizationInvitation
 from ...auth.oauth import google_oauth, github_oauth
 from ...auth.jwt import create_access_token
 from ...auth.dependencies import get_current_active_user
@@ -504,16 +504,16 @@ async def exchange_auth_code_for_token(
 @router.patch("/users/{user_id}/role")
 async def update_user_role(
     user_id: int,
-    new_role: str = Query(..., regex="^(member|manager|org_admin)$"),
+    new_role: str = Query(..., regex="^(member|admin|viewer)$"),
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
     """
     Update a user's role within the organization.
-    Only org_admin can change roles.
+    Only admin can change roles.
     """
-    # Check if current user is org_admin
-    if current_user.role != "org_admin":
+    # Check if current user is admin (support both old and new role names during transition)
+    if current_user.role not in ['admin', 'org_admin']:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only organization admins can change user roles"
@@ -541,11 +541,40 @@ async def update_user_role(
             detail="Cannot change your own role"
         )
 
+    # Prevent demoting the last admin
+    if target_user.role in ['admin', 'org_admin'] and new_role not in ['admin', 'org_admin']:
+        admin_count = db.query(User).filter(
+            User.organization_id == current_user.organization_id,
+            User.role.in_(['admin', 'org_admin']),
+            User.status == 'active',
+            User.id != target_user.id
+        ).count()
+
+        if admin_count == 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot demote the last admin. Promote another member to admin first."
+            )
+
     # Update the role
     old_role = target_user.role
     target_user.role = new_role
     db.commit()
     db.refresh(target_user)
+
+    # Create notification for the user whose role changed
+    try:
+        from ...services.notification_service import NotificationService
+        notification_service = NotificationService(db)
+        notification_service.create_role_change_notification(
+            user=target_user,
+            old_role=old_role,
+            new_role=new_role,
+            changed_by=current_user
+        )
+    except Exception as e:
+        logger.error(f"Failed to create role change notification: {e}")
+        # Don't fail the role update if notification fails
 
     return {
         "success": True,
@@ -729,3 +758,71 @@ async def delete_current_user_account(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete account. Please contact support."
         )
+
+
+@router.get("/organizations/members")
+async def get_organization_members(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+) -> list[Dict[str, Any]]:
+    """
+    Get all members and pending invitations for the current user's organization.
+    """
+    if not current_user.organization_id:
+        raise HTTPException(status_code=400, detail="You must be part of an organization")
+
+    # Get all users in the organization
+    users = db.query(User).filter(
+        User.organization_id == current_user.organization_id,
+        User.status == 'active'
+    ).order_by(User.name).all()
+
+    # Get pending invitations for the organization
+    pending_invitations = db.query(OrganizationInvitation).filter(
+        OrganizationInvitation.organization_id == current_user.organization_id,
+        OrganizationInvitation.status == 'pending'
+    ).all()
+
+    # Format response with current user first
+    current_user_data = None
+    other_members = []
+
+    # Add actual users
+    for user in users:
+        member_data = {
+            "id": user.id,
+            "name": user.name,
+            "email": user.email,
+            "role": user.role,
+            "status": "active",
+            "is_current_user": user.id == current_user.id,
+            "joined_at": user.joined_org_at.isoformat() if user.joined_org_at else None
+        }
+
+        if user.id == current_user.id:
+            current_user_data = member_data
+        else:
+            other_members.append(member_data)
+
+    # Add pending invitations
+    for invitation in pending_invitations:
+        if not invitation.is_expired:
+            invitation_data = {
+                "id": f"invitation_{invitation.id}",  # Prefix to distinguish from users
+                "invitation_id": invitation.id,
+                "name": invitation.email.split('@')[0],  # Use email username as name
+                "email": invitation.email,
+                "role": invitation.role,
+                "status": "pending",
+                "is_current_user": False,
+                "joined_at": None,
+                "invited_at": invitation.created_at.isoformat() if invitation.created_at else None,
+                "expires_at": invitation.expires_at.isoformat() if invitation.expires_at else None
+            }
+            other_members.append(invitation_data)
+
+    # Return current user first, then others (users + pending invitations)
+    members = [current_user_data] if current_user_data else []
+    members.extend(other_members)
+
+    return members

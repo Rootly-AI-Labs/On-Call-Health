@@ -1,0 +1,31 @@
+# Ignore local environment files
+.env.local
+.env*.local
+
+# Ignore node_modules (already copied from deps stage)
+node_modules
+
+# Ignore git
+.git
+.gitignore
+
+# Ignore build artifacts
+.next
+out
+
+# Ignore IDE files
+.vscode
+.idea
+*.swp
+*.swo
+
+# Ignore test files
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+__tests__
+
+# Ignore documentation
+*.md
+README.md
