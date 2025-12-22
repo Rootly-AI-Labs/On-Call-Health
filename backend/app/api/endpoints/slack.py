@@ -842,26 +842,17 @@ async def sync_slack_user_ids(
 
             logger.debug(f"Built mapping for {len(email_to_slack_id)} Slack users with emails")
 
-            # SECURITY: Only update correlations for the current user's actual email
-            # to prevent accidentally updating correlations for other people
+            # Update correlations for all users in the organization
+            # Match by organization + email to support team roster (user_id=NULL)
             correlations = db.query(UserCorrelation).filter(
-                UserCorrelation.user_id == current_user.id,
-                UserCorrelation.email == current_user.email  # CRITICAL: Match current user's email only
+                UserCorrelation.organization_id == current_user.organization_id,
+                UserCorrelation.email.in_(list(email_to_slack_id.keys()))
             ).all()
 
             updated_count = 0
             skipped_count = 0
 
             for correlation in correlations:
-                # Double-check email matches current user (defense in depth)
-                if correlation.email.lower() != current_user.email.lower():
-                    logger.error(
-                        f"SECURITY: Skipping correlation {correlation.id} with email {correlation.email} "
-                        f"that doesn't match current user {current_user.email}"
-                    )
-                    skipped_count += 1
-                    continue
-
                 user_email = correlation.email.lower()
                 slack_id = email_to_slack_id.get(user_email)
 
@@ -1357,8 +1348,8 @@ async def handle_slack_interactions(
                         "not_great": 2,
                         "struggling": 1
                     }
-                    # Store feeling as self_reported_score (1-5 scale: higher = feeling better)
-                    self_reported_score = feeling_map.get(feeling_str, 3)
+                    # Store feeling as feeling_score (1-5 scale: higher = feeling better)
+                    feeling_score = feeling_map.get(feeling_str, 3)
 
                     # Question 2: How manageable does your workload feel? (1-5 scale)
                     workload_str = values.get("workload_block", {}).get("workload_input", {}).get("selected_option", {}).get("value", "somewhat_manageable")
@@ -1369,8 +1360,8 @@ async def handle_slack_interactions(
                         "barely_manageable": 2,
                         "overwhelming": 1
                     }
-                    # Store workload as energy_level (1-5 scale: higher = more manageable)
-                    energy_level = workload_map.get(workload_str, 3)
+                    # Store workload as workload_score (1-5 scale: higher = more manageable)
+                    workload_score = workload_map.get(workload_str, 3)
 
                     # No longer collecting stress factors or personal circumstances
                     stress_factors = []
@@ -1412,8 +1403,8 @@ async def handle_slack_interactions(
                 is_update = False
                 if existing_report:
                     # Update existing report
-                    existing_report.self_reported_score = self_reported_score
-                    existing_report.energy_level = energy_level
+                    existing_report.feeling_score = feeling_score
+                    existing_report.workload_score = workload_score
                     existing_report.stress_factors = stress_factors
                     existing_report.personal_circumstances = personal_circumstances
                     existing_report.additional_comments = comments
@@ -1430,8 +1421,8 @@ async def handle_slack_interactions(
                         organization_id=organization_id,
                         email_domain=user.email_domain,
                         analysis_id=analysis_id,  # Optional - may be None
-                        self_reported_score=self_reported_score,
-                        energy_level=energy_level,
+                        feeling_score=feeling_score,
+                        workload_score=workload_score,
                         stress_factors=stress_factors,
                         personal_circumstances=personal_circumstances,
                         additional_comments=comments,

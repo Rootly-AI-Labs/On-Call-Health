@@ -265,10 +265,25 @@ class UserSyncService:
             # This prevents one user from overwriting another user's correlations
             if email.lower() == current_user.email.lower():
                 # This is the current user's own correlation
+                # First check if we have an existing user_id correlation
                 correlation = self.db.query(UserCorrelation).filter(
                     UserCorrelation.user_id == user_id,
                     UserCorrelation.email == email
                 ).first()
+
+                # If not found, check if there's a NULL user_id correlation we should migrate
+                if not correlation:
+                    null_correlation = self.db.query(UserCorrelation).filter(
+                        UserCorrelation.organization_id == organization_id,
+                        UserCorrelation.email == email,
+                        UserCorrelation.user_id.is_(None)
+                    ).first()
+
+                    if null_correlation:
+                        # Migrate org-scoped correlation to personal correlation
+                        null_correlation.user_id = current_user.id
+                        correlation = null_correlation
+                        logger.info(f"Migrated org-scoped correlation {correlation.id} to user {current_user.id}")
             else:
                 # This is a team member - check by organization and email
                 correlation = self.db.query(UserCorrelation).filter(
