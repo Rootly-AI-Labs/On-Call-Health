@@ -625,9 +625,94 @@ class MigrationRunner:
                     """
                 ]
             },
+            {
+                "name": "019_make_survey_organization_nullable",
+                "description": "Make organization_id nullable in user_burnout_reports to allow surveys without org constraint",
+                "sql": [
+                    """
+                    -- Drop the foreign key constraint if it exists
+                    ALTER TABLE user_burnout_reports
+                    DROP CONSTRAINT IF EXISTS user_burnout_reports_organization_id_fkey
+                    """,
+                    """
+                    -- Make organization_id nullable
+                    ALTER TABLE user_burnout_reports
+                    ALTER COLUMN organization_id DROP NOT NULL
+                    """
+                ]
+            },
+            {
+                "name": "020_add_email_domain_for_data_sharing",
+                "description": "Add email_domain column to users and user_correlations for domain-based data sharing",
+                "sql": [
+                    """
+                    -- Add email_domain to users table
+                    ALTER TABLE users
+                    ADD COLUMN IF NOT EXISTS email_domain VARCHAR(255)
+                    """,
+                    """
+                    -- Populate email_domain from existing emails
+                    UPDATE users
+                    SET email_domain = LOWER(SUBSTRING(email FROM POSITION('@' IN email) + 1))
+                    WHERE email_domain IS NULL AND email LIKE '%@%'
+                    """,
+                    """
+                    -- Create index on users.email_domain for performance
+                    CREATE INDEX IF NOT EXISTS idx_users_email_domain ON users(email_domain)
+                    """,
+                    """
+                    -- Add email_domain to user_correlations for faster queries
+                    ALTER TABLE user_correlations
+                    ADD COLUMN IF NOT EXISTS email_domain VARCHAR(255)
+                    """,
+                    """
+                    -- Populate user_correlations.email_domain from users
+                    UPDATE user_correlations uc
+                    SET email_domain = u.email_domain
+                    FROM users u
+                    WHERE uc.user_id = u.id AND uc.email_domain IS NULL
+                    """,
+                    """
+                    -- Create index on user_correlations.email_domain for performance
+                    CREATE INDEX IF NOT EXISTS idx_user_correlations_email_domain ON user_correlations(email_domain)
+                    """
+                ]
+            },
+            {
+                "name": "021_add_email_domain_to_surveys",
+                "description": "Add email_domain to user_burnout_reports for domain-based survey aggregation",
+                "sql": [
+                    """
+                    -- Add email_domain to user_burnout_reports
+                    ALTER TABLE user_burnout_reports
+                    ADD COLUMN IF NOT EXISTS email_domain VARCHAR(255)
+                    """,
+                    """
+                    -- Populate email_domain from users table
+                    UPDATE user_burnout_reports ubr
+                    SET email_domain = u.email_domain
+                    FROM users u
+                    WHERE ubr.user_id = u.id AND ubr.email_domain IS NULL
+                    """,
+                    """
+                    -- Create index for performance
+                    CREATE INDEX IF NOT EXISTS idx_user_burnout_reports_email_domain ON user_burnout_reports(email_domain)
+                    """
+                ]
+            },
+            {
+                "name": "022_make_analysis_id_nullable",
+                "description": "Make analysis_id nullable in user_burnout_reports",
+                "sql": [
+                    """
+                    -- Make analysis_id nullable since surveys can be submitted without an analysis
+                    ALTER TABLE user_burnout_reports ALTER COLUMN analysis_id DROP NOT NULL
+                    """
+                ]
+            },
             # Add future migrations here with incrementing numbers
             # {
-            #     "name": "019_add_user_preferences",
+            #     "name": "023_add_user_preferences",
             #     "description": "Add user preferences table",
             #     "sql": ["CREATE TABLE IF NOT EXISTS user_preferences (...)"]
             # }

@@ -12,6 +12,7 @@ class UserCorrelation(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)  # Keep for backwards compatibility
     organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)  # Multi-tenancy support
+    email_domain = Column(String(255), nullable=True, index=True)  # Domain-based grouping for data sharing
     email = Column(String(255), nullable=False, index=True)  # The email that links platforms
     name = Column(String(255), nullable=True)  # User's display name from platform
     github_username = Column(String(100), nullable=True, index=True)

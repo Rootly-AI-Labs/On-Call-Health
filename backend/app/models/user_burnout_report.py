@@ -15,7 +15,8 @@ class UserBurnoutReport(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False)
+    organization_id = Column(Integer, nullable=True)  # Nullable - FK removed in migration 019
+    email_domain = Column(String(255), nullable=True, index=True)  # Domain-based grouping for aggregation
     analysis_id = Column(Integer, ForeignKey("analyses.id"), nullable=True)  # Optional - for linking to specific analysis
 
     # Core self-reported scores (0-100 scale to match OCB)
@@ -39,7 +40,7 @@ class UserBurnoutReport(Base):
 
     # Relationships
     user = relationship("User", backref="burnout_reports")
-    organization = relationship("Organization")
+    # Note: organization_id FK was removed in migration 019 - no relationship
     analysis = relationship("Analysis", backref="user_burnout_reports")
 
     def to_dict(self):

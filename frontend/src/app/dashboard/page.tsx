@@ -2248,6 +2248,7 @@ function DashboardContent() {
         members={members}
         analysisId={currentAnalysis?.id || currentAnalysis?.uuid}
         currentAnalysis={currentAnalysis}
+        timeRange={currentAnalysis?.time_range || timeRange}
       />
 
       {/* Delete Analysis Dialog */}

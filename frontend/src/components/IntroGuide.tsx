@@ -107,8 +107,8 @@ function IntroGuide({ isOpen, currentStep, onNext, onPrev, onClose }: IntroGuide
                   <Image
                     src={step.image || "/placeholder.svg"}
                     alt="Dashboard with Mock Data"
-                    width={500}
-                    height={280}
+                    width={1200}
+                    height={675}
                     className="w-full h-auto"
                     priority
                     quality={100}
@@ -117,7 +117,6 @@ function IntroGuide({ isOpen, currentStep, onNext, onPrev, onClose }: IntroGuide
                 <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950">
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div className="flex items-start gap-2">
-                      <span className="text-purple-600 dark:text-purple-400 font-bold">👈</span>
                       <div>
                         <p className="font-medium text-slate-900 dark:text-white">Left Panel</p>
                         <p className="text-slate-600 dark:text-slate-400">
@@ -126,7 +125,6 @@ function IntroGuide({ isOpen, currentStep, onNext, onPrev, onClose }: IntroGuide
                       </div>
                     </div>
                     <div className="flex items-start gap-2">
-                      <span className="text-purple-600 dark:text-purple-400 font-bold">👉</span>
                       <div>
                         <p className="font-medium text-slate-900 dark:text-white">Center Section</p>
                         <p className="text-slate-600 dark:text-slate-400">
@@ -146,15 +144,15 @@ function IntroGuide({ isOpen, currentStep, onNext, onPrev, onClose }: IntroGuide
                     <Image
                       src={step.images[0] || "/placeholder.svg"}
                       alt="Integrations Page"
-                      width={500}
-                      height={320}
+                      width={1200}
+                      height={768}
                       className="w-full h-auto"
                       priority
                       quality={100}
                     />
                   </div>
                   <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950">
-                    <p className="text-sm font-medium text-slate-900 dark:text-white">📍 Integrations Page</p>
+                    <p className="text-sm font-medium text-slate-900 dark:text-white"> Integrations Page</p>
                     <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
                       Navigate to the Integrations tab to view all available connections and team management options.
                     </p>
@@ -166,15 +164,15 @@ function IntroGuide({ isOpen, currentStep, onNext, onPrev, onClose }: IntroGuide
                     <Image
                       src={step.images[1] || "/placeholder.svg"}
                       alt="Team Members Modal"
-                      width={350}
-                      height={320}
+                      width={840}
+                      height={768}
                       className="w-full h-auto"
                       priority
                       quality={100}
                     />
                   </div>
                   <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950">
-                    <p className="text-sm font-medium text-slate-900 dark:text-white">👥 View Members</p>
+                    <p className="text-sm font-medium text-slate-900 dark:text-white"> View Members</p>
                     <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
                       Click "View Members" to see team member mappings across integrations and manage their data
                       sources.
@@ -190,15 +188,15 @@ function IntroGuide({ isOpen, currentStep, onNext, onPrev, onClose }: IntroGuide
                   <Image
                     src={step.images[1] || "/placeholder.svg"}
                     alt="Methodology Page"
-                    width={350}
-                    height={230}
+                    width={840}
+                    height={552}
                     className="w-full h-auto"
                     priority
                     quality={100}
                   />
                 </div>
                 <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950">
-                  <p className="text-sm font-medium text-slate-900 dark:text-white">📖 Methodology Details</p>
+                  <p className="text-sm font-medium text-slate-900 dark:text-white"> Methodology Details</p>
                   <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
                     Learn about the On-Call Burnout Score (OCB), our research-backed framework, and the five key
                     burnout factors we analyze.

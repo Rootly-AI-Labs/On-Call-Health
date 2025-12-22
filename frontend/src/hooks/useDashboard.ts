@@ -853,6 +853,15 @@ export default function useDashboard() {
           return filtered
         })
 
+        // Clear from cache to prevent stale data issues
+        setAnalysisCache(prev => {
+          const newCache = new Map(prev)
+          // Remove by both integer ID and string UUID
+          newCache.delete(String(analysisToDelete.id))
+          newCache.delete(analysisToDelete.id.toString())
+          return newCache
+        })
+
         // If the deleted analysis was currently selected, clear it
         if (currentAnalysis?.id === analysisToDelete.id) {
           setCurrentAnalysis(null)

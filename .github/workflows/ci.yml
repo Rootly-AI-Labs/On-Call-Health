@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build frontend Docker image
+        run: docker build -t frontend-test ./frontend -f ./frontend/Dockerfile.dev
+
+      - name: Verify Node version meets Next.js requirements
+        run: |
+          docker run --rm frontend-test node -e "
+            const version = process.versions.node.split('.')[0];
+            if (version < 20) {
+              console.error('Node.js version ' + process.versions.node + ' is below required 20.x');
+              process.exit(1);
+            }
+            console.log('Node.js version ' + process.versions.node + ' OK');
+          "
+
+      - name: Test Next.js build
+        run: docker run --rm frontend-test npm run build
+
+  build-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build backend Docker image
+        run: docker build -t backend-test ./backend
+
+  docker-compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start services
+        run: docker compose up -d --build
+
+      - name: Wait for services to be healthy
+        run: |
+          timeout 60 bash -c 'until docker compose ps | grep -q "healthy"; do sleep 2; done'
+
+      - name: Check frontend is responding
+        run: |
+          timeout 30 bash -c 'until curl -s http://localhost:3000 > /dev/null; do sleep 2; done'
+
+      - name: Show logs on failure
+        if: failure()
+        run: docker compose logs

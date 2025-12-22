@@ -169,6 +169,7 @@ class AccountLinkingService:
             provider=provider,
             provider_id=provider_user_id
         )
+        user.update_email_domain()  # Set email_domain from email
         self.db.add(user)
         self.db.flush()  # Get user ID
         
@@ -210,6 +211,7 @@ class AccountLinkingService:
                 provider=provider,
                 provider_id=provider_user_id
             )
+            user.update_email_domain()  # Set email_domain from email
             self.db.add(user)
             self.db.flush()
 

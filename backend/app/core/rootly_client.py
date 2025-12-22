@@ -613,6 +613,17 @@ class RootlyAPIClient:
                     if not incidents:
                         break
 
+                    # DEBUG: Log first incident to see severity structure
+                    if len(all_incidents) == 0 and len(incidents) > 0:
+                        first_incident = incidents[0]
+                        severity_data = first_incident.get("attributes", {}).get("severity")
+                        logger.info(f"🔍 FIRST INCIDENT SEVERITY CHECK:")
+                        logger.info(f"  - Incident ID: {first_incident.get('id')}")
+                        logger.info(f"  - Severity type: {type(severity_data)}")
+                        logger.info(f"  - Severity value: {severity_data}")
+                        if isinstance(severity_data, dict):
+                            logger.info(f"  - Has 'data' key: {'data' in severity_data}")
+
                     all_incidents.extend(incidents)
 
                     # Check if we have more pages
