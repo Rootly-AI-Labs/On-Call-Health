@@ -323,8 +323,9 @@ export function UnifiedSlackCard({
                   <div className="mt-3 pt-3 border-t border-amber-300">
                     <p className="text-amber-900 font-medium mb-2">After admin approval:</p>
                     <ol className="list-decimal list-inside space-y-1 text-amber-800 ml-2 text-xs">
-                      <li>Invite the bot to channels you want analyzed (use <code className="bg-amber-100 px-1 rounded text-xs">/invite @bot-name</code>)</li>
+                      <li>Invite the bot to channels you want analyzed (use <code className="bg-amber-100 px-1 rounded text-xs">/invite @On-Call Health</code>)</li>
                       <li>Bot can only read messages from channels it's been added to</li>
+                      <li>Team members can use <code className="bg-amber-100 px-1 rounded text-xs">/oncall-health</code> to submit health check-ins</li>
                     </ol>
                   </div>
                 </div>
