@@ -38,9 +38,9 @@ class SlackDMSender:
             # Default message if none provided
             if not message:
                 message = (
-                    "Hi there! 👋\n\n"
-                    "Quick check-in: How are you doing today?\n\n"
-                    "Your feedback helps us support team health and prevent burnout."
+                    "Hi there!\n\n"
+                    "Quick check-in: How are you feeling today?\n\n"
+                    "Your feedback helps us support team well-being and workload balance."
                 )
 
             # Create message with button
@@ -59,7 +59,7 @@ class SlackDMSender:
                             "type": "button",
                             "text": {
                                 "type": "plain_text",
-                                "text": "Take Survey (2 min)"
+                                "text": "Take Check-in (30 sec)"
                             },
                             "style": "primary",
                             "action_id": "open_burnout_survey",

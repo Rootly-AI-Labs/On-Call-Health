@@ -1349,26 +1349,33 @@ async def handle_slack_interactions(
                 # Extract form values from modal
                 values = view.get("state", {}).get("values", {})
 
-                # Get burnout score (0-100 scale) - already in correct format
-                self_reported_score = int(values.get("burnout_score_block", {}).get("burnout_score_input", {}).get("selected_option", {}).get("value", "50"))
-
-                # Get energy level (radio buttons) - convert to 1-5 integer
-                energy_level_str = values.get("energy_level_block", {}).get("energy_level_input", {}).get("selected_option", {}).get("value", "moderate")
-                energy_level_map = {
-                    "very_low": 1,
-                    "low": 2,
-                    "moderate": 3,
-                    "high": 4,
-                    "very_high": 5
+                # Question 1: How are you feeling today?
+                feeling_str = values.get("feeling_block", {}).get("feeling_input", {}).get("selected_option", {}).get("value", "okay")
+                feeling_map = {
+                    "very_good": 100,
+                    "good": 75,
+                    "okay": 50,
+                    "not_great": 25,
+                    "struggling": 0
                 }
-                energy_level = energy_level_map.get(energy_level_str, 3)
+                # Map feeling to 0-100 scale for self_reported_score (inverted: higher score = feeling better)
+                self_reported_score = feeling_map.get(feeling_str, 50)
 
-                # Get stress factors (checkboxes)
-                stress_factors_options = values.get("stress_factors_block", {}).get("stress_factors_input", {}).get("selected_options", [])
-                stress_factors = [opt.get("value") for opt in stress_factors_options]
+                # Question 2: How manageable does your workload feel?
+                workload_str = values.get("workload_block", {}).get("workload_input", {}).get("selected_option", {}).get("value", "somewhat_manageable")
+                workload_map = {
+                    "very_manageable": 5,
+                    "manageable": 4,
+                    "somewhat_manageable": 3,
+                    "barely_manageable": 2,
+                    "overwhelming": 1
+                }
+                # Store workload as energy_level (1-5 scale)
+                energy_level = workload_map.get(workload_str, 3)
 
-                # Get personal circumstances (optional)
-                personal_circumstances = values.get("personal_circumstances_block", {}).get("personal_circumstances_input", {}).get("selected_option", {}).get("value")
+                # No longer collecting stress factors or personal circumstances
+                stress_factors = []
+                personal_circumstances = None
 
                 # Get optional comments
                 comments = values.get("comments_block", {}).get("comments_input", {}).get("value", "")
@@ -1446,9 +1453,9 @@ async def handle_slack_interactions(
 
                 # Return success response with different message for updates
                 if is_update:
-                    success_message = f"✅ *Survey updated successfully*\n\n_You already submitted a survey today. Your burnout score has been updated to {self_reported_score}/100._\n\nYour updated feedback helps us:\n• Validate automated burnout detection\n• Catch stress before it impacts you\n• Make data-driven team improvements\n\nThank you for contributing to a healthier team."
+                    success_message = "*Check-in updated successfully*\n\n_You already submitted today. Your response has been updated._\n\nYour feedback helps us:\n• Monitor team well-being\n• Identify workload issues early\n• Support a healthier on-call experience\n\nThank you for contributing to a healthier team."
                 else:
-                    success_message = "✅ *Survey submitted successfully*\n\nYour feedback helps us:\n• Validate automated burnout detection\n• Catch stress before it impacts you\n• Make data-driven team improvements\n\nThank you for contributing to a healthier team."
+                    success_message = "*Check-in submitted successfully*\n\nYour feedback helps us:\n• Monitor team well-being\n• Identify workload issues early\n• Support a healthier on-call experience\n\nThank you for contributing to a healthier team."
 
                 return {
                     "response_action": "update",
@@ -1661,8 +1668,8 @@ def create_burnout_survey_modal(organization_id: int, user_id: int, analysis_id:
         "analysis_id": analysis_id
     }
 
-    modal_title = "Update Check-in" if is_update else "Burnout Check-in"
-    intro_text = "📋 *Update your burnout check-in*\n\nYou already submitted today. Your previous response will be updated." if is_update else "📋 *2-minute burnout check-in*\n\nYour responses help improve team health and workload distribution. All responses are confidential."
+    modal_title = "Update Check-in" if is_update else "On-Call Health Check-in"
+    intro_text = "*Update your health check-in*\n\nYou already submitted today. Your previous response will be updated." if is_update else "*Quick health check-in*\n\nYour responses help improve team health and workload distribution. All responses are confidential."
 
     return {
         "type": "modal",
@@ -1696,103 +1703,49 @@ def create_burnout_survey_modal(organization_id: int, user_id: int, analysis_id:
             },
             {
                 "type": "input",
-                "block_id": "burnout_score_block",
+                "block_id": "feeling_block",
                 "element": {
                     "type": "static_select",
-                    "action_id": "burnout_score_input",
+                    "action_id": "feeling_input",
                     "placeholder": {
                         "type": "plain_text",
-                        "text": "Select level (0-10)"
+                        "text": "Select how you're feeling"
                     },
                     "options": [
-                        {"text": {"type": "plain_text", "text": "0 - Not at all"}, "value": "0"},
-                        {"text": {"type": "plain_text", "text": "1 - Very slightly"}, "value": "10"},
-                        {"text": {"type": "plain_text", "text": "2 - Slightly"}, "value": "20"},
-                        {"text": {"type": "plain_text", "text": "3 - Somewhat"}, "value": "30"},
-                        {"text": {"type": "plain_text", "text": "4 - Moderately"}, "value": "40"},
-                        {"text": {"type": "plain_text", "text": "5 - Considerably"}, "value": "50"},
-                        {"text": {"type": "plain_text", "text": "6 - Quite a bit"}, "value": "60"},
-                        {"text": {"type": "plain_text", "text": "7 - Very much"}, "value": "70"},
-                        {"text": {"type": "plain_text", "text": "8 - Extremely"}, "value": "80"},
-                        {"text": {"type": "plain_text", "text": "9 - Almost completely"}, "value": "90"},
-                        {"text": {"type": "plain_text", "text": "10 - Completely"}, "value": "100"}
+                        {"text": {"type": "plain_text", "text": "Very good"}, "value": "very_good"},
+                        {"text": {"type": "plain_text", "text": "Good"}, "value": "good"},
+                        {"text": {"type": "plain_text", "text": "Okay"}, "value": "okay"},
+                        {"text": {"type": "plain_text", "text": "Not great"}, "value": "not_great"},
+                        {"text": {"type": "plain_text", "text": "Struggling"}, "value": "struggling"}
                     ]
                 },
                 "label": {
                     "type": "plain_text",
-                    "text": "Question 1: How burned out do you feel right now?"
+                    "text": "How are you feeling today?"
                 }
             },
             {
                 "type": "input",
-                "block_id": "energy_level_block",
+                "block_id": "workload_block",
                 "element": {
                     "type": "static_select",
-                    "action_id": "energy_level_input",
+                    "action_id": "workload_input",
                     "placeholder": {
                         "type": "plain_text",
-                        "text": "Select energy level"
+                        "text": "Select workload level"
                     },
                     "options": [
-                        {"text": {"type": "plain_text", "text": "Very Low"}, "value": "very_low"},
-                        {"text": {"type": "plain_text", "text": "Low"}, "value": "low"},
-                        {"text": {"type": "plain_text", "text": "Moderate"}, "value": "moderate"},
-                        {"text": {"type": "plain_text", "text": "High"}, "value": "high"},
-                        {"text": {"type": "plain_text", "text": "Very High"}, "value": "very_high"}
+                        {"text": {"type": "plain_text", "text": "Very manageable"}, "value": "very_manageable"},
+                        {"text": {"type": "plain_text", "text": "Manageable"}, "value": "manageable"},
+                        {"text": {"type": "plain_text", "text": "Somewhat manageable"}, "value": "somewhat_manageable"},
+                        {"text": {"type": "plain_text", "text": "Barely manageable"}, "value": "barely_manageable"},
+                        {"text": {"type": "plain_text", "text": "Overwhelming"}, "value": "overwhelming"}
                     ]
                 },
                 "label": {
                     "type": "plain_text",
-                    "text": "Question 2: What's your energy level this week?"
+                    "text": "How manageable does your workload feel?"
                 }
-            },
-            {
-                "type": "input",
-                "block_id": "stress_factors_block",
-                "element": {
-                    "type": "multi_static_select",
-                    "action_id": "stress_factors_input",
-                    "placeholder": {
-                        "type": "plain_text",
-                        "text": "Select stress factors"
-                    },
-                    "options": [
-                        {"text": {"type": "plain_text", "text": "Incident volume"}, "value": "incident_volume"},
-                        {"text": {"type": "plain_text", "text": "Work hours"}, "value": "work_hours"},
-                        {"text": {"type": "plain_text", "text": "On-call burden"}, "value": "on_call_burden"},
-                        {"text": {"type": "plain_text", "text": "Workload"}, "value": "workload"},
-                        {"text": {"type": "plain_text", "text": "Team dynamics"}, "value": "team_dynamics"},
-                        {"text": {"type": "plain_text", "text": "Other"}, "value": "other"}
-                    ]
-                },
-                "label": {
-                    "type": "plain_text",
-                    "text": "Question 3: Main stress factors? (select all that apply)"
-                },
-                "optional": True
-            },
-            {
-                "type": "input",
-                "block_id": "personal_circumstances_block",
-                "element": {
-                    "type": "static_select",
-                    "action_id": "personal_circumstances_input",
-                    "placeholder": {
-                        "type": "plain_text",
-                        "text": "Select option"
-                    },
-                    "options": [
-                        {"text": {"type": "plain_text", "text": "Yes, significantly"}, "value": "significantly"},
-                        {"text": {"type": "plain_text", "text": "Yes, somewhat"}, "value": "somewhat"},
-                        {"text": {"type": "plain_text", "text": "No, this is work-related"}, "value": "no"},
-                        {"text": {"type": "plain_text", "text": "Prefer not to say"}, "value": "prefer_not_say"}
-                    ]
-                },
-                "label": {
-                    "type": "plain_text",
-                    "text": "Question 4: Are personal circumstances (e.g., sleep, family matters) affecting how you feel today?"
-                },
-                "optional": True
             },
             {
                 "type": "input",
@@ -1802,13 +1755,13 @@ def create_burnout_survey_modal(organization_id: int, user_id: int, analysis_id:
                     "action_id": "comments_input",
                     "placeholder": {
                         "type": "plain_text",
-                        "text": "Anything else affecting your stress? (optional)"
+                        "text": "Share any additional context (optional)"
                     },
                     "multiline": True
                 },
                 "label": {
                     "type": "plain_text",
-                    "text": "Additional Comments (Optional)"
+                    "text": "Would you like to share any additional context?"
                 },
                 "optional": True
             }
