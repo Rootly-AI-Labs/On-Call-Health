@@ -84,9 +84,7 @@ export function UnifiedSlackCard({
     const scopes = 'commands,chat:write,team:read,channels:history,channels:read,users:read,users:read.email'
 
     // Include feature flags in state parameter - both enabled by default
-    // Production uses /api prefix, staging/dev don't
-    const useApiPrefix = backendUrl.includes('production')
-    const redirectUri = `${backendUrl}${useApiPrefix ? '/api' : ''}/integrations/slack/oauth/callback`
+    const redirectUri = `${backendUrl}/integrations/slack/oauth/callback`
     const stateData = {
       orgId: userInfo?.organization_id,
       userId: userInfo?.id,
