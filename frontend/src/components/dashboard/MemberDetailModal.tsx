@@ -12,6 +12,7 @@ import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadius
 import { Info, RefreshCw, BarChart3 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { UserObjectiveDataCard } from "@/components/dashboard/UserObjectiveDataCard"
+import { SurveyResultsCard } from "@/components/dashboard/SurveyResultsCard"
 
 // Individual Daily Health Chart component
 function IndividualDailyHealthChart({ memberData, analysisId, currentAnalysis }: {
@@ -543,16 +544,21 @@ export function MemberDetailModal({
 
                       const hasSlackData = selectedMember.slack_activity?.messages_sent > 0 ||
                                            selectedMember.slack_activity?.channels_active > 0;
+                      const hasSurveyData = true; // Always show survey tab
 
-                      if (!hasGitHubData && !hasSlackData) {
+                      const tabCount = [hasGitHubData, hasSlackData, hasSurveyData].filter(Boolean).length;
+                      const defaultTab = hasGitHubData ? "github" : hasSurveyData ? "surveys" : "communication";
+
+                      if (tabCount === 0) {
                         return null;
                       }
 
                       return (
-                        <Tabs defaultValue={hasGitHubData ? "github" : "communication"} className="w-full">
-                          <TabsList className={`grid w-full ${(hasGitHubData && hasSlackData) ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                        <Tabs defaultValue={defaultTab} className="w-full">
+                          <TabsList className={`grid w-full grid-cols-${tabCount}`}>
                             {hasGitHubData && <TabsTrigger value="github">GitHub</TabsTrigger>}
                             {hasSlackData && <TabsTrigger value="communication">Communication</TabsTrigger>}
+                            {hasSurveyData && <TabsTrigger value="surveys">Health Check-ins</TabsTrigger>}
                           </TabsList>
 
                           <TabsContent value="github" className="space-y-4">
@@ -690,6 +696,14 @@ export function MemberDetailModal({
                                 </CardContent>
                               </Card>
                             )}
+                          </TabsContent>
+
+                          <TabsContent value="surveys" className="space-y-4">
+                            <SurveyResultsCard
+                              userId={selectedMember.user_id}
+                              userEmail={selectedMember.user_email}
+                              days={30}
+                            />
                           </TabsContent>
                         </Tabs>
                       );

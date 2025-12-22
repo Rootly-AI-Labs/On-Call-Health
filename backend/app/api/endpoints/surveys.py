@@ -2,14 +2,15 @@
 Survey scheduling and preferences API endpoints.
 """
 import logging
-from datetime import time
-from typing import Optional
+from datetime import time, datetime, timedelta
+from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
 from ...models import get_db, User
 from ...models.survey_schedule import SurveySchedule, UserSurveyPreference
+from ...models.user_burnout_report import UserBurnoutReport
 from ...models.user_notification import UserNotification
 from ...auth.dependencies import get_current_user
 from ...services.notification_service import NotificationService
@@ -442,3 +443,63 @@ async def manual_survey_delivery(
         db.commit()
 
         raise HTTPException(status_code=500, detail=f"Survey delivery failed: {str(e)}")
+
+
+@router.get("/user/{user_id}/results")
+def get_user_survey_results(
+    user_id: int,
+    days: int = 30,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get survey results for a specific user.
+    Only accessible by admins in the same organization.
+    """
+    # Check if requesting user is admin
+    if current_user.role != 'admin':
+        raise HTTPException(
+            status_code=403,
+            detail="Only admins can view survey results."
+        )
+
+    # Get the target user
+    target_user = db.query(User).filter(User.id == user_id).first()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Verify same organization
+    if current_user.organization_id != target_user.organization_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Cannot view survey results from different organization."
+        )
+
+    # Get survey results from the last N days
+    since = datetime.utcnow() - timedelta(days=days)
+
+    results = db.query(UserBurnoutReport).filter(
+        UserBurnoutReport.user_id == user_id,
+        UserBurnoutReport.submitted_at >= since
+    ).order_by(UserBurnoutReport.submitted_at.desc()).all()
+
+    return {
+        "user_id": user_id,
+        "user_email": target_user.email,
+        "user_name": target_user.name,
+        "days": days,
+        "results": [
+            {
+                "id": r.id,
+                "feeling_score": r.feeling_score,
+                "workload_score": r.workload_score,
+                "feeling_text": r.feeling_text,
+                "workload_text": r.workload_text,
+                "risk_level": r.risk_level,
+                "additional_comments": r.additional_comments,
+                "submitted_via": r.submitted_via,
+                "submitted_at": r.submitted_at.isoformat() if r.submitted_at else None
+            }
+            for r in results
+        ]
+    }
