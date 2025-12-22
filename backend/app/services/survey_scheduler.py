@@ -8,6 +8,7 @@ from typing import List, Dict
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy.orm import Session
+from sqlalchemy import and_
 import pytz
 
 from ..models.survey_schedule import SurveySchedule, UserSurveyPreference
