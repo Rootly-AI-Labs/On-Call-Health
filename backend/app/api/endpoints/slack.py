@@ -1349,19 +1349,19 @@ async def handle_slack_interactions(
                 # Extract form values from modal
                 values = view.get("state", {}).get("values", {})
 
-                # Question 1: How are you feeling today?
+                # Question 1: How are you feeling today? (1-5 scale)
                 feeling_str = values.get("feeling_block", {}).get("feeling_input", {}).get("selected_option", {}).get("value", "okay")
                 feeling_map = {
-                    "very_good": 100,
-                    "good": 75,
-                    "okay": 50,
-                    "not_great": 25,
-                    "struggling": 0
+                    "very_good": 5,
+                    "good": 4,
+                    "okay": 3,
+                    "not_great": 2,
+                    "struggling": 1
                 }
-                # Map feeling to 0-100 scale for self_reported_score (inverted: higher score = feeling better)
-                self_reported_score = feeling_map.get(feeling_str, 50)
+                # Store feeling as self_reported_score (1-5 scale: higher = feeling better)
+                self_reported_score = feeling_map.get(feeling_str, 3)
 
-                # Question 2: How manageable does your workload feel?
+                # Question 2: How manageable does your workload feel? (1-5 scale)
                 workload_str = values.get("workload_block", {}).get("workload_input", {}).get("selected_option", {}).get("value", "somewhat_manageable")
                 workload_map = {
                     "very_manageable": 5,
@@ -1370,7 +1370,7 @@ async def handle_slack_interactions(
                     "barely_manageable": 2,
                     "overwhelming": 1
                 }
-                # Store workload as energy_level (1-5 scale)
+                # Store workload as energy_level (1-5 scale: higher = more manageable)
                 energy_level = workload_map.get(workload_str, 3)
 
                 # No longer collecting stress factors or personal circumstances
