@@ -52,6 +52,7 @@ import {
   Info,
   BarChart3,
   CalendarIcon,
+  ArrowRight,
 } from "lucide-react"
 import { TeamHealthOverview } from "@/components/dashboard/TeamHealthOverview"
 import { AnalysisProgressSection } from "@/components/dashboard/AnalysisProgressSection"
@@ -60,7 +61,7 @@ import { HealthTrendsChart } from "@/components/dashboard/HealthTrendsChart"
 import { ObjectiveDataCard } from "@/components/dashboard/ObjectiveDataCard"
 import { MemberDetailModal } from "@/components/dashboard/MemberDetailModal"
 import { GitHubCommitsTimeline } from "@/components/dashboard/charts/GitHubCommitsTimeline"
-import GitHubMetricPopup from "@/components/dashboard/GitHubMetricPopup"
+import GitHubAllMetricsPopup from "@/components/dashboard/GitHubAllMetricsPopup"
 import { AIInsightsCard } from "@/components/dashboard/insights/AIInsightsCard"
 import { DeleteAnalysisDialog } from "@/components/dashboard/dialogs/DeleteAnalysisDialog"
 import Image from "next/image"
@@ -217,12 +218,8 @@ function DashboardContent() {
   const userId = typeof window !== 'undefined' ? localStorage.getItem("user_id") : null
   const onboarding = useOnboarding(userId)
 
-  // GitHub Metric Popup State
-  const [githubMetricPopup, setGithubMetricPopup] = useState<{
-    isOpen: boolean
-    metricType: string
-    metricLabel: string
-  }>({ isOpen: false, metricType: '', metricLabel: '' })
+  // GitHub All Metrics Popup State
+  const [showAllMetricsPopup, setShowAllMetricsPopup] = useState(false)
 
   // Extract members array from current analysis
   const membersArray = useMemo(() => {
@@ -1394,15 +1391,7 @@ function DashboardContent() {
 
                               {/* GitHub Metrics Grid */}
                               <div className="grid grid-cols-2 gap-4">
-                                <div
-                                  className="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 hover:shadow-md transition-all duration-200 relative group"
-                                  onClick={() => setGithubMetricPopup({
-                                    isOpen: true,
-                                    metricType: 'high_commits',
-                                    metricLabel: 'High Commit Volume'
-                                  })}
-                                >
-                                  <Info className="absolute top-2 right-2 w-3.5 h-3.5 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                                <div className="bg-gray-50 rounded-lg p-3">
                                   <p className="text-xs text-gray-600 font-medium">Total Commits</p>
                                   {github.total_commits ? (
                                     <p className="text-lg font-bold text-gray-900">{github.total_commits.toLocaleString()}</p>
@@ -1410,15 +1399,7 @@ function DashboardContent() {
                                     <p className="text-lg font-bold text-gray-400 italic">No data</p>
                                   )}
                                 </div>
-                                <div
-                                  className="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 hover:shadow-md transition-all duration-200 relative group"
-                                  onClick={() => setGithubMetricPopup({
-                                    isOpen: true,
-                                    metricType: 'pull_requests',
-                                    metricLabel: 'High Pull Request Activity'
-                                  })}
-                                >
-                                  <Info className="absolute top-2 right-2 w-3.5 h-3.5 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                                <div className="bg-gray-50 rounded-lg p-3">
                                   <p className="text-xs text-gray-600 font-medium">Pull Requests</p>
                                   {github.total_pull_requests ? (
                                     <p className="text-lg font-bold text-gray-900">{github.total_pull_requests.toLocaleString()}</p>
@@ -1426,15 +1407,7 @@ function DashboardContent() {
                                     <p className="text-lg font-bold text-gray-400 italic">No data</p>
                                   )}
                                 </div>
-                                <div
-                                  className="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 hover:shadow-md transition-all duration-200 relative group"
-                                  onClick={() => setGithubMetricPopup({
-                                    isOpen: true,
-                                    metricType: 'code_reviews',
-                                    metricLabel: 'High Code Review Load'
-                                  })}
-                                >
-                                  <Info className="absolute top-2 right-2 w-3.5 h-3.5 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                                <div className="bg-gray-50 rounded-lg p-3">
                                   <p className="text-xs text-gray-600 font-medium">Code Reviews</p>
                                   {github.total_reviews ? (
                                     <p className="text-lg font-bold text-gray-900">{github.total_reviews.toLocaleString()}</p>
@@ -1442,15 +1415,7 @@ function DashboardContent() {
                                     <p className="text-lg font-bold text-gray-400 italic">No data</p>
                                   )}
                                 </div>
-                                <div
-                                  className="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 hover:shadow-md transition-all duration-200 relative group"
-                                  onClick={() => setGithubMetricPopup({
-                                    isOpen: true,
-                                    metricType: 'after_hours',
-                                    metricLabel: 'After Hours Activity'
-                                  })}
-                                >
-                                  <Info className="absolute top-2 right-2 w-3.5 h-3.5 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                                <div className="bg-gray-50 rounded-lg p-3">
                                   <p className="text-xs text-gray-600 font-medium">After Hours</p>
                                   {github.after_hours_activity_percentage !== undefined && github.after_hours_activity_percentage !== null ? (
                                     <p className="text-lg font-bold text-gray-900">{github.after_hours_activity_percentage.toFixed(1)}%</p>
@@ -1458,15 +1423,7 @@ function DashboardContent() {
                                     <p className="text-lg font-bold text-gray-400 italic">No data</p>
                                   )}
                                 </div>
-                                <div
-                                  className="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 hover:shadow-md transition-all duration-200 relative group"
-                                  onClick={() => setGithubMetricPopup({
-                                    isOpen: true,
-                                    metricType: 'weekend_work',
-                                    metricLabel: 'Weekend Work Activity'
-                                  })}
-                                >
-                                  <Info className="absolute top-2 right-2 w-3.5 h-3.5 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                                <div className="bg-gray-50 rounded-lg p-3">
                                   <p className="text-xs text-gray-600 font-medium">Weekend Commits</p>
                                   {(github.weekend_activity_percentage !== undefined && github.weekend_activity_percentage !== null) ||
                                    (github.weekend_commit_percentage !== undefined && github.weekend_commit_percentage !== null) ? (
@@ -1482,6 +1439,17 @@ function DashboardContent() {
                                 </div>
                               </div>
 
+                              {/* View Affected Members Button */}
+                              <div className="flex justify-end mt-4">
+                                <button
+                                  onClick={() => setShowAllMetricsPopup(true)}
+                                  className="flex items-center gap-1 text-red-600 hover:text-red-700 transition-colors text-sm font-medium"
+                                >
+                                  View affected members
+                                  <ArrowRight className="w-4 h-4" />
+                                </button>
+                              </div>
+
                             </>
                           )
                         })()}
@@ -1489,16 +1457,14 @@ function DashboardContent() {
                     </Card>
                   )}
 
-                  {/* GitHub Metric Popup */}
-                  <GitHubMetricPopup
-                    isOpen={githubMetricPopup.isOpen}
-                    onClose={() => setGithubMetricPopup({ ...githubMetricPopup, isOpen: false })}
-                    metricType={githubMetricPopup.metricType as any}
-                    metricLabel={githubMetricPopup.metricLabel}
+                  {/* GitHub All Metrics Popup */}
+                  <GitHubAllMetricsPopup
+                    isOpen={showAllMetricsPopup}
+                    onClose={() => setShowAllMetricsPopup(false)}
                     members={membersArray}
                     onMemberClick={(member) => {
                       setSelectedMember(member)
-                      setGithubMetricPopup({ ...githubMetricPopup, isOpen: false })
+                      setShowAllMetricsPopup(false)
                     }}
                   />
 
