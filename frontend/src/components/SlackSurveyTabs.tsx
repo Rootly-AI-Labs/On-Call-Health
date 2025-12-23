@@ -57,6 +57,8 @@ export function SlackSurveyTabs({
   // Schedule state
   const [scheduleEnabled, setScheduleEnabled] = useState(false)
   const [scheduleTime, setScheduleTime] = useState('09:00')
+  const [frequencyType, setFrequencyType] = useState<'daily' | 'weekday' | 'weekly'>('weekday')
+  const [dayOfWeek, setDayOfWeek] = useState<number>(4) // Default: Friday
   const [savedScheduleTime, setSavedScheduleTime] = useState<string | null>(null) // Track saved time from DB
   const [loadingSchedule, setLoadingSchedule] = useState(false)
   const [savingSchedule, setSavingSchedule] = useState(false)
@@ -96,6 +98,14 @@ export function SlackSurveyTabs({
             setSavedScheduleTime(null)
             setScheduleTime('09:00') // Reset to default
           }
+
+          // Load frequency settings
+          if (data.frequency_type) {
+            setFrequencyType(data.frequency_type)
+          }
+          if (data.day_of_week !== undefined && data.day_of_week !== null) {
+            setDayOfWeek(data.day_of_week)
+          }
         } else {
           // Handle case where no schedule is configured (shouldn't happen with new backend)
           setScheduleEnabled(false)
@@ -127,7 +137,8 @@ export function SlackSurveyTabs({
         enabled: scheduleEnabled,
         send_time: scheduleTime,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        send_weekdays_only: true,
+        frequency_type: frequencyType,
+        day_of_week: frequencyType === 'weekly' ? dayOfWeek : null,
         send_reminder: false,
         reminder_hours_after: 5
       }
@@ -460,11 +471,44 @@ export function SlackSurveyTabs({
                   </div>
                 </div>
 
+                <div>
+                  <Label className="text-sm text-gray-700">Frequency</Label>
+                  <select
+                    value={frequencyType}
+                    onChange={(e) => setFrequencyType(e.target.value as 'daily' | 'weekday' | 'weekly')}
+                    disabled={savingSchedule}
+                    className="mt-2 w-full px-3 py-2 border border-gray-200 rounded-md text-sm"
+                  >
+                    <option value="daily">Every day</option>
+                    <option value="weekday">Weekdays (Mon-Fri)</option>
+                    <option value="weekly">Once per week</option>
+                  </select>
+                </div>
+
+                {frequencyType === 'weekly' && (
+                  <div>
+                    <Label className="text-sm text-gray-700">Day of Week</Label>
+                    <select
+                      value={dayOfWeek}
+                      onChange={(e) => setDayOfWeek(parseInt(e.target.value))}
+                      disabled={savingSchedule}
+                      className="mt-2 w-full px-3 py-2 border border-gray-200 rounded-md text-sm"
+                    >
+                      <option value={0}>Monday</option>
+                      <option value={1}>Tuesday</option>
+                      <option value={2}>Wednesday</option>
+                      <option value={3}>Thursday</option>
+                      <option value={4}>Friday</option>
+                      <option value={5}>Saturday</option>
+                      <option value={6}>Sunday</option>
+                    </select>
+                  </div>
+                )}
+
                 <div className="text-xs text-gray-600 bg-blue-50 border border-blue-100 rounded-md p-2">
                   <p className="font-medium text-blue-900 mb-1">Schedule Details:</p>
                   <ul className="space-y-1 ml-2">
-                    <li>• Sends Monday through Friday</li>
-                    <li>• Skips weekends automatically</li>
+                    <li>• {frequencyType === 'daily' ? 'Sends every day' : frequencyType === 'weekday' ? 'Sends Monday through Friday' : `Sends every ${['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][dayOfWeek]}`}</li>
                     <li>• Time: {scheduleTime || '09:00'} in your local timezone</li>
                   </ul>
                 </div>
@@ -503,7 +547,7 @@ export function SlackSurveyTabs({
                       const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour
                       return `${displayHour}:${String(minute).padStart(2, '0')} ${period}`
                     })()} ({Intl.DateTimeFormat().resolvedOptions().timeZone})</div>
-                    <div>• <strong>Days:</strong> Monday through Friday</div>
+                    <div>• <strong>Frequency:</strong> {frequencyType === 'daily' ? 'Every day' : frequencyType === 'weekday' ? 'Weekdays (Mon-Fri)' : `Every ${['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][dayOfWeek]}`}</div>
                     <div>• <strong>Recipients:</strong> All team members with Slack</div>
                   </div>
                 </div>
