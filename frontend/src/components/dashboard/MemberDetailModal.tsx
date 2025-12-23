@@ -553,9 +553,12 @@ export function MemberDetailModal({
                         return null;
                       }
 
+                      // Map tabCount to Tailwind grid-cols class
+                      const gridColsClass = tabCount === 1 ? 'grid-cols-1' : tabCount === 2 ? 'grid-cols-2' : 'grid-cols-3';
+
                       return (
                         <Tabs defaultValue={defaultTab} className="w-full">
-                          <TabsList className={`grid w-full grid-cols-${tabCount}`}>
+                          <TabsList className={`grid w-full ${gridColsClass}`}>
                             {hasGitHubData && <TabsTrigger value="github">GitHub</TabsTrigger>}
                             {hasSlackData && <TabsTrigger value="communication">Communication</TabsTrigger>}
                             {hasSurveyData && <TabsTrigger value="surveys">Health Check-ins</TabsTrigger>}
