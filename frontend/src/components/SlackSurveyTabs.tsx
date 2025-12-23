@@ -71,6 +71,29 @@ export function SlackSurveyTabs({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Empty array - run once on mount
 
+  // Poll schedule every 10 seconds to sync changes across admins (only when page is visible)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadSchedule() // Refresh immediately when page becomes visible
+      }
+    }
+
+    const pollInterval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        loadSchedule() // Refresh survey schedule from backend
+      }
+    }, 10000) // 10 seconds
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      clearInterval(pollInterval)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const loadSchedule = async () => {
     setLoadingSchedule(true)
     try {
