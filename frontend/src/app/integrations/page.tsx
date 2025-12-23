@@ -790,6 +790,18 @@ export default function IntegrationsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slackIntegration, activeEnhancementTab])
 
+  // Poll Slack integration status every 10 seconds to sync feature toggles across admin users
+  useEffect(() => {
+    if (!slackIntegration) return
+
+    const pollInterval = setInterval(() => {
+      loadSlackIntegration(true) // Force refresh to get latest status from backend
+    }, 10000) // 10 seconds
+
+    return () => clearInterval(pollInterval)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slackIntegration])
+
   // Load organization data when invite modal opens
   useEffect(() => {
     if (showInviteModal) {
