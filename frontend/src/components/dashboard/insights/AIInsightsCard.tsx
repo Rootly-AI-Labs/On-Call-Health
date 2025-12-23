@@ -37,29 +37,31 @@ export function AIInsightsCard({ currentAnalysis }: AIInsightsCardProps) {
   const aiInsights = currentAnalysis?.analysis_data?.ai_team_insights;
   const aiEnhanced = currentAnalysis?.analysis_data?.ai_enhanced;
   const hasAIData = aiInsights?.available;
-  
-  // Show card if AI was enabled (even if it failed) or if AI insights are available
-  if (!aiEnhanced && !hasAIData) {
-    return null
-  }
 
   const insightsData = aiInsights?.insights;
   const hasContent = insightsData?.llm_team_analysis;
 
   return (
     <>
-      <Card className="flex flex-col h-full">
-        <CardHeader>
-          <div className="flex items-center space-x-2">
-            <Sparkles className="w-5 h-5 text-blue-600" />
-            <CardTitle className="text-lg">AI Team Insights</CardTitle>
-          </div>
-          <CardDescription>
-            AI-generated analysis
-          </CardDescription>
+      <Card className="border-2 border-blue-200 bg-white/70 backdrop-blur-sm shadow-lg flex flex-col h-full">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-blue-700 flex items-center space-x-2">
+            <Sparkles className="w-4 h-4" />
+            <span>AI Team Insights</span>
+          </CardTitle>
         </CardHeader>
         <CardContent className="flex-1 flex flex-col">
           {(() => {
+            if (!aiEnhanced && !hasAIData) {
+              return (
+                <div className="text-center py-8 text-gray-500">
+                  <Sparkles className="h-8 w-8 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm font-medium text-gray-700 mb-1">AI Insights Not Enabled</p>
+                  <p className="text-xs">Enable AI in analysis settings to generate insights</p>
+                </div>
+              )
+            }
+
             // Check if we have LLM-generated narrative
             if (hasContent) {
               const summaryText = getTextAfterSummary(insightsData.llm_team_analysis);

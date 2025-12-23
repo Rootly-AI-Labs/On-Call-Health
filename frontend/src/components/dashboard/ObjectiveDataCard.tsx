@@ -1,6 +1,8 @@
 "use client"
 
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
 
 interface ObjectiveDataCardProps {
@@ -12,27 +14,84 @@ export function ObjectiveDataCard({
   currentAnalysis,
   loadingTrends
 }: ObjectiveDataCardProps) {
+  const [selectedMetric, setSelectedMetric] = useState<string>("health_score")
+
+  // Metric configuration
+  const METRIC_CONFIG: any = {
+    health_score: {
+      label: "Health Score",
+      color: "#3b82f6",
+      yAxisLabel: "OCB Health Score",
+      dataKey: "dailyScore",
+      showMeanLine: true,
+      transformer: (trend: any) => Math.max(0, Math.min(100, 100 - Math.round(trend.overall_score * 10)))
+    },
+    incident_load: {
+      label: "Incident Load",
+      color: "#8b5cf6",
+      yAxisLabel: "Incident Count",
+      dataKey: "incidentCount",
+      showMeanLine: true,
+      transformer: (trend: any) => trend.incident_count || 0
+    },
+    after_hours: {
+      label: "After Hours Activity",
+      color: "#f59e0b",
+      yAxisLabel: "After Hours Incidents",
+      dataKey: "afterHoursCount",
+      showMeanLine: true,
+      transformer: (trend: any) => trend.after_hours_count || 0
+    },
+    severity_weighted: {
+      label: "Workload Intensity",
+      color: "#ef4444",
+      yAxisLabel: "Severity-Weighted Load",
+      dataKey: "severityWeightedCount",
+      showMeanLine: true,
+      transformer: (trend: any) => Math.round(trend.severity_weighted_count || 0)
+    },
+    weekend_work: {
+      label: "Weekend Work",
+      color: "#10b981",
+      yAxisLabel: "Weekend Incidents",
+      dataKey: "weekendCount",
+      showMeanLine: true,
+      transformer: null
+    }
+  }
 
   // Calculate statistics from daily trends
-  const calculateStats = (dailyTrends: any[]) => {
+  const calculateStats = (dailyTrends: any[], metric: string, individualData?: any) => {
     if (!dailyTrends || dailyTrends.length === 0) {
       return { mean: 0, min: 0, max: 0, trend: 'neutral' };
     }
 
-    const scores = dailyTrends.map(d => {
-      // Convert health score (0-10) to OCB scale (0-100): OCB = 100 - (health * 10)
-      return Math.max(0, Math.min(100, 100 - Math.round(d.overall_score * 10)));
+    const config = METRIC_CONFIG[metric];
+
+    const values = dailyTrends.map(d => {
+      if (metric === 'weekend_work') {
+        return aggregateWeekendWork(d.date, individualData);
+      } else {
+        return config.transformer(d);
+      }
     });
 
-    const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
-    const min = Math.min(...scores);
-    const max = Math.max(...scores);
+    const mean = values.reduce((a, b) => a + b, 0) / values.length;
+    const min = Math.min(...values);
+    const max = Math.max(...values);
 
     // Determine trend: compare first third vs last third
-    const third = Math.floor(scores.length / 3);
-    const firstThirdAvg = scores.slice(0, third).reduce((a, b) => a + b, 0) / third;
-    const lastThirdAvg = scores.slice(-third).reduce((a, b) => a + b, 0) / third;
-    const trend = lastThirdAvg < firstThirdAvg ? 'improving' : lastThirdAvg > firstThirdAvg ? 'declining' : 'stable';
+    const third = Math.floor(values.length / 3);
+    const firstThirdAvg = values.slice(0, third).reduce((a, b) => a + b, 0) / third;
+    const lastThirdAvg = values.slice(-third).reduce((a, b) => a + b, 0) / third;
+
+    // For health score, lower is better; for other metrics, higher is worse
+    let trend: string;
+    if (metric === 'health_score') {
+      trend = lastThirdAvg < firstThirdAvg ? 'improving' : lastThirdAvg > firstThirdAvg ? 'declining' : 'stable';
+    } else {
+      trend = lastThirdAvg > firstThirdAvg ? 'declining' : lastThirdAvg < firstThirdAvg ? 'improving' : 'stable';
+    }
 
     return { mean, min, max, trend };
   };
@@ -50,12 +109,37 @@ export function ObjectiveDataCard({
     });
   };
 
+  // Aggregate weekend work from individual user data
+  const aggregateWeekendWork = (date: string, individualData: any): number => {
+    if (!individualData || typeof individualData !== 'object') {
+      return 0
+    }
+
+    let totalWeekendCount = 0
+
+    try {
+      Object.keys(individualData).forEach((userEmail) => {
+        const userData = individualData[userEmail]
+        if (userData && userData[date]) {
+          totalWeekendCount += userData[date].weekend_count || 0
+        }
+      })
+    } catch (error) {
+      console.warn('Error aggregating weekend work:', error)
+      return 0
+    }
+
+    return totalWeekendCount
+  };
+
   // Get chart mode from backend analysis data (default to 'normal')
   const chartMode = currentAnalysis?.analysis_data?.chart_mode || 'normal';
 
   // Get the chart data
-  const getChartData = () => {
+  const getChartData = (metric: string) => {
     const dailyTrends = currentAnalysis?.analysis_data?.daily_trends;
+    const individualData = currentAnalysis?.analysis_data?.individual_daily_data;
+    const config = METRIC_CONFIG[metric];
 
     if (!dailyTrends || !Array.isArray(dailyTrends) || dailyTrends.length === 0) {
       return [];
@@ -63,13 +147,20 @@ export function ObjectiveDataCard({
 
     // Convert daily trends to chart format
     const chartData = dailyTrends.map((trend: any) => {
-      // Convert health score (0-10) to OCB scale (0-100): OCB = 100 - (health * 10)
-      const dailyScore = Math.max(0, Math.min(100, 100 - Math.round(trend.overall_score * 10)));
+      let metricValue: number;
+
+      // Special handling for weekend work
+      if (metric === 'weekend_work') {
+        metricValue = aggregateWeekendWork(trend.date, individualData);
+      } else {
+        metricValue = config.transformer(trend);
+      }
 
       return {
         date: new Date(trend.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
         originalDate: trend.date,
-        dailyScore: dailyScore,
+        [config.dataKey]: metricValue,
+        // Keep these for tooltip
         incidentCount: trend.incident_count || 0,
         afterHours: trend.after_hours_count || 0,
         membersAtRisk: trend.members_at_risk || 0,
@@ -78,42 +169,62 @@ export function ObjectiveDataCard({
       };
     });
 
-    // Calculate mean line
-    const scores = chartData.map(d => d.dailyScore);
-    const mean = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+    // Calculate mean
+    const values = chartData.map(d => d[config.dataKey]);
+    const mean = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
 
-    // Apply running average if mode is set to 'running_average'
-    let displayScores = scores;
-    if (chartMode === 'running_average') {
-      displayScores = calculate7DayRunningAverage(scores);
+    // Apply running average only for health_score
+    let displayValues = values;
+    if (chartMode === 'running_average' && metric === 'health_score') {
+      displayValues = calculate7DayRunningAverage(values);
     }
 
-    // Add mean and display score to each data point
+    // Add mean and display value
     const dataWithMean = chartData.map((d, index) => ({
       ...d,
-      dailyScore: displayScores[index], // Use either normal or running average based on mode
+      [config.dataKey]: displayValues[index],
       meanScore: Math.round(mean)
     }));
 
     return dataWithMean;
   };
 
-  const chartData = getChartData();
-  const stats = calculateStats(currentAnalysis?.analysis_data?.daily_trends || []);
+  const chartData = getChartData(selectedMetric);
+  const individualData = currentAnalysis?.analysis_data?.individual_daily_data;
+  const stats = calculateStats(
+    currentAnalysis?.analysis_data?.daily_trends || [],
+    selectedMetric,
+    individualData
+  );
   const timeRange = currentAnalysis?.time_range || currentAnalysis?.analysis_data?.metadata?.days_analyzed || 30;
 
   const hasData = chartData.length > 0;
 
   return (
     <Card className="mb-6 flex flex-col min-h-full">
-      <CardHeader>
-        <CardTitle>Team Objective Data</CardTitle>
-        <CardDescription>
-          {hasData
-            ? `Over the last ${timeRange} days, your average workload index was ${Math.round(stats.mean)} points.`
-            : "No daily trend data available for this analysis"
-          }
-        </CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div className="space-y-1.5">
+          <CardTitle>Team Objective Data</CardTitle>
+          <CardDescription>
+            {hasData
+              ? `Over the last ${timeRange} days, your average ${METRIC_CONFIG[selectedMetric].yAxisLabel.toLowerCase()} was ${Math.round(stats.mean)}${selectedMetric === 'health_score' ? ' points' : ''}.`
+              : "No daily trend data available for this analysis"
+            }
+          </CardDescription>
+        </div>
+
+        <Select value={selectedMetric} onValueChange={setSelectedMetric}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="health_score">Health Score</SelectItem>
+            <SelectItem value="incident_load">Incident Load</SelectItem>
+            <SelectItem value="after_hours">After Hours Activity</SelectItem>
+            <SelectItem value="severity_weighted">Workload Intensity</SelectItem>
+            <SelectItem value="weekend_work">Weekend Work</SelectItem>
+          </SelectContent>
+        </Select>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col pb-4">
         <div className="space-y-3 flex-1 flex flex-col">
@@ -142,7 +253,12 @@ export function ObjectiveDataCard({
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                   data={chartData}
-                  margin={{ top: 20, right: 30, left: 30, bottom: 60 }}
+                  margin={{
+                    top: 20,
+                    right: 30,
+                    left: selectedMetric === 'health_score' ? 10 : 60,
+                    bottom: 60
+                  }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                   <XAxis
@@ -155,16 +271,28 @@ export function ObjectiveDataCard({
                     height={50}
                     interval={Math.floor(chartData.length / 7) || 0}
                   />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={selectedMetric !== 'health_score' ? { fontSize: 12, fill: '#6B7280' } : false}
+                    label={selectedMetric !== 'health_score' ? {
+                      value: METRIC_CONFIG[selectedMetric].yAxisLabel,
+                      angle: -90,
+                      position: 'insideLeft',
+                      style: { textAnchor: 'middle', fontSize: 12, fill: '#6B7280' }
+                    } : false}
+                  />
                   <Tooltip
                     content={({ payload, label }) => {
                       if (payload && payload.length > 0) {
                         const data = payload[0]?.payload;
-                        const dailyScore = data?.dailyScore || 0;
+                        const config = METRIC_CONFIG[selectedMetric];
+                        const metricValue = data?.[config.dataKey] || 0;
                         const meanScore = data?.meanScore || 0;
 
                         // Calculate percentage difference from mean
                         const percentageChange = meanScore !== 0
-                          ? ((dailyScore - meanScore) / meanScore) * 100
+                          ? ((metricValue - meanScore) / meanScore) * 100
                           : 0;
 
                         // Format the date
@@ -174,24 +302,37 @@ export function ObjectiveDataCard({
                           day: 'numeric'
                         });
 
+                        // For health score: higher % = worse (red)
+                        // For other metrics: higher % = more incidents (red)
+                        const isNegative = selectedMetric === 'health_score'
+                          ? percentageChange >= 0
+                          : percentageChange >= 0;
+
                         return (
                           <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
-                            {/* Percentage change with arrow */}
-                            <p className={`text-base font-bold mb-2 ${percentageChange >= 0 ? 'text-red-600' : 'text-green-600'}`}>
+                            {/* Percentage change */}
+                            <p className={`text-base font-bold mb-2 ${isNegative ? 'text-red-600' : 'text-green-600'}`}>
                               {percentageChange >= 0 ? '↑' : '↓'} {Math.abs(percentageChange).toFixed(1)}%
                             </p>
 
-                            {/* Incidents count */}
-                            <p className="text-sm text-gray-600">Incidents: {data.incidentCount || 0}</p>
+                            {/* Metric value */}
+                            <p className="text-sm text-gray-600">
+                              {config.label}: {metricValue.toFixed(selectedMetric === 'severity_weighted' ? 1 : 0)}
+                            </p>
 
-                            {/* At-risk members (conditional) */}
+                            {/* Incidents count (always show for context) */}
+                            <p className="text-sm text-gray-600">
+                              Incidents: {data.incidentCount || 0}
+                            </p>
+
+                            {/* At-risk members */}
                             {data.membersAtRisk > 0 && (
                               <p className="text-sm text-orange-600">
                                 At Risk: {data.membersAtRisk}/{data.totalMembers} members
                               </p>
                             )}
 
-                            {/* Date at bottom */}
+                            {/* Date */}
                             <p className="text-xs text-gray-500 pt-2 border-t">
                               {formattedDate}
                             </p>
@@ -201,29 +342,31 @@ export function ObjectiveDataCard({
                       return null;
                     }}
                   />
-                  {/* Daily Team OCB Score Line */}
+                  {/* Dynamic metric line */}
                   <Line
                     type="monotone"
-                    dataKey="dailyScore"
-                    stroke="#3b82f6"
+                    dataKey={METRIC_CONFIG[selectedMetric].dataKey}
+                    stroke={METRIC_CONFIG[selectedMetric].color}
                     strokeWidth={2}
                     dot={false}
                     isAnimationActive={true}
-                    name="Daily OCB Score"
+                    name={METRIC_CONFIG[selectedMetric].label}
                     connectNulls={true}
                   />
-                  {/* Mean Score Line */}
-                  <Line
-                    type="monotone"
-                    dataKey="meanScore"
-                    stroke="#ef4444"
-                    strokeWidth={2}
-                    strokeDasharray="5 5"
-                    dot={false}
-                    isAnimationActive={false}
-                    name={`${timeRange}-Day Mean`}
-                    connectNulls={true}
-                  />
+                  {/* Mean line */}
+                  {METRIC_CONFIG[selectedMetric].showMeanLine && (
+                    <Line
+                      type="monotone"
+                      dataKey="meanScore"
+                      stroke="#ef4444"
+                      strokeWidth={2}
+                      strokeDasharray="5 5"
+                      dot={false}
+                      isAnimationActive={false}
+                      name={`${timeRange}-Day Mean`}
+                      connectNulls={true}
+                    />
+                  )}
                 </LineChart>
               </ResponsiveContainer>
             )}
@@ -232,13 +375,15 @@ export function ObjectiveDataCard({
           {/* Legend */}
           <div className="mt-4 flex items-center justify-start space-x-6 text-xs text-gray-600">
             <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-blue-500 rounded"></div>
-              <span>Daily Health Score</span>
+              <div className="w-3 h-3 rounded" style={{ backgroundColor: METRIC_CONFIG[selectedMetric].color }}></div>
+              <span>{METRIC_CONFIG[selectedMetric].label}</span>
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-0.5 bg-red-500"></div>
-              <span className="ml-1">{timeRange}-Day Mean</span>
-            </div>
+            {METRIC_CONFIG[selectedMetric].showMeanLine && (
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-0.5 bg-red-500"></div>
+                <span className="ml-1">{timeRange}-Day Mean</span>
+              </div>
+            )}
           </div>
         </div>
       </CardContent>

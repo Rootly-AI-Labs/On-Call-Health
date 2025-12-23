@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense } from "react"
+import { Suspense, useState, useMemo, useEffect } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { MappingDrawer } from "@/components/mapping-drawer"
@@ -52,6 +52,7 @@ import {
   Info,
   BarChart3,
   CalendarIcon,
+  ArrowRight,
 } from "lucide-react"
 import { TeamHealthOverview } from "@/components/dashboard/TeamHealthOverview"
 import { AnalysisProgressSection } from "@/components/dashboard/AnalysisProgressSection"
@@ -60,6 +61,7 @@ import { HealthTrendsChart } from "@/components/dashboard/HealthTrendsChart"
 import { ObjectiveDataCard } from "@/components/dashboard/ObjectiveDataCard"
 import { MemberDetailModal } from "@/components/dashboard/MemberDetailModal"
 import { GitHubCommitsTimeline } from "@/components/dashboard/charts/GitHubCommitsTimeline"
+import GitHubAllMetricsPopup from "@/components/dashboard/GitHubAllMetricsPopup"
 import { AIInsightsCard } from "@/components/dashboard/insights/AIInsightsCard"
 import { DeleteAnalysisDialog } from "@/components/dashboard/dialogs/DeleteAnalysisDialog"
 import Image from "next/image"
@@ -215,6 +217,22 @@ function DashboardContent() {
   // Get userId from localStorage for user-specific onboarding tracking
   const userId = typeof window !== 'undefined' ? localStorage.getItem("user_id") : null
   const onboarding = useOnboarding(userId)
+
+  // Track if component has mounted on client to prevent hydration mismatch
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // GitHub All Metrics Popup State
+  const [showAllMetricsPopup, setShowAllMetricsPopup] = useState(false)
+
+  // Extract members array from current analysis
+  const membersArray = useMemo(() => {
+    if (!currentAnalysis?.analysis_data?.team_analysis) return []
+    const teamAnalysis = currentAnalysis.analysis_data.team_analysis
+    return Array.isArray(teamAnalysis) ? teamAnalysis : (teamAnalysis as any)?.members || []
+  }, [currentAnalysis])
 
   // Map the hook's meta to actual Lucide icons
   const renderTrendIcon = (trend?: string) => {
@@ -857,12 +875,15 @@ function DashboardContent() {
               {/* Charts Section */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 {/* Team Objective Data */}
-                <ObjectiveDataCard
-                  currentAnalysis={currentAnalysis}
-                  loadingTrends={loadingTrends}
-                />
+                <div className="lg:col-span-2">
+                  <ObjectiveDataCard
+                    currentAnalysis={currentAnalysis}
+                    loadingTrends={loadingTrends}
+                  />
+                </div>
 
                 {/* Burnout Journey Map */}
+                {false && (
                 <Card className="flex flex-col">
                   <CardHeader>
                     <CardTitle>Burnout Timeline</CardTitle>
@@ -906,17 +927,17 @@ function DashboardContent() {
                         (() => {
                         // Calculate high risk members for journey map
                         const highRiskMembers = members.filter(m => m.risk_level === 'high' || m.risk_level === 'critical');
-                        
+
                         // Calculate health score
-                        const healthScore = currentAnalysis?.analysis_data?.team_health ? 
+                        const healthScore = currentAnalysis?.analysis_data?.team_health ?
                           Math.round(currentAnalysis.analysis_data.team_health.overall_score * 10) : 92;
-                        
+
                         // Generate timeline events using the same intelligent detection as the health trends chart
                         let journeyEvents = [];
-                        
+
                         if (currentAnalysis?.analysis_data?.daily_trends?.length > 0) {
                           const dailyTrends = currentAnalysis.analysis_data.daily_trends;
-                          
+
                           // Transform data and detect standout events (same logic as chart)
                           const chartData = dailyTrends.map((trend: any, index: number) => ({
                             date: trend.date,
@@ -928,22 +949,22 @@ function DashboardContent() {
                             rawScore: trend.overall_score,
                             index: index
                           }));
-                          
+
                           // Identify standout events (same algorithm as chart)
                           const identifyStandoutEvents = (data: any[]) => {
                             if (data.length < 3) return data;
-                            
+
                             return data.map((point: any, i: number) => {
                               let eventType = 'normal';
                               let eventDescription = '';
                               let significance = 0;
-                              
+
                               const prev = i > 0 ? data[i-1] : null;
                               const next = i < data.length-1 ? data[i+1] : null;
-                              
+
                               // Calculate changes
                               const prevChange = prev ? point.score - prev.score : 0;
-                              
+
                               // Detect peaks (local maxima)
                               if (prev && next && point.score > prev.score && point.score > next.score && point.score >= 75) {
                                 eventType = 'peak';
@@ -952,7 +973,7 @@ function DashboardContent() {
                                 eventDescription = `Team wellness at peak (${ocbScore} OCB score) - ${point.incidentCount} incidents handled without stress signs`;
                                 significance = point.score >= 90 ? 3 : 2;
                               }
-                              // Detect valleys (local minima)  
+                              // Detect valleys (local minima)
                               else if (prev && next && point.score < prev.score && point.score < next.score && point.score <= 60) {
                                 eventType = 'valley';
                                 // Convert health score to OCB score for display (100 - health_percentage = OCB score)
@@ -990,7 +1011,7 @@ function DashboardContent() {
                                 eventDescription = `URGENT: Team at burnout risk (${ocbScore} OCB score) - ${point.membersAtRisk} members need immediate support`;
                                 significance = 3;
                               }
-                              
+
                               return {
                                 ...point,
                                 eventType,
@@ -1000,9 +1021,9 @@ function DashboardContent() {
                               };
                             });
                           };
-                          
+
                           const standoutEvents = identifyStandoutEvents(chartData);
-                          
+
                           // Convert standout events to timeline format, sorted by significance
                           journeyEvents = standoutEvents
                             .filter(event => event.isStandout)
@@ -1010,9 +1031,9 @@ function DashboardContent() {
                             .slice(0, 8) // Limit to top 8 events
                             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()) // Sort by date for timeline
                             .map((event: any) => ({
-                              date: new Date(event.date).toLocaleDateString('en-US', { 
-                                month: 'short', 
-                                day: 'numeric' 
+                              date: new Date(event.date).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric'
                               }),
                               status: event.eventType,
                               title: event.eventType === 'peak' ? 'Team Wellness Peak' :
@@ -1035,7 +1056,7 @@ function DashboardContent() {
                                      'neutral',
                               significance: event.significance
                             }));
-                          
+
                           // Add current state
                           if (journeyEvents.length === 0 || journeyEvents[journeyEvents.length - 1].date !== 'Current') {
                             journeyEvents.push({
@@ -1063,7 +1084,7 @@ function DashboardContent() {
                           <div className="relative max-h-80 overflow-y-auto pr-2">
                             {/* Timeline line */}
                             <div className="absolute left-4 top-0 bottom-0 w-px bg-gray-200"></div>
-                            
+
                             {journeyEvents.map((event, index) => (
                               <div key={index} className="relative flex items-start space-x-4 pb-6">
                                 {/* Timeline dot */}
@@ -1079,7 +1100,7 @@ function DashboardContent() {
                                   {(() => {
                                     // Use more vibrant colors for success icons
                                     let iconColor = 'text-white'; // Default for dark backgrounds
-                                    
+
                                     if (event.impact === 'positive' || event.status === 'risk-decrease' || event.status === 'improvement' || event.status === 'recovery' || event.status === 'excellence' || event.status === 'risk-eliminated') {
                                       // Success icons get vibrant colors based on event type
                                       if (event.status === 'excellence') {
@@ -1104,7 +1125,7 @@ function DashboardContent() {
                                     return null;
                                   })()}
                                 </div>
-                                
+
                                 {/* Event content */}
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center justify-between">
@@ -1122,6 +1143,7 @@ function DashboardContent() {
                     </div>
                   </CardContent>
                 </Card>
+                )}
 
                 {/* { <HealthTrendsChart
                   currentAnalysis={currentAnalysis}
@@ -1413,7 +1435,7 @@ function DashboardContent() {
                                 </div>
                                 <div className="bg-gray-50 rounded-lg p-3">
                                   <p className="text-xs text-gray-600 font-medium">Weekend Commits</p>
-                                  {(github.weekend_activity_percentage !== undefined && github.weekend_activity_percentage !== null) || 
+                                  {(github.weekend_activity_percentage !== undefined && github.weekend_activity_percentage !== null) ||
                                    (github.weekend_commit_percentage !== undefined && github.weekend_commit_percentage !== null) ? (
                                     <div>
                                       <p className="text-lg font-bold text-gray-900">{(github.weekend_activity_percentage || github.weekend_commit_percentage || 0).toFixed(1)}%</p>
@@ -1427,12 +1449,34 @@ function DashboardContent() {
                                 </div>
                               </div>
 
+                              {/* View Affected Members Button */}
+                              <div className="flex justify-end mt-4">
+                                <button
+                                  onClick={() => setShowAllMetricsPopup(true)}
+                                  className="flex items-center gap-1 text-red-600 hover:text-red-700 transition-colors text-sm font-medium"
+                                >
+                                  View affected members
+                                  <ArrowRight className="w-4 h-4" />
+                                </button>
+                              </div>
+
                             </>
                           )
                         })()}
                       </CardContent>
                     </Card>
                   )}
+
+                  {/* GitHub All Metrics Popup */}
+                  <GitHubAllMetricsPopup
+                    isOpen={showAllMetricsPopup}
+                    onClose={() => setShowAllMetricsPopup(false)}
+                    members={membersArray}
+                    onMemberClick={(member) => {
+                      setSelectedMember(member)
+                      setShowAllMetricsPopup(false)
+                    }}
+                  />
 
                   {/* Slack Metrics Card */}
                   {currentAnalysis?.analysis_data?.slack_insights && (
@@ -1654,7 +1698,7 @@ function DashboardContent() {
           )}
 
           {/* Analysis Not Found State or Auto-Redirect Loader */}
-          {!analysisRunning && searchParams.get('analysis') && (redirectingToSuggested || !currentAnalysis) && (
+          {mounted && !analysisRunning && searchParams.get('analysis') && (redirectingToSuggested || !currentAnalysis) && (
             <Card className={`text-center p-8 ${redirectingToSuggested ? 'border-blue-200 bg-blue-50' : 'border-red-200 bg-red-50'}`}>
               {redirectingToSuggested ? (
                 <>

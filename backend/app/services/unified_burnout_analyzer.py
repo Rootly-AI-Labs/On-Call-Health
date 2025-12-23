@@ -3555,11 +3555,17 @@ class UnifiedBurnoutAnalyzer:
             )
             
             if team_insights.get("available"):
+                # AI successfully generated insights
                 analysis_result["ai_team_insights"] = team_insights
-            
-            # Add AI metadata
-            analysis_result["ai_enhanced"] = True
-            analysis_result["ai_enhancement_timestamp"] = datetime.utcnow().isoformat()
+                analysis_result["ai_enhanced"] = True
+                analysis_result["ai_enhancement_timestamp"] = datetime.utcnow().isoformat()
+            else:
+                # AI was requested but failed/unavailable
+                analysis_result["ai_enhanced"] = False
+                analysis_result["ai_team_insights"] = {
+                    "available": False,
+                    "message": "AI insights generation failed or API key not configured"
+                }
             
             logger.info(f"Successfully enhanced analysis with AI insights for {len(enhanced_members)} members")
             
