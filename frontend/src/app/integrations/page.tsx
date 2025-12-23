@@ -2165,12 +2165,45 @@ export default function IntegrationsPage() {
                 </div>
                 <Select
                   value={selectedOrganization}
-                  onValueChange={(value) => {
+                  onValueChange={async (value) => {
                     // Only show toast if selecting a different organization
                     if (value !== selectedOrganization) {
                       const selected = integrations.find(i => i.id.toString() === value)
                       if (selected) {
                         toast.success(`${selected.name} set as default`)
+
+                        // Check if the integration has valid permissions
+                        try {
+                          const authToken = localStorage.getItem('auth_token')
+                          const response = await fetch(
+                            `${API_BASE}/${selected.platform}/integrations/${selected.id}/permissions`,
+                            {
+                              headers: {
+                                'Authorization': `Bearer ${authToken}`,
+                                'Content-Type': 'application/json'
+                              }
+                            }
+                          )
+
+                          if (response.ok) {
+                            const data = await response.json()
+
+                            if (data.has_users === false || data.has_incidents === false) {
+                              toast.warning('⚠️ Integration has insufficient permissions', {
+                                description: `Missing: ${[
+                                  !data.has_users && 'users access',
+                                  !data.has_incidents && 'incidents access'
+                                ].filter(Boolean).join(', ')}. Please refresh the token.`
+                              })
+                            }
+                          } else if (response.status === 401 || response.status === 403) {
+                            toast.error('❌ Integration token expired or invalid', {
+                              description: 'Please test and refresh your token in the integration settings.'
+                            })
+                          }
+                        } catch (error) {
+                          console.error('Error checking integration permissions:', error)
+                        }
                       }
                     }
 
