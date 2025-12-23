@@ -2165,12 +2165,45 @@ export default function IntegrationsPage() {
                 </div>
                 <Select
                   value={selectedOrganization}
-                  onValueChange={(value) => {
+                  onValueChange={async (value) => {
                     // Only show toast if selecting a different organization
                     if (value !== selectedOrganization) {
                       const selected = integrations.find(i => i.id.toString() === value)
                       if (selected) {
                         toast.success(`${selected.name} set as default`)
+
+                        // Check if the integration has valid permissions
+                        try {
+                          const authToken = localStorage.getItem('auth_token')
+                          const response = await fetch(
+                            `${API_BASE}/${selected.platform}/integrations/${selected.id}/permissions`,
+                            {
+                              headers: {
+                                'Authorization': `Bearer ${authToken}`,
+                                'Content-Type': 'application/json'
+                              }
+                            }
+                          )
+
+                          if (response.ok) {
+                            const data = await response.json()
+
+                            if (data.has_users === false || data.has_incidents === false) {
+                              toast.warning('⚠️ Integration has insufficient permissions', {
+                                description: `Missing: ${[
+                                  !data.has_users && 'users access',
+                                  !data.has_incidents && 'incidents access'
+                                ].filter(Boolean).join(', ')}. Please refresh the token.`
+                              })
+                            }
+                          } else if (response.status === 401 || response.status === 403) {
+                            toast.error('❌ Integration token expired or invalid', {
+                              description: 'Please test and refresh your token in the integration settings.'
+                            })
+                          }
+                        } catch (error) {
+                          console.error('Error checking integration permissions:', error)
+                        }
                       }
                     }
 
@@ -2777,13 +2810,13 @@ export default function IntegrationsPage() {
                     </div>
                     <div>
                       <h3 className={`text-lg font-semibold ${selectedOrganization ? 'text-slate-900' : 'text-gray-900'}`}>
-                        Team Members
+                        Team Member Sync
                       </h3>
                       <p className={`text-sm ${selectedOrganization ? 'text-slate-600' : 'text-gray-600'}`}>
                         {selectedOrganization ? (
-                          <>View and manage synced team members {syncedUsers.length > 0 && `(${syncedUsers.length} synced)`}</>
+                          <>Sync team members from connected integrations {syncedUsers.length > 0 && `(${syncedUsers.length} synced)`}</>
                         ) : (
-                          'Select an organization above to view team members'
+                          'Select an organization above to sync team members'
                         )}
                       </p>
                     </div>

@@ -265,9 +265,24 @@ export function UnifiedSlackCard({
             <div>
               <CardTitle className="text-lg text-gray-900">Slack</CardTitle>
               {isConnected && (
-                <p className="text-sm text-gray-600">
-                  {slackIntegration.workspace_name || 'Connected to workspace'}
-                </p>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-gray-900">
+                    {slackIntegration.workspace_name || 'Connected to workspace'}
+                  </p>
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-500">
+                    {slackIntegration.owner_name && (
+                      <span>Connected by {slackIntegration.owner_name}</span>
+                    )}
+                    {slackIntegration.connected_at && (
+                      <span>
+                        {new Date(slackIntegration.connected_at).toLocaleDateString()}
+                      </span>
+                    )}
+                    {slackIntegration.synced_users_count !== undefined && (
+                      <span>{slackIntegration.synced_users_count} users synced</span>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
           </div>

@@ -91,7 +91,7 @@ class SlackDMSender:
                     json={
                         "channel": channel_id,
                         "blocks": blocks,
-                        "text": "Daily burnout check-in"  # Fallback text
+                        "text": "On-call check-in"  # Fallback text
                     }
                 )
                 msg_data = msg_response.json()
