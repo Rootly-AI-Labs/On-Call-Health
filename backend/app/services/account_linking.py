@@ -384,7 +384,7 @@ class AccountLinkingService:
                 return
 
             # Shared domains (Gmail, etc.) - check for invitation
-            shared_domains = {'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com'}
+            shared_domains = {'gmail.com', 'googlemail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com', 'hey.com'}
             if domain in shared_domains:
                 # Look for pending invitation
                 invitation = self.db.query(OrganizationInvitation).filter(
@@ -395,40 +395,52 @@ class AccountLinkingService:
                 if invitation and not invitation.is_expired:
                     # Accept invitation automatically on OAuth
                     user.organization_id = invitation.organization_id
-                    # Beta: Everyone is org_admin to test all features
-                    user.role = 'org_admin'  # TODO: Change to invitation.role after beta
+                    # Use role from invitation (admin/member/viewer)
+                    user.role = invitation.role
                     user.joined_org_at = datetime.now()
 
                     # Mark invitation as accepted
                     invitation.status = 'accepted'
                     invitation.used_at = datetime.now()
 
-                    logger.info(f"Auto-accepted invitation for {email} to org {invitation.organization_id}")
+                    logger.info(f"Auto-accepted invitation for {email} to org {invitation.organization_id} as {user.role}")
                 else:
                     logger.info(f"No pending invitation found for {email}")
                 # else: Leave user unassigned, they need manual invitation
 
             else:
-                # Company domain - auto-assign to organization
+                # Company domain - get or create organization
                 organization = self.db.query(Organization).filter(
                     Organization.domain == domain
                 ).first()
 
-                if organization:
-                    # Check if this is the first user from this domain (make them admin)
-                    existing_users = self.db.query(User).filter(
-                        User.organization_id == organization.id
-                    ).count()
+                if not organization:
+                    # Auto-create organization for this domain
+                    org_name = domain.split('.')[0].title()  # "xyz.com" → "Xyz"
+                    org_slug = domain.replace('.', '-')  # "xyz.com" → "xyz-com"
 
-                    user.organization_id = organization.id
-                    # Beta: Everyone is org_admin to test all features
-                    user.role = 'org_admin'  # TODO: Change to 'org_admin' if existing_users == 0 else 'user' after beta
-                    user.joined_org_at = datetime.now()
+                    organization = Organization(
+                        name=org_name,
+                        domain=domain,
+                        slug=org_slug,
+                        status='active'
+                    )
+                    self.db.add(organization)
+                    self.db.flush()  # Get the ID
+                    logger.info(f"Auto-created organization '{org_name}' (id={organization.id}) for domain {domain}")
 
-                    logger.info(f"Auto-assigned {email} to org {organization.id} as {user.role}")
-                else:
-                    logger.info(f"No organization found for domain {domain}")
-                # else: No organization exists for this domain yet
+                # Check if this is the first user from this domain (make them admin)
+                existing_users = self.db.query(User).filter(
+                    User.organization_id == organization.id,
+                    User.status == 'active'
+                ).count()
+
+                user.organization_id = organization.id
+                # First user is admin, subsequent users are members
+                user.role = 'admin' if existing_users == 0 else 'member'
+                user.joined_org_at = datetime.now()
+
+                logger.info(f"Auto-assigned {email} to org {organization.id} ({organization.name}) as {user.role}")
 
         except Exception as e:
             logger.error(f"Error in _assign_user_to_organization: {e}")

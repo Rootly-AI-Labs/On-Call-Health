@@ -38,9 +38,9 @@ class SlackDMSender:
             # Default message if none provided
             if not message:
                 message = (
-                    "Hi there! 👋\n\n"
-                    "Quick check-in: How are you doing today?\n\n"
-                    "Your feedback helps us support team health and prevent burnout."
+                    "Hi there!\n\n"
+                    "Quick check-in: How are you feeling today?\n\n"
+                    "Your feedback helps us support team well-being and workload balance."
                 )
 
             # Create message with button
@@ -59,7 +59,7 @@ class SlackDMSender:
                             "type": "button",
                             "text": {
                                 "type": "plain_text",
-                                "text": "Take Survey (2 min)"
+                                "text": "Take Check-in (30 sec)"
                             },
                             "style": "primary",
                             "action_id": "open_burnout_survey",
@@ -91,15 +91,18 @@ class SlackDMSender:
                     json={
                         "channel": channel_id,
                         "blocks": blocks,
-                        "text": "Daily burnout check-in"  # Fallback text
+                        "text": "On-call check-in"  # Fallback text
                     }
                 )
                 msg_data = msg_response.json()
 
+                logger.info(f"Slack API response: {msg_data}")
+
                 if not msg_data.get("ok"):
+                    logger.error(f"Slack API error: {msg_data.get('error')} - Full response: {msg_data}")
                     raise Exception(f"Failed to send message: {msg_data.get('error')}")
 
-                logger.info(f"Survey DM sent successfully to {slack_user_id}")
+                logger.info(f"Survey DM sent successfully to {slack_user_id} - Message TS: {msg_data.get('ts')}")
                 return True
 
         except Exception as e:

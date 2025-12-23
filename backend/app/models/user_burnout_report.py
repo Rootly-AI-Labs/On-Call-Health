@@ -19,9 +19,9 @@ class UserBurnoutReport(Base):
     email_domain = Column(String(255), nullable=True, index=True)  # Domain-based grouping for aggregation
     analysis_id = Column(Integer, ForeignKey("analyses.id"), nullable=True)  # Optional - for linking to specific analysis
 
-    # Core self-reported scores (0-100 scale to match OCB)
-    self_reported_score = Column(Integer, nullable=False)  # 0-100 burnout score
-    energy_level = Column(Integer, nullable=False)  # 1-5 scale (Very Low to Very High)
+    # Core self-reported scores (1-5 scale)
+    feeling_score = Column(Integer, nullable=False)  # 1-5 scale: How user is feeling (1=struggling, 5=very good)
+    workload_score = Column(Integer, nullable=False)  # 1-5 scale: How manageable workload feels (1=overwhelming, 5=very manageable)
 
     # Stress factors as JSON array
     stress_factors = Column(JSON, nullable=True)  # ["incident_volume", "work_hours", "on_call_burden", ...]
@@ -49,8 +49,8 @@ class UserBurnoutReport(Base):
             'id': self.id,
             'user_id': self.user_id,
             'analysis_id': self.analysis_id,
-            'self_reported_score': self.self_reported_score,
-            'energy_level': self.energy_level,
+            'feeling_score': self.feeling_score,
+            'workload_score': self.workload_score,
             'stress_factors': self.stress_factors,
             'personal_circumstances': self.personal_circumstances,
             'additional_comments': self.additional_comments,
@@ -61,31 +61,41 @@ class UserBurnoutReport(Base):
         }
 
     @property
-    def energy_level_text(self):
-        """Convert numeric energy level to human-readable text."""
-        energy_map = {
-            1: "Very Low",
-            2: "Low",
-            3: "Moderate",
-            4: "High",
-            5: "Very High"
+    def workload_text(self):
+        """Convert numeric workload score to human-readable text."""
+        workload_map = {
+            1: "Overwhelming",
+            2: "Barely Manageable",
+            3: "Somewhat Manageable",
+            4: "Manageable",
+            5: "Very Manageable"
         }
-        return energy_map.get(self.energy_level, "Unknown")
+        return workload_map.get(self.workload_score, "Unknown")
+
+    @property
+    def feeling_text(self):
+        """Convert numeric feeling score to human-readable text."""
+        feeling_map = {
+            1: "Struggling",
+            2: "Not Great",
+            3: "Okay",
+            4: "Good",
+            5: "Very Good"
+        }
+        return feeling_map.get(self.feeling_score, "Unknown")
 
     @property
     def risk_level(self):
-        """Calculate risk level from self-reported score using OCB ranges."""
-        if self.self_reported_score < 25:
+        """Calculate risk level from feeling and workload scores (1-5 scale).
+        Lower scores indicate higher risk."""
+        # Average the two scores to get overall health (1-5 scale)
+        avg_score = (self.feeling_score + self.workload_score) / 2
+
+        if avg_score >= 4:
             return 'healthy'
-        elif self.self_reported_score < 50:
+        elif avg_score >= 3:
             return 'fair'
-        elif self.self_reported_score < 75:
+        elif avg_score >= 2:
             return 'poor'
         else:
             return 'critical'
-
-    def calculate_variance(self, automated_score):
-        """Calculate variance between self-reported and automated scores."""
-        if automated_score is None:
-            return None
-        return self.self_reported_score - automated_score

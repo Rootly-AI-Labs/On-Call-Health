@@ -8,6 +8,7 @@ from typing import List, Dict
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy.orm import Session
+from sqlalchemy import and_
 import pytz
 
 from ..models.survey_schedule import SurveySchedule, UserSurveyPreference
@@ -302,20 +303,36 @@ class SurveyScheduler:
             logger.warning(f"No users found for organization {organization_id}")
 
         # Query users with preferences
+        # Join on organization + email instead of user_id to support team roster (user_id=NULL)
+        # Order by correlation.id DESC to get the most recent correlation if duplicates exist
         users = db.query(User, UserCorrelation, UserSurveyPreference).join(
-            UserCorrelation, User.id == UserCorrelation.user_id
+            UserCorrelation,
+            and_(
+                User.organization_id == UserCorrelation.organization_id,
+                User.email == UserCorrelation.email
+            )
         ).outerjoin(
             UserSurveyPreference, User.id == UserSurveyPreference.user_id
         ).filter(
             User.organization_id == organization_id,
             UserCorrelation.slack_user_id.isnot(None)  # Must have Slack ID
-        ).all()
+        ).order_by(UserCorrelation.id.desc()).all()
 
         # Use a dict to deduplicate by user_id (in case user has multiple UserCorrelation records)
         recipients_dict = {}
         for user, correlation, preference in users:
+            # CRITICAL: Validate email matching to prevent wrong user mapping
+            if user.email != correlation.email:
+                logger.error(
+                    f"CRITICAL: Email mismatch! User {user.id} email={user.email} "
+                    f"but correlation {correlation.id} email={correlation.email}. "
+                    f"Skipping to prevent sending to wrong Slack user."
+                )
+                continue
+
             # Skip if we already processed this user
             if user.id in recipients_dict:
+                logger.debug(f"Duplicate correlation for user {user.id}, keeping first (most recent)")
                 continue
 
             # NEW: Filter by saved recipient selections if configured

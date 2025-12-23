@@ -198,7 +198,7 @@ export default function IntegrationsPage() {
   // Invite modal state
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [inviteEmail, setInviteEmail] = useState("")
-  const [inviteRole, setInviteRole] = useState("manager")
+  const [inviteRole, setInviteRole] = useState("member")
   const [isInviting, setIsInviting] = useState(false)
 
   // Organization members and invitations state
@@ -986,7 +986,7 @@ export default function IntegrationsPage() {
               toast.dismiss(loadingToastId)
               if (status === 'pending_user_association') {
                 toast.success(`🎉 Slack app installed successfully!`, {
-                  description: `Connected to "${decodeURIComponent(workspace)}" workspace. The /burnout-survey command is now available.`,
+                  description: `Connected to "${decodeURIComponent(workspace)}" workspace. The /oncall-health command is now available.`,
                   duration: 6000,
                 })
               } else {
@@ -2165,12 +2165,45 @@ export default function IntegrationsPage() {
                 </div>
                 <Select
                   value={selectedOrganization}
-                  onValueChange={(value) => {
+                  onValueChange={async (value) => {
                     // Only show toast if selecting a different organization
                     if (value !== selectedOrganization) {
                       const selected = integrations.find(i => i.id.toString() === value)
                       if (selected) {
                         toast.success(`${selected.name} set as default`)
+
+                        // Check if the integration has valid permissions
+                        try {
+                          const authToken = localStorage.getItem('auth_token')
+                          const response = await fetch(
+                            `${API_BASE}/${selected.platform}/integrations/${selected.id}/permissions`,
+                            {
+                              headers: {
+                                'Authorization': `Bearer ${authToken}`,
+                                'Content-Type': 'application/json'
+                              }
+                            }
+                          )
+
+                          if (response.ok) {
+                            const data = await response.json()
+
+                            if (data.has_users === false || data.has_incidents === false) {
+                              toast.warning('⚠️ Integration has insufficient permissions', {
+                                description: `Missing: ${[
+                                  !data.has_users && 'users access',
+                                  !data.has_incidents && 'incidents access'
+                                ].filter(Boolean).join(', ')}. Please refresh the token.`
+                              })
+                            }
+                          } else if (response.status === 401 || response.status === 403) {
+                            toast.error('❌ Integration token expired or invalid', {
+                              description: 'Please test and refresh your token in the integration settings.'
+                            })
+                          }
+                        } catch (error) {
+                          console.error('Error checking integration permissions:', error)
+                        }
                       }
                     }
 
@@ -2777,13 +2810,13 @@ export default function IntegrationsPage() {
                     </div>
                     <div>
                       <h3 className={`text-lg font-semibold ${selectedOrganization ? 'text-slate-900' : 'text-gray-900'}`}>
-                        Team Members
+                        Team Member Sync
                       </h3>
                       <p className={`text-sm ${selectedOrganization ? 'text-slate-600' : 'text-gray-600'}`}>
                         {selectedOrganization ? (
-                          <>View and manage synced team members {syncedUsers.length > 0 && `(${syncedUsers.length} synced)`}</>
+                          <>Sync team members from connected integrations {syncedUsers.length > 0 && `(${syncedUsers.length} synced)`}</>
                         ) : (
-                          'Select an organization above to view team members'
+                          'Select an organization above to sync team members'
                         )}
                       </p>
                     </div>
@@ -3949,7 +3982,7 @@ export default function IntegrationsPage() {
             </div>
             <div className="pt-3 border-t border-gray-200">
               <p className="text-xs text-gray-600">
-                💡 The <code className="bg-gray-100 px-1 rounded">/burnout-survey</code> command will only show analyses for your organization
+                💡 The <code className="bg-gray-100 px-1 rounded">/oncall-health</code> command will only show analyses for your organization
               </p>
             </div>
           </div>
@@ -3993,7 +4026,7 @@ export default function IntegrationsPage() {
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-2">
               <p className="text-sm font-medium text-red-900">This will:</p>
               <ul className="text-sm text-red-800 space-y-1 list-disc list-inside">
-                <li>Disable the <code className="bg-red-100 px-1 rounded font-mono text-xs">/burnout-survey</code> command in your Slack workspace</li>
+                <li>Disable the <code className="bg-red-100 px-1 rounded font-mono text-xs">/oncall-health</code> command in your Slack workspace</li>
                 <li>Stop all automated survey delivery</li>
                 <li>Remove access to survey features for all team members</li>
               </ul>

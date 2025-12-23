@@ -14,13 +14,15 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { NotificationDrawer } from "@/components/notifications"
 import { AccountSettingsDialog } from "@/components/AccountSettingsDialog"
+import { TeamManagementDialog } from "@/components/TeamManagementDialog"
 import { useGettingStarted } from "@/contexts/GettingStartedContext"
-import { LogOut, BookOpen, HelpCircle, Settings } from "lucide-react"
+import { LogOut, BookOpen, HelpCircle, Settings, Users } from "lucide-react"
 
 interface UserInfo {
   name: string
   email: string
   avatar?: string
+  role?: string
 }
 
 export function TopPanel() {
@@ -29,12 +31,14 @@ export function TopPanel() {
   const { openGettingStarted } = useGettingStarted()
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null)
   const [showAccountSettings, setShowAccountSettings] = useState(false)
+  const [showTeamManagement, setShowTeamManagement] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 
   useEffect(() => {
     const userName = localStorage.getItem("user_name")
     const userEmail = localStorage.getItem("user_email")
-    if (userName && userEmail) setUserInfo({ name: userName, email: userEmail })
+    const userRole = localStorage.getItem("user_role")
+    if (userName && userEmail) setUserInfo({ name: userName, email: userEmail, role: userRole || undefined })
   }, [])
 
   const handleSignOut = () => {
@@ -44,6 +48,9 @@ export function TopPanel() {
   }
 
   const isActive = (path: string) => pathname === path
+
+  // Check if user is admin (support both old and new role names during transition)
+  const isAdmin = userInfo?.role === 'admin' || userInfo?.role === 'org_admin'
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200/60">
@@ -155,6 +162,22 @@ export function TopPanel() {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
+                    onClick={() => {
+                      setShowTeamManagement(true)
+                      setIsDropdownOpen(false)
+                    }}
+                    className="cursor-pointer"
+                  >
+                    <Users className="w-4 h-4 mr-2" />
+                    <span className="flex-1">Organization</span>
+                    {userInfo.role && (
+                      <span className="ml-2 px-1.5 py-0.5 text-[10px] font-medium rounded bg-purple-100 text-purple-700 capitalize">
+                        {userInfo.role.replace('_', ' ')}
+                      </span>
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
                     onClick={handleSignOut}
                     className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
                   >
@@ -171,6 +194,10 @@ export function TopPanel() {
         isOpen={showAccountSettings}
         onClose={() => setShowAccountSettings(false)}
         userEmail={userInfo?.email || ''}
+      />
+      <TeamManagementDialog
+        isOpen={showTeamManagement}
+        onClose={() => setShowTeamManagement(false)}
       />
     </header>
   )
