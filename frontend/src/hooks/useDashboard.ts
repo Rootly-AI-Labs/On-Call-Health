@@ -684,18 +684,8 @@ export default function useDashboard() {
         const teamAnalysis = cachedAnalysis.analysis_data.team_analysis
         const members = Array.isArray(teamAnalysis) ? teamAnalysis : teamAnalysis?.members
 
-        // Validate cache has member data AND check AI data freshness
-        const hasMembers = members && Array.isArray(members) && members.length > 0
-        const isCompleted = cachedAnalysis.status === 'completed'
-
-        // If analysis is completed and should have AI, validate AI data exists
-        // If AI was enabled but AI data is missing from cache, fetch fresh
-        const shouldHaveAI = cachedAnalysis.analysis_data?.ai_enhanced === true
-        const hasAIData = cachedAnalysis.analysis_data?.ai_team_insights?.available === true
-        const needsFreshData = isCompleted && shouldHaveAI && !hasAIData
-
-        // Only use cache if it has actual member data and passes AI validation
-        if (hasMembers && !needsFreshData) {
+        // Only use cache if it has actual member data
+        if (members && Array.isArray(members) && members.length > 0) {
           setCurrentAnalysis(cachedAnalysis)
           setRedirectingToSuggested(false)
           return
@@ -1283,15 +1273,31 @@ export default function useDashboard() {
     sources.push("incident response patterns")
     if (includeGithub && githubIntegration) sources.push("code activity")
     if (includeSlack && slackIntegration) sources.push("communication patterns")
-    
+
     if (sources.length === 1) return sources[0]
     if (sources.length === 2) return `${sources[0]} and ${sources[1]}`
     return `${sources.slice(0, -1).join(", ")}, and ${sources[sources.length - 1]}`
   }
 
+  const validateCustomDate = (date: Date | null) => {
+    if (!date) return { valid: false, days: 0, error: "Please select a start date" }
+    const today = new Date()
+    if (date > today) {
+      return { valid: false, days: 0, error: "Start date cannot be in the future" }
+    }
+    const diffTime = Math.abs(today.getTime() - date.getTime())
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    const oneYearAgo = new Date()
+    oneYearAgo.setFullYear(today.getFullYear() - 1)
+    if (date < oneYearAgo) {
+      return { valid: false, days: 0, error: "Start date cannot be older than 1 year" }
+    }
+    return { valid: true, days: diffDays, error: "" }
+  }
+
   const [showTimeRangeDialog, setShowTimeRangeDialog] = useState(false)
   const [selectedTimeRange, setSelectedTimeRange] = useState("30")
-  const [customStartDate, setCustomStartDate] = useState<Date | undefined>(undefined)
+  const [customStartDate, setCustomStartDate] = useState<Date | null>(null)
   const [isCustomRange, setIsCustomRange] = useState(false)
   const [dialogSelectedIntegration, setDialogSelectedIntegration] = useState<string>("")
   const [noIntegrationsFound, setNoIntegrationsFound] = useState(false)
@@ -1498,29 +1504,6 @@ export default function useDashboard() {
     }
   }
 
-  // Validate custom date selection
-  const validateCustomDate = (date: Date | undefined): { valid: boolean; days?: number; error?: string } => {
-    if (!date) return { valid: false, error: "Please select a date" }
-
-    const today = new Date()
-    const diffTime = today.getTime() - date.getTime()
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-
-    if (diffDays < 0) return { valid: false, error: "Cannot select future dates" }
-    if (diffDays > 365) return { valid: false, error: "Maximum lookback is 1 year (365 days)" }
-
-    return { valid: true, days: diffDays }
-  }
-
-  // Get the effective time range (either from preset or custom date)
-  const getEffectiveTimeRange = (): number => {
-    if (isCustomRange && customStartDate) {
-      const validation = validateCustomDate(customStartDate)
-      return validation.days || 30
-    }
-    return parseInt(selectedTimeRange)
-  }
-
   const runAnalysisWithTimeRange = async () => {
     // Check permissions before running - only for Rootly integrations
     const selectedIntegration = integrations.find(i => i.id.toString() === dialogSelectedIntegration);
@@ -1559,7 +1542,7 @@ export default function useDashboard() {
       
       const requestData = {
         integration_id: integrationId,
-        time_range: getEffectiveTimeRange(),
+        time_range: parseInt(selectedTimeRange),
         include_weekends: true,
         include_github: githubIntegration ? includeGithub : false,
         include_slack: slackIntegration ? includeSlack : false,
@@ -1701,16 +1684,6 @@ export default function useDashboard() {
                   setCurrentAnalysis(analysisData)
                   setRedirectingToSuggested(false) // Turn off redirect loader
                   updateURLWithAnalysis(analysisData.uuid || analysisData.id)
-
-                  // Update cache with completed analysis data including AI insights
-                  const cacheKey = analysisData.uuid || analysisData.id
-                  if (cacheKey) {
-                    setAnalysisCache(prev => {
-                      const newCache = new Map(prev)
-                      newCache.set(cacheKey, analysisData)
-                      return newCache
-                    })
-                  }
                 }, 500) // Show 100% for just 0.5 seconds before showing data
               }, 800) // Wait 0.8 seconds to reach 95%
               
@@ -1832,13 +1805,6 @@ export default function useDashboard() {
           setTimeout(pollAnalysis, Math.min(2000 * pollRetryCount, 10000))
         }
       }
-
-      // Invalidate cache for this running analysis to prevent stale data
-      setAnalysisCache(prev => {
-        const newCache = new Map(prev)
-        newCache.delete(analysis_id)
-        return newCache
-      })
 
       // Start polling after a short delay
       setTimeout(pollAnalysis, 1000)
