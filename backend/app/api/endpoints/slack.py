@@ -556,6 +556,17 @@ async def get_slack_status(
     if not workspace_name:
         logger.debug(f"OAuth workspace {workspace_mapping.workspace_id} has no name in database")
 
+    # Get owner user details
+    owner_user = db.query(User).filter(User.id == workspace_mapping.owner_user_id).first()
+    owner_name = owner_user.name if owner_user and owner_user.name else owner_user.email if owner_user else "Unknown"
+
+    # Count synced users (those with slack_user_id in this organization)
+    from ...models.user_correlation import UserCorrelation
+    synced_users_count = db.query(UserCorrelation).filter(
+        UserCorrelation.organization_id == current_user.organization_id,
+        UserCorrelation.slack_user_id.isnot(None)
+    ).count()
+
     return {
         "connected": True,
         "integration": {
@@ -577,6 +588,8 @@ async def get_slack_status(
             "connection_type": "oauth",
             "status": workspace_mapping.status,
             "owner_user_id": workspace_mapping.owner_user_id,
+            "owner_name": owner_name,
+            "synced_users_count": synced_users_count,
             # Feature flags for OAuth integrations
             "survey_enabled": workspace_mapping.survey_enabled if hasattr(workspace_mapping, 'survey_enabled') else False,
             "communication_patterns_enabled": workspace_mapping.communication_patterns_enabled if hasattr(workspace_mapping, 'communication_patterns_enabled') else False,
