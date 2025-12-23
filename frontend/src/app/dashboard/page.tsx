@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useState, useMemo } from "react"
+import { Suspense, useState, useMemo, useEffect } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { MappingDrawer } from "@/components/mapping-drawer"
@@ -217,6 +217,12 @@ function DashboardContent() {
   // Get userId from localStorage for user-specific onboarding tracking
   const userId = typeof window !== 'undefined' ? localStorage.getItem("user_id") : null
   const onboarding = useOnboarding(userId)
+
+  // Track if component has mounted on client to prevent hydration mismatch
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // GitHub All Metrics Popup State
   const [showAllMetricsPopup, setShowAllMetricsPopup] = useState(false)
@@ -1692,7 +1698,7 @@ function DashboardContent() {
           )}
 
           {/* Analysis Not Found State or Auto-Redirect Loader */}
-          {!analysisRunning && searchParams.get('analysis') && (redirectingToSuggested || !currentAnalysis) && (
+          {mounted && !analysisRunning && searchParams.get('analysis') && (redirectingToSuggested || !currentAnalysis) && (
             <Card className={`text-center p-8 ${redirectingToSuggested ? 'border-blue-200 bg-blue-50' : 'border-red-200 bg-red-50'}`}>
               {redirectingToSuggested ? (
                 <>

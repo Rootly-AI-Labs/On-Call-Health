@@ -12,6 +12,7 @@ import {
   Info
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { AIInsightsCard } from "./insights/AIInsightsCard"
 
 interface TeamHealthOverviewProps {
   currentAnalysis: any
@@ -649,7 +650,8 @@ export function TeamHealthOverview({
           </CardContent>
         </Card>
 
-        {/* Data Sources Card */}
+        {/* Data Sources Card - COMMENTED OUT */}
+        {false && (
         <Card className="border-2 border-blue-200 bg-white/70 backdrop-blur-sm shadow-lg">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-blue-700 flex items-center space-x-2">
@@ -761,6 +763,10 @@ export function TeamHealthOverview({
             </div>
           </CardContent>
         </Card>
+        )}
+
+        {/* AI Insights Card - Replaces Data Sources */}
+        <AIInsightsCard currentAnalysis={currentAnalysis} />
       </div>
     </>
   )

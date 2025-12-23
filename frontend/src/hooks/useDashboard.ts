@@ -684,8 +684,18 @@ export default function useDashboard() {
         const teamAnalysis = cachedAnalysis.analysis_data.team_analysis
         const members = Array.isArray(teamAnalysis) ? teamAnalysis : teamAnalysis?.members
 
-        // Only use cache if it has actual member data
-        if (members && Array.isArray(members) && members.length > 0) {
+        // Validate cache has member data AND check AI data freshness
+        const hasMembers = members && Array.isArray(members) && members.length > 0
+        const isCompleted = cachedAnalysis.status === 'completed'
+
+        // If analysis is completed and should have AI, validate AI data exists
+        // If AI was enabled but AI data is missing from cache, fetch fresh
+        const shouldHaveAI = cachedAnalysis.analysis_data?.ai_enhanced === true
+        const hasAIData = cachedAnalysis.analysis_data?.ai_team_insights?.available === true
+        const needsFreshData = isCompleted && shouldHaveAI && !hasAIData
+
+        // Only use cache if it has actual member data and passes AI validation
+        if (hasMembers && !needsFreshData) {
           setCurrentAnalysis(cachedAnalysis)
           setRedirectingToSuggested(false)
           return
@@ -1691,6 +1701,16 @@ export default function useDashboard() {
                   setCurrentAnalysis(analysisData)
                   setRedirectingToSuggested(false) // Turn off redirect loader
                   updateURLWithAnalysis(analysisData.uuid || analysisData.id)
+
+                  // Update cache with completed analysis data including AI insights
+                  const cacheKey = analysisData.uuid || analysisData.id
+                  if (cacheKey) {
+                    setAnalysisCache(prev => {
+                      const newCache = new Map(prev)
+                      newCache.set(cacheKey, analysisData)
+                      return newCache
+                    })
+                  }
                 }, 500) // Show 100% for just 0.5 seconds before showing data
               }, 800) // Wait 0.8 seconds to reach 95%
               
@@ -1812,6 +1832,13 @@ export default function useDashboard() {
           setTimeout(pollAnalysis, Math.min(2000 * pollRetryCount, 10000))
         }
       }
+
+      // Invalidate cache for this running analysis to prevent stale data
+      setAnalysisCache(prev => {
+        const newCache = new Map(prev)
+        newCache.delete(analysis_id)
+        return newCache
+      })
 
       // Start polling after a short delay
       setTimeout(pollAnalysis, 1000)

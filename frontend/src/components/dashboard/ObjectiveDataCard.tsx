@@ -253,7 +253,12 @@ export function ObjectiveDataCard({
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                   data={chartData}
-                  margin={{ top: 20, right: 30, left: 30, bottom: 60 }}
+                  margin={{
+                    top: 20,
+                    right: 30,
+                    left: selectedMetric === 'health_score' ? 10 : 60,
+                    bottom: 60
+                  }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                   <XAxis
@@ -269,13 +274,13 @@ export function ObjectiveDataCard({
                   <YAxis
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fontSize: 12, fill: '#6B7280' }}
-                    label={{
+                    tick={selectedMetric !== 'health_score' ? { fontSize: 12, fill: '#6B7280' } : false}
+                    label={selectedMetric !== 'health_score' ? {
                       value: METRIC_CONFIG[selectedMetric].yAxisLabel,
                       angle: -90,
                       position: 'insideLeft',
                       style: { textAnchor: 'middle', fontSize: 12, fill: '#6B7280' }
-                    }}
+                    } : false}
                   />
                   <Tooltip
                     content={({ payload, label }) => {
