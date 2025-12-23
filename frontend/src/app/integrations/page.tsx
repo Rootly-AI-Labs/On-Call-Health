@@ -791,14 +791,29 @@ export default function IntegrationsPage() {
   }, [slackIntegration, activeEnhancementTab])
 
   // Poll Slack integration status every 10 seconds to sync feature toggles across admin users
+  // Only polls when page is visible to save resources
   useEffect(() => {
     if (!slackIntegration) return
 
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadSlackIntegration(true) // Refresh immediately when page becomes visible
+      }
+    }
+
     const pollInterval = setInterval(() => {
-      loadSlackIntegration(true) // Force refresh to get latest status from backend
+      if (document.visibilityState === 'visible') {
+        loadSlackIntegration(true) // Force refresh to get latest status from backend
+      }
     }, 10000) // 10 seconds
 
-    return () => clearInterval(pollInterval)
+    // Also refresh when user returns to the page
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      clearInterval(pollInterval)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slackIntegration])
 
