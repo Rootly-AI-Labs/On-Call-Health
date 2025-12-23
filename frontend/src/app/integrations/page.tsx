@@ -2810,13 +2810,13 @@ export default function IntegrationsPage() {
                     </div>
                     <div>
                       <h3 className={`text-lg font-semibold ${selectedOrganization ? 'text-slate-900' : 'text-gray-900'}`}>
-                        Team Members
+                        Team Member Sync
                       </h3>
                       <p className={`text-sm ${selectedOrganization ? 'text-slate-600' : 'text-gray-600'}`}>
                         {selectedOrganization ? (
-                          <>View and manage synced team members {syncedUsers.length > 0 && `(${syncedUsers.length} synced)`}</>
+                          <>Sync team members from connected integrations {syncedUsers.length > 0 && `(${syncedUsers.length} synced)`}</>
                         ) : (
-                          'Select an organization above to view team members'
+                          'Select an organization above to sync team members'
                         )}
                       </p>
                     </div>
