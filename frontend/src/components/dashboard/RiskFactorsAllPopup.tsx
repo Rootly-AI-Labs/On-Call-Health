@@ -11,49 +11,35 @@ import {
   DialogTitle
 } from '@/components/ui/dialog'
 import {
-  getAllMetricsAffectedMembers,
+  getAllFactorsAffectedMembers,
   getVulnerabilityTags,
   getRemainingTagCount,
   getTagColorClasses,
   getOCBBadgeColor
-} from '@/lib/githubMetricUtils'
+} from '@/lib/riskFactorUtils'
 
-interface GitHubAllMetricsPopupProps {
+interface RiskFactorsAllPopupProps {
   isOpen: boolean
   onClose: () => void
   members: any[]
   onMemberClick: (member: any) => void
 }
 
-export default function GitHubAllMetricsPopup({
+export default function RiskFactorsAllPopup({
   isOpen,
   onClose,
   members,
   onMemberClick
-}: GitHubAllMetricsPopupProps) {
-  const metricsWithMembers = getAllMetricsAffectedMembers(members)
+}: RiskFactorsAllPopupProps) {
+  const factorsWithMembers = getAllFactorsAffectedMembers(members)
 
   const handleMemberClick = (member: any) => {
-    // Transform the member object to match MemberDetailModal's expected format
+    // Transform the member object to include both original and transformed field names
     const formattedMember = {
+      ...member,
       id: member.user_id || '',
       name: member.user_name || 'Unknown',
       email: member.user_email || '',
-      burnoutScore: member.ocb_score || 0,
-      riskLevel: (member.risk_level || 'low') as 'high' | 'medium' | 'low',
-      trend: 'stable' as const,
-      incidentsHandled: member.incident_count || 0,
-      avgResponseTime: `${Math.round(member.metrics?.avg_response_time_minutes || 0)}m`,
-      factors: {
-        workload: Math.round(((member.factors?.workload || 0)) * 10) / 10,
-        afterHours: Math.round(((member.factors?.after_hours || 0)) * 10) / 10,
-        weekendWork: Math.round(((member.factors?.weekend_work || 0)) * 10) / 10,
-        incidentLoad: Math.round(((member.factors?.incident_load || 0)) * 10) / 10,
-        responseTime: Math.round(((member.factors?.response_time || 0)) * 10) / 10,
-      },
-      metrics: member.metrics || {},
-      github_activity: member.github_activity || null,
-      slack_activity: member.slack_activity || null
     }
     onMemberClick(formattedMember)
     onClose()
@@ -63,27 +49,27 @@ export default function GitHubAllMetricsPopup({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl">Team Members at Risk - GitHub Activity</DialogTitle>
+          <DialogTitle className="text-2xl">Team Members at Risk - Burnout Factors</DialogTitle>
           <DialogDescription className="text-sm">
-            Showing all team members with medium to high risk across GitHub metrics
+            Showing all team members with medium to high risk across burnout factors
           </DialogDescription>
         </DialogHeader>
 
         <div className="mt-4 space-y-6">
-          {metricsWithMembers.map((metric) => {
-            const isEmpty = metric.members.length === 0
+          {factorsWithMembers.map((factor) => {
+            const isEmpty = factor.members.length === 0
 
             return (
-              <div key={metric.metricType} className="space-y-2">
-                {/* Metric Section Header */}
+              <div key={factor.factorType} className="space-y-2">
+                {/* Factor Section Header */}
                 <div className="border-b border-gray-200 pb-2">
                   <h3 className="text-base font-semibold text-gray-900">
-                    {metric.label}
+                    {factor.label}
                   </h3>
                   <p className="text-xs text-gray-500 mt-0.5">
                     {isEmpty
-                      ? `All team members are below the threshold for ${metric.label}`
-                      : `${metric.members.length} member${metric.members.length !== 1 ? 's' : ''} at risk`}
+                      ? `All team members are below the threshold for ${factor.label}`
+                      : `${factor.members.length} member${factor.members.length !== 1 ? 's' : ''} at risk`}
                   </p>
                 </div>
 
@@ -96,11 +82,11 @@ export default function GitHubAllMetricsPopup({
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {metric.members.map((member) => {
-                      const allTags = getVulnerabilityTags(member, metric.metricType)
+                    {factor.members.map((member) => {
+                      const allTags = getVulnerabilityTags(member, factor.factorType)
                       // Filter out OCB tag
                       const tags = allTags.filter(tag => !tag.label.startsWith('OCB:'))
-                      const remainingTags = getRemainingTagCount(member, metric.metricType) - (allTags.length - tags.length)
+                      const remainingTags = getRemainingTagCount(allTags) - (allTags.length - tags.length)
                       const ocbScore = member.ocb_score || 0
 
                       return (
@@ -143,14 +129,17 @@ export default function GitHubAllMetricsPopup({
                             {/* Tags */}
                             {tags.length > 0 && (
                               <div className="mt-2 flex items-center flex-wrap gap-1">
-                                {tags.map((tag, idx) => (
-                                  <span
-                                    key={idx}
-                                    className={`inline-flex items-center text-xs px-2 py-0.5 rounded-full border ${getTagColorClasses(tag.color)}`}
-                                  >
-                                    {tag.label}
-                                  </span>
-                                ))}
+                                {tags.map((tag, idx) => {
+                                  const tagColors = getTagColorClasses(tag.color)
+                                  return (
+                                    <span
+                                      key={idx}
+                                      className={`inline-flex items-center text-xs px-2 py-0.5 rounded-full border ${tagColors.bg} ${tagColors.text} ${tagColors.border}`}
+                                    >
+                                      {tag.label}
+                                    </span>
+                                  )
+                                })}
                                 {remainingTags > 0 && (
                                   <span className="inline-flex items-center text-xs px-2 py-0.5 rounded-full border bg-gray-100 text-gray-700 border-gray-300">
                                     +{remainingTags} more

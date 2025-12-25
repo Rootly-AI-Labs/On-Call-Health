@@ -62,6 +62,7 @@ import { ObjectiveDataCard } from "@/components/dashboard/ObjectiveDataCard"
 import { MemberDetailModal } from "@/components/dashboard/MemberDetailModal"
 import { GitHubCommitsTimeline } from "@/components/dashboard/charts/GitHubCommitsTimeline"
 import GitHubAllMetricsPopup from "@/components/dashboard/GitHubAllMetricsPopup"
+import RiskFactorsAllPopup from "@/components/dashboard/RiskFactorsAllPopup"
 import { AIInsightsCard } from "@/components/dashboard/insights/AIInsightsCard"
 import { DeleteAnalysisDialog } from "@/components/dashboard/dialogs/DeleteAnalysisDialog"
 import Image from "next/image"
@@ -226,6 +227,9 @@ function DashboardContent() {
 
   // GitHub All Metrics Popup State
   const [showAllMetricsPopup, setShowAllMetricsPopup] = useState(false)
+
+  // Risk Factors All Popup State
+  const [showAllRiskFactorsPopup, setShowAllRiskFactorsPopup] = useState(false)
 
   // Extract members array from current analysis
   const membersArray = useMemo(() => {
@@ -1239,24 +1243,35 @@ function DashboardContent() {
                 {burnoutFactors.length > 0 && (
                   <Card>
                     <CardHeader>
-                      <CardTitle className="flex items-center space-x-2">
-                        {highRiskFactors.length > 0 ? (
-                          <>
-                            <span>Risk Factors</span>
-                          </>
-                        ) : (
-                          <>
-                            <BarChart3 className="w-5 h-5 text-blue-500" />
-                            <span>Risk Factors</span>
-                          </>
-                        )}
-                      </CardTitle>
-                      <CardDescription>
-                        {highRiskFactors.length > 0 
-                          ? "Risk factors requiring immediate attention based on combined incident response and development activity patterns"
-                          : "Current risk factors based on team activity patterns"
-                        }
-                      </CardDescription>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="flex items-center space-x-2">
+                            {highRiskFactors.length > 0 ? (
+                              <>
+                                <span>Risk Factors</span>
+                              </>
+                            ) : (
+                              <>
+                                <BarChart3 className="w-5 h-5 text-blue-500" />
+                                <span>Risk Factors</span>
+                              </>
+                            )}
+                          </CardTitle>
+                          <CardDescription>
+                            {highRiskFactors.length > 0
+                              ? "Risk factors requiring immediate attention based on combined incident response and development activity patterns"
+                              : "Current risk factors based on team activity patterns"
+                            }
+                          </CardDescription>
+                        </div>
+                        <button
+                          onClick={() => setShowAllRiskFactorsPopup(true)}
+                          className="flex items-center gap-1 text-red-600 hover:text-red-700 transition-colors text-sm font-medium whitespace-nowrap ml-4"
+                        >
+                          View Affected Members
+                          <ArrowRight className="w-4 h-4" />
+                        </button>
+                      </div>
                     </CardHeader>
                     
                     <CardContent>
@@ -1355,6 +1370,13 @@ function DashboardContent() {
                             </div>
                             <span className="text-gray-900">GitHub Activity</span>
                           </CardTitle>
+                          <button
+                            onClick={() => setShowAllMetricsPopup(true)}
+                            className="flex items-center gap-1 text-red-600 hover:text-red-700 transition-colors text-sm font-medium whitespace-nowrap ml-4"
+                          >
+                            View Affected Members
+                            <ArrowRight className="w-4 h-4" />
+                          </button>
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-4">
@@ -1449,17 +1471,6 @@ function DashboardContent() {
                                 </div>
                               </div>
 
-                              {/* View Affected Members Button */}
-                              <div className="flex justify-end mt-4">
-                                <button
-                                  onClick={() => setShowAllMetricsPopup(true)}
-                                  className="flex items-center gap-1 text-red-600 hover:text-red-700 transition-colors text-sm font-medium"
-                                >
-                                  View affected members
-                                  <ArrowRight className="w-4 h-4" />
-                                </button>
-                              </div>
-
                             </>
                           )
                         })()}
@@ -1475,6 +1486,17 @@ function DashboardContent() {
                     onMemberClick={(member) => {
                       setSelectedMember(member)
                       setShowAllMetricsPopup(false)
+                    }}
+                  />
+
+                  {/* Risk Factors All Popup */}
+                  <RiskFactorsAllPopup
+                    isOpen={showAllRiskFactorsPopup}
+                    onClose={() => setShowAllRiskFactorsPopup(false)}
+                    members={membersArray}
+                    onMemberClick={(member) => {
+                      setSelectedMember(member)
+                      setShowAllRiskFactorsPopup(false)
                     }}
                   />
 
