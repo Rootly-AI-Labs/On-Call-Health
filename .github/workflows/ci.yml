@@ -10,7 +10,7 @@ jobs:
   build-frontend:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Build frontend Docker image
         run: docker build -t frontend-test ./frontend -f ./frontend/Dockerfile.dev
@@ -32,7 +32,7 @@ jobs:
   build-backend:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Build backend Docker image
         run: docker build -t backend-test ./backend
@@ -40,7 +40,7 @@ jobs:
   docker-compose:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Start services
         run: docker compose up -d --build
