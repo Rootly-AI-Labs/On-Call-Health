@@ -181,6 +181,13 @@ export async function loadSlackPermissions(
 ): Promise<void> {
   if (!slackIntegration) return
 
+  // Skip permissions test for OAuth integrations - they use workspace-level bot tokens
+  // Only user-based integrations (manual token setup) need permission testing
+  if (slackIntegration.is_oauth || slackIntegration.token_source === 'oauth') {
+    setIsLoadingPermissions(false)
+    return
+  }
+
   setIsLoadingPermissions(true)
   try {
     const authToken = localStorage.getItem('auth_token')
