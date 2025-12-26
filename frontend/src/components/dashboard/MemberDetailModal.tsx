@@ -292,10 +292,12 @@ export function MemberDetailModal({
   // Scroll to top when member changes
   useEffect(() => {
     if (selectedMember && dialogContentRef.current) {
-      // Use setTimeout to ensure the DOM is fully updated
+      // Set scrollTop directly and wait for animation to complete
       setTimeout(() => {
-        dialogContentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 0);
+        if (dialogContentRef.current) {
+          dialogContentRef.current.scrollTop = 0;
+        }
+      }, 50);
     }
   }, [selectedMember?.email]);
 
