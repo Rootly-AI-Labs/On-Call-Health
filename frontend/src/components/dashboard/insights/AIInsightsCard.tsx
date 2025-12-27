@@ -72,7 +72,7 @@ export function AIInsightsCard({ currentAnalysis }: AIInsightsCardProps) {
                       {summaryText}
                     </p>
                   </div>
-                  <div className="mt-auto flex justify-end pt-0 pb-2">
+                  <div className="mt-auto flex justify-end pt-0 pb-3">
                     <button
                       onClick={() => setIsModalOpen(true)}
                       className="text-xs text-blue-600 hover:text-blue-700 hover:underline flex items-center space-x-1 cursor-pointer"
