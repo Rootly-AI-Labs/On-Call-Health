@@ -2,7 +2,6 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Sparkles, ChevronRight } from "lucide-react"
 import { useState } from "react"
 import { AIInsightsModal } from "./AIInsightsModal"
@@ -43,18 +42,18 @@ export function AIInsightsCard({ currentAnalysis }: AIInsightsCardProps) {
 
   return (
     <>
-      <Card className="border-2 border-blue-200 bg-white/70 backdrop-blur-sm shadow-lg flex flex-col h-full">
+      <Card className="border-2 border-blue-200 bg-white/70 backdrop-blur-sm shadow-lg flex flex-col h-full min-h-[200px]">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-blue-700 flex items-center space-x-2">
+          <CardTitle className="text-base font-medium text-blue-700 flex items-center space-x-2">
             <Sparkles className="w-4 h-4" />
             <span>AI Team Insights</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex-1 flex flex-col">
+        <CardContent className="flex-1 flex flex-col pb-0">
           {(() => {
             if (!aiEnhanced && !hasAIData) {
               return (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-4 text-gray-500">
                   <Sparkles className="h-8 w-8 mx-auto mb-3 opacity-30" />
                   <p className="text-sm font-medium text-gray-700 mb-1">AI Insights Not Enabled</p>
                   <p className="text-xs">Enable AI in analysis settings to generate insights</p>
@@ -67,21 +66,21 @@ export function AIInsightsCard({ currentAnalysis }: AIInsightsCardProps) {
               const summaryText = getTextAfterSummary(insightsData.llm_team_analysis);
 
               return (
-                <div className="flex flex-col h-full">
-                  <div className="flex-1 mb-4 overflow-hidden">
-                    <p className="text-base text-gray-700 leading-relaxed line-clamp-[12]">
+                <div className="flex flex-col h-full pt-1 pb-0 -mb-1">
+                  <div className="mb-2 overflow-hidden">
+                    <p className="text-sm text-gray-700 leading-relaxed line-clamp-6">
                       {summaryText}
                     </p>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsModalOpen(true)}
-                    className="w-full mt-auto"
-                  >
-                    View Full Insights
-                    <ChevronRight className="w-4 h-4 ml-1" />
-                  </Button>
+                  <div className="mt-auto flex justify-end pt-0 pb-2">
+                    <button
+                      onClick={() => setIsModalOpen(true)}
+                      className="text-xs text-blue-600 hover:text-blue-700 hover:underline flex items-center space-x-1 cursor-pointer"
+                    >
+                      <span>View more</span>
+                      <ChevronRight className="w-3 h-3" />
+                    </button>
+                  </div>
                 </div>
               );
             }
@@ -91,7 +90,7 @@ export function AIInsightsCard({ currentAnalysis }: AIInsightsCardProps) {
 
             if (isAnalysisRunning) {
               return (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-4 text-gray-500">
                   <Sparkles className="h-8 w-8 mx-auto mb-3 opacity-40 animate-pulse" />
                   <p className="text-sm font-medium text-gray-700 mb-1">Generating AI Insights</p>
                   <p className="text-xs">AI analysis is being generated...</p>
@@ -99,7 +98,7 @@ export function AIInsightsCard({ currentAnalysis }: AIInsightsCardProps) {
               )
             } else {
               return (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-4 text-gray-500">
                   <Sparkles className="h-8 w-8 mx-auto mb-3 opacity-40" />
                   <p className="text-sm font-medium text-gray-700 mb-1">No AI Insights</p>
                   <p className="text-xs">Run a new analysis to generate insights</p>
