@@ -10,6 +10,7 @@ export function useNotifications() {
   const [isLoading, setIsLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [offset, setOffset] = useState(0)
+  const [invitationModalId, setInvitationModalId] = useState<number | null>(null)
   const { toast } = useToast()
 
   const LIMIT = 20
@@ -175,6 +176,16 @@ export function useNotifications() {
   const handleAction = async (notification: Notification) => {
     if (!notification.action_url) return
 
+    // Check if it's an invitation acceptance action
+    const invitationMatch = notification.action_url.match(/\/invitations\/accept\/(\d+)/)
+    if (invitationMatch) {
+      const invitationId = parseInt(invitationMatch[1])
+      setInvitationModalId(invitationId)
+      // Mark as read when modal opens
+      await markAsRead(notification.id)
+      return
+    }
+
     // If external URL, open in new tab
     if (notification.action_url.startsWith('http')) {
       window.open(notification.action_url, '_blank')
@@ -206,6 +217,8 @@ export function useNotifications() {
     dismiss,
     markAllAsRead,
     clearAll,
-    handleAction
+    handleAction,
+    invitationModalId,
+    setInvitationModalId
   }
 }

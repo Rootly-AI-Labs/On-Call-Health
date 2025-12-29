@@ -37,8 +37,8 @@ logger.info(f"Starting application with log level: {settings.LOG_LEVEL}")
 
 # Create FastAPI application
 app = FastAPI(
-    title="On-call Burnout Detector API",
-    description="API for detecting burnout risk in engineering teams using Rootly incident data",
+    title="On-Call Health API",
+    description="API for monitoring team wellbeing and detecting burnout risk in engineering teams",
     version="1.0.0",
     swagger_ui_parameters={
         "defaultModelsExpandDepth": 1,  # Don't expand schemas deeply
@@ -131,12 +131,12 @@ app.add_middleware(
 @app.get("/")
 async def root():
     """Root endpoint."""
-    return {"message": "On-call Burnout Detector API", "version": "1.0.0"}
+    return {"message": "On-Call Health API", "version": "1.0.0"}
 
 @app.get("/health")
 async def health():
     """Health check endpoint."""
-    return {"status": "healthy", "service": "rootly-burnout-detector"}
+    return {"status": "healthy", "service": "on-call-health"}
 
 @app.get('/favicon.ico', include_in_schema=False)
 async def favicon():

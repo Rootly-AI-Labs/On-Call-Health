@@ -103,7 +103,11 @@ export async function handleSlackDisconnect(
   setIsDisconnectingSlack(true)
   try {
     const authToken = localStorage.getItem('auth_token')
-    if (!authToken) return
+    if (!authToken) {
+      toast.error("Please log in to disconnect Slack")
+      setSlackDisconnectDialogOpen(false)
+      return
+    }
 
     const response = await fetch(`${API_BASE}/integrations/slack/disconnect`, {
       method: 'DELETE',
@@ -116,10 +120,21 @@ export async function handleSlackDisconnect(
       toast.success("Your Slack integration has been removed.")
       setSlackDisconnectDialogOpen(false)
       loadSlackIntegration(true) // Force refresh after changes
+    } else {
+      // Handle error responses
+      const errorData = await response.json().catch(() => ({}))
+      const errorMessage = errorData.detail || `Failed to disconnect: ${response.statusText}`
+      toast.error(errorMessage)
+      // Still close the dialog since the UI shows it's disconnected in the background
+      setSlackDisconnectDialogOpen(false)
+      // Refresh to get actual state from backend
+      loadSlackIntegration(true)
     }
   } catch (error) {
     console.error('Error disconnecting Slack:', error)
     toast.error(error instanceof Error ? error.message : "An unexpected error occurred.")
+    // Close dialog on error too
+    setSlackDisconnectDialogOpen(false)
   } finally {
     setIsDisconnectingSlack(false)
   }
@@ -180,6 +195,13 @@ export async function loadSlackPermissions(
   setSlackPermissions: (permissions: any) => void
 ): Promise<void> {
   if (!slackIntegration) return
+
+  // Skip permissions test for OAuth integrations - they use workspace-level bot tokens
+  // Only user-based integrations (manual token setup) need permission testing
+  if (slackIntegration.is_oauth || slackIntegration.token_source === 'oauth') {
+    setIsLoadingPermissions(false)
+    return
+  }
 
   setIsLoadingPermissions(true)
   try {

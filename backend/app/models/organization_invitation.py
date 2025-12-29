@@ -18,7 +18,7 @@ class OrganizationInvitation(Base):
     # Organization and user info
     organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False)
     email = Column(String(255), nullable=False, index=True)
-    role = Column(String(20), default="user")  # 'org_admin', 'user'
+    role = Column(String(20), default="member")  # 'admin', 'member', 'viewer'
 
     # Invitation tracking
     invited_by = Column(Integer, ForeignKey("users.id"), nullable=True)

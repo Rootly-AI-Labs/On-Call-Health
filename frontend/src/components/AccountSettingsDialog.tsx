@@ -97,100 +97,116 @@ export function AccountSettingsDialog({
         {/* Future sections will go here: Change Password, Notifications, etc. */}
 
         {/* Account Deletion Section */}
-        <div className="mt-6 border-2 border-red-500 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Account Deletion
-          </h3>
-
-          <p className="text-sm text-gray-600 mb-4">
-            Once you delete your account, there is no going back. This will
-            permanently delete all your data.
-          </p>
+        <div className="mt-8 pt-8 border-t border-gray-200">
+          <div className="flex items-start gap-3 mb-4">
+            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-50 flex items-center justify-center">
+              <Trash2 className="w-5 h-5 text-red-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Delete Account
+              </h3>
+              <p className="text-sm text-gray-600 mt-1">
+                Permanently remove your account and all associated data
+              </p>
+            </div>
+          </div>
 
           {!showDeleteConfirmation ? (
-            <Button
-              variant="destructive"
-              onClick={() => setShowDeleteConfirmation(true)}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete Account
-            </Button>
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <p className="text-sm text-gray-700 mb-3">
+                This action cannot be undone. This will permanently delete your account and remove all data from our servers.
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteConfirmation(true)}
+                className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Account
+              </Button>
+            </div>
           ) : (
-            <div className="space-y-4 p-4 border-2 border-red-200 rounded-lg bg-red-50">
-                <div>
-                  <p className="text-sm font-semibold text-red-900 mb-2">
-                    Are you absolutely sure?
-                  </p>
-                  <p className="text-sm text-red-800 mb-3">
-                    This will permanently delete your account and all associated
-                    data including:
-                  </p>
-                  <ul className="text-sm text-red-800 list-disc list-inside space-y-1 mb-4">
-                    <li>All burnout analyses</li>
-                    <li>
-                      Integration connections (Rootly, PagerDuty, GitHub, Slack,
-                      Jira)
-                    </li>
-                    <li>Team member mappings and correlations</li>
-                    <li>Account credentials and OAuth providers</li>
-                  </ul>
-                  <p className="text-sm font-medium text-red-900 mb-2">
-                    Type your email address{" "}
-                    <span className="font-mono bg-white px-1 rounded">
-                      {userEmail}
-                    </span>{" "}
-                    to confirm:
-                  </p>
-                  <Input
-                    type="email"
-                    value={emailConfirmation}
-                    onChange={(e) => setEmailConfirmation(e.target.value)}
-                    placeholder="Enter your email address"
-                    className="border-red-300 focus:border-red-500 focus:ring-red-500"
-                    disabled={isDeleting}
-                  />
-                </div>
-
-                {deleteError && (
-                  <div className="p-3 bg-red-100 border border-red-300 rounded-md">
-                    <p className="text-sm text-red-800">{deleteError}</p>
+            <div className="space-y-4">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <div className="flex gap-3">
+                  <div className="flex-shrink-0">
+                    <svg className="w-5 h-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
                   </div>
-                )}
-
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setShowDeleteConfirmation(false)
-                      setEmailConfirmation("")
-                      setDeleteError(null)
-                    }}
-                    disabled={isDeleting}
-                    className="flex-1"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    onClick={handleDeleteAccount}
-                    disabled={emailConfirmation !== userEmail || isDeleting}
-                    className="flex-1 bg-red-600 hover:bg-red-700"
-                  >
-                    {isDeleting ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Deleting Account...
-                      </>
-                    ) : (
-                      <>
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Delete My Account
-                      </>
-                    )}
-                  </Button>
+                  <div>
+                    <h4 className="text-sm font-semibold text-amber-900 mb-1">
+                      This action cannot be undone
+                    </h4>
+                    <p className="text-sm text-amber-800 mb-2">
+                      This will permanently delete:
+                    </p>
+                    <ul className="text-sm text-amber-800 space-y-1 ml-4 list-disc">
+                      <li>All burnout analyses and insights</li>
+                      <li>Integration connections (Rootly, PagerDuty, GitHub, Slack, Jira)</li>
+                      <li>Team member mappings</li>
+                      <li>Account credentials</li>
+                    </ul>
+                  </div>
                 </div>
               </div>
+
+              <div>
+                <label htmlFor="email-confirm" className="block text-sm font-medium text-gray-900 mb-2">
+                  Confirm by typing your email:{" "}
+                  <span className="font-mono text-sm bg-gray-100 px-2 py-0.5 rounded">
+                    {userEmail}
+                  </span>
+                </label>
+                <Input
+                  id="email-confirm"
+                  type="email"
+                  value={emailConfirmation}
+                  onChange={(e) => setEmailConfirmation(e.target.value)}
+                  placeholder="Enter your email address"
+                  className="bg-white"
+                  disabled={isDeleting}
+                  autoFocus
+                />
+              </div>
+
+              {deleteError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <p className="text-sm text-red-800">{deleteError}</p>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowDeleteConfirmation(false)
+                    setEmailConfirmation("")
+                    setDeleteError(null)
+                  }}
+                  disabled={isDeleting}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteAccount}
+                  disabled={emailConfirmation !== userEmail || isDeleting}
+                  className="flex-1 bg-red-600 hover:bg-red-700"
+                >
+                  {isDeleting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    "Delete Account Permanently"
+                  )}
+                </Button>
+              </div>
+            </div>
           )}
         </div>
       </DialogContent>

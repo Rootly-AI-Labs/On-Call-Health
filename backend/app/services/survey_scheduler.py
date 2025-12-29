@@ -8,6 +8,7 @@ from typing import List, Dict
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy.orm import Session
+from sqlalchemy import and_
 import pytz
 
 from ..models.survey_schedule import SurveySchedule, UserSurveyPreference
@@ -62,25 +63,54 @@ class SurveyScheduler:
     def _add_schedule_job(self, schedule: SurveySchedule, db: Session):
         """
         Add a cron job for a specific organization's survey schedule.
+        Supports daily, weekday, and weekly frequencies.
         """
         org_timezone = pytz.timezone(schedule.timezone)
         send_hour = schedule.send_time.hour
         send_minute = schedule.send_time.minute
 
-        # Create cron trigger for initial survey
-        if schedule.send_weekdays_only:
+        # Determine frequency type (with fallback for old data)
+        if schedule.frequency_type:
+            frequency_type = schedule.frequency_type
+        else:
+            # Fallback to old field for backwards compatibility
+            frequency_type = 'weekday' if schedule.send_weekdays_only else 'daily'
+
+        # Create cron trigger based on frequency type
+        if frequency_type == 'daily':
+            # Every day at specified time
+            trigger = CronTrigger(
+                hour=send_hour,
+                minute=send_minute,
+                timezone=org_timezone
+            )
+            freq_desc = "daily"
+        elif frequency_type == 'weekday':
+            # Monday-Friday only
             trigger = CronTrigger(
                 hour=send_hour,
                 minute=send_minute,
                 day_of_week='mon-fri',
                 timezone=org_timezone
             )
-        else:
+            freq_desc = "weekdays only"
+        elif frequency_type == 'weekly':
+            # Once per week on specified day
+            if schedule.day_of_week is None:
+                logger.error(f"Schedule {schedule.id} has weekly frequency but no day_of_week - skipping")
+                return
+            days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+            day_name = days[schedule.day_of_week]
             trigger = CronTrigger(
                 hour=send_hour,
                 minute=send_minute,
+                day_of_week=day_name,
                 timezone=org_timezone
             )
+            freq_desc = f"weekly on {day_name.capitalize()}"
+        else:
+            logger.error(f"Unknown frequency type: {frequency_type} - skipping schedule {schedule.id}")
+            return
 
         # Add initial survey job
         job_id = f"survey_org_{schedule.organization_id}"
@@ -93,8 +123,8 @@ class SurveyScheduler:
         )
 
         logger.debug(
-            f"Scheduled daily surveys for org {schedule.organization_id} "
-            f"at {send_hour:02d}:{send_minute:02d} {schedule.timezone}"
+            f"Scheduled survey for org {schedule.organization_id} "
+            f"{freq_desc} at {send_hour:02d}:{send_minute:02d} {schedule.timezone}"
         )
 
         # Add reminder job if enabled
@@ -111,20 +141,30 @@ class SurveyScheduler:
                 reminder_hour = reminder_time.hour
                 reminder_minute = reminder_time.minute
 
-            # Create reminder trigger
-            if schedule.send_weekdays_only:
+            # Create reminder trigger matching main schedule frequency
+            if frequency_type == 'daily':
+                reminder_trigger = CronTrigger(
+                    hour=reminder_hour,
+                    minute=reminder_minute,
+                    timezone=org_timezone
+                )
+            elif frequency_type == 'weekday':
                 reminder_trigger = CronTrigger(
                     hour=reminder_hour,
                     minute=reminder_minute,
                     day_of_week='mon-fri',
                     timezone=org_timezone
                 )
-            else:
+            elif frequency_type == 'weekly':
                 reminder_trigger = CronTrigger(
                     hour=reminder_hour,
                     minute=reminder_minute,
+                    day_of_week=day_name,
                     timezone=org_timezone
                 )
+            else:
+                logger.error(f"Cannot create reminder for unknown frequency: {frequency_type}")
+                return
 
             # Add reminder job
             reminder_job_id = f"reminder_org_{schedule.organization_id}"
@@ -302,20 +342,36 @@ class SurveyScheduler:
             logger.warning(f"No users found for organization {organization_id}")
 
         # Query users with preferences
+        # Join on organization + email instead of user_id to support team roster (user_id=NULL)
+        # Order by correlation.id DESC to get the most recent correlation if duplicates exist
         users = db.query(User, UserCorrelation, UserSurveyPreference).join(
-            UserCorrelation, User.id == UserCorrelation.user_id
+            UserCorrelation,
+            and_(
+                User.organization_id == UserCorrelation.organization_id,
+                User.email == UserCorrelation.email
+            )
         ).outerjoin(
             UserSurveyPreference, User.id == UserSurveyPreference.user_id
         ).filter(
             User.organization_id == organization_id,
             UserCorrelation.slack_user_id.isnot(None)  # Must have Slack ID
-        ).all()
+        ).order_by(UserCorrelation.id.desc()).all()
 
         # Use a dict to deduplicate by user_id (in case user has multiple UserCorrelation records)
         recipients_dict = {}
         for user, correlation, preference in users:
+            # CRITICAL: Validate email matching to prevent wrong user mapping
+            if user.email != correlation.email:
+                logger.error(
+                    f"CRITICAL: Email mismatch! User {user.id} email={user.email} "
+                    f"but correlation {correlation.id} email={correlation.email}. "
+                    f"Skipping to prevent sending to wrong Slack user."
+                )
+                continue
+
             # Skip if we already processed this user
             if user.id in recipients_dict:
+                logger.debug(f"Duplicate correlation for user {user.id}, keeping first (most recent)")
                 continue
 
             # NEW: Filter by saved recipient selections if configured

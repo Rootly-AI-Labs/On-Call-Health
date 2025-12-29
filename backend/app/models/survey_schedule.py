@@ -20,7 +20,9 @@ class SurveySchedule(Base):
     timezone = Column(String(50), default="America/New_York")  # Organization timezone
 
     # Frequency settings
-    send_weekdays_only = Column(Boolean, default=True)  # Skip weekends
+    send_weekdays_only = Column(Boolean, default=True)  # DEPRECATED: Use frequency_type instead
+    frequency_type = Column(String(20), default='weekday')  # 'daily', 'weekday', 'weekly'
+    day_of_week = Column(Integer, nullable=True)  # 0-6 (Monday=0, Sunday=6), required for weekly
 
     # Reminder settings
     send_reminder = Column(Boolean, default=True)  # Send reminder if not completed

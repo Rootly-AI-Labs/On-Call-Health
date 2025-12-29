@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { CheckCircle, AlertCircle, Loader2, Building2, Users, Mail } from 'lucide-react'
 import { toast } from 'sonner'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000'
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 interface Invitation {
   id: number
@@ -112,7 +112,7 @@ export default function AcceptInvitationPage() {
 
         // Show success toast
         toast.success(`🎉 Welcome to ${invitation.organization_name}!`, {
-          description: `You've successfully joined as a ${invitation.role}. Redirecting to dashboard...`,
+          description: `You've successfully joined as a ${invitation.role}. Redirecting to integrations...`,
           duration: 4000,
         })
 
@@ -121,7 +121,7 @@ export default function AcceptInvitationPage() {
           if (data.redirect_url) {
             router.push(data.redirect_url)
           } else {
-            router.push('/dashboard')
+            router.push('/integrations')
           }
         }, 3000)
       }
@@ -162,13 +162,13 @@ export default function AcceptInvitationPage() {
               You've successfully joined <strong>{invitation?.organization_name}</strong> as a {invitation?.role}.
             </p>
             <p className="text-sm text-gray-500">
-              Redirecting you to the dashboard in a moment...
+              Redirecting you to integrations in a moment...
             </p>
             <Button
-              onClick={() => router.push('/dashboard')}
+              onClick={() => router.push('/integrations')}
               className="w-full"
             >
-              Go to Dashboard
+              Go to Integrations
             </Button>
           </CardContent>
         </Card>
