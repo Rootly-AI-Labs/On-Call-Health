@@ -58,9 +58,9 @@ export function TopPanel() {
         <div className="flex h-16 items-center justify-between">
           {/* Left: brand + nav */}
           <div className="flex items-center gap-10">
-            {/* On-Call Burnout powered by Rootly AI */}
+            {/* On-Call Health powered by Rootly AI */}
             <div className="flex flex-col items-start gap-1">
-              <span className="text-sm font-extrabold text-gray-700">On-Call Burnout</span>
+              <span className="text-sm font-extrabold text-gray-700">On-Call Health</span>
               <div className="flex items-center gap-1.5">
                 <span className="text-[10px] uppercase tracking-wide leading-none text-gray-400 font-medium">powered by</span>
                 <Image

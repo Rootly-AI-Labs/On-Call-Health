@@ -63,25 +63,54 @@ class SurveyScheduler:
     def _add_schedule_job(self, schedule: SurveySchedule, db: Session):
         """
         Add a cron job for a specific organization's survey schedule.
+        Supports daily, weekday, and weekly frequencies.
         """
         org_timezone = pytz.timezone(schedule.timezone)
         send_hour = schedule.send_time.hour
         send_minute = schedule.send_time.minute
 
-        # Create cron trigger for initial survey
-        if schedule.send_weekdays_only:
+        # Determine frequency type (with fallback for old data)
+        if schedule.frequency_type:
+            frequency_type = schedule.frequency_type
+        else:
+            # Fallback to old field for backwards compatibility
+            frequency_type = 'weekday' if schedule.send_weekdays_only else 'daily'
+
+        # Create cron trigger based on frequency type
+        if frequency_type == 'daily':
+            # Every day at specified time
+            trigger = CronTrigger(
+                hour=send_hour,
+                minute=send_minute,
+                timezone=org_timezone
+            )
+            freq_desc = "daily"
+        elif frequency_type == 'weekday':
+            # Monday-Friday only
             trigger = CronTrigger(
                 hour=send_hour,
                 minute=send_minute,
                 day_of_week='mon-fri',
                 timezone=org_timezone
             )
-        else:
+            freq_desc = "weekdays only"
+        elif frequency_type == 'weekly':
+            # Once per week on specified day
+            if schedule.day_of_week is None:
+                logger.error(f"Schedule {schedule.id} has weekly frequency but no day_of_week - skipping")
+                return
+            days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+            day_name = days[schedule.day_of_week]
             trigger = CronTrigger(
                 hour=send_hour,
                 minute=send_minute,
+                day_of_week=day_name,
                 timezone=org_timezone
             )
+            freq_desc = f"weekly on {day_name.capitalize()}"
+        else:
+            logger.error(f"Unknown frequency type: {frequency_type} - skipping schedule {schedule.id}")
+            return
 
         # Add initial survey job
         job_id = f"survey_org_{schedule.organization_id}"
@@ -94,8 +123,8 @@ class SurveyScheduler:
         )
 
         logger.debug(
-            f"Scheduled daily surveys for org {schedule.organization_id} "
-            f"at {send_hour:02d}:{send_minute:02d} {schedule.timezone}"
+            f"Scheduled survey for org {schedule.organization_id} "
+            f"{freq_desc} at {send_hour:02d}:{send_minute:02d} {schedule.timezone}"
         )
 
         # Add reminder job if enabled
@@ -112,20 +141,30 @@ class SurveyScheduler:
                 reminder_hour = reminder_time.hour
                 reminder_minute = reminder_time.minute
 
-            # Create reminder trigger
-            if schedule.send_weekdays_only:
+            # Create reminder trigger matching main schedule frequency
+            if frequency_type == 'daily':
+                reminder_trigger = CronTrigger(
+                    hour=reminder_hour,
+                    minute=reminder_minute,
+                    timezone=org_timezone
+                )
+            elif frequency_type == 'weekday':
                 reminder_trigger = CronTrigger(
                     hour=reminder_hour,
                     minute=reminder_minute,
                     day_of_week='mon-fri',
                     timezone=org_timezone
                 )
-            else:
+            elif frequency_type == 'weekly':
                 reminder_trigger = CronTrigger(
                     hour=reminder_hour,
                     minute=reminder_minute,
+                    day_of_week=day_name,
                     timezone=org_timezone
                 )
+            else:
+                logger.error(f"Cannot create reminder for unknown frequency: {frequency_type}")
+                return
 
             # Add reminder job
             reminder_job_id = f"reminder_org_{schedule.organization_id}"

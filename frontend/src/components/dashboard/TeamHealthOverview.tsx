@@ -39,9 +39,9 @@ export function TeamHealthOverview({
         id="ocb-score-tooltip"
         style={{ top: '-200px', left: '-200px' }}>
         <div className="space-y-2">
-          <div className="text-purple-300 font-semibold mb-2">On-Call Burnout (OCB)</div>
+          <div className="text-purple-300 font-semibold mb-2">On-Call Health (OCH)</div>
           <div className="text-gray-300 text-sm">
-            OCB scores range from <strong>0 to 100</strong>, where higher scores indicate more burnout risk.
+            OCH scores range from <strong>0 to 100</strong>, where higher scores indicate more burnout risk.
           </div>
           <div className="text-gray-300 text-xs mt-2 pt-2 border-t border-gray-600">
             Scientifically validated burnout assessment methodology

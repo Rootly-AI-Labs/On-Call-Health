@@ -33,7 +33,9 @@ class SurveyScheduleCreate(BaseModel):
     enabled: bool = True
     send_time: str  # Format: "HH:MM" (e.g., "09:00")
     timezone: str = "America/New_York"
-    send_weekdays_only: bool = True
+    send_weekdays_only: Optional[bool] = None  # DEPRECATED: Use frequency_type instead
+    frequency_type: Optional[str] = None  # 'daily', 'weekday', 'weekly' (default: 'weekday')
+    day_of_week: Optional[int] = None  # 0-6 (Monday=0, Sunday=6), required for weekly
     send_reminder: bool = True
     reminder_time: Optional[str] = None  # Format: "HH:MM" or None
     reminder_hours_after: int = 5
@@ -48,7 +50,9 @@ class SurveyScheduleResponse(BaseModel):
     enabled: bool
     send_time: str
     timezone: str
-    send_weekdays_only: bool
+    send_weekdays_only: bool  # Computed for backwards compatibility
+    frequency_type: str  # 'daily', 'weekday', 'weekly'
+    day_of_week: Optional[int]  # 0-6 (Monday=0, Sunday=6)
     send_reminder: bool
     reminder_time: Optional[str]
     reminder_hours_after: int
@@ -111,6 +115,35 @@ async def create_or_update_survey_schedule(
                 detail="This Slack workspace was connected by a different organization."
             )
 
+    # Determine frequency_type (supports both old and new fields)
+    if schedule_data.frequency_type:
+        frequency_type = schedule_data.frequency_type
+        # Validate frequency_type
+        VALID_FREQUENCIES = ['daily', 'weekday', 'weekly']
+        if frequency_type not in VALID_FREQUENCIES:
+            raise HTTPException(
+                status_code=400,
+                detail=f"frequency_type must be one of: {VALID_FREQUENCIES}"
+            )
+        # Validate day_of_week for weekly
+        if frequency_type == 'weekly':
+            if schedule_data.day_of_week is None:
+                raise HTTPException(
+                    status_code=400,
+                    detail="day_of_week required for weekly schedules"
+                )
+            if not 0 <= schedule_data.day_of_week <= 6:
+                raise HTTPException(
+                    status_code=400,
+                    detail="day_of_week must be 0-6 (Monday=0, Sunday=6)"
+                )
+    elif schedule_data.send_weekdays_only is not None:
+        # Backwards compatibility: convert old field to new
+        frequency_type = 'weekday' if schedule_data.send_weekdays_only else 'daily'
+    else:
+        # Default
+        frequency_type = 'weekday'
+
     # Parse time strings
     try:
         hour, minute = map(int, schedule_data.send_time.split(":"))
@@ -133,7 +166,9 @@ async def create_or_update_survey_schedule(
         existing_schedule.enabled = schedule_data.enabled
         existing_schedule.send_time = send_time
         existing_schedule.timezone = schedule_data.timezone
-        existing_schedule.send_weekdays_only = schedule_data.send_weekdays_only
+        existing_schedule.send_weekdays_only = (frequency_type == 'weekday')  # Keep in sync for backwards compat
+        existing_schedule.frequency_type = frequency_type
+        existing_schedule.day_of_week = schedule_data.day_of_week if frequency_type == 'weekly' else None
         existing_schedule.send_reminder = schedule_data.send_reminder
         existing_schedule.reminder_time = reminder_time
         existing_schedule.reminder_hours_after = schedule_data.reminder_hours_after
@@ -154,7 +189,9 @@ async def create_or_update_survey_schedule(
             enabled=schedule_data.enabled,
             send_time=send_time,
             timezone=schedule_data.timezone,
-            send_weekdays_only=schedule_data.send_weekdays_only,
+            send_weekdays_only=(frequency_type == 'weekday'),  # Keep in sync for backwards compat
+            frequency_type=frequency_type,
+            day_of_week=schedule_data.day_of_week if frequency_type == 'weekly' else None,
             send_reminder=schedule_data.send_reminder,
             reminder_time=reminder_time,
             reminder_hours_after=schedule_data.reminder_hours_after
@@ -184,7 +221,9 @@ async def create_or_update_survey_schedule(
         "enabled": schedule.enabled,
         "send_time": str(schedule.send_time),
         "timezone": schedule.timezone,
-        "send_weekdays_only": schedule.send_weekdays_only,
+        "send_weekdays_only": (schedule.frequency_type == 'weekday'),  # Computed for backwards compat
+        "frequency_type": schedule.frequency_type,
+        "day_of_week": schedule.day_of_week,
         "send_reminder": schedule.send_reminder,
         "reminder_time": str(schedule.reminder_time) if schedule.reminder_time else None,
         "reminder_hours_after": schedule.reminder_hours_after,
@@ -211,6 +250,8 @@ async def get_survey_schedule(
             "send_time": None,
             "timezone": "America/New_York",
             "send_weekdays_only": True,
+            "frequency_type": "weekday",
+            "day_of_week": None,
             "send_reminder": False,
             "reminder_time": None,
             "reminder_hours_after": 5,
@@ -223,7 +264,9 @@ async def get_survey_schedule(
         "enabled": schedule.enabled,
         "send_time": str(schedule.send_time),
         "timezone": schedule.timezone,
-        "send_weekdays_only": schedule.send_weekdays_only,
+        "send_weekdays_only": (schedule.frequency_type == 'weekday') if schedule.frequency_type else schedule.send_weekdays_only,
+        "frequency_type": schedule.frequency_type or ('weekday' if schedule.send_weekdays_only else 'daily'),
+        "day_of_week": schedule.day_of_week,
         "send_reminder": schedule.send_reminder,
         "reminder_time": str(schedule.reminder_time) if schedule.reminder_time else None,
         "reminder_hours_after": schedule.reminder_hours_after,
