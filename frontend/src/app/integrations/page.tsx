@@ -999,9 +999,13 @@ export default function IntegrationsPage() {
 
           if (response.ok) {
             const data = await response.json()
+            console.log('🔍 Slack status check response:', data)
             if (data.connected) {
               // Update Slack integration state directly without reloading other cards
+              console.log('✅ Setting Slack integration state:', data.integration)
               setSlackIntegration(data.integration)
+              // Also set loading to false to ensure card renders
+              setLoadingSlack(false)
               // Update cache
               localStorage.setItem('slack_integration', JSON.stringify(data))
               localStorage.setItem('all_integrations_timestamp', Date.now().toString())
@@ -1023,7 +1027,11 @@ export default function IntegrationsPage() {
                 })
               }
               return
+            } else {
+              console.log('⚠️ Slack not connected yet, will retry...')
             }
+          } else {
+            console.log('⚠️ Slack status check failed:', response.status)
           }
 
           // Not connected yet, retry if we haven't exceeded max retries
