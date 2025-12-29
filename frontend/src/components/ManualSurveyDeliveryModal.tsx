@@ -73,9 +73,8 @@ export default function ManualSurveyDeliveryModal({
 
       const data = await response.json();
       setPreviewData(data);
-      // Select all recipients by default
-      const allEmails = new Set<string>(data.recipients.map((r: Recipient) => r.email));
-      setSelectedRecipients(allEmails);
+      // Deselect all recipients by default (user must manually select)
+      setSelectedRecipients(new Set());
       setStep('confirm');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
