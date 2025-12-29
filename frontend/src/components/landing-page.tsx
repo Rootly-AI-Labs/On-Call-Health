@@ -182,7 +182,7 @@ export default function LandingPage() {
                 </div>
                 <h3 className="text-xl font-semibold text-slate-900 mb-4">Connect your incident tools.</h3>
                 <p className="text-slate-600 leading-relaxed mb-4">
-                  Research shows a majority of on-call burnout risk can be predicted from incident history. Refine accuracy by connecting more tools.
+                  Research shows a majority of on-call health risk can be predicted from incident history. Refine accuracy by connecting more tools.
                 </p>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center space-x-2">
@@ -238,7 +238,7 @@ export default function LandingPage() {
                 </div>
                 <h3 className="text-xl font-semibold text-slate-900 mb-4">Access the results where you need them.</h3>
                 <p className="text-slate-600 leading-relaxed mb-4">
-                  Make the burnout detector part of your powered workflow by getting the results via a UI, CLI, or MCP.
+                  Make the health monitor part of your powered workflow by getting the results via a UI, CLI, or MCP.
                 </p>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center space-x-2">

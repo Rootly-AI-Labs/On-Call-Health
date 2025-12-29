@@ -12,8 +12,8 @@ import { ChartModeProvider } from '@/contexts/ChartModeContext'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Rootly Burnout Detector',
-  description: 'Prevent engineering burnout before it impacts your team',
+  title: 'On-Call Health',
+  description: 'Monitor team wellbeing and prevent burnout before it impacts your team',
   icons: {
     icon: '/images/favicon.png',
     shortcut: '/images/favicon.png',

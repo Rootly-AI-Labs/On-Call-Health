@@ -17,8 +17,8 @@ function IntroGuide({ isOpen, currentStep, onNext, onPrev, onClose }: IntroGuide
 
   const steps = [
     {
-      title: "Welcome to On-Call Burnout Detector",
-      description: "Detects potential signs of overwork in incident responders, which could lead to burnout.",
+      title: "Welcome to On-Call Health",
+      description: "Monitor team wellbeing and detect potential signs of overwork in incident responders.",
       details:
         "To compute a per-responder risk score, it integrates with Rootly, PagerDuty, GitHub, Slack and Pagerduty.",    },
     {
@@ -198,8 +198,8 @@ function IntroGuide({ isOpen, currentStep, onNext, onPrev, onClose }: IntroGuide
                 <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950">
                   <p className="text-sm font-medium text-slate-900 dark:text-white"> Methodology Details</p>
                   <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                    Learn about the On-Call Burnout Score (OCB), our research-backed framework, and the five key
-                    burnout factors we analyze.
+                    Learn about the On-Call Health Score (OCH), our research-backed framework, and the five key
+                    health factors we analyze.
                   </p>
                 </div>
               </div>
