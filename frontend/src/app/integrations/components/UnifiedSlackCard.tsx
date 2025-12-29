@@ -308,7 +308,14 @@ export function UnifiedSlackCard({
           {/* Connection Status */}
           {isConnected ? (
             <button
-              onClick={() => setSlackSurveyDisconnectDialogOpen(true)}
+              onClick={() => {
+                const isAdmin = userInfo?.role === 'admin' || userInfo?.role === 'org_admin'
+                if (!isAdmin) {
+                  toast.error('Only admins can disconnect Slack integration')
+                  return
+                }
+                setSlackSurveyDisconnectDialogOpen(true)
+              }}
               disabled={isDisconnectingSlackSurvey}
               className="inline-flex items-center space-x-2 bg-green-100 text-green-800 px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -369,7 +376,14 @@ export function UnifiedSlackCard({
               {process.env.NEXT_PUBLIC_SLACK_CLIENT_ID ? (
                 <div className="flex justify-center pt-2">
                   <Button
-                    onClick={handleSlackConnect}
+                    onClick={() => {
+                      const isAdmin = userInfo?.role === 'admin' || userInfo?.role === 'org_admin'
+                      if (!isAdmin) {
+                        toast.error('Only admins can connect Slack integration')
+                        return
+                      }
+                      handleSlackConnect()
+                    }}
                     disabled={isConnectingSlackOAuth}
                     className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2.5 text-base"
                     size="lg"

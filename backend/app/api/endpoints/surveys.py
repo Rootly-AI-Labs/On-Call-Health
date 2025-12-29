@@ -496,24 +496,10 @@ async def manual_survey_delivery(
         ).first()
         message_template = schedule.message_template if schedule else None
 
-        # Send DMs to selected recipients (with deduplication check)
-        from datetime import datetime
-        today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-        skipped_count = 0
-
+        # Send DMs to selected recipients
+        # Manual surveys are always sent (admin explicitly selected recipients)
         for user in recipients:
             try:
-                # Check if user already received/completed survey today (prevent duplicates)
-                already_received = db.query(UserBurnoutReport).filter(
-                    UserBurnoutReport.user_id == user['user_id'],
-                    UserBurnoutReport.submitted_at >= today_start
-                ).first()
-
-                if already_received:
-                    skipped_count += 1
-                    logger.info(f"Skipping {user['email']} - already received survey today")
-                    continue
-
                 await dm_sender.send_survey_dm(
                     slack_token=slack_token,
                     slack_user_id=user['slack_user_id'],
@@ -537,8 +523,6 @@ async def manual_survey_delivery(
 
         # Build detailed response message
         message_parts = [f"Sent surveys to {sent_count} recipient(s)"]
-        if skipped_count > 0:
-            message_parts.append(f"{skipped_count} skipped (already received today)")
         if failed_count > 0:
             message_parts.append(f"{failed_count} failed")
 
@@ -547,7 +531,6 @@ async def manual_survey_delivery(
             "message": ". ".join(message_parts),
             "recipient_count": recipient_count,  # Total selected
             "sent_count": sent_count,  # Actually sent
-            "skipped_count": skipped_count,  # Already received today
             "failed_count": failed_count,  # Failed to send
             "triggered_by": current_user.email
         }
