@@ -108,6 +108,7 @@ import {
   type GitHubIntegration,
   type SlackIntegration,
   type JiraIntegration,
+  type LinearIntegration,
   type PreviewData,
   type IntegrationMapping,
   type MappingStatistics,
@@ -126,6 +127,7 @@ import {
 import * as GithubHandlers from "./handlers/github-handlers"
 import * as SlackHandlers from "./handlers/slack-handlers"
 import * as JiraHandlers from "./handlers/jira-handlers"
+import * as LinearHandlers from "./handlers/linear-handlers"
 import * as TeamHandlers from "./handlers/team-handlers"
 import * as IntegrationHandlers from "./handlers/integration-handlers"
 import * as OrganizationHandlers from "./handlers/organization-handlers"
@@ -137,6 +139,8 @@ import { AIInsightsCard } from "./components/AIInsightsCard"
 import { GitHubConnectedCard } from "./components/GitHubConnectedCard"
 import { JiraIntegrationCard } from "./components/JiraIntegrationCard"
 import { JiraConnectedCard } from "./components/JiraConnectedCard"
+import { LinearIntegrationCard } from "./components/LinearIntegrationCard"
+import { LinearConnectedCard } from "./components/LinearConnectedCard"
 import { RootlyIntegrationForm } from "./components/RootlyIntegrationForm"
 import { SurveyFeedbackSection } from "./components/SurveyFeedbackSection"
 import { PagerDutyIntegrationForm } from "./components/PagerDutyIntegrationForm"
@@ -145,6 +149,7 @@ import { DeleteIntegrationDialog } from "./dialogs/DeleteIntegrationDialog"
 import { GitHubDisconnectDialog } from "./dialogs/GitHubDisconnectDialog"
 import { SlackDisconnectDialog } from "./dialogs/SlackDisconnectDialog"
 import { JiraDisconnectDialog } from "./dialogs/JiraDisconnectDialog"
+import { LinearDisconnectDialog } from "./dialogs/LinearDisconnectDialog"
 import { JiraWorkspaceSelector } from "./dialogs/JiraWorkspaceSelector"
 import { NewMappingDialog } from "./dialogs/NewMappingDialog"
 import { OrganizationManagementDialog } from "./dialogs/OrganizationManagementDialog"
@@ -157,6 +162,7 @@ export default function IntegrationsPage() {
   const [loadingGitHub, setLoadingGitHub] = useState(true)
   const [loadingSlack, setLoadingSlack] = useState(true)
   const [loadingJira, setLoadingJira] = useState(true)
+  const [loadingLinear, setLoadingLinear] = useState(true)
   const [reloadingIntegrations, setReloadingIntegrations] = useState(false)
   const [loadingPermissions, setLoadingPermissions] = useState(false)
   const [refreshingPermissions, setRefreshingPermissions] = useState<number | null>(null)
@@ -171,7 +177,8 @@ export default function IntegrationsPage() {
   const [githubIntegration, setGithubIntegration] = useState<GitHubIntegration | null>(null)
   const [slackIntegration, setSlackIntegration] = useState<SlackIntegration | null>(null)
   const [jiraIntegration, setJiraIntegration] = useState<JiraIntegration | null>(null)
-  const [activeEnhancementTab, setActiveEnhancementTab] = useState<"github" | "slack" | "jira" | null>(null)
+  const [linearIntegration, setLinearIntegration] = useState<LinearIntegration | null>(null)
+  const [activeEnhancementTab, setActiveEnhancementTab] = useState<"github" | "slack" | "jira" | "linear" | null>(null)
 
   // Slack feature selection for OAuth
   const [enableSlackSurvey, setEnableSlackSurvey] = useState(true) // Default both enabled
@@ -253,6 +260,7 @@ export default function IntegrationsPage() {
   const [isConnectingGithub, setIsConnectingGithub] = useState(false)
   const [isConnectingSlack, setIsConnectingSlack] = useState(false)
   const [isConnectingJira, setIsConnectingJira] = useState(false)
+  const [isConnectingLinear, setIsConnectingLinear] = useState(false)
   const [isSyncingJira, setIsSyncingJira] = useState(false)
   const [jiraWorkspaceSelectorOpen, setJiraWorkspaceSelectorOpen] = useState(false)
 
@@ -260,11 +268,13 @@ export default function IntegrationsPage() {
   const [githubDisconnectDialogOpen, setGithubDisconnectDialogOpen] = useState(false)
   const [slackDisconnectDialogOpen, setSlackDisconnectDialogOpen] = useState(false)
   const [jiraDisconnectDialogOpen, setJiraDisconnectDialogOpen] = useState(false)
+  const [linearDisconnectDialogOpen, setLinearDisconnectDialogOpen] = useState(false)
   const [slackSurveyDisconnectDialogOpen, setSlackSurveyDisconnectDialogOpen] = useState(false)
   const [slackSurveyConfirmDisconnectOpen, setSlackSurveyConfirmDisconnectOpen] = useState(false)
   const [isDisconnectingGithub, setIsDisconnectingGithub] = useState(false)
   const [isDisconnectingSlack, setIsDisconnectingSlack] = useState(false)
   const [isDisconnectingJira, setIsDisconnectingJira] = useState(false)
+  const [isDisconnectingLinear, setIsDisconnectingLinear] = useState(false)
   const [isDisconnectingSlackSurvey, setIsDisconnectingSlackSurvey] = useState(false)
   const [isConnectingSlackOAuth, setIsConnectingSlackOAuth] = useState(false)
   const [slackPermissions, setSlackPermissions] = useState<any>(null)
@@ -1212,6 +1222,10 @@ export default function IntegrationsPage() {
     return JiraHandlers.loadJiraIntegration(forceRefresh, setJiraIntegration, setLoadingJira)
   }
 
+  const loadLinearIntegration = async (forceRefresh = false) => {
+    return LinearHandlers.loadLinearIntegration(forceRefresh, setLinearIntegration, setLoadingLinear)
+  }
+
   // ✨ PHASE 1 OPTIMIZATION: Instant cache loading with background refresh
   const [refreshingInBackground, setRefreshingInBackground] = useState(false)
   const isLoadingRef = useRef(false)
@@ -1244,7 +1258,13 @@ export default function IntegrationsPage() {
         const jiraData = JSON.parse(cachedJira)
         setJiraIntegration(jiraData.connected ? jiraData.integration : null)
       }
-      const hasAllCache = !!(cachedIntegrations && cachedGithub && cachedSlack && cachedJira)
+
+      const cachedLinear = localStorage.getItem('linear_integration')
+      if (cachedLinear) {
+        const linearData = JSON.parse(cachedLinear)
+        setLinearIntegration(linearData.connected ? linearData.integration : null)
+      }
+      const hasAllCache = !!(cachedIntegrations && cachedGithub && cachedSlack && cachedJira && cachedLinear)
       return hasAllCache
     } catch (error) {
       return false
@@ -1331,7 +1351,7 @@ export default function IntegrationsPage() {
       }
 
       // 🚀 PHASE 2: Backend now caches permissions for 24 hours
-      const [rootlyResponse, pagerdutyResponse, githubResponse, slackResponse, jiraResponse] = await Promise.all([
+      const [rootlyResponse, pagerdutyResponse, githubResponse, slackResponse, jiraResponse, linearResponse] = await Promise.all([
         fetch(`${API_BASE}/rootly/integrations`, {
           headers: { 'Authorization': `Bearer ${authToken}` }
         }),
@@ -1346,15 +1366,19 @@ export default function IntegrationsPage() {
         }),
         fetch(`${API_BASE}/integrations/jira/status`, {
           headers: { 'Authorization': `Bearer ${authToken}` }
+        }),
+        fetch(`${API_BASE}/integrations/linear/status`, {
+          headers: { 'Authorization': `Bearer ${authToken}` }
         })
       ])
 
-      const [rootlyData, pagerdutyData, githubData, slackData, jiraData] = await Promise.all([
+      const [rootlyData, pagerdutyData, githubData, slackData, jiraData, linearData] = await Promise.all([
         rootlyResponse.ok ? rootlyResponse.json() : { integrations: [] },
         pagerdutyResponse.ok ? pagerdutyResponse.json() : { integrations: [] },
         githubResponse.ok ? githubResponse.json() : { connected: false, integration: null },
         slackResponse.ok ? slackResponse.json() : { integration: null },
-        jiraResponse.ok ? jiraResponse.json() : { connected: false, integration: null }
+        jiraResponse.ok ? jiraResponse.json() : { connected: false, integration: null },
+        linearResponse.ok ? linearResponse.json() : { connected: false, integration: null }
       ])
 
       // Update state silently
@@ -1370,6 +1394,7 @@ export default function IntegrationsPage() {
         setGithubIntegration(githubData.connected ? githubData.integration : null)
         setSlackIntegration(slackData.integration)
         setJiraIntegration(jiraData.connected ? jiraData.integration : null)
+        setLinearIntegration(linearData.connected ? linearData.integration : null)
 
         // Update cache with fresh data
         localStorage.setItem('all_integrations', JSON.stringify(allIntegrations))
@@ -1377,6 +1402,7 @@ export default function IntegrationsPage() {
         localStorage.setItem('github_integration', JSON.stringify(githubData))
         localStorage.setItem('slack_integration', JSON.stringify(slackData))
         localStorage.setItem('jira_integration', JSON.stringify(jiraData))
+        localStorage.setItem('linear_integration', JSON.stringify(linearData))
 
       }
 
@@ -1406,6 +1432,7 @@ export default function IntegrationsPage() {
         setLoadingGitHub(false)
         setLoadingSlack(false)
         setLoadingJira(false)
+        setLoadingLinear(false)
 
         // Step 3: Check if cache is stale and refresh in background if needed
         const cacheIsStale = isCacheStale()
@@ -1426,10 +1453,10 @@ export default function IntegrationsPage() {
       setLoadingGitHub(false)
       setLoadingSlack(false)
       setLoadingJira(false)
-
+      setLoadingLinear(false)
     }
   }
-  
+
   // 🚀 PHASE 1 OPTIMIZATION: Progressive section loading
   // Each integration section loads and renders independently as data arrives
   const loadAllIntegrationsAPI = async () => {
@@ -1446,6 +1473,7 @@ export default function IntegrationsPage() {
     setLoadingGitHub(true)
     setLoadingSlack(true)
     setLoadingJira(true)
+    setLoadingLinear(true)
 
     try {
       const authToken = localStorage.getItem('auth_token')
@@ -1494,6 +1522,12 @@ export default function IntegrationsPage() {
       })
 
       const jiraPromise = fetchWithTimeout(`${API_BASE}/integrations/jira/status`, {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      }).catch(() => {
+        return { ok: false }
+      })
+
+      const linearPromise = fetchWithTimeout(`${API_BASE}/integrations/linear/status`, {
         headers: { 'Authorization': `Bearer ${authToken}` }
       }).catch(() => {
         return { ok: false }
@@ -1600,6 +1634,22 @@ export default function IntegrationsPage() {
         }
       })
 
+      // Process Linear data as soon as it's available
+      linearPromise.then(async (linearResponse) => {
+        try {
+          const linearData = (linearResponse as any).ok && (linearResponse as Response).json
+            ? await (linearResponse as Response).json()
+            : { connected: false, integration: null }
+
+          setLinearIntegration(linearData.connected ? linearData.integration : null)
+          localStorage.setItem('linear_integration', JSON.stringify(linearData))
+        } catch (error) {
+          console.error('Error processing Linear data:', error)
+        } finally {
+          setLoadingLinear(false)
+        }
+      })
+
       // Wait for all promises to complete (for back URL logic)
       const [rootlyResponse, pagerdutyResponse] = await Promise.all([rootlyPromise, pagerdutyPromise])
 
@@ -1625,6 +1675,7 @@ export default function IntegrationsPage() {
       setLoadingGitHub(false)
       setLoadingSlack(false)
       setLoadingJira(false)
+      setLoadingLinear(false)
     } finally {
       isLoadingRef.current = false
     }
@@ -1836,6 +1887,27 @@ export default function IntegrationsPage() {
       undefined, // No progress callback needed
       () => fetchSyncedUsers(false, false, true) // Refresh synced users after sync
     )
+  }
+
+  // Linear integration handlers
+  const handleLinearConnect = async () => {
+    await LinearHandlers.handleLinearConnect(
+      setIsConnectingLinear,
+      setActiveEnhancementTab,
+      loadLinearIntegration
+    )
+  }
+
+  const handleLinearDisconnect = async () => {
+    return LinearHandlers.handleLinearDisconnect(
+      setIsDisconnectingLinear,
+      setLinearIntegration,
+      setActiveEnhancementTab
+    )
+  }
+
+  const handleLinearTest = async () => {
+    return LinearHandlers.handleLinearTest(toast)
   }
 
   // Mapping data handlers
@@ -3074,6 +3146,46 @@ export default function IntegrationsPage() {
                 </div>
               </Card>
             )}
+
+            {/* Linear Card */}
+            {loadingLinear ? (
+              <Card className="border-2 border-gray-200 p-4 flex items-center justify-center relative h-20 animate-pulse">
+                <div className="absolute top-2 right-2 w-16 h-5 bg-gray-300 rounded"></div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 bg-gray-300 rounded"></div>
+                  <div className="h-6 w-20 bg-gray-300 rounded"></div>
+                </div>
+              </Card>
+            ) : (
+              <Card
+                className={`border-2 transition-all cursor-pointer hover:shadow-md ${
+                  activeEnhancementTab === 'linear'
+                    ? 'border-gray-800 shadow-md bg-gray-50'
+                    : 'border-gray-200 hover:border-gray-400'
+                } p-4 flex items-center justify-center relative h-20`}
+                onClick={() => {
+                  setActiveEnhancementTab(activeEnhancementTab === 'linear' ? null : 'linear')
+                }}
+              >
+                {linearIntegration ? (
+                  <div className="absolute top-2 right-2 flex flex-col items-end space-y-1">
+                    <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200 text-xs">
+                      <CheckCircle className="w-3 h-3 mr-1" />
+                      Connected
+                    </Badge>
+                  </div>
+                ) : null}
+                {activeEnhancementTab === 'linear' && (
+                  <div className="absolute top-2 left-2">
+                    <CheckCircle className="w-5 h-5 text-gray-800" />
+                  </div>
+                )}
+                <div className="flex items-center space-x-2">
+                  <Image src="/images/linear-logo.png" alt="Linear" width={28} height={28} />
+                  <span className="text-xl font-semibold text-slate-900">Linear</span>
+                </div>
+              </Card>
+            )}
           </div>
 
           {/* Integration Forms */}
@@ -3134,6 +3246,24 @@ export default function IntegrationsPage() {
                 onDisconnect={() => setJiraDisconnectDialogOpen(true)}
                 onTest={handleJiraTest}
                 isLoading={isDisconnectingJira}
+              />
+            )}
+
+            {/* Linear Integration Card - Not Connected */}
+            {activeEnhancementTab === 'linear' && !linearIntegration && (
+              <LinearIntegrationCard
+                onConnect={handleLinearConnect}
+                isConnecting={isConnectingLinear}
+              />
+            )}
+
+            {/* Linear Connected Card */}
+            {activeEnhancementTab === 'linear' && linearIntegration && (
+              <LinearConnectedCard
+                integration={linearIntegration}
+                onDisconnect={() => setLinearDisconnectDialogOpen(true)}
+                onTest={handleLinearTest}
+                isLoading={isDisconnectingLinear}
               />
             )}
 
@@ -3987,6 +4117,16 @@ export default function IntegrationsPage() {
         onConfirmDisconnect={async () => {
           await handleJiraDisconnect()
           setJiraDisconnectDialogOpen(false)
+        }}
+      />
+      {/* Linear Disconnect Confirmation Dialog */}
+      <LinearDisconnectDialog
+        open={linearDisconnectDialogOpen}
+        onOpenChange={setLinearDisconnectDialogOpen}
+        isDisconnecting={isDisconnectingLinear}
+        onConfirmDisconnect={async () => {
+          await handleLinearDisconnect()
+          setLinearDisconnectDialogOpen(false)
         }}
       />
       {/* Jira Workspace Selector Dialog */}
