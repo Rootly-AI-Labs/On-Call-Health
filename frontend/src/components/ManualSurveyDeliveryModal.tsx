@@ -57,13 +57,17 @@ export default function ManualSurveyDeliveryModal({
     setLoading(true);
     setError(null);
     try {
+      const selectedEmails = Array.from(selectedRecipients);
       const response = await fetch(`${API_BASE}/api/surveys/survey-schedule/manual-delivery`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         },
-        body: JSON.stringify({ confirmed: false })
+        body: JSON.stringify({
+          confirmed: false,
+          recipient_emails: selectedEmails.length > 0 ? selectedEmails : undefined
+        })
       });
 
       if (!response.ok) {
