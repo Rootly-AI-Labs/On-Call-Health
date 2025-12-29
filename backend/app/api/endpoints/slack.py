@@ -124,6 +124,7 @@ async def slack_oauth_callback(
     try:
         # Parse state parameter to get organization info and feature flags
         organization_id = None
+        user_id = None
         user_email = None
         enable_survey = True  # Default to True for backward compatibility
         enable_communication_patterns = False  # Default to False
@@ -135,10 +136,11 @@ async def slack_oauth_callback(
                 decoded_state = json.loads(base64.b64decode(state + '=='))  # Add padding
                 logger.debug(f"Full decoded state: {decoded_state}")
                 organization_id = decoded_state.get("orgId")
+                user_id = decoded_state.get("userId")
                 user_email = decoded_state.get("email")
                 enable_survey = decoded_state.get("enableSurvey", True)  # Default True
                 enable_communication_patterns = decoded_state.get("enableCommunicationPatterns", False)  # Default False
-                logger.debug(f"Decoded state - org_id: {organization_id}, email: {user_email}, survey: {enable_survey}, communication_patterns: {enable_communication_patterns}")
+                logger.debug(f"Decoded state - org_id: {organization_id}, user_id: {user_id}, email: {user_email}, survey: {enable_survey}, communication_patterns: {enable_communication_patterns}")
             except Exception as state_error:
                 # If state parsing fails, continue without org mapping and use defaults
                 logger.warning(f"Failed to parse state parameter: {state_error}")
@@ -218,25 +220,42 @@ async def slack_oauth_callback(
         # For now, we'll store the bot token in SlackIntegration model instead
         # and create a basic workspace mapping without token storage
 
-        # Find a user from the organization if we have organization_id
+        # Find the user who initiated the OAuth flow
         owner_user = None
-        if organization_id:
+
+        # First, try to find by user_id from state (most accurate)
+        if user_id:
+            owner_user = db.query(User).filter(User.id == user_id).first()
+            if owner_user:
+                logger.info(f"Found owner by user_id: {owner_user.id} ({owner_user.email})")
+
+        # Fallback: try to find by email from state
+        if not owner_user and user_email:
+            owner_user = db.query(User).filter(User.email == user_email).first()
+            if owner_user:
+                logger.info(f"Found owner by email: {owner_user.id} ({owner_user.email})")
+
+        # Fallback: find any admin in the organization
+        if not owner_user and organization_id:
             owner_user = db.query(User).filter(
-                User.organization_id == organization_id
+                User.organization_id == organization_id,
+                User.role == 'admin'
             ).first()
+            if owner_user:
+                logger.warning(f"Could not find user from state, using first admin in org: {owner_user.id} ({owner_user.email})")
 
-        # If no specific owner found, find any user to be the owner
-        # This allows the workspace to be registered and functional
+        # Last resort: find any user to be the owner
         if not owner_user:
-            # Use the first available user as the owner for the workspace mapping
             owner_user = db.query(User).first()
+            if owner_user:
+                logger.warning(f"Could not find specific user, using first user in database: {owner_user.id} ({owner_user.email})")
 
-            if not owner_user:
-                # If absolutely no users exist, we can't create the mapping
-                from fastapi.responses import RedirectResponse
-                frontend_url = settings.FRONTEND_URL or "http://localhost:3000"
-                redirect_url = f"{frontend_url}/integrations?slack_connected=false&error=no_users_found"
-                return RedirectResponse(url=redirect_url, status_code=302)
+        if not owner_user:
+            # If absolutely no users exist, we can't create the mapping
+            from fastapi.responses import RedirectResponse
+            frontend_url = settings.FRONTEND_URL or "http://localhost:3000"
+            redirect_url = f"{frontend_url}/integrations?slack_connected=false&error=no_users_found"
+            return RedirectResponse(url=redirect_url, status_code=302)
 
         # Create or update workspace mapping
         existing_mapping = db.query(SlackWorkspaceMapping).filter(
@@ -1075,10 +1094,15 @@ async def handle_oncall_health_command(
     Opens a modal with the 3-question burnout survey.
     """
     try:
+        # Log incoming slash command for debugging
+        logger.info(f"🎯 Slash command received: /oncall-health from user {user_id} in workspace {team_id}")
+        logger.debug(f"Command details - trigger_id: {trigger_id}, channel: {channel_id}, text: '{text}'")
+
         # Extract user info from Slack command form data
         # user_id, trigger_id, team_id are already available as form parameters
 
         if not user_id or not trigger_id:
+            logger.error("Missing user_id or trigger_id in slash command")
             return {"text": "⚠️ Sorry, there was an error processing your request. Please try again."}
 
         # Find workspace mapping to get organization
