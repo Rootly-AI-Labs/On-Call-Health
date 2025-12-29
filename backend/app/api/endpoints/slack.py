@@ -1094,10 +1094,15 @@ async def handle_oncall_health_command(
     Opens a modal with the 3-question burnout survey.
     """
     try:
+        # Log incoming slash command for debugging
+        logger.info(f"🎯 Slash command received: /oncall-health from user {user_id} in workspace {team_id}")
+        logger.debug(f"Command details - trigger_id: {trigger_id}, channel: {channel_id}, text: '{text}'")
+
         # Extract user info from Slack command form data
         # user_id, trigger_id, team_id are already available as form parameters
 
         if not user_id or not trigger_id:
+            logger.error("Missing user_id or trigger_id in slash command")
             return {"text": "⚠️ Sorry, there was an error processing your request. Please try again."}
 
         # Find workspace mapping to get organization
