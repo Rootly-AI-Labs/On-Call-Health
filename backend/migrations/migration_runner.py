@@ -799,6 +799,53 @@ class MigrationRunner:
                     """
                 ]
             },
+            {
+                "name": "024_add_survey_frequency_options",
+                "description": "Add frequency_type and day_of_week to survey_schedules",
+                "sql": [
+                    """
+                    -- Add frequency_type column to replace send_weekdays_only with more options
+                    ALTER TABLE survey_schedules
+                    ADD COLUMN IF NOT EXISTS frequency_type VARCHAR(20) DEFAULT 'weekday'
+                    """,
+                    """
+                    -- Add day_of_week column for weekly schedules (0=Monday, 6=Sunday)
+                    ALTER TABLE survey_schedules
+                    ADD COLUMN IF NOT EXISTS day_of_week INTEGER
+                    """,
+                    """
+                    -- Migrate existing data: convert send_weekdays_only to frequency_type
+                    UPDATE survey_schedules
+                    SET frequency_type = CASE
+                        WHEN send_weekdays_only = true THEN 'weekday'
+                        ELSE 'daily'
+                    END
+                    WHERE frequency_type = 'weekday'  -- Only update if still default
+                    """,
+                    """
+                    -- Add CHECK constraint for frequency_type
+                    ALTER TABLE survey_schedules
+                    ADD CONSTRAINT check_frequency_type
+                    CHECK (frequency_type IN ('daily', 'weekday', 'weekly'))
+                    """,
+                    """
+                    -- Add CHECK constraint for day_of_week (0-6 or NULL)
+                    ALTER TABLE survey_schedules
+                    ADD CONSTRAINT check_day_of_week
+                    CHECK (day_of_week IS NULL OR (day_of_week >= 0 AND day_of_week <= 6))
+                    """,
+                    """
+                    -- Keep send_weekdays_only column for backwards compatibility (don't drop yet)
+                    -- Will be marked as deprecated in API but still functional
+                    """
+                ]
+            },
+
+            # {
+            #     "name": "024_add_user_preferences",
+            #     "description": "Add user preferences table",
+            #     "sql": ["CREATE TABLE IF NOT EXISTS user_preferences (...)"]
+            # }
             # Add future migrations here with incrementing numbers
         ]
 
