@@ -2,7 +2,14 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 interface UserObjectiveDataCardProps {
   memberData: any
@@ -20,6 +27,58 @@ export function UserObjectiveDataCard({
 
   const [dailyHealthData, setDailyHealthData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedMetric, setSelectedMetric] = useState<string>("health_score");
+
+  // Metric configuration for dropdown selector
+  const METRIC_CONFIG: Record<string, {
+    label: string
+    color: string
+    yAxisLabel: string
+    dataKey: string
+    showMeanLine: boolean
+    transformer: (day: any) => number
+  }> = {
+    health_score: {
+      label: "Health Score",
+      color: "#3b82f6",  // Blue
+      yAxisLabel: "OCB Health Score",
+      dataKey: "dailyScore",
+      showMeanLine: true,
+      transformer: (day: any) => day.health_score || 0
+    },
+    incident_load: {
+      label: "Incident Load",
+      color: "#8b5cf6",  // Purple
+      yAxisLabel: "Incident Count",
+      dataKey: "incidentCount",
+      showMeanLine: true,
+      transformer: (day: any) => day.incident_count || 0
+    },
+    after_hours: {
+      label: "After Hours Activity",
+      color: "#f59e0b",  // Amber
+      yAxisLabel: "After Hours Incidents",
+      dataKey: "afterHoursCount",
+      showMeanLine: true,
+      transformer: (day: any) => day.after_hours_count || 0
+    },
+    severity_weighted: {
+      label: "Workload Intensity",
+      color: "#ef4444",  // Red
+      yAxisLabel: "Severity-Weighted Load",
+      dataKey: "severityWeightedCount",
+      showMeanLine: true,
+      transformer: (day: any) => Math.round(day.severity_weighted_count || 0)
+    },
+    weekend_work: {
+      label: "Weekend Work",
+      color: "#10b981",  // Green
+      yAxisLabel: "Weekend Incidents",
+      dataKey: "weekendCount",
+      showMeanLine: true,
+      transformer: (day: any) => day.weekend_count || 0
+    }
+  };
 
   // Calculate 7-day running average
   const calculate7DayRunningAverage = (scores: number[]) => {
@@ -68,82 +127,121 @@ export function UserObjectiveDataCard({
     fetchDailyHealth();
   }, [memberData?.user_email, analysisId]);
 
-  // Calculate statistics from daily health data
-  const calculateStats = (data: any[]) => {
-    if (!data || data.length === 0) {
-      return { mean: 0 };
-    }
-
-    const scores = data.map(d => d.health_score || 0);
-    const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
-
-    return { mean };
-  };
-
-  // Get the chart data
+  // Get the chart data with dynamic metric support
   const getChartData = () => {
     if (!dailyHealthData || dailyHealthData.length === 0) {
       return [];
     }
 
-    // Convert daily health data to chart format
-    const chartData = dailyHealthData.map((trend: any) => {
-      // Daily health score is already on 0-100 scale
-      const dailyScore = trend.health_score || 0;
+    const config = METRIC_CONFIG[selectedMetric];
+
+    // Transform data using metric-specific transformer
+    const chartData = dailyHealthData.map((day: any) => {
+      const metricValue = config.transformer(day);
 
       return {
-        date: new Date(trend.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        originalDate: trend.date,
-        dailyScore: dailyScore,
-        incidentCount: trend.incident_count || 0,
-        hasData: trend.incident_count > 0
+        date: new Date(day.date).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric'
+        }),
+        originalDate: day.date,
+        [config.dataKey]: metricValue,
+        incidentCount: day.incident_count || 0,
+        hasData: day.has_data || false
       };
     });
 
-    // Calculate mean
-    const scores = chartData.map(d => d.dailyScore);
-    const mean = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+    // Calculate mean for the selected metric
+    const values = chartData
+      .filter((d: any) => d.hasData)
+      .map((d: any) => d[config.dataKey]);
+
+    const mean = values.length > 0
+      ? values.reduce((a: number, b: number) => a + b, 0) / values.length
+      : 0;
 
     // Add mean to each data point
-    const dataWithMean = chartData.map(d => ({
+    return chartData.map((d: any) => ({
       ...d,
       meanScore: Math.round(mean)
     }));
-
-    return dataWithMean;
   };
+
+  // Calculate statistics from daily health data
+  const stats = useMemo(() => {
+    const chartData = getChartData();
+    const config = METRIC_CONFIG[selectedMetric];
+
+    const values = chartData
+      .filter((d: any) => d.hasData)
+      .map((d: any) => d[config.dataKey]);
+
+    if (values.length === 0) {
+      return { mean: 0, min: 0, max: 0 };
+    }
+
+    const mean = values.reduce((a: number, b: number) => a + b, 0) / values.length;
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+
+    return { mean, min, max };
+  }, [dailyHealthData, selectedMetric]);
 
   // Get chart mode from backend analysis data (default to 'normal')
   const chartMode = currentAnalysis?.analysis_data?.chart_mode || 'normal';
 
-  // Apply running average if mode is set
+  // Get base chart data
+  const chartData = getChartData();
+  const hasData = chartData.length > 0;
+
+  // Apply running average if mode is set (only for health_score)
   const processedChartData = (() => {
-    const data = getChartData();
-    if (chartMode === 'running_average' && data.length > 0) {
-      const scores = data.map(d => d.dailyScore);
+    if (chartMode === 'running_average' && chartData.length > 0 && selectedMetric === 'health_score') {
+      const config = METRIC_CONFIG[selectedMetric];
+      const scores = chartData.map(d => d[config.dataKey]);
       const averagedScores = calculate7DayRunningAverage(scores);
-      return data.map((d, index) => ({
+      return chartData.map((d, index) => ({
         ...d,
-        dailyScore: averagedScores[index]
+        [config.dataKey]: averagedScores[index]
       }));
     }
-    return data;
+    return chartData;
   })();
 
-  const chartData = getChartData();
-  const stats = calculateStats(dailyHealthData);
-  const hasData = chartData.length > 0;
+  const config = METRIC_CONFIG[selectedMetric];
 
   return (
     <Card className="mb-6">
       <CardHeader>
-        <CardTitle>User Objective Data</CardTitle>
-        <CardDescription>
-          {hasData
-            ? `Over the last ${timeRange} days, average workload index was ${Math.round(stats.mean)} points.`
-            : "No daily trend data available for this user"
-          }
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div className="space-y-1.5">
+            <CardTitle>User Objective Data</CardTitle>
+            <CardDescription>
+              {hasData
+                ? `Over the last ${timeRange} days, average ${
+                    config.yAxisLabel.toLowerCase()
+                  } was ${Math.round(stats.mean)}${
+                    selectedMetric === 'health_score' ? ' points' : ''
+                  }.`
+                : "No daily trend data available for this user"
+              }
+            </CardDescription>
+          </div>
+
+          {/* Dropdown Selector */}
+          <Select value={selectedMetric} onValueChange={setSelectedMetric}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="health_score">Health Score</SelectItem>
+              <SelectItem value="incident_load">Incident Load</SelectItem>
+              <SelectItem value="after_hours">After Hours</SelectItem>
+              <SelectItem value="severity_weighted">Workload Intensity</SelectItem>
+              <SelectItem value="weekend_work">Weekend Work</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
@@ -172,7 +270,12 @@ export function UserObjectiveDataCard({
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                   data={processedChartData}
-                  margin={{ top: 20, right: 30, left: 30, bottom: 60 }}
+                  margin={{
+                    top: 10,
+                    right: 10,
+                    left: selectedMetric === 'health_score' ? -20 : 20,
+                    bottom: 0,
+                  }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                   <XAxis
@@ -185,83 +288,107 @@ export function UserObjectiveDataCard({
                     height={50}
                     interval={Math.floor(processedChartData.length / 7) || 0}
                   />
+                  <YAxis
+                    hide={selectedMetric === 'health_score'}
+                    label={
+                      selectedMetric !== 'health_score'
+                        ? {
+                            value: config.yAxisLabel,
+                            angle: -90,
+                            position: 'insideLeft',
+                            style: { textAnchor: 'middle', fontSize: '12px', fill: '#6b7280' },
+                          }
+                        : undefined
+                    }
+                  />
                   <Tooltip
-                    content={({ payload, label }) => {
-                      if (payload && payload.length > 0) {
-                        const data = payload[0]?.payload;
-                        const dailyScore = data?.dailyScore || 0;
-                        const meanScore = data?.meanScore || 0;
+                    content={({ payload }) => {
+                      if (!payload || payload.length === 0) return null;
 
-                        // Calculate percentage difference from mean
-                        const percentageChange = meanScore !== 0
-                          ? ((dailyScore - meanScore) / meanScore) * 100
-                          : 0;
+                      const data = payload[0]?.payload;
+                      const metricValue = data?.[config.dataKey] || 0;
+                      const meanScore = data?.meanScore || 0;
 
-                        // Format the date
-                        const dateObj = new Date(data?.originalDate);
-                        const formattedDate = dateObj.toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric'
-                        });
+                      const percentageChange = meanScore !== 0
+                        ? ((metricValue - meanScore) / meanScore) * 100
+                        : 0;
 
-                        return (
-                          <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
-                            {/* Percentage change with arrow */}
-                            <p className={`text-base font-bold mb-2 ${percentageChange >= 0 ? 'text-red-600' : 'text-green-600'}`}>
-                              {percentageChange >= 0 ? '↑' : '↓'} {Math.abs(percentageChange).toFixed(1)}%
+                      // For health_score: higher = better (green), lower = worse (red)
+                      // For other metrics: lower = better (green), higher = worse (red)
+                      const isPositive = selectedMetric === 'health_score'
+                        ? percentageChange >= 0
+                        : percentageChange <= 0;
+
+                      return (
+                        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+                          <p className="text-sm font-medium text-gray-600 mb-2">
+                            {data?.date}
+                          </p>
+                          <p className={`text-base font-bold mb-2 ${
+                            isPositive ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            {percentageChange >= 0 ? '↑' : '↓'} {Math.abs(percentageChange).toFixed(1)}%
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            {config.label}: <span className="font-semibold">{metricValue}</span>
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Mean: {meanScore}
+                          </p>
+                          {data?.incidentCount > 0 && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              {data.incidentCount} incident{data.incidentCount !== 1 ? 's' : ''}
                             </p>
-
-                            {/* Incidents count */}
-                            <p className="text-sm text-gray-600">Incidents: {data.incidentCount || 0}</p>
-
-                            {/* Date at bottom */}
-                            <p className="text-xs text-gray-500 pt-2 border-t">
-                              {formattedDate}
-                            </p>
-                          </div>
-                        );
-                      }
-                      return null;
+                          )}
+                        </div>
+                      );
                     }}
                   />
-                  {/* Daily User Health Score Line */}
+                  {/* Dynamic Metric Line */}
                   <Line
                     type="monotone"
-                    dataKey="dailyScore"
-                    stroke="#3b82f6"
+                    dataKey={config.dataKey}
+                    stroke={config.color}
                     strokeWidth={2}
                     dot={false}
                     isAnimationActive={true}
-                    name="Daily User Health Score"
+                    name={config.label}
                     connectNulls={true}
                   />
                   {/* Mean Score Line */}
-                  <Line
-                    type="monotone"
-                    dataKey="meanScore"
-                    stroke="#ef4444"
-                    strokeWidth={2}
-                    strokeDasharray="5 5"
-                    dot={false}
-                    isAnimationActive={false}
-                    name={`${timeRange}-Day Mean`}
-                    connectNulls={true}
-                  />
+                  {config.showMeanLine && (
+                    <Line
+                      type="monotone"
+                      dataKey="meanScore"
+                      stroke="#ef4444"
+                      strokeWidth={2}
+                      strokeDasharray="5 5"
+                      dot={false}
+                      isAnimationActive={false}
+                      name={`${timeRange}-Day Mean`}
+                      connectNulls={true}
+                    />
+                  )}
                 </LineChart>
               </ResponsiveContainer>
             )}
           </div>
 
           {/* Legend */}
-          <div className="mt-4 flex items-center justify-start space-x-6 text-xs text-gray-600">
+          <div className="mt-4 flex items-center justify-start space-x-6 text-sm text-gray-600">
             <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-blue-500 rounded"></div>
-              <span>Daily Health Score</span>
+              <div
+                className="w-3 h-3 rounded"
+                style={{ backgroundColor: config.color }}
+              ></div>
+              <span>{config.label}</span>
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-0.5 bg-red-500"></div>
-              <span className="ml-1">{timeRange}-Day Mean</span>
-            </div>
+            {config.showMeanLine && (
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-0.5 bg-red-500 border-dashed"></div>
+                <span>Mean</span>
+              </div>
+            )}
           </div>
         </div>
       </CardContent>

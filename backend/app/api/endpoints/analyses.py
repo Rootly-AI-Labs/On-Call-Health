@@ -34,7 +34,12 @@ def extract_analysis_summary(full_results: dict) -> dict:
             "members": []  # Empty list - frontend only checks for existence
         },
         "metadata": {},
-        "team_health": {}
+        "team_health": {},
+        # Include AI insights metadata so frontend can detect if AI was used
+        "ai_enhanced": full_results.get("ai_enhanced", False),
+        "ai_team_insights": {
+            "available": full_results.get("ai_team_insights", {}).get("available", False)
+        }
     }
 
     # Include only high-level metrics if they exist
@@ -2321,6 +2326,10 @@ async def get_member_daily_health(
             "day_name": day_name,
             "factors": factors,
             "has_data": has_data,
+            # Metric counts for User Objective Data dropdown
+            "severity_weighted_count": severity_weighted,
+            "after_hours_count": after_hours_count,
+            "weekend_count": weekend_count,
             # Enhanced data for tooltips
             "severity_breakdown": severity_breakdown,
             "daily_summary": daily_summary,

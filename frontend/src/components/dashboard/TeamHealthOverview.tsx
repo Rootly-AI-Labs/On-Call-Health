@@ -12,6 +12,7 @@ import {
   Info
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { AIInsightsCard } from "./insights/AIInsightsCard"
 
 interface TeamHealthOverviewProps {
   currentAnalysis: any
@@ -111,14 +112,14 @@ export function TeamHealthOverview({
 
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6 overflow-visible">
-        <Card className="border-2 border-purple-200 bg-white/70 backdrop-blur-sm shadow-lg overflow-visible">
+        <Card className="border-2 border-purple-200 bg-white/70 backdrop-blur-sm shadow-lg overflow-visible min-h-[200px]">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-purple-700 flex items-center space-x-2">
+            <CardTitle className="text-base font-medium text-purple-700 flex items-center space-x-2">
               <Heart className="w-4 h-4" />
               <span>Team Health</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pb-0">
             {currentAnalysis?.analysis_data?.team_health || (currentAnalysis?.analysis_data?.team_analysis && currentAnalysis?.status === 'completed') ? (
               <div>
                 <div className="flex items-start space-x-3">
@@ -415,14 +416,14 @@ export function TeamHealthOverview({
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-purple-200 bg-white/70 backdrop-blur-sm shadow-lg">
+        <Card className="border-2 border-purple-200 bg-white/70 backdrop-blur-sm shadow-lg min-h-[200px]">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-purple-700 flex items-center space-x-2">
+            <CardTitle className="text-base font-medium text-purple-700 flex items-center space-x-2">
               <Shield className="w-4 h-4" />
               <span>At Risk</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pb-0">
             {currentAnalysis?.analysis_data?.team_health || (currentAnalysis?.analysis_data?.team_analysis && currentAnalysis?.status === 'completed') ? (
               <div>
                 <div className="space-y-1">
@@ -519,14 +520,14 @@ export function TeamHealthOverview({
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-purple-200 bg-white/70 backdrop-blur-sm shadow-lg">
+        <Card className="border-2 border-purple-200 bg-white/70 backdrop-blur-sm shadow-lg min-h-[200px]">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-purple-700 flex items-center space-x-2">
+            <CardTitle className="text-base font-medium text-purple-700 flex items-center space-x-2">
               <BarChart3 className="w-4 h-4" />
               <span>Total Incidents</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pb-0">
             <div className="text-2xl font-bold text-gray-900">
               {(currentAnalysis.analysis_data as any)?.metadata?.total_incidents !== undefined
                 ? (currentAnalysis.analysis_data as any).metadata.total_incidents
@@ -649,7 +650,8 @@ export function TeamHealthOverview({
           </CardContent>
         </Card>
 
-        {/* Data Sources Card */}
+        {/* Data Sources Card - COMMENTED OUT */}
+        {false && (
         <Card className="border-2 border-blue-200 bg-white/70 backdrop-blur-sm shadow-lg">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-blue-700 flex items-center space-x-2">
@@ -761,6 +763,10 @@ export function TeamHealthOverview({
             </div>
           </CardContent>
         </Card>
+        )}
+
+        {/* AI Insights Card - Replaces Data Sources */}
+        <AIInsightsCard currentAnalysis={currentAnalysis} />
       </div>
     </>
   )

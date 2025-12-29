@@ -333,9 +333,9 @@ class AnalysisRequest(BaseValidatedModel):
     @classmethod
     def validate_time_range(cls, v):
         """Validate time range is reasonable."""
-        allowed_ranges = [7, 14, 30, 60, 90, 180, 365]
-        if v not in allowed_ranges:
-            raise ValueError(f"Time range must be one of: {allowed_ranges}")
+        # Allow any value between 1 and 365 days (preset or custom ranges)
+        if v < 1 or v > 365:
+            raise ValueError(f"Time range must be between 1 and 365 days")
         return v
 
 class AnalysisFilterRequest(BaseValidatedModel):

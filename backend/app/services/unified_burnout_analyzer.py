@@ -48,7 +48,7 @@ logger = logging.getLogger(__name__)
 # === BUSINESS HOURS CONSTANTS ===
 # Standardized definitions for after-hours and late-night detection
 BUSINESS_HOURS_START = 9   # 9 AM - standard knowledge worker start time
-BUSINESS_HOURS_END = 17    # 5 PM - standard knowledge worker end time
+BUSINESS_HOURS_END = 18    # 6 PM - standard knowledge worker end time
 LATE_NIGHT_START = 22      # 10 PM - when sleep preparation should begin
 LATE_NIGHT_END = 6         # 6 AM - early morning threshold
 
@@ -1947,7 +1947,7 @@ class UnifiedBurnoutAnalyzer:
 
                 if dt_local:
                     # After hours: before 9 AM or after 6 PM
-                    if dt_local.hour < 9 or dt_local.hour >= 18:
+                    if dt_local.hour < BUSINESS_HOURS_START or dt_local.hour >= BUSINESS_HOURS_END:
                         after_hours_count += 1
                     
                     # Weekend: Saturday (5) or Sunday (6)
@@ -2717,14 +2717,17 @@ class UnifiedBurnoutAnalyzer:
             workload = 10
         
         # After hours factor - ensure numeric value
+        # Convert decimal percentage (0.0-1.0) to 0-10 scale
+        # Scale: 0% = 0, 50% = 5, 100% = 10
         after_hours_pct = metrics.get("after_hours_percentage", 0)
         after_hours_pct = float(after_hours_pct) if after_hours_pct is not None else 0.0
-        after_hours = min(10, after_hours_pct * 20)
-        
+        after_hours = min(10, after_hours_pct * 100 * 0.1)
+
         # Weekend work factor - ensure numeric value
+        # Convert decimal percentage (0.0-1.0) to 0-10 scale
         weekend_pct = metrics.get("weekend_percentage", 0)
         weekend_pct = float(weekend_pct) if weekend_pct is not None else 0.0
-        weekend_work = min(10, weekend_pct * 25)
+        weekend_work = min(10, weekend_pct * 100 * 0.1)
         
         # REMOVED incident_load factor - was duplicate of workload factor
         # Both were calculated from incidents_per_week, causing double-counting
@@ -3555,11 +3558,17 @@ class UnifiedBurnoutAnalyzer:
             )
             
             if team_insights.get("available"):
+                # AI successfully generated insights
                 analysis_result["ai_team_insights"] = team_insights
-            
-            # Add AI metadata
-            analysis_result["ai_enhanced"] = True
-            analysis_result["ai_enhancement_timestamp"] = datetime.utcnow().isoformat()
+                analysis_result["ai_enhanced"] = True
+                analysis_result["ai_enhancement_timestamp"] = datetime.utcnow().isoformat()
+            else:
+                # AI was requested but failed/unavailable
+                analysis_result["ai_enhanced"] = False
+                analysis_result["ai_team_insights"] = {
+                    "available": False,
+                    "message": "AI insights generation failed or API key not configured"
+                }
             
             logger.info(f"Successfully enhanced analysis with AI insights for {len(enhanced_members)} members")
             

@@ -1273,14 +1273,32 @@ export default function useDashboard() {
     sources.push("incident response patterns")
     if (includeGithub && githubIntegration) sources.push("code activity")
     if (includeSlack && slackIntegration) sources.push("communication patterns")
-    
+
     if (sources.length === 1) return sources[0]
     if (sources.length === 2) return `${sources[0]} and ${sources[1]}`
     return `${sources.slice(0, -1).join(", ")}, and ${sources[sources.length - 1]}`
   }
 
+  const validateCustomDate = (date: Date | null) => {
+    if (!date) return { valid: false, days: 0, error: "Please select a start date" }
+    const today = new Date()
+    if (date > today) {
+      return { valid: false, days: 0, error: "Start date cannot be in the future" }
+    }
+    const diffTime = Math.abs(today.getTime() - date.getTime())
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    const oneYearAgo = new Date()
+    oneYearAgo.setFullYear(today.getFullYear() - 1)
+    if (date < oneYearAgo) {
+      return { valid: false, days: 0, error: "Start date cannot be older than 1 year" }
+    }
+    return { valid: true, days: diffDays, error: "" }
+  }
+
   const [showTimeRangeDialog, setShowTimeRangeDialog] = useState(false)
   const [selectedTimeRange, setSelectedTimeRange] = useState("30")
+  const [customStartDate, setCustomStartDate] = useState<Date | null>(null)
+  const [isCustomRange, setIsCustomRange] = useState(false)
   const [dialogSelectedIntegration, setDialogSelectedIntegration] = useState<string>("")
   const [noIntegrationsFound, setNoIntegrationsFound] = useState(false)
   
@@ -2020,7 +2038,10 @@ export default function useDashboard() {
         // Convert 0-10 scale to OCB 0-100 scale (whole integer)
         return Math.round(average * 10);
       })(),
-      metrics: `Average workload factor from ${allActiveMembers.length} active team members`
+      metrics: (() => {
+        const affectedCount = allActiveMembers.filter(m => (m?.factors?.workload ?? 0) >= 5).length
+        return `${affectedCount} of ${allActiveMembers.length} members at medium/high risk`
+      })()
     },
     {
       factor: "After Hours Activity",
@@ -2039,7 +2060,10 @@ export default function useDashboard() {
         // Convert 0-10 scale to OCB 0-100 scale (whole integer)
         return Math.round(average * 10);
       })(),
-      metrics: `Average after-hours factor from ${allActiveMembers.length} active team members`
+      metrics: (() => {
+        const affectedCount = allActiveMembers.filter(m => (m?.factors?.after_hours ?? 0) >= 5).length
+        return `${affectedCount} of ${allActiveMembers.length} members at medium/high risk`
+      })()
     },
     {
       factor: "Weekend Work",
@@ -2058,7 +2082,10 @@ export default function useDashboard() {
         // Convert 0-10 scale to OCB 0-100 scale (whole integer)
         return Math.round(average * 10);
       })(),
-      metrics: `Average weekend work factor from ${allActiveMembers.length} active team members`
+      metrics: (() => {
+        const affectedCount = allActiveMembers.filter(m => (m?.factors?.weekend_work ?? 0) >= 5).length
+        return `${affectedCount} of ${allActiveMembers.length} members at medium/high risk`
+      })()
     },
     {
       factor: "Response Time",
@@ -2077,7 +2104,10 @@ export default function useDashboard() {
         // Convert 0-10 scale to OCB 0-100 scale (whole integer)
         return Math.round(average * 10);
       })(),
-      metrics: `Average response time factor from ${allActiveMembers.length} active team members`
+      metrics: (() => {
+        const affectedCount = allActiveMembers.filter(m => (m?.factors?.response_time ?? 0) >= 5).length
+        return `${affectedCount} of ${allActiveMembers.length} members at medium/high risk`
+      })()
     },
     {
       factor: "Incident Load",
@@ -2096,7 +2126,10 @@ export default function useDashboard() {
         // Convert 0-10 scale to OCB 0-100 scale (whole integer)
         return Math.round(average * 10);
       })(),
-      metrics: `Average incident load factor from ${allActiveMembers.length} active team members`
+      metrics: (() => {
+        const affectedCount = allActiveMembers.filter(m => (m?.factors?.incident_load ?? 0) >= 5).length
+        return `${affectedCount} of ${allActiveMembers.length} members at medium/high risk`
+      })()
     },
   ].map(factor => ({
     ...factor,
@@ -2237,6 +2270,11 @@ return {
   setShowTimeRangeDialog,
   selectedTimeRange,
   setSelectedTimeRange,
+  customStartDate,
+  setCustomStartDate,
+  isCustomRange,
+  setIsCustomRange,
+  validateCustomDate,
   dialogSelectedIntegration,
   setDialogSelectedIntegration,
   noIntegrationsFound,
