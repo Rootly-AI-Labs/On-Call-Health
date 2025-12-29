@@ -991,7 +991,27 @@ export default function IntegrationsPage() {
 
           // Check if Slack is now connected
           const authToken = localStorage.getItem('auth_token')
-          if (!authToken) return
+          if (!authToken) {
+            // No auth token - user might not be logged in
+            if (retries >= 5) {
+              // After 5 retries (2.5 seconds), give up and show error
+              localStorage.removeItem('slack_oauth_in_progress')
+              setIsConnectingSlackOAuth(false)
+              toast.dismiss(loadingToastId)
+              toast.error('Authentication required', {
+                description: 'Please log in to complete Slack connection. Redirecting...',
+                duration: 3000,
+              })
+              // Redirect to login after 2 seconds
+              setTimeout(() => {
+                window.location.href = '/auth/login?redirect=/integrations'
+              }, 2000)
+              return
+            }
+            // Otherwise retry - auth might still be loading
+            setTimeout(checkConnection, pollInterval)
+            return
+          }
 
           const response = await fetch(`${API_BASE}/integrations/slack/status`, {
             headers: { 'Authorization': `Bearer ${authToken}` }
