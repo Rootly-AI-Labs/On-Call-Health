@@ -80,6 +80,24 @@ export function UnifiedSlackCard({
       return
     }
 
+    // Check if user is authenticated before starting OAuth
+    const authToken = localStorage.getItem('auth_token')
+    if (!authToken) {
+      toast.error('Please log in first', {
+        description: 'You must be logged in to connect Slack. Redirecting to login...'
+      })
+      setTimeout(() => {
+        window.location.href = '/auth/login?redirect=/integrations'
+      }, 2000)
+      return
+    }
+
+    // Check if we have user info
+    if (!userInfo) {
+      toast.error('User information not available. Please refresh the page and try again.')
+      return
+    }
+
     // Request ALL scopes upfront (both features enabled by default)
     const scopes = 'commands,chat:write,team:read,channels:history,channels:read,users:read,users:read.email'
 
