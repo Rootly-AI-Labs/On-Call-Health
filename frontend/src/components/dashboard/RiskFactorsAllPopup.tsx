@@ -15,7 +15,7 @@ import {
   getVulnerabilityTags,
   getRemainingTagCount,
   getTagColorClasses,
-  getOCBBadgeColor
+  getOCBBadgeColorClasses
 } from '@/lib/riskFactorUtils'
 
 interface RiskFactorsAllPopupProps {
@@ -84,8 +84,8 @@ export default function RiskFactorsAllPopup({
                   <div className="space-y-2">
                     {factor.members.map((member) => {
                       const allTags = getVulnerabilityTags(member, factor.factorType)
-                      // Filter out OCB tag
-                      const tags = allTags.filter(tag => !tag.label.startsWith('OCB:'))
+                      // Filter out OCB tag and Risk level tags
+                      const tags = allTags.filter(tag => !tag.label.startsWith('OCB:') && !tag.label.includes('Risk'))
                       const remainingTags = getRemainingTagCount(allTags) - (allTags.length - tags.length)
                       const ocbScore = member.ocb_score || 0
 
@@ -120,7 +120,7 @@ export default function RiskFactorsAllPopup({
                               {/* OCB Badge on the right */}
                               <Badge
                                 variant="outline"
-                                className={`flex-shrink-0 ${getOCBBadgeColor(ocbScore)} text-xs py-1 px-2`}
+                                className={`flex-shrink-0 ${getOCBBadgeColorClasses(ocbScore)} text-xs py-1 px-2`}
                               >
                                 {ocbScore.toFixed(1)}/100
                               </Badge>
@@ -129,17 +129,14 @@ export default function RiskFactorsAllPopup({
                             {/* Tags */}
                             {tags.length > 0 && (
                               <div className="mt-2 flex items-center flex-wrap gap-1">
-                                {tags.map((tag, idx) => {
-                                  const tagColors = getTagColorClasses(tag.color)
-                                  return (
-                                    <span
-                                      key={idx}
-                                      className={`inline-flex items-center text-xs px-2 py-0.5 rounded-full border ${tagColors.bg} ${tagColors.text} ${tagColors.border}`}
-                                    >
-                                      {tag.label}
-                                    </span>
-                                  )
-                                })}
+                                {tags.map((tag, idx) => (
+                                  <span
+                                    key={idx}
+                                    className={`inline-flex items-center text-xs px-2 py-0.5 rounded-full border ${getTagColorClasses(tag.color)}`}
+                                  >
+                                    {tag.label}
+                                  </span>
+                                ))}
                                 {remainingTags > 0 && (
                                   <span className="inline-flex items-center text-xs px-2 py-0.5 rounded-full border bg-gray-100 text-gray-700 border-gray-300">
                                     +{remainingTags} more

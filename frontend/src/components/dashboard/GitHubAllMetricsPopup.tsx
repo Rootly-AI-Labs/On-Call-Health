@@ -15,7 +15,7 @@ import {
   getVulnerabilityTags,
   getRemainingTagCount,
   getTagColorClasses,
-  getOCBBadgeColor
+  getOCBBadgeColorClasses
 } from '@/lib/githubMetricUtils'
 
 interface GitHubAllMetricsPopupProps {
@@ -134,7 +134,7 @@ export default function GitHubAllMetricsPopup({
                               {/* OCB Badge on the right */}
                               <Badge
                                 variant="outline"
-                                className={`flex-shrink-0 ${getOCBBadgeColor(ocbScore)} text-xs py-1 px-2`}
+                                className={`flex-shrink-0 ${getOCBBadgeColorClasses(ocbScore)} text-xs py-1 px-2`}
                               >
                                 {ocbScore.toFixed(1)}/100
                               </Badge>

@@ -65,23 +65,23 @@ export function ObjectiveDataCard({
   const METRIC_DESCRIPTIONS: any = {
     health_score: {
       title: "Health Score",
-      description: "OCB Health Score (0-100) measures team on-call health based on incident frequency, after-hours work, and severity. Uses PRIMARY integration (Rootly/PagerDuty incidents). Lower scores indicate higher burnout risk."
+      description: "Team's overall on-call health based on factors such as incident frequency, after-hours work and severity. Higher scores indicate higher burnout risk."
     },
     incident_load: {
       title: "Incident Load",
-      description: "Total count of incidents handled per day. Uses PRIMARY integration (Rootly/PagerDuty incidents). Counts all incidents regardless of severity or timing."
+      description: "Total count of incidents handled per day. Counts all incidents regardless of severity or timing."
     },
     after_hours: {
       title: "After Hours Activity",
-      description: "Incidents occurring outside business hours (before 9 AM or after 5 PM) or on weekends. Uses PRIMARY integration (Rootly/PagerDuty incidents). Timezone-aware based on each team member's local time."
+      description: "Incidents occurring outside business hours (before 9 AM or after 5 PM) or on weekends. Timezone-aware based on each team member's local time."
     },
     severity_weighted: {
       title: "Workload Intensity",
-      description: "Measures workload stress by weighting incidents based on their severity level. Uses PRIMARY integration (Rootly/PagerDuty incidents). Higher values indicate more stressful workload."
+      description: "Measures workload stress by weighting incidents based on their severity level. Higher values indicate more stressful workload."
     },
     weekend_work: {
       title: "Weekend Work",
-      description: "Incidents handled on Saturdays and Sundays. Uses PRIMARY integration (Rootly/PagerDuty incidents). Aggregated from individual user data and timezone-aware."
+      description: "Incidents handled on Saturdays and Sundays. Aggregated from individual user data and timezone-aware."
     }
   }
 
@@ -251,7 +251,7 @@ export function ObjectiveDataCard({
           </SelectContent>
         </Select>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col pb-4">
+      <CardContent className="flex-1 flex flex-col pb-2">
         <div className="space-y-3 flex-1 flex flex-col">
           {/* Chart */}
           <div className="h-[300px]">
@@ -347,13 +347,15 @@ export function ObjectiveDataCard({
                               </p>
                             )}
 
-                            {/* Incidents count (always show for context) */}
-                            <p className="text-sm text-gray-600">
-                              Incidents: {data.incidentCount || 0}
-                            </p>
+                            {/* Incidents count - only show for incident load */}
+                            {selectedMetric === 'incident_load' && (
+                              <p className="text-sm text-gray-600">
+                                Incidents: {data.incidentCount || 0}
+                              </p>
+                            )}
 
-                            {/* At-risk members */}
-                            {data.membersAtRisk > 0 && (
+                            {/* At-risk members - only show for health score */}
+                            {selectedMetric === 'health_score' && data.membersAtRisk > 0 && (
                               <p className="text-sm text-orange-600">
                                 At Risk: {data.membersAtRisk}/{data.totalMembers} members
                               </p>
