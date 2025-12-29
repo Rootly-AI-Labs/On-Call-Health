@@ -65,7 +65,7 @@ export function ObjectiveDataCard({
   const METRIC_DESCRIPTIONS: any = {
     health_score: {
       title: "Health Score",
-      description: "Team's overall on-call health based on factors such as incident frequency, after-hours work and severity. Higher scores indicate higher burnout risk."
+      description: "Measures the Team's overall on-call health based on factors such as incident frequency, after-hours work and severity. Higher scores indicate higher burnout risk."
     },
     incident_load: {
       title: "Incident Load",
