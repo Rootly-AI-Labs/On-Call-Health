@@ -87,7 +87,7 @@ export function AIInsightsModal({ isOpen, onClose, currentAnalysis }: AIInsights
               return (
                 <div className="prose prose-sm max-w-none">
                   <div
-                    className="leading-relaxed text-gray-800"
+                    className="leading-relaxed text-gray-800 [&>*:last-child]:mb-0"
                     dangerouslySetInnerHTML={{
                       __html: aiInsights.llm_team_analysis
                         .replace(/^### (.*?)$/gm, '<h3 class="text-lg font-semibold mt-6 mb-3">$1</h3>')

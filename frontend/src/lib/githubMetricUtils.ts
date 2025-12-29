@@ -341,6 +341,16 @@ export function getOCBBadgeColor(ocbScore: number): string {
 }
 
 /**
+ * Get Tailwind color classes for OCB badge (with borders for outlined variant)
+ */
+export function getOCBBadgeColorClasses(ocbScore: number): string {
+  if (ocbScore < 25) return 'bg-green-100 text-green-800 border-green-300'
+  if (ocbScore < 50) return 'bg-yellow-100 text-yellow-800 border-yellow-300'
+  if (ocbScore < 75) return 'bg-orange-100 text-orange-800 border-orange-300'
+  return 'bg-red-100 text-red-800 border-red-300'
+}
+
+/**
  * Get contribution display text for a member based on metric type
  */
 export function getContributionText(member: any, metricType: MetricType): string {

@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, Cell } from "recharts"
 import { Info, RefreshCw, BarChart3 } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { UserObjectiveDataCard } from "@/components/dashboard/UserObjectiveDataCard"
 import { SurveyResultsCard } from "@/components/dashboard/SurveyResultsCard"
 
@@ -253,6 +253,7 @@ export function MemberDetailModal({
 }: MemberDetailModalProps) {
   const [dailyCommitsData, setDailyCommitsData] = useState<any[]>([]);
   const [loadingCommits, setLoadingCommits] = useState(false);
+  const dialogContentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchDailyCommits = async () => {
@@ -288,11 +289,24 @@ export function MemberDetailModal({
     fetchDailyCommits();
   }, [selectedMember?.email, analysisId]);
 
+  // Scroll to top when member changes
+  useEffect(() => {
+    if (selectedMember && dialogContentRef.current) {
+      // Set scrollTop directly and wait for animation to complete
+      setTimeout(() => {
+        if (dialogContentRef.current) {
+          dialogContentRef.current.scrollTop = 0;
+        }
+      }, 50);
+    }
+  }, [selectedMember?.email]);
+
   if (!selectedMember) return null
 
   return (
     <Dialog open={!!selectedMember} onOpenChange={() => setSelectedMember(null)}>
       <DialogContent
+        ref={dialogContentRef}
         className="max-w-5xl max-h-[80vh] overflow-y-auto"
         aria-describedby="member-detail-description"
       >

@@ -2326,6 +2326,10 @@ async def get_member_daily_health(
             "day_name": day_name,
             "factors": factors,
             "has_data": has_data,
+            # Metric counts for User Objective Data dropdown
+            "severity_weighted_count": severity_weighted,
+            "after_hours_count": after_hours_count,
+            "weekend_count": weekend_count,
             # Enhanced data for tooltips
             "severity_breakdown": severity_breakdown,
             "daily_summary": daily_summary,

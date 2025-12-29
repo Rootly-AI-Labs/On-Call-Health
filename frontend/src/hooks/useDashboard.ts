@@ -2038,7 +2038,10 @@ export default function useDashboard() {
         // Convert 0-10 scale to OCB 0-100 scale (whole integer)
         return Math.round(average * 10);
       })(),
-      metrics: `Average workload factor from ${allActiveMembers.length} active team members`
+      metrics: (() => {
+        const affectedCount = allActiveMembers.filter(m => (m?.factors?.workload ?? 0) >= 5).length
+        return `${affectedCount} of ${allActiveMembers.length} members at medium/high risk`
+      })()
     },
     {
       factor: "After Hours Activity",
@@ -2057,7 +2060,10 @@ export default function useDashboard() {
         // Convert 0-10 scale to OCB 0-100 scale (whole integer)
         return Math.round(average * 10);
       })(),
-      metrics: `Average after-hours factor from ${allActiveMembers.length} active team members`
+      metrics: (() => {
+        const affectedCount = allActiveMembers.filter(m => (m?.factors?.after_hours ?? 0) >= 5).length
+        return `${affectedCount} of ${allActiveMembers.length} members at medium/high risk`
+      })()
     },
     {
       factor: "Weekend Work",
@@ -2076,7 +2082,10 @@ export default function useDashboard() {
         // Convert 0-10 scale to OCB 0-100 scale (whole integer)
         return Math.round(average * 10);
       })(),
-      metrics: `Average weekend work factor from ${allActiveMembers.length} active team members`
+      metrics: (() => {
+        const affectedCount = allActiveMembers.filter(m => (m?.factors?.weekend_work ?? 0) >= 5).length
+        return `${affectedCount} of ${allActiveMembers.length} members at medium/high risk`
+      })()
     },
     {
       factor: "Response Time",
@@ -2095,7 +2104,10 @@ export default function useDashboard() {
         // Convert 0-10 scale to OCB 0-100 scale (whole integer)
         return Math.round(average * 10);
       })(),
-      metrics: `Average response time factor from ${allActiveMembers.length} active team members`
+      metrics: (() => {
+        const affectedCount = allActiveMembers.filter(m => (m?.factors?.response_time ?? 0) >= 5).length
+        return `${affectedCount} of ${allActiveMembers.length} members at medium/high risk`
+      })()
     },
     {
       factor: "Incident Load",
@@ -2114,7 +2126,10 @@ export default function useDashboard() {
         // Convert 0-10 scale to OCB 0-100 scale (whole integer)
         return Math.round(average * 10);
       })(),
-      metrics: `Average incident load factor from ${allActiveMembers.length} active team members`
+      metrics: (() => {
+        const affectedCount = allActiveMembers.filter(m => (m?.factors?.incident_load ?? 0) >= 5).length
+        return `${affectedCount} of ${allActiveMembers.length} members at medium/high risk`
+      })()
     },
   ].map(factor => ({
     ...factor,
