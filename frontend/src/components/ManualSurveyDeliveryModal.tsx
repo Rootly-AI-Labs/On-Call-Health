@@ -112,6 +112,12 @@ export default function ManualSurveyDeliveryModal({
   };
 
   const confirmDelivery = async () => {
+    // Validate that at least one recipient is selected
+    if (selectedRecipients.size === 0) {
+      setError('Please select at least one team member to send surveys to.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -150,6 +156,7 @@ export default function ManualSurveyDeliveryModal({
     setPreviewData(null);
     setSuccessData(null);
     setError(null);
+    setSelectedRecipients(new Set()); // Reset selections on close
     onClose();
   };
 

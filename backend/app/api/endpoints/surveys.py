@@ -415,8 +415,8 @@ async def manual_survey_delivery(
         # Get recipients count
         recipients = survey_scheduler._get_survey_recipients(organization_id, db, is_reminder=False)
 
-        # Filter by recipient_emails if provided
-        if request.recipient_emails:
+        # Filter by recipient_emails if provided (but not if empty array)
+        if request.recipient_emails is not None and len(request.recipient_emails) > 0:
             recipient_emails_lower = [email.lower() for email in request.recipient_emails]
             recipients = [r for r in recipients if r['email'].lower() in recipient_emails_lower]
 
@@ -453,20 +453,26 @@ async def manual_survey_delivery(
         # Get recipients before sending
         all_recipients = survey_scheduler._get_survey_recipients(organization_id, db, is_reminder=False)
 
-        # Filter by recipient_emails if provided
-        if request.recipient_emails:
-            recipient_emails_lower = [email.lower() for email in request.recipient_emails]
-            recipients = [r for r in all_recipients if r['email'].lower() in recipient_emails_lower]
-            logger.info(f"Filtered to {len(recipients)} selected recipients from {len(all_recipients)} total")
-        else:
-            recipients = all_recipients
-
-        recipient_count = len(recipients)
-
-        if recipient_count == 0:
+        # CRITICAL: Must provide recipient_emails when confirmed (cannot send to all)
+        # This prevents accidental mass sends when empty array is provided
+        if request.recipient_emails is None or len(request.recipient_emails) == 0:
             raise HTTPException(
                 status_code=400,
                 detail="No recipients selected. Please select at least one team member to send surveys to."
+            )
+
+        # Filter to only selected recipients
+        recipient_emails_lower = [email.lower() for email in request.recipient_emails]
+        recipients = [r for r in all_recipients if r['email'].lower() in recipient_emails_lower]
+        logger.info(f"Filtered to {len(recipients)} selected recipients from {len(all_recipients)} total")
+
+        recipient_count = len(recipients)
+
+        # Validate that selected emails actually exist in recipient list
+        if recipient_count == 0:
+            raise HTTPException(
+                status_code=400,
+                detail="None of the selected emails were found in the available recipients. Please select valid team members."
             )
 
         # Send surveys directly using the same logic as scheduled sends
@@ -490,9 +496,24 @@ async def manual_survey_delivery(
         ).first()
         message_template = schedule.message_template if schedule else None
 
-        # Send DMs to selected recipients
+        # Send DMs to selected recipients (with deduplication check)
+        from datetime import datetime
+        today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        skipped_count = 0
+
         for user in recipients:
             try:
+                # Check if user already received/completed survey today (prevent duplicates)
+                already_received = db.query(UserBurnoutReport).filter(
+                    UserBurnoutReport.user_id == user['user_id'],
+                    UserBurnoutReport.submitted_at >= today_start
+                ).first()
+
+                if already_received:
+                    skipped_count += 1
+                    logger.info(f"Skipping {user['email']} - already received survey today")
+                    continue
+
                 await dm_sender.send_survey_dm(
                     slack_token=slack_token,
                     slack_user_id=user['slack_user_id'],
@@ -510,14 +531,24 @@ async def manual_survey_delivery(
         notification_service.create_survey_delivery_notification(
             organization_id=organization_id,
             triggered_by=current_user,
-            recipient_count=recipient_count,
+            recipient_count=sent_count,  # Use actual sent count, not requested count
             is_manual=True
         )
 
+        # Build detailed response message
+        message_parts = [f"Sent surveys to {sent_count} recipient(s)"]
+        if skipped_count > 0:
+            message_parts.append(f"{skipped_count} skipped (already received today)")
+        if failed_count > 0:
+            message_parts.append(f"{failed_count} failed")
+
         return {
             "success": True,
-            "message": f"Survey delivery triggered successfully to {recipient_count} recipients",
-            "recipient_count": recipient_count,
+            "message": ". ".join(message_parts),
+            "recipient_count": recipient_count,  # Total selected
+            "sent_count": sent_count,  # Actually sent
+            "skipped_count": skipped_count,  # Already received today
+            "failed_count": failed_count,  # Failed to send
             "triggered_by": current_user.email
         }
 
