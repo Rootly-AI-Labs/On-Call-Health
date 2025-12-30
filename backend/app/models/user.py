@@ -28,7 +28,7 @@ class User(Base):
 
     # Organization and role management
     organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True)
-    role = Column(String(20), default="member")  # 'admin', 'member', 'viewer'
+    role = Column(String(20), default="member")  # 'admin', 'member'
     joined_org_at = Column(DateTime(timezone=True), server_default=func.now())
     last_active_at = Column(DateTime(timezone=True))
     status = Column(String(20), default="active")  # 'active', 'suspended', 'pending'

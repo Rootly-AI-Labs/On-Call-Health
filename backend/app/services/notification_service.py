@@ -450,8 +450,8 @@ class NotificationService:
 
     def create_role_change_notification(self, user: User, old_role: str, new_role: str, changed_by: User) -> UserNotification:
         """Create notification when user's role is changed."""
-        is_promotion = new_role in ['admin'] and old_role in ['member', 'viewer']
-        is_demotion = old_role in ['admin'] and new_role in ['member', 'viewer']
+        is_promotion = new_role == 'admin' and old_role == 'member'
+        is_demotion = old_role == 'admin' and new_role == 'member'
 
         if is_promotion:
             title = f"You've been promoted to {new_role.replace('_', ' ').title()}"
