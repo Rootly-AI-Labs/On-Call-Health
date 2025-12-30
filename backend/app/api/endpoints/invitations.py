@@ -33,9 +33,9 @@ async def create_invitation(
     if not current_user.organization_id:
         raise HTTPException(status_code=400, detail="You must be part of an organization to invite others")
 
-    # Check if user can invite (admin or super_admin)
-    if current_user.role not in ['admin', 'org_admin', 'super_admin']:  # Support both during transition
-        raise HTTPException(status_code=403, detail="Only organization admins can invite users")
+    # Check if user can invite (admin only)
+    if current_user.role != 'admin':
+        raise HTTPException(status_code=403, detail="Only admins can invite users")
 
     # Check if user already exists with this email
     existing_user = db.query(User).filter(User.email.ilike(request.email)).first()
@@ -98,8 +98,8 @@ async def list_pending_invitations(
     if not email_domain:
         raise HTTPException(status_code=400, detail="Invalid email format")
 
-    # Check if user can view invitations (admin or super_admin)
-    if current_user.role not in ['admin', 'org_admin', 'super_admin']:  # Support both during transition
+    # Check if user can view invitations (admin only)
+    if current_user.role != 'admin':
         raise HTTPException(status_code=403, detail="Only organization admins can view invitations")
 
     try:
@@ -393,7 +393,7 @@ async def resend_invitation(
         raise HTTPException(status_code=404, detail="Invitation not found")
 
     # Check if current user can resend (admin or super admin)
-    if not current_user.organization_id == invitation.organization_id or current_user.role not in ['admin', 'org_admin', 'super_admin']:
+    if not current_user.organization_id == invitation.organization_id or current_user.role != 'admin':
         raise HTTPException(status_code=403, detail="Not authorized to resend this invitation")
 
     if invitation.status == "accepted":
@@ -506,7 +506,7 @@ async def revoke_invitation(
     # Check if current user can revoke (org admin of same org, or person who sent it)
     if not (
         (current_user.organization_id == invitation.organization_id and
-         current_user.role in ['admin', 'org_admin', 'super_admin']) or
+         current_user.role == 'admin') or
         current_user.id == invitation.invited_by
     ):
         raise HTTPException(status_code=403, detail="Not authorized to revoke this invitation")
