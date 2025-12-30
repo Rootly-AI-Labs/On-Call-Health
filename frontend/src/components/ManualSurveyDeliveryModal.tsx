@@ -20,6 +20,9 @@ interface SuccessResponse {
   success: boolean;
   message: string;
   recipient_count: number;
+  sent_count: number;
+  failed_count: number;
+  failed_recipients?: Array<{ email: string; error: string }>;
   triggered_by: string;
 }
 
