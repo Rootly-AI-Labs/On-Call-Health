@@ -99,7 +99,7 @@ export function UnifiedSlackCard({
     }
 
     // Request ALL scopes upfront (both features enabled by default)
-    const scopes = 'commands,chat:write,team:read,channels:history,channels:read,users:read,users:read.email'
+    const scopes = 'commands,chat:write,im:write,team:read,channels:history,channels:read,users:read,users:read.email'
 
     // Include feature flags in state parameter - both enabled by default
     const redirectUri = `${backendUrl}/integrations/slack/oauth/callback`
