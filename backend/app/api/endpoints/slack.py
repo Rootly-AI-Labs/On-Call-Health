@@ -290,6 +290,7 @@ async def slack_oauth_callback(
             # Update existing mapping (reactivate if it was disconnected)
             existing_mapping.workspace_name = workspace_name
             existing_mapping.status = 'active'
+            existing_mapping.owner_user_id = owner_user.id  # Update owner to current user reconnecting
             if organization_id:
                 existing_mapping.organization_id = organization_id
             # Update feature flags based on user selection
