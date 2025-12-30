@@ -922,7 +922,7 @@ export default function IntegrationsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jiraIntegration, teamMembersDrawerOpen, showSyncedUsers])
 
-  // Handle Slack/Jira OAuth success redirect
+  // Handle Slack/Jira/Linear OAuth success redirect
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
     const slackConnected = urlParams.get('slack_connected')
@@ -930,6 +930,8 @@ export default function IntegrationsPage() {
     const status = urlParams.get('status')
     const jiraConnected = urlParams.get('jira_connected')
     const jiraError = urlParams.get('jira_error')
+    const linearConnected = urlParams.get('linear_connected')
+    const linearError = urlParams.get('linear_error')
     // Check auth token after OAuth redirect
     const authToken = localStorage.getItem('auth_token')
 
@@ -1191,6 +1193,94 @@ export default function IntegrationsPage() {
       const errorMessage = decodeURIComponent(jiraError)
 
       toast.error('Failed to connect Jira', {
+        description: errorMessage,
+        duration: 8000,
+      })
+
+      // Clean up URL parameters
+      const newUrl = window.location.pathname
+      window.history.replaceState({}, '', newUrl)
+    }
+
+    // Handle Linear OAuth success
+    if (linearConnected === '1' || linearConnected === 'true') {
+      // Show loading toast
+      const loadingToastId = toast.loading('Verifying Linear connection...', {
+        description: 'Please wait while we confirm your Linear integration.',
+      })
+
+      // Clean up URL parameters
+      const newUrl = window.location.pathname
+      window.history.replaceState({}, '', newUrl)
+
+      // Poll for connection status with retries
+      let retries = 0
+      const maxRetries = 15
+      const pollInterval = 500
+
+      const checkLinearConnection = async () => {
+        try {
+          retries++
+
+          // Check if Linear is now connected
+          const authToken = localStorage.getItem('auth_token')
+          if (!authToken) return
+
+          const response = await fetch(`${API_BASE}/integrations/linear/status`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+          })
+
+          if (response.ok) {
+            const data = await response.json()
+            if (data.connected) {
+              // Update Linear integration state
+              setLinearIntegration(data.integration)
+              setLoadingLinear(false)
+              // Update cache
+              localStorage.setItem('linear_integration', JSON.stringify(data))
+              localStorage.setItem('all_integrations_timestamp', Date.now().toString())
+
+              toast.dismiss(loadingToastId)
+
+              // Show success message
+              toast.success(`🎉 Linear integration connected!`, {
+                description: `Successfully connected to ${data.integration.workspace_name || 'your Linear workspace'}.`,
+                duration: 5000,
+              })
+              return
+            }
+          }
+
+          // Not connected yet, retry if we haven't exceeded max retries
+          if (retries < maxRetries) {
+            setTimeout(checkLinearConnection, pollInterval)
+          } else {
+            // Max retries reached, show warning
+            toast.dismiss(loadingToastId)
+            toast.warning('Connection verification timed out', {
+              description: 'Your Linear workspace was connected, but verification took longer than expected. Try refreshing the page.',
+              duration: 8000,
+            })
+          }
+        } catch (error) {
+          if (retries < maxRetries) {
+            setTimeout(checkLinearConnection, pollInterval)
+          } else {
+            toast.dismiss(loadingToastId)
+            toast.error('Failed to verify connection', {
+              description: 'Please refresh the page to check your Linear connection status.',
+            })
+          }
+        }
+      }
+
+      // Start checking immediately
+      checkLinearConnection()
+    } else if (linearError) {
+      // Show error toast
+      const errorMessage = decodeURIComponent(linearError)
+
+      toast.error('Failed to connect Linear', {
         description: errorMessage,
         duration: 8000,
       })
