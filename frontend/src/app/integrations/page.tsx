@@ -2912,7 +2912,7 @@ export default function IntegrationsPage() {
                     title={!selectedOrganization ? 'Please select an organization first' : ''}
                   >
                     <Users className="w-4 h-4 mr-2" />
-                    View Members
+                    Sync Members
                   </Button>
                 </div>
               </CardContent>
