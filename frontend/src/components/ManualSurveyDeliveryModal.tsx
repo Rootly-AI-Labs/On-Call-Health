@@ -276,10 +276,10 @@ export default function ManualSurveyDeliveryModal({
                     <Send className="w-8 h-8 text-green-600" />
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    {successData.message}
+                    Survey Delivery Complete
                   </h3>
                   <p className="text-sm text-gray-600">
-                    Surveys have been sent to {successData.recipient_count} team members.
+                    {successData.message}
                   </p>
                 </div>
               </div>
