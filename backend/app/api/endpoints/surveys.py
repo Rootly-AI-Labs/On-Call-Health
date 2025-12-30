@@ -498,6 +498,7 @@ async def manual_survey_delivery(
 
         # Send DMs to selected recipients
         # Manual surveys are always sent (admin explicitly selected recipients)
+        failed_recipients = []  # Track failures with details
         for user in recipients:
             try:
                 await dm_sender.send_survey_dm(
@@ -510,7 +511,12 @@ async def manual_survey_delivery(
                 sent_count += 1
             except Exception as e:
                 failed_count += 1
-                logger.error(f"Failed to send survey to {user['email']}: {str(e)}")
+                error_msg = str(e)
+                logger.error(f"Failed to send survey to {user['email']}: {error_msg}")
+                failed_recipients.append({
+                    "email": user['email'],
+                    "error": error_msg
+                })
 
         # Create notification for admins
         notification_service = NotificationService(db)
@@ -532,6 +538,7 @@ async def manual_survey_delivery(
             "recipient_count": recipient_count,  # Total selected
             "sent_count": sent_count,  # Actually sent
             "failed_count": failed_count,  # Failed to send
+            "failed_recipients": failed_recipients,  # Detailed failure info
             "triggered_by": current_user.email
         }
 
