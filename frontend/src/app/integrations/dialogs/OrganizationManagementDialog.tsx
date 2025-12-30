@@ -89,7 +89,7 @@ export function OrganizationManagementDialog({
 
         <div className="space-y-6">
           {/* Invite New Member Section - Only visible to admins */}
-          {(userInfo?.role === 'admin' || userInfo?.role === 'org_admin') && (
+          {(userInfo?.role === 'admin') && (
             <div className="p-6 border rounded-lg bg-gradient-to-br from-purple-50 to-white">
               <div className="flex items-start space-x-4">
                 <div className="flex-shrink-0 w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">

@@ -28,7 +28,7 @@ class User(Base):
 
     # Organization and role management
     organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True)
-    role = Column(String(20), default="member")  # 'super_admin', 'admin', 'member', 'viewer'
+    role = Column(String(20), default="member")  # 'admin', 'member', 'viewer'
     joined_org_at = Column(DateTime(timezone=True), server_default=func.now())
     last_active_at = Column(DateTime(timezone=True))
     status = Column(String(20), default="active")  # 'active', 'suspended', 'pending'
@@ -134,23 +134,14 @@ class User(Base):
 
     # Role-based properties
     @property
-    def is_super_admin(self) -> bool:
-        """Check if user is a super admin."""
-        return self.role == 'super_admin'
-
-    @property
-    def is_org_admin(self) -> bool:
-        """Check if user is an organization admin."""
-        return self.role in ['super_admin', 'admin']
-
     def is_admin(self) -> bool:
-        """Check if user is an admin (super_admin or org_admin)."""
-        return self.is_org_admin
+        """Check if user is an admin."""
+        return self.role == 'admin'
 
     @property
     def is_manager(self) -> bool:
         """Check if user can manage analyses and surveys."""
-        return self.role in ['super_admin', 'admin', 'member']
+        return self.role in ['admin', 'member']
 
     @property
     def is_active(self) -> bool:
@@ -159,8 +150,6 @@ class User(Base):
 
     def can_manage_organization(self, org_id: int = None) -> bool:
         """Check if user can manage organization settings."""
-        if self.is_super_admin:
-            return True
         if self.role == 'admin' and (org_id is None or self.organization_id == org_id):
             return True
         return False

@@ -512,11 +512,11 @@ async def update_user_role(
     Update a user's role within the organization.
     Only admin can change roles.
     """
-    # Check if current user is admin (support both old and new role names during transition)
-    if current_user.role not in ['admin', 'org_admin']:
+    # Check if current user is admin
+    if current_user.role != 'admin':
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only organization admins can change user roles"
+            detail="Only admins can change user roles"
         )
 
     # Get the target user
@@ -542,10 +542,10 @@ async def update_user_role(
         )
 
     # Prevent demoting the last admin
-    if target_user.role in ['admin', 'org_admin'] and new_role not in ['admin', 'org_admin']:
+    if target_user.role == 'admin' and new_role != 'admin':
         admin_count = db.query(User).filter(
             User.organization_id == current_user.organization_id,
-            User.role.in_(['admin', 'org_admin']),
+            User.role == 'admin',
             User.status == 'active',
             User.id != target_user.id
         ).count()
@@ -636,12 +636,12 @@ async def delete_current_user_account(
             detail="Email confirmation does not match your account email"
         )
 
-    # Additional safety check - prevent deletion if user is sole org admin
-    if current_user.organization_id and current_user.role == 'org_admin':
-        # Check if there are other org admins
+    # Additional safety check - prevent deletion if user is sole admin
+    if current_user.organization_id and current_user.role == 'admin':
+        # Check if there are other admins
         other_admins = db.query(User).filter(
             User.organization_id == current_user.organization_id,
-            User.role == 'org_admin',
+            User.role == 'admin',
             User.id != current_user.id,
             User.status == 'active'
         ).count()
