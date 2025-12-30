@@ -281,6 +281,23 @@ export default function ManualSurveyDeliveryModal({
                   <p className="text-sm text-gray-600">
                     {successData.message}
                   </p>
+
+                  {/* Show failure details if any */}
+                  {successData.failed_recipients && successData.failed_recipients.length > 0 && (
+                    <div className="mt-6 text-left">
+                      <div className="p-4 bg-red-50 rounded-lg border border-red-200">
+                        <p className="text-sm font-medium text-red-900 mb-3">Failed Recipients:</p>
+                        <div className="space-y-2">
+                          {successData.failed_recipients.map((failure: any, idx: number) => (
+                            <div key={idx} className="text-sm">
+                              <p className="font-medium text-red-800">{failure.email}</p>
+                              <p className="text-red-600 text-xs mt-1">{failure.error}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
