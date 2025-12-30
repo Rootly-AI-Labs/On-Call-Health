@@ -357,6 +357,7 @@ async def get_survey_preferences(
 class ManualDeliveryRequest(BaseModel):
     """Schema for manual survey delivery with confirmation."""
     confirmed: bool = False
+    recipient_emails: Optional[List[str]] = None  # If provided, only send to these emails
 
 
 @router.post("/survey-schedule/manual-delivery")
@@ -414,6 +415,11 @@ async def manual_survey_delivery(
         # Get recipients count
         recipients = survey_scheduler._get_survey_recipients(organization_id, db, is_reminder=False)
 
+        # Filter by recipient_emails if provided (but not if empty array)
+        if request.recipient_emails is not None and len(request.recipient_emails) > 0:
+            recipient_emails_lower = [email.lower() for email in request.recipient_emails]
+            recipients = [r for r in recipients if r['email'].lower() in recipient_emails_lower]
+
         return {
             "requires_confirmation": True,
             "message": f"This will send surveys to {len(recipients)} team members via Slack DM.",
@@ -445,25 +451,87 @@ async def manual_survey_delivery(
             )
 
         # Get recipients before sending
-        recipients = survey_scheduler._get_survey_recipients(organization_id, db, is_reminder=False)
+        all_recipients = survey_scheduler._get_survey_recipients(organization_id, db, is_reminder=False)
+
+        # CRITICAL: Must provide recipient_emails when confirmed (cannot send to all)
+        # This prevents accidental mass sends when empty array is provided
+        if request.recipient_emails is None or len(request.recipient_emails) == 0:
+            raise HTTPException(
+                status_code=400,
+                detail="No recipients selected. Please select at least one team member to send surveys to."
+            )
+
+        # Filter to only selected recipients
+        recipient_emails_lower = [email.lower() for email in request.recipient_emails]
+        recipients = [r for r in all_recipients if r['email'].lower() in recipient_emails_lower]
+        logger.info(f"Filtered to {len(recipients)} selected recipients from {len(all_recipients)} total")
+
         recipient_count = len(recipients)
 
-        # Trigger delivery
-        await survey_scheduler._send_organization_surveys(organization_id, db, is_reminder=False)
+        # Validate that selected emails actually exist in recipient list
+        if recipient_count == 0:
+            raise HTTPException(
+                status_code=400,
+                detail="None of the selected emails were found in the available recipients. Please select valid team members."
+            )
+
+        # Send surveys directly using the same logic as scheduled sends
+        from ...services.slack_dm_sender import SlackDMSender
+        from ...services.slack_token_service import get_slack_token_for_organization
+
+        slack_token = get_slack_token_for_organization(db, organization_id)
+        if not slack_token:
+            raise HTTPException(
+                status_code=500,
+                detail="No Slack token available for organization"
+            )
+
+        dm_sender = SlackDMSender()
+        sent_count = 0
+        failed_count = 0
+
+        # Get custom message template from schedule if exists
+        schedule = db.query(SurveySchedule).filter(
+            SurveySchedule.organization_id == organization_id
+        ).first()
+        message_template = schedule.message_template if schedule else None
+
+        # Send DMs to selected recipients
+        # Manual surveys are always sent (admin explicitly selected recipients)
+        for user in recipients:
+            try:
+                await dm_sender.send_survey_dm(
+                    slack_token=slack_token,
+                    slack_user_id=user['slack_user_id'],
+                    user_id=user['user_id'],
+                    organization_id=organization_id,
+                    message=message_template
+                )
+                sent_count += 1
+            except Exception as e:
+                failed_count += 1
+                logger.error(f"Failed to send survey to {user['email']}: {str(e)}")
 
         # Create notification for admins
         notification_service = NotificationService(db)
         notification_service.create_survey_delivery_notification(
             organization_id=organization_id,
             triggered_by=current_user,
-            recipient_count=recipient_count,
+            recipient_count=sent_count,  # Use actual sent count, not requested count
             is_manual=True
         )
 
+        # Build detailed response message
+        message_parts = [f"Sent surveys to {sent_count} recipient(s)"]
+        if failed_count > 0:
+            message_parts.append(f"{failed_count} failed")
+
         return {
             "success": True,
-            "message": f"Survey delivery triggered successfully to {recipient_count} recipients",
-            "recipient_count": recipient_count,
+            "message": ". ".join(message_parts),
+            "recipient_count": recipient_count,  # Total selected
+            "sent_count": sent_count,  # Actually sent
+            "failed_count": failed_count,  # Failed to send
             "triggered_by": current_user.email
         }
 

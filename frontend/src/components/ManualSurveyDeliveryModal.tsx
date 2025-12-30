@@ -57,13 +57,17 @@ export default function ManualSurveyDeliveryModal({
     setLoading(true);
     setError(null);
     try {
+      const selectedEmails = Array.from(selectedRecipients);
       const response = await fetch(`${API_BASE}/api/surveys/survey-schedule/manual-delivery`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         },
-        body: JSON.stringify({ confirmed: false })
+        body: JSON.stringify({
+          confirmed: false,
+          recipient_emails: selectedEmails.length > 0 ? selectedEmails : undefined
+        })
       });
 
       if (!response.ok) {
@@ -73,9 +77,8 @@ export default function ManualSurveyDeliveryModal({
 
       const data = await response.json();
       setPreviewData(data);
-      // Select all recipients by default
-      const allEmails = new Set<string>(data.recipients.map((r: Recipient) => r.email));
-      setSelectedRecipients(allEmails);
+      // Deselect all recipients by default (user must manually select)
+      setSelectedRecipients(new Set());
       setStep('confirm');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -109,6 +112,12 @@ export default function ManualSurveyDeliveryModal({
   };
 
   const confirmDelivery = async () => {
+    // Validate that at least one recipient is selected
+    if (selectedRecipients.size === 0) {
+      setError('Please select at least one team member to send surveys to.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -147,6 +156,7 @@ export default function ManualSurveyDeliveryModal({
     setPreviewData(null);
     setSuccessData(null);
     setError(null);
+    setSelectedRecipients(new Set()); // Reset selections on close
     onClose();
   };
 
