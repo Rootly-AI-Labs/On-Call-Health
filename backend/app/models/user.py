@@ -183,7 +183,7 @@ class User(Base):
                 'domain': self.organization.domain
             }
 
-        if include_sensitive and self.is_super_admin:
+        if include_sensitive and self.is_admin:
             data['organization_id'] = self.organization_id
             data['joined_org_at'] = self.joined_org_at.isoformat() if self.joined_org_at else None
 
