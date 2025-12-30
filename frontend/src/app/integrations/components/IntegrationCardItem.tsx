@@ -121,7 +121,21 @@ export const IntegrationCardItem = memo(function IntegrationCardItem({
             </Button>
           </div>
         ) : (
-          <h3 className="font-semibold text-base truncate flex-1 min-w-0 mr-3">{integration.name}</h3>
+          <div className="flex items-center gap-2 flex-1 min-w-0 mr-3">
+            <h3 className="font-semibold text-base truncate">{integration.name}</h3>
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={isSaving}
+              onClick={(e) => {
+                e.stopPropagation()
+                onEdit(integration.id, integration.name)
+              }}
+              className="h-5 w-5 p-0 flex-shrink-0"
+            >
+              <Edit3 className="w-3 h-3" />
+            </Button>
+          </div>
         )}
 
         {/* Stats in collapsed view - fixed widths for alignment */}
@@ -149,23 +163,7 @@ export const IntegrationCardItem = memo(function IntegrationCardItem({
             <div className="flex items-start space-x-2">
               <Building className="w-4 h-4 mt-0.5 text-gray-400" />
               <div className="flex-1">
-                <div className="font-bold text-gray-900 flex items-center gap-2">
-                  Organization
-                  {editingIntegration !== integration.id && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      disabled={isSaving}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onEdit(integration.id, integration.name)
-                      }}
-                      className="h-5 w-5 p-0"
-                    >
-                      <Edit3 className="w-3 h-3" />
-                    </Button>
-                  )}
-                </div>
+                <div className="font-bold text-gray-900">Organization</div>
                 <div className="text-gray-600">{integration.organization_name}</div>
               </div>
             </div>
