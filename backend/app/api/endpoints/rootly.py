@@ -1549,7 +1549,7 @@ async def get_synced_users(
                 # Continue without on-call status
 
         # Get survey counts for all users in this organization
-        from app.models.survey_response import UserBurnoutReport
+        from app.models.user_burnout_report import UserBurnoutReport
         survey_counts = {}
         for corr in correlations:
             if corr.user_id:
