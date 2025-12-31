@@ -3099,6 +3099,7 @@ export default function IntegrationsPage() {
                 teamMembers={teamMembers}
                 loadingTeamMembers={loadingTeamMembers}
                 loadingSyncedUsers={loadingSyncedUsers}
+                syncedUsers={syncedUsers}
                 fetchTeamMembers={fetchTeamMembers}
                 syncUsersToCorrelation={syncUsersToCorrelation}
                 fetchSyncedUsers={fetchSyncedUsers}
