@@ -310,7 +310,7 @@ export function SlackSurveyTabs({
             <h4 className="font-medium text-gray-900 mb-2">Survey Correlation</h4>
             <p className="text-sm text-gray-600 mb-3">
               When team members run <code className="bg-gray-100 px-1 rounded text-xs">/oncall-health</code>,
-              it opens an interactive modal with 3 scored questions + optional text.
+              it opens an interactive modal with 2 scored questions + optional text.
               We match their responses to their profile using:
             </p>
             <div className="space-y-2 text-sm">
