@@ -342,53 +342,56 @@ export function SlackSurveyTabs({
                   <Loader2 className="w-5 h-5 animate-spin text-gray-400 mr-2" />
                   <span className="text-sm text-gray-600">Loading team members...</span>
                 </div>
-              ) : syncedUsers.length > 0 ? (
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <h5 className="text-sm font-medium text-gray-900">Synced Members ({syncedUsers.length})</h5>
-                  </div>
-                  <div className="max-h-[400px] overflow-y-auto space-y-2 pr-2">
-                    {syncedUsers.map((user: any) => (
-                      <div key={user.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium text-gray-900 truncate">{user.name}</span>
-                            {user.survey_count > 0 && (
-                              <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 border-green-200">
-                                {user.survey_count} {user.survey_count === 1 ? 'survey' : 'surveys'}
-                              </Badge>
-                            )}
+              ) : (() => {
+                const slackUsers = syncedUsers.filter((u: any) => u.slack_user_id)
+                return slackUsers.length > 0 ? (
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <h5 className="text-sm font-medium text-gray-900">Synced Members ({slackUsers.length})</h5>
+                    </div>
+                    <div className="max-h-[400px] overflow-y-auto space-y-2 pr-2">
+                      {slackUsers.map((user: any) => (
+                        <div key={user.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-medium text-gray-900 truncate">{user.name}</span>
+                              {user.survey_count > 0 && (
+                                <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 border-green-200">
+                                  {user.survey_count} {user.survey_count === 1 ? 'survey' : 'surveys'}
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1 text-xs text-gray-500">
+                              <Mail className="w-3 h-3" />
+                              <span className="truncate">{user.email}</span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1 text-xs text-gray-500">
-                            <Mail className="w-3 h-3" />
-                            <span className="truncate">{user.email}</span>
+                          <div className="flex items-center gap-1 ml-3">
+                            {user.platforms?.map((platform: string) => {
+                              const colors: Record<string, string> = {
+                                slack: 'bg-purple-100 text-purple-700',
+                                rootly: 'bg-blue-100 text-blue-700',
+                                pagerduty: 'bg-green-100 text-green-700',
+                                github: 'bg-gray-100 text-gray-700',
+                                jira: 'bg-indigo-100 text-indigo-700'
+                              }
+                              return (
+                                <Badge key={platform} variant="outline" className={`text-xs ${colors[platform] || 'bg-gray-100 text-gray-700'}`}>
+                                  {platform}
+                                </Badge>
+                              )
+                            })}
                           </div>
                         </div>
-                        <div className="flex items-center gap-1 ml-3">
-                          {user.platforms?.map((platform: string) => {
-                            const colors: Record<string, string> = {
-                              slack: 'bg-purple-100 text-purple-700',
-                              rootly: 'bg-blue-100 text-blue-700',
-                              pagerduty: 'bg-green-100 text-green-700',
-                              github: 'bg-gray-100 text-gray-700',
-                              jira: 'bg-indigo-100 text-indigo-700'
-                            }
-                            return (
-                              <Badge key={platform} variant="outline" className={`text-xs ${colors[platform] || 'bg-gray-100 text-gray-700'}`}>
-                                {platform}
-                              </Badge>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="text-sm text-gray-600 text-center py-6">
-                  <p>Use the <strong>Sync Members</strong> button at the top to load users from your organization.</p>
-                </div>
-              )}
+                ) : (
+                  <div className="text-sm text-gray-600 text-center py-6">
+                    <p>Use the <strong>Sync Members</strong> button at the top to load users from your organization.</p>
+                  </div>
+                )
+              })()}
             </div>
           )}
 
