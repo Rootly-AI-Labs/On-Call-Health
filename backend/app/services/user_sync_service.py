@@ -273,11 +273,17 @@ class UserSyncService:
             # This prevents one user from overwriting another user's correlations
             if email.lower() == current_user.email.lower():
                 # This is the current user's own correlation
+                logger.info(f"🔍 SPENCER: Looking for personal correlation with user_id={user_id}, email={email}")
                 # First check if we have an existing user_id correlation
                 correlation = self.db.query(UserCorrelation).filter(
                     UserCorrelation.user_id == user_id,
                     UserCorrelation.email == email
                 ).first()
+
+                if correlation:
+                    logger.info(f"✅ SPENCER: Found existing personal correlation id={correlation.id}, integration_ids={correlation.integration_ids}")
+                else:
+                    logger.warning(f"❌ SPENCER: No personal correlation found with user_id={user_id}, email={email}")
 
                 # If not found, check if there's a NULL user_id correlation we should migrate
                 if not correlation:
