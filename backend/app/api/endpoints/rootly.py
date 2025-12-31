@@ -1458,12 +1458,17 @@ async def get_synced_users(
 
         # Filter by integration_id if provided (check if value is in JSON array)
         if integration_id:
+            logger.info(f"Filtering {len(correlations)} correlations by integration_id={integration_id}")
             filtered_correlations = []
             for corr in correlations:
                 # Only include if integration_id is in the integration_ids array
                 # Skip users with NULL integration_ids (not yet synced from any org)
                 if corr.integration_ids and integration_id in corr.integration_ids:
                     filtered_correlations.append(corr)
+                    logger.debug(f"✓ Included {corr.email} - has integration_id {integration_id} in {corr.integration_ids}")
+                elif corr.integration_ids:
+                    logger.debug(f"✗ Skipped {corr.email} - integration_id {integration_id} not in {corr.integration_ids}")
+            logger.info(f"Filtered to {len(filtered_correlations)} correlations with integration_id={integration_id}")
             correlations = filtered_correlations
 
         # Fetch on-call emails if requested
