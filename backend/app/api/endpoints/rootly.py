@@ -1548,6 +1548,16 @@ async def get_synced_users(
                 logger.error(traceback.format_exc())
                 # Continue without on-call status
 
+        # Get survey counts for all users in this organization
+        from app.models.survey_response import UserBurnoutReport
+        survey_counts = {}
+        for corr in correlations:
+            if corr.user_id:
+                count = db.query(func.count(UserBurnoutReport.id)).filter(
+                    UserBurnoutReport.user_id == corr.user_id
+                ).scalar() or 0
+                survey_counts[corr.id] = count
+
         # Format the response
         synced_users = []
         for corr in correlations:
@@ -1579,6 +1589,7 @@ async def get_synced_users(
                 "jira_account_id": corr.jira_account_id,
                 "jira_email": corr.jira_email,
                 "is_oncall": is_oncall,
+                "survey_count": survey_counts.get(corr.id, 0),
                 "created_at": corr.created_at.isoformat() if corr.created_at else None
             })
 
