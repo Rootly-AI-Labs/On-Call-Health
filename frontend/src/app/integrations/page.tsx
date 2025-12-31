@@ -1958,7 +1958,7 @@ export default function IntegrationsPage() {
   }
 
   // Fetch synced users from database
-  const fetchSyncedUsers = async (showToast = true, autoSync = true, forceRefresh = false) => {
+  const fetchSyncedUsers = async (showToast = true, autoSync = true, forceRefresh = false, openDrawer = true) => {
     return TeamHandlers.fetchSyncedUsers(
       selectedOrganization,
       setLoadingSyncedUsers,
@@ -1972,7 +1972,8 @@ export default function IntegrationsPage() {
       setSavedRecipients,
       syncedUsersCache.current,
       forceRefresh,
-      recipientsCache.current
+      recipientsCache.current,
+      openDrawer
     )
   }
 

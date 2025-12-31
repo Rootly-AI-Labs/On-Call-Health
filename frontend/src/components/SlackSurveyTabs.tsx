@@ -20,7 +20,7 @@ interface SlackSurveyTabsProps {
   userInfo: any
   fetchTeamMembers: () => void
   syncUsersToCorrelation: () => void
-  fetchSyncedUsers: () => void
+  fetchSyncedUsers: (showToast?: boolean, autoSync?: boolean, forceRefresh?: boolean, openDrawer?: boolean) => void
   setShowManualSurveyModal: (show: boolean) => void
   loadSlackPermissions: () => void
   toast: any
@@ -77,7 +77,8 @@ export function SlackSurveyTabs({
   // Auto-fetch synced users when component mounts or organization changes
   useEffect(() => {
     if (selectedOrganization) {
-      fetchSyncedUsers()
+      // Fetch users but don't open the drawer (showToast=false, autoSync=true, forceRefresh=false, openDrawer=false)
+      fetchSyncedUsers(false, true, false, false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedOrganization])
