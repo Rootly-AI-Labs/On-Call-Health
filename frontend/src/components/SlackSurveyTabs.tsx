@@ -74,6 +74,14 @@ export function SlackSurveyTabs({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Empty array - run once on mount
 
+  // Auto-fetch synced users when component mounts or organization changes
+  useEffect(() => {
+    if (selectedOrganization) {
+      fetchSyncedUsers()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedOrganization])
+
   // Poll schedule every 10 seconds to sync changes across admins (only when page is visible)
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -388,7 +396,7 @@ export function SlackSurveyTabs({
                   </div>
                 ) : (
                   <div className="text-sm text-gray-600 text-center py-6">
-                    <p>Use the <strong>Sync Members</strong> button at the top to load users from your organization.</p>
+                    <p>No Slack users found. Use the <strong>Sync Members</strong> button at the top to sync users from your organization.</p>
                   </div>
                 )
               })()}
