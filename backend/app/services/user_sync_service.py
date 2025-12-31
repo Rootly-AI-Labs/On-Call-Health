@@ -147,6 +147,26 @@ class UserSyncService:
                 stats['jira_skipped'] = 0
                 stats['jira_error'] = error_msg
 
+            # After syncing Rootly/PagerDuty users, try to match Linear accounts
+            # Wrap in try-except to ensure Linear failures don't block other operations
+            try:
+                linear_stats = await self._match_linear_users(current_user)
+                if linear_stats:
+                    stats['linear_matched'] = linear_stats['matched']
+                    stats['linear_skipped'] = linear_stats['skipped']
+                    logger.info(
+                        f"Linear matching: {linear_stats['matched']} users matched, "
+                        f"{linear_stats['skipped']} skipped"
+                    )
+                # If None is returned (no Linear integration), don't set stats
+                # This prevents frontend from showing "Matched 0 users to Linear"
+            except Exception as e:
+                error_msg = f"Linear matching failed: {str(e)}"
+                logger.error(f"{error_msg} - continuing with other operations")
+                stats['linear_matched'] = 0
+                stats['linear_skipped'] = 0
+                stats['linear_error'] = error_msg
+
             return stats
 
         except Exception as e:
@@ -247,6 +267,7 @@ class UserSyncService:
 
         # Beta mode: If no organization, isolate by user_id instead
         if not organization_id:
+            organization_id = user_id  # Use user_id as organization_id in beta mode
             logger.info(f"User {user_id} has no organization_id - using user_id for isolation (beta mode)")
 
         for user in users:
@@ -296,28 +317,43 @@ class UserSyncService:
                 # Update existing correlation
                 updated += self._update_correlation(correlation, user, platform, integration_id)
             else:
-                # SECURITY FIX: Only set user_id if this email belongs to the current user
-                # This prevents assigning other people's correlation data to the wrong user_id
-                # For team roster data, user_id should be NULL (organization-scoped only)
-                assigned_user_id = None
+                # Determine user_id assignment
+                # Current user's own email gets user_id=current_user.id (personal data)
+                # Team members get user_id=NULL (org-scoped roster data)
                 if email.lower() == current_user.email.lower():
                     assigned_user_id = current_user.id
                     logger.info(f"Assigning correlation for {email} to current user {current_user.id}")
                 else:
-                    logger.debug(f"Creating org-scoped correlation for {email} (not current user)")
+                    assigned_user_id = None  # NULL for team roster data
+                    logger.debug(f"Creating org-scoped correlation for team member {email}")
 
-                # Create new correlation
-                correlation = UserCorrelation(
-                    user_id=assigned_user_id,  # NULL for others, current_user.id for self
-                    organization_id=organization_id,  # Multi-tenancy key
-                    email_domain=current_user.email_domain,  # Domain-based data sharing
-                    email=email,
-                    name=user.get("name"),  # Store user's display name
-                    integration_ids=[integration_id] if integration_id else []  # Initialize array
-                )
-                self._update_correlation(correlation, user, platform, integration_id)
-                self.db.add(correlation)
-                created += 1
+                # Safety check: ensure (user_id, email) doesn't already exist
+                existing_record = self.db.query(UserCorrelation).filter(
+                    UserCorrelation.user_id == assigned_user_id,
+                    UserCorrelation.email == email
+                ).first()
+
+                if existing_record:
+                    # Record exists but wasn't found by previous queries
+                    # Update it instead of creating new one
+                    logger.warning(
+                        f"Found existing record via safety check: user_id={assigned_user_id}, "
+                        f"email={email}. Updating instead of inserting."
+                    )
+                    updated += self._update_correlation(existing_record, user, platform, integration_id)
+                else:
+                    # Safe to create new correlation
+                    correlation = UserCorrelation(
+                        user_id=assigned_user_id,  # NULL for team members, current_user.id for own email
+                        organization_id=organization_id,  # Multi-tenancy key
+                        email_domain=current_user.email_domain,  # Domain-based data sharing
+                        email=email,
+                        name=user.get("name"),  # Store user's display name
+                        integration_ids=[integration_id] if integration_id else []  # Initialize array
+                    )
+                    self._update_correlation(correlation, user, platform, integration_id)
+                    self.db.add(correlation)
+                    created += 1
 
         # Commit all changes
         try:
@@ -803,5 +839,161 @@ class UserSyncService:
 
         except Exception as e:
             logger.error(f"Error in Jira matching: {e}", exc_info=True)
+            self.db.rollback()
+            return None
+
+    async def _match_linear_users(self, user: User) -> Optional[Dict[str, int]]:
+        """
+        Match all synced users to Linear accounts using email and name matching.
+
+        This uses:
+        - Email exact matching (primary)
+        - Name similarity matching (fuzzy matching fallback)
+
+        Returns statistics about matching results.
+        """
+        try:
+            from app.models import LinearIntegration
+            from app.services.enhanced_linear_matcher import EnhancedLinearMatcher
+            from app.auth.integration_oauth import linear_integration_oauth
+            from cryptography.fernet import Fernet
+            import base64
+            from app.core.config import settings
+
+            # Check if user has an active Linear integration
+            linear_int = self.db.query(LinearIntegration).filter(
+                LinearIntegration.user_id == user.id
+            ).first()
+
+            if not linear_int or linear_int.workspace_id == "pending":
+                logger.info("Skipping Linear matching - no active Linear integration for user")
+                return None
+
+            logger.info(f"Starting Linear account matching for user {user.id}")
+
+            # Decrypt token
+            key = settings.JWT_SECRET_KEY.encode()
+            key = base64.urlsafe_b64encode(key[:32].ljust(32, b'\0'))
+            fernet = Fernet(key)
+            access_token = fernet.decrypt(linear_int.access_token.encode()).decode()
+
+            # Fetch Linear users via GraphQL API (paginated)
+            all_users = []
+            cursor = None
+            max_pages = 20
+
+            for _ in range(max_pages):
+                result = await linear_integration_oauth.get_users(
+                    access_token,
+                    first=100,
+                    after=cursor,
+                )
+
+                nodes = result.get("nodes", [])
+                all_users.extend(nodes)
+
+                page_info = result.get("pageInfo", {})
+                if not page_info.get("hasNextPage"):
+                    break
+                cursor = page_info.get("endCursor")
+
+            # Filter to active users with required fields
+            linear_users = [
+                {
+                    "id": u.get("id"),
+                    "name": u.get("name"),
+                    "email": u.get("email"),
+                }
+                for u in all_users
+                if u.get("id") and u.get("name") and u.get("active", True)
+            ]
+
+            if not linear_users:
+                logger.info("No Linear users found to match")
+                return {"matched": 0, "skipped": 0}
+
+            # Get all synced users without Linear account IDs
+            correlations = self.db.query(UserCorrelation).filter(
+                UserCorrelation.user_id == user.id,
+                UserCorrelation.linear_user_id.is_(None)
+            ).all()
+
+            if not correlations:
+                logger.info("No users need Linear matching")
+                return {"matched": 0, "skipped": 0}
+
+            logger.info(f"Found {len(correlations)} users to match with {len(linear_users)} Linear users")
+
+            matched = 0
+            skipped = 0
+
+            # Initialize matcher
+            matcher = EnhancedLinearMatcher()
+
+            # Try to match each correlation to a Linear user
+            for correlation in correlations:
+                # Check if there's a manual mapping for this user's Linear account
+                # Manual mappings should take precedence over automatic matching
+                manual_mapping = self.db.query(UserMapping).filter(
+                    and_(
+                        UserMapping.user_id == user.id,
+                        UserMapping.source_identifier == correlation.email,
+                        UserMapping.target_platform == "linear",
+                        UserMapping.mapping_type == "manual"
+                    )
+                ).first()
+
+                if manual_mapping:
+                    # Manual mapping exists - respect it and don't overwrite
+                    logger.info(f"⚠️  Skipping {correlation.email} - manual Linear mapping exists: {manual_mapping.target_identifier}")
+                    skipped += 1
+                    continue
+
+                # Try email-based matching (primary strategy)
+                match_result = await matcher.match_email_to_linear(
+                    team_email=correlation.email,
+                    linear_users=linear_users,
+                    confidence_threshold=0.70
+                )
+
+                # Fallback to name matching if email fails and name exists
+                if not match_result and correlation.name:
+                    match_result = await matcher.match_name_to_linear(
+                        team_name=correlation.name,
+                        linear_users=linear_users,
+                        confidence_threshold=0.70
+                    )
+
+                if match_result:
+                    linear_user_id, linear_name, confidence = match_result
+                    correlation.linear_user_id = linear_user_id
+
+                    # Also set linear_email if available
+                    linear_user = next(
+                        (u for u in linear_users if u["id"] == linear_user_id),
+                        None
+                    )
+                    if linear_user and linear_user.get("email"):
+                        correlation.linear_email = linear_user["email"]
+
+                    matched += 1
+                    logger.info(f"✅ Matched {correlation.name} ({correlation.email}) to Linear: {linear_name} (confidence: {confidence:.2f})")
+                else:
+                    skipped += 1
+                    logger.debug(f"❌ No Linear match for {correlation.name} ({correlation.email})")
+
+            # Commit all changes
+            if matched > 0:
+                self.db.commit()
+                logger.info(f"✅ Completed {matched} Linear account matches")
+
+            return {
+                "matched": matched,
+                "skipped": skipped,
+                "total": len(correlations)
+            }
+
+        except Exception as e:
+            logger.error(f"Error in Linear matching: {e}", exc_info=True)
             self.db.rollback()
             return None

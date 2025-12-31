@@ -840,7 +840,7 @@ class MigrationRunner:
                     """
                 ]
             },
-            # Add future migrations here with incrementing numbers
+
             # {
             #     "name": "024_add_user_preferences",
             #     "description": "Add user preferences table",
