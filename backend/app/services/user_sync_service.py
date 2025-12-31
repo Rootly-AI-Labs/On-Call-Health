@@ -357,9 +357,14 @@ class UserSyncService:
             if not correlation.integration_ids:
                 correlation.integration_ids = [integration_id]
                 updated = True
+                logger.info(f"Added first integration_id {integration_id} to correlation {correlation.id}")
             elif integration_id not in correlation.integration_ids:
+                old_ids = correlation.integration_ids.copy() if correlation.integration_ids else []
                 correlation.integration_ids = correlation.integration_ids + [integration_id]
                 updated = True
+                logger.info(f"Added integration_id {integration_id} to correlation {correlation.id} (was {old_ids}, now {correlation.integration_ids})")
+            else:
+                logger.debug(f"Integration_id {integration_id} already in correlation {correlation.id}: {correlation.integration_ids}")
 
         # Update name if available and different
         if user.get("name") and correlation.name != user["name"]:
