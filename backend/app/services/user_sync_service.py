@@ -166,14 +166,22 @@ class UserSyncService:
 
         # Extract from JSONAPI format
         users = []
+        spencer_found = False
         for user in filtered_users:
             attrs = user.get("attributes", {})
+            email = attrs.get("email")
             users.append({
                 "id": user.get("id"),
-                "email": attrs.get("email"),
+                "email": email,
                 "name": attrs.get("name") or attrs.get("full_name"),
                 "platform": "rootly"
             })
+            if email and "spencer.cheng" in email.lower():
+                spencer_found = True
+                logger.info(f"✅ SPENCER FOUND in Rootly API: {email} (id: {user.get('id')}, name: {attrs.get('name')})")
+
+        if not spencer_found:
+            logger.warning(f"❌ SPENCER NOT FOUND in {len(users)} Rootly users")
 
         return users
 
