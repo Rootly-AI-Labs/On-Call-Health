@@ -1469,6 +1469,8 @@ async def get_synced_users(
                         logger.info(f"✓ SPENCER INCLUDED - integration_id={integration_id} in {corr.integration_ids} (types: {[type(x) for x in corr.integration_ids]})")
                 elif corr.email == "spencer.cheng@rootly.com":
                     logger.info(f"✗ SPENCER SKIPPED - integration_id={integration_id} (type {type(integration_id)}) NOT in {corr.integration_ids} (types: {[type(x) for x in corr.integration_ids] if corr.integration_ids else 'NULL'})")
+                    logger.info(f"✗ SPENCER DEBUG - corr.integration_ids type: {type(corr.integration_ids)}, repr: {repr(corr.integration_ids)}")
+                    logger.info(f"✗ SPENCER DEBUG - Checking each element: {[(x, x == integration_id, x == str(integration_id), x == int(integration_id) if integration_id.isdigit() else False) for x in (corr.integration_ids if corr.integration_ids else [])]}")
             logger.info(f"Filtered to {len(filtered_correlations)} correlations with integration_id={integration_id}")
             correlations = filtered_correlations
 
