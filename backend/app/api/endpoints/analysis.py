@@ -496,9 +496,9 @@ async def _run_analysis_task_impl(db, analysis_id: int, integration_id: int, day
             # Fetch user correlations for Jira mapping
             synced_users = []
             try:
-                logger.info(f"🔍 Fetching user correlations for user_id={user_id}")
+                logger.info(f"🔍 Fetching user correlations for organization_id={user.organization_id}")
                 user_correlations = db.query(UserCorrelation).filter(
-                    UserCorrelation.user_id == user_id
+                    UserCorrelation.organization_id == user.organization_id
                 ).all()
 
                 logger.info(f"🔍 Query returned {len(user_correlations)} user correlation records")
