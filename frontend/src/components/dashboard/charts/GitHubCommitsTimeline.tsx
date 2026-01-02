@@ -19,8 +19,10 @@ export function GitHubCommitsTimeline({ analysisId, totalCommits, weekendPercent
 
   useEffect(() => {
     const fetchTimelineData = async () => {
-      if (!analysisId) {
+      // Skip if no valid analysis ID
+      if (!analysisId || analysisId === 0) {
         setLoading(false)
+        setTimelineData([])
         return
       }
 
