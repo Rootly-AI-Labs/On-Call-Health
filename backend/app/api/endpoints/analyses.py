@@ -2598,13 +2598,20 @@ async def run_analysis_task(
             try:
                 from ...models.user_correlation import UserCorrelation
 
+                # Fetch user to get organization_id (if not already fetched)
+                if 'user' not in locals() or user is None:
+                    user = db.query(User).filter(User.id == user_id).first()
+                    if not user:
+                        logger.error(f"BACKGROUND_TASK: User {user_id} not found")
+                        raise Exception(f"User {user_id} not found")
+
                 # Determine integration_id string format
                 integration_id_str = str(integration_id)
-                logger.info(f"BACKGROUND_TASK: Querying UserCorrelation for user_id={user_id}, integration_id={integration_id_str}")
+                logger.info(f"BACKGROUND_TASK: Querying UserCorrelation for organization_id={user.organization_id}, integration_id={integration_id_str}")
 
-                # Query all correlations for this user
+                # Query all correlations for this organization
                 correlations = db.query(UserCorrelation).filter(
-                    UserCorrelation.user_id == user_id
+                    UserCorrelation.organization_id == user.organization_id
                 ).all()
 
                 logger.info(f"🔍 TEAM SYNC: Found {len(correlations)} total user correlations for user_id={user_id}")
