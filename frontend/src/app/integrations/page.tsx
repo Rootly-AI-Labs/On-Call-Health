@@ -2222,13 +2222,17 @@ export default function IntegrationsPage() {
                 <Select
                   value={selectedOrganization}
                   onValueChange={async (value) => {
-                    // Only show toast if selecting a different organization
+                    // Update state immediately for instant UI response
+                    setSelectedOrganization(value)
+                    localStorage.setItem('selected_organization', value)
+
+                    // Only show toast and check permissions if selecting a different organization
                     if (value !== selectedOrganization) {
                       const selected = integrations.find(i => i.id.toString() === value)
                       if (selected) {
                         toast.success(`${selected.name} set as default`)
 
-                        // Check if the integration has valid permissions
+                        // Check permissions in background (non-blocking)
                         try {
                           const authToken = localStorage.getItem('auth_token')
                           const response = await fetch(
@@ -2262,10 +2266,6 @@ export default function IntegrationsPage() {
                         }
                       }
                     }
-
-                    setSelectedOrganization(value)
-                    // Save to localStorage for persistence
-                    localStorage.setItem('selected_organization', value)
                   }}
                 >
                   <SelectTrigger className="flex-1 h-10 bg-slate-50 border-slate-300 hover:bg-slate-100 transition-colors">
