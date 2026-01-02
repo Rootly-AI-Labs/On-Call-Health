@@ -141,12 +141,16 @@ async def collect_team_github_data_with_mapping(
                 elif isinstance(user_data, dict) and "github_username" in user_data:
                     github_username = user_data["github_username"]
 
+                # Look up user_id and organization_id for this specific email
+                member_user_id, org_id = recorder.get_user_and_org_for_email(email, analysis_id)
+
                 if github_username:
                     # All mappings are now discovered via API
                     mapping_method = "api_discovery"
 
                     recorder.record_successful_mapping(
-                        user_id=user_id,
+                        user_id=member_user_id,  # NULL if team member hasn't logged in
+                        organization_id=org_id,
                         analysis_id=analysis_id,
                         source_platform=source_platform,
                         source_identifier=email,
@@ -159,7 +163,8 @@ async def collect_team_github_data_with_mapping(
                 else:
                     # Data collected but no clear username
                     recorder.record_successful_mapping(
-                        user_id=user_id,
+                        user_id=member_user_id,
+                        organization_id=org_id,
                         analysis_id=analysis_id,
                         source_platform=source_platform,
                         source_identifier=email,
@@ -169,9 +174,13 @@ async def collect_team_github_data_with_mapping(
                         data_points_count=data_points
                     )
             else:
+                # Look up user_id and organization_id for failed mapping too
+                member_user_id, org_id = recorder.get_user_and_org_for_email(email, analysis_id)
+
                 # Failed mapping
                 recorder.record_failed_mapping(
-                    user_id=user_id,
+                    user_id=member_user_id,
+                    organization_id=org_id,
                     analysis_id=analysis_id,
                     source_platform=source_platform,
                     source_identifier=email,
