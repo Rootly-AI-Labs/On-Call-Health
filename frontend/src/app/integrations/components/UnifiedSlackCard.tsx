@@ -20,6 +20,7 @@ interface UnifiedSlackCardProps {
   teamMembers: any[]
   loadingTeamMembers: boolean
   loadingSyncedUsers: boolean
+  syncedUsers: any[]
   fetchTeamMembers: () => void
   syncUsersToCorrelation: () => void
   fetchSyncedUsers: () => void
@@ -55,6 +56,7 @@ export function UnifiedSlackCard({
   teamMembers,
   loadingTeamMembers,
   loadingSyncedUsers,
+  syncedUsers,
   fetchTeamMembers,
   syncUsersToCorrelation,
   fetchSyncedUsers,
@@ -486,6 +488,7 @@ export function UnifiedSlackCard({
                   teamMembers={teamMembers}
                   loadingTeamMembers={loadingTeamMembers}
                   loadingSyncedUsers={loadingSyncedUsers}
+                  syncedUsers={syncedUsers}
                   userInfo={userInfo}
                   fetchTeamMembers={fetchTeamMembers}
                   syncUsersToCorrelation={syncUsersToCorrelation}
