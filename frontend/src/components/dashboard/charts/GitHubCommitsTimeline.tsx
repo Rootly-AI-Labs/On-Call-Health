@@ -13,14 +13,17 @@ interface GitHubCommitsTimelineProps {
 }
 
 export function GitHubCommitsTimeline({ analysisId, totalCommits, weekendPercentage, cache, setCache }: GitHubCommitsTimelineProps) {
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [timelineData, setTimelineData] = useState<any[]>([])
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchTimelineData = async () => {
-      if (!analysisId) {
+      // Skip if no valid analysis ID
+      if (!analysisId || analysisId === 0) {
         setLoading(false)
+        setTimelineData([])
+        setError(null)
         return
       }
 

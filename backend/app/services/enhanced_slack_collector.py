@@ -57,6 +57,9 @@ async def collect_team_slack_data_with_mapping(
                 if slack_user_id:
                     # Determine mapping method
                     from .slack_collector import SlackCollector
+                    # Look up user_id and organization_id for this specific identifier
+                    member_user_id, org_id = recorder.get_user_and_org_for_email(identifier, analysis_id)
+
                     collector = SlackCollector()
                     if use_names and identifier in collector.name_to_slack_mappings:
                         mapping_method = "manual_name_mapping"
@@ -64,9 +67,10 @@ async def collect_team_slack_data_with_mapping(
                         mapping_method = "manual_email_mapping"
                     else:
                         mapping_method = "api_search"
-                    
+
                     recorder.record_successful_mapping(
-                        user_id=user_id,
+                        user_id=member_user_id,
+                        organization_id=org_id,
                         analysis_id=analysis_id,
                         source_platform=source_platform,
                         source_identifier=identifier,
@@ -77,9 +81,13 @@ async def collect_team_slack_data_with_mapping(
                     )
                     logger.info(f"✓ Recorded successful Slack mapping: {identifier} -> {slack_user_id} ({data_points} data points)")
                 else:
+                    # Look up for data collection record
+                    member_user_id, org_id = recorder.get_user_and_org_for_email(identifier, analysis_id)
+
                     # Data collected but no clear user ID
                     recorder.record_successful_mapping(
-                        user_id=user_id,
+                        user_id=member_user_id,
+                        organization_id=org_id,
                         analysis_id=analysis_id,
                         source_platform=source_platform,
                         source_identifier=identifier,
@@ -90,13 +98,17 @@ async def collect_team_slack_data_with_mapping(
                     )
                     logger.info(f"? Recorded Slack data collection: {identifier} -> unknown user ({data_points} data points)")
             else:
+                # Look up for failed mapping
+                member_user_id, org_id = recorder.get_user_and_org_for_email(identifier, analysis_id)
+
                 # Failed mapping
                 error_msg = f"No Slack data found for {'name' if use_names else 'email'}: {identifier}"
                 if mock_mode:
                     error_msg += " (mock mode)"
-                
+
                 recorder.record_failed_mapping(
-                    user_id=user_id,
+                    user_id=member_user_id,
+                    organization_id=org_id,
                     analysis_id=analysis_id,
                     source_platform=source_platform,
                     source_identifier=identifier,
