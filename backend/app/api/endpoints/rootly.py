@@ -1746,9 +1746,10 @@ async def update_survey_recipients(
                 "is_default": True
             }
 
-        # Validate that all recipient IDs belong to this user's correlations
+        # Validate that all recipient IDs belong to this user's organization
+        # Use organization_id instead of user_id to support org-scoped users (user_id=NULL)
         valid_ids = db.query(UserCorrelation.id).filter(
-            UserCorrelation.user_id == current_user.id,
+            UserCorrelation.organization_id == current_user.organization_id,
             UserCorrelation.id.in_(recipient_ids)
         ).all()
         valid_id_set = {row[0] for row in valid_ids}
