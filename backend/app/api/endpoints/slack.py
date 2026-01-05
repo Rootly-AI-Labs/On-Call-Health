@@ -126,7 +126,7 @@ async def slack_oauth_callback(
         organization_id = None
         user_id = None
         user_email = None
-        enable_survey = True  # Default to True for backward compatibility
+        enable_survey = False  # Default to False - admin must explicitly enable
         enable_communication_patterns = False  # Default to False
 
         if state:
@@ -138,7 +138,7 @@ async def slack_oauth_callback(
                 organization_id = decoded_state.get("orgId")
                 user_id = decoded_state.get("userId")
                 user_email = decoded_state.get("email")
-                enable_survey = decoded_state.get("enableSurvey", True)  # Default True
+                enable_survey = decoded_state.get("enableSurvey", False)  # Default False
                 enable_communication_patterns = decoded_state.get("enableCommunicationPatterns", False)  # Default False
                 logger.debug(f"Decoded state - org_id: {organization_id}, user_id: {user_id}, email: {user_email}, survey: {enable_survey}, communication_patterns: {enable_communication_patterns}")
             except Exception as state_error:
