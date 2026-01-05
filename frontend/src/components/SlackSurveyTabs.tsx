@@ -274,10 +274,12 @@ export function SlackSurveyTabs({
         fetchSyncedUsers(false, false, true, false)
       } else {
         const error = await response.json()
+        console.error('Failed to save survey recipients - Backend error:', error)
+        console.error('Request payload was:', recipientIds)
         toast.error(error.detail || 'Failed to update recipients')
       }
     } catch (error) {
-      console.error('Failed to save survey recipients:', error)
+      console.error('Failed to save survey recipients - Network error:', error)
       toast.error('Failed to update recipients')
     } finally {
       setSavingRecipients(false)
