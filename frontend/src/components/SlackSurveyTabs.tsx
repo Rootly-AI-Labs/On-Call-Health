@@ -430,6 +430,19 @@ export function SlackSurveyTabs({
                 const slackUsers = syncedUsers.filter((u: any) => u.slack_user_id)
                 return slackUsers.length > 0 ? (
                   <div>
+                    {(() => {
+                      // Check if sets have different members
+                      const hasChanges = selectedRecipients.size !== savedRecipients.size ||
+                        Array.from(selectedRecipients).some(id => !savedRecipients.has(id))
+                      return hasChanges && (
+                        <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                          <p className="text-sm text-amber-900">
+                            ⚠️ <strong>Unsaved changes:</strong> You have {selectedRecipients.size} member{selectedRecipients.size !== 1 ? 's' : ''} selected.
+                            Click <strong>Save Recipients</strong> below to apply these changes.
+                          </p>
+                        </div>
+                      )
+                    })()}
                     <div className="flex items-center justify-between mb-3">
                       <h5 className="text-sm font-medium text-gray-900">
                         Team Members ({slackUsers.length})
@@ -438,16 +451,6 @@ export function SlackSurveyTabs({
                             • {savedRecipients.size} configured for automated surveys
                           </span>
                         )}
-                        {(() => {
-                          // Check if sets have different members
-                          const hasChanges = selectedRecipients.size !== savedRecipients.size ||
-                            Array.from(selectedRecipients).some(id => !savedRecipients.has(id))
-                          return hasChanges && (
-                            <span className="ml-2 text-amber-600">
-                              • Unsaved changes
-                            </span>
-                          )
-                        })()}
                       </h5>
                       <div className="flex gap-2">
                         <Button
