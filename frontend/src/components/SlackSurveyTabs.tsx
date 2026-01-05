@@ -364,6 +364,11 @@ export function SlackSurveyTabs({
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
                               <span className="font-medium text-gray-900 truncate">{user.name}</span>
+                              {user.receives_automated_surveys && (
+                                <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700 border-purple-200">
+                                  📅 Auto Survey
+                                </Badge>
+                              )}
                               {user.survey_count > 0 && (
                                 <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 border-green-200">
                                   {user.survey_count} {user.survey_count === 1 ? 'survey' : 'surveys'}
