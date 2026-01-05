@@ -70,6 +70,7 @@ export function SlackSurveyTabs({
 
   // Recipient selection state
   const [selectedRecipients, setSelectedRecipients] = useState<Set<number>>(new Set())
+  const [savedRecipients, setSavedRecipients] = useState<Set<number>>(new Set()) // Track what's actually saved
   const [savingRecipients, setSavingRecipients] = useState(false)
   const [loadingRecipients, setLoadingRecipients] = useState(false)
 
@@ -233,7 +234,9 @@ export function SlackSurveyTabs({
       if (response.ok) {
         const data = await response.json()
         // data.recipient_ids is array of UserCorrelation IDs
-        setSelectedRecipients(new Set(data.recipient_ids || []))
+        const savedIds = new Set(data.recipient_ids || [])
+        setSelectedRecipients(savedIds)
+        setSavedRecipients(savedIds) // Track what's saved
       }
     } catch (error) {
       console.error('Failed to load survey recipients:', error)
@@ -265,6 +268,8 @@ export function SlackSurveyTabs({
       if (response.ok) {
         const data = await response.json()
         toast.success(data.message || 'Survey recipients updated')
+        // Update saved state to match current selection
+        setSavedRecipients(new Set(selectedRecipients))
         // Refresh the synced users to update the "Auto Survey" badges
         fetchSyncedUsers(false, false, true, false)
       } else {
@@ -428,11 +433,21 @@ export function SlackSurveyTabs({
                     <div className="flex items-center justify-between mb-3">
                       <h5 className="text-sm font-medium text-gray-900">
                         Team Members ({slackUsers.length})
-                        {selectedRecipients.size > 0 && (
-                          <span className="ml-2 text-purple-600">
-                            • {selectedRecipients.size} selected for automated surveys
+                        {savedRecipients.size > 0 && (
+                          <span className="ml-2 text-green-600">
+                            • {savedRecipients.size} configured for automated surveys
                           </span>
                         )}
+                        {(() => {
+                          // Check if sets have different members
+                          const hasChanges = selectedRecipients.size !== savedRecipients.size ||
+                            Array.from(selectedRecipients).some(id => !savedRecipients.has(id))
+                          return hasChanges && (
+                            <span className="ml-2 text-amber-600">
+                              • Unsaved changes
+                            </span>
+                          )
+                        })()}
                       </h5>
                       <div className="flex gap-2">
                         <Button
@@ -541,9 +556,9 @@ export function SlackSurveyTabs({
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
           <p className="text-sm text-blue-900">
             ℹ️ <strong>Tip:</strong> Configure which team members receive automated surveys in the <strong>Team Members</strong> tab.
-            {selectedRecipients.size > 0 && (
+            {savedRecipients.size > 0 && (
               <span className="block mt-1">
-                Currently <strong>{selectedRecipients.size} member{selectedRecipients.size !== 1 ? 's' : ''}</strong> selected for automated surveys.
+                Currently <strong>{savedRecipients.size} member{savedRecipients.size !== 1 ? 's' : ''}</strong> configured to receive automated surveys.
               </span>
             )}
           </p>
@@ -764,7 +779,7 @@ export function SlackSurveyTabs({
                       return `${displayHour}:${String(minute).padStart(2, '0')} ${period}`
                     })()} ({Intl.DateTimeFormat().resolvedOptions().timeZone})</div>
                     <div>• <strong>Frequency:</strong> {frequencyType === 'daily' ? 'Every day' : frequencyType === 'weekday' ? 'Weekdays (Mon-Fri)' : `Every ${['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][dayOfWeek]}`}</div>
-                    <div>• <strong>Recipients:</strong> {selectedRecipients.size > 0 ? `${selectedRecipients.size} selected member${selectedRecipients.size !== 1 ? 's' : ''}` : 'All team members with Slack (configure in Team Members tab)'}</div>
+                    <div>• <strong>Recipients:</strong> {savedRecipients.size > 0 ? `${savedRecipients.size} configured member${savedRecipients.size !== 1 ? 's' : ''}` : 'All team members with Slack (configure in Team Members tab)'}</div>
                   </div>
                 </div>
               </>
