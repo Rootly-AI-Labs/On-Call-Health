@@ -1444,11 +1444,17 @@ async def get_synced_users(
     Optionally include on-call status for each user (default: true).
     """
     try:
-        from sqlalchemy import func, cast, String
+        from sqlalchemy import func, cast, String, or_, and_
 
-        # Fetch all user correlations for this user
+        # Fetch all user correlations - both personal (user_id = current_user.id) and org-scoped (user_id = NULL)
         query = db.query(UserCorrelation).filter(
-            UserCorrelation.user_id == current_user.id
+            or_(
+                UserCorrelation.user_id == current_user.id,
+                and_(
+                    UserCorrelation.user_id.is_(None),
+                    UserCorrelation.organization_id == current_user.organization_id
+                )
+            )
         )
 
         # Get all correlations, then filter in Python
@@ -1956,16 +1962,24 @@ async def update_user_correlation_jira_mapping(
     Used for dropdown selection in Team Members panel.
     """
     try:
-        # Fetch the correlation - ensure it belongs to current user
+        from sqlalchemy import or_, and_
+
+        # Fetch the correlation - handle both personal and org-scoped correlations
         correlation = db.query(UserCorrelation).filter(
             UserCorrelation.id == correlation_id,
-            UserCorrelation.user_id == current_user.id
+            or_(
+                UserCorrelation.user_id == current_user.id,
+                and_(
+                    UserCorrelation.user_id.is_(None),
+                    UserCorrelation.organization_id == current_user.organization_id
+                )
+            )
         ).first()
 
         if not correlation:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="User correlation not found or doesn't belong to you"
+                detail="User correlation not found or doesn't belong to your organization"
             )
 
         jira_account_id = (jira_account_id or "").strip()
@@ -2057,17 +2071,27 @@ async def update_user_correlation_linear_mapping(
     Used for dropdown selection in Team Members panel.
     """
     try:
-        # Fetch the correlation - ensure it belongs to current user
+        from sqlalchemy import or_, and_
+
+        # Fetch the correlation - handle both personal and org-scoped correlations
         correlation = db.query(UserCorrelation).filter(
             UserCorrelation.id == correlation_id,
-            UserCorrelation.user_id == current_user.id
+            or_(
+                UserCorrelation.user_id == current_user.id,
+                and_(
+                    UserCorrelation.user_id.is_(None),
+                    UserCorrelation.organization_id == current_user.organization_id
+                )
+            )
         ).first()
 
         if not correlation:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="User correlation not found or doesn't belong to you"
+                detail="User correlation not found or doesn't belong to your organization"
             )
+
+        logger.info(f"LINEAR MAPPING: Found correlation {correlation_id} for user {current_user.id}, email={correlation.email}, user_id={correlation.user_id}")
 
         linear_user_id = (linear_user_id or "").strip()
         old_linear_id = correlation.linear_user_id

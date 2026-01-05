@@ -309,6 +309,7 @@ class AnalysisRequest(BaseValidatedModel):
     include_github: bool = Field(False, description="Include GitHub data")
     include_slack: bool = Field(False, description="Include Slack data")
     include_jira: bool = Field(False, description="Include Jira data")
+    include_linear: bool = Field(False, description="Include Linear data")
     enable_ai: bool = Field(False, description="Enable AI insights")
     
     @field_validator('integration_id')

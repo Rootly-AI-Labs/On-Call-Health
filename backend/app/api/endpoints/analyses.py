@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, 
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from ...models import get_db, User, Analysis, RootlyIntegration, SlackIntegration, GitHubIntegration, JiraIntegration
+from ...models import get_db, User, Analysis, RootlyIntegration, SlackIntegration, GitHubIntegration, JiraIntegration, LinearIntegration, UserCorrelation
 from ...auth.dependencies import get_current_active_user
 from ...services.unified_burnout_analyzer import UnifiedBurnoutAnalyzer
 from ...core.rate_limiting import analysis_rate_limit, general_rate_limit
@@ -70,6 +70,8 @@ class RunAnalysisRequest(BaseModel):
     include_weekends: bool = True
     include_github: bool = False
     include_slack: bool = False
+    include_jira: bool = False
+    include_linear: bool = False
     enable_ai: bool = False
 
 
@@ -248,6 +250,7 @@ async def run_burnout_analysis(
                 include_github=request.include_github,
                 include_slack=request.include_slack,
                 include_jira=request.include_jira,
+                include_linear=request.include_linear,
                 user_id=current_user.id,
                 enable_ai=request.enable_ai
             )
@@ -2426,6 +2429,7 @@ async def run_analysis_task(
     include_github: bool = False,
     include_slack: bool = False,
     include_jira: bool = False,
+    include_linear: bool = False,
     user_id: int = None,
     enable_ai: bool = False
 ):
@@ -2442,10 +2446,10 @@ async def run_analysis_task(
 
     logger = logging.getLogger(__name__)
     logger.info(f"BACKGROUND_TASK: Starting analysis {analysis_id} with timeout mechanism")
-    logger.info(f"BACKGROUND_TASK: GitHub/Slack/Jira params - include_github: {include_github}, include_slack: {include_slack}, include_jira: {include_jira}")
+    logger.info(f"BACKGROUND_TASK: Integration params - GitHub: {include_github}, Slack: {include_slack}, Jira: {include_jira}, Linear: {include_linear}")
     logger.info(f"BACKGROUND_TASK: User ID received: {user_id}")
     logger.info(f"BACKGROUND_TASK: AI params - enable_ai: {enable_ai}")
-    print(f"BACKGROUND_TASK: GitHub/Slack/Jira params - include_github: {include_github}, include_slack: {include_slack}, include_jira: {include_jira}")
+    print(f"BACKGROUND_TASK: Integration params - GitHub: {include_github}, Slack: {include_slack}, Jira: {include_jira}, Linear: {include_linear}")
     print(f"BACKGROUND_TASK: User ID received: {user_id}")
     print(f"BACKGROUND_TASK: AI params - enable_ai: {enable_ai}")
     
@@ -2486,10 +2490,11 @@ async def run_analysis_task(
         slack_token = None
         github_token = None
         jira_token = None
+        linear_token = None
 
-        logger.info(f"BACKGROUND_TASK: Checking conditions - user_id: {user_id}, include_slack: {include_slack}, include_github: {include_github}, include_jira: {include_jira}")
+        logger.info(f"BACKGROUND_TASK: Checking conditions - user_id: {user_id}, include_slack: {include_slack}, include_github: {include_github}, include_jira: {include_jira}, include_linear: {include_linear}")
 
-        if user_id and (include_slack or include_github or include_jira):
+        if user_id and (include_slack or include_github or include_jira or include_linear):
             logger.info(f"BACKGROUND_TASK: Fetching user {user_id} integrations for analysis {analysis_id}")
 
             if include_slack:
@@ -2534,8 +2539,21 @@ async def run_analysis_task(
                     logger.info(f"BACKGROUND_TASK: Found Jira integration for user {user_id} with token: {jira_token[:10]}...")
                 else:
                     logger.warning(f"BACKGROUND_TASK: No Jira integration found for user {user_id}")
+
+            if include_linear:
+                logger.info(f"BACKGROUND_TASK: Looking for Linear integration for user {user_id}")
+                linear_integration = db.query(LinearIntegration).filter(
+                    LinearIntegration.user_id == user_id
+                ).first()
+                logger.info(f"BACKGROUND_TASK: Linear integration query result: {linear_integration}")
+                if linear_integration and linear_integration.access_token:
+                    # Linear tokens don't need decryption (they use OAuth refresh flow)
+                    linear_token = linear_integration.access_token
+                    logger.info(f"BACKGROUND_TASK: Found Linear integration for user {user_id}")
+                else:
+                    logger.warning(f"BACKGROUND_TASK: No Linear integration found for user {user_id}")
         else:
-            logger.info(f"BACKGROUND_TASK: Skipping user integrations - user_id: {user_id}, include_slack: {include_slack}, include_github: {include_github}, include_jira: {include_jira}")
+            logger.info(f"BACKGROUND_TASK: Skipping user integrations - user_id: {user_id}, include_slack: {include_slack}, include_github: {include_github}, include_jira: {include_jira}, include_linear: {include_linear}")
 
         # Initialize analyzer service based on platform and AI enablement
         logger.info(f"BACKGROUND_TASK: Initializing {platform} analyzer service for analysis {analysis_id}, enable_ai: {enable_ai}")
@@ -2654,6 +2672,7 @@ async def run_analysis_task(
                             'github_username': corr.github_username,
                             'slack_user_id': corr.slack_user_id,
                             'jira_account_id': corr.jira_account_id,  # Jira mapping for workload correlation
+                            'linear_user_id': corr.linear_user_id,  # Linear mapping for workload correlation
                             'synced': True  # Mark as from Team Sync
                         }
                         synced_users.append(user_data)
@@ -2671,12 +2690,87 @@ async def run_analysis_task(
                         for u in jira_synced[:3]:
                             logger.info(f"      - {u.get('name')} → {u.get('jira_account_id')}")
                 else:
-                    logger.info(f"⚠️  TEAM SYNC: No synced users found for integration {integration_id_str} - will fetch from API")
-                    synced_users = None  # Fallback to API
+                    logger.info(f"⚠️  TEAM SYNC: No synced users found for integration {integration_id_str} - checking for manual mappings")
+                    # Fallback to manual mappings from UserCorrelation
+                    manual_correlations = db.query(UserCorrelation).filter(
+                        UserCorrelation.user_id == user_id,
+                        UserCorrelation.is_active == 1
+                    ).all()
+
+                    if manual_correlations:
+                        synced_users = []
+                        for corr in manual_correlations:
+                            # Build user data with all mapping fields (mirrors Team Sync structure)
+                            if platform == "pagerduty":
+                                platform_user_id = corr.pagerduty_user_id
+                                if not platform_user_id:
+                                    continue
+                            else:  # rootly
+                                platform_user_id = corr.rootly_user_id or corr.email
+                                if not platform_user_id:
+                                    continue
+
+                            user_data = {
+                                'id': platform_user_id,
+                                'name': corr.name,
+                                'email': corr.email,
+                                'is_oncall': oncall_emails.get(corr.email.lower(), False),
+                                'github_username': corr.github_username,
+                                'slack_user_id': corr.slack_user_id,
+                                'jira_account_id': corr.jira_account_id,
+                                'linear_user_id': corr.linear_user_id,
+                                'synced': False  # Mark as manual mappings, not from Team Sync
+                            }
+                            synced_users.append(user_data)
+
+                        logger.info(f"✅ FALLBACK: Found {len(synced_users)} manual mappings in UserCorrelation")
+                        linear_mapped = [u for u in synced_users if u.get('linear_user_id')]
+                        if linear_mapped:
+                            logger.info(f"   ✅ {len(linear_mapped)} manual mappings have linear_user_id")
+                    else:
+                        logger.info(f"⚠️  FALLBACK: No manual mappings found - will fetch from API")
+                        synced_users = None  # Fallback to API
 
             except Exception as e:
-                logger.warning(f"⚠️  TEAM SYNC: Failed to fetch synced users: {e} - falling back to API")
-                synced_users = None  # Fallback to API on error
+                logger.warning(f"⚠️  TEAM SYNC: Failed to fetch synced users: {e} - checking for manual mappings")
+                # Fallback to manual mappings from UserCorrelation on error
+                try:
+                    manual_correlations = db.query(UserCorrelation).filter(
+                        UserCorrelation.user_id == user_id,
+                        UserCorrelation.is_active == 1
+                    ).all()
+
+                    if manual_correlations:
+                        synced_users = []
+                        for corr in manual_correlations:
+                            if platform == "pagerduty":
+                                platform_user_id = corr.pagerduty_user_id
+                                if not platform_user_id:
+                                    continue
+                            else:  # rootly
+                                platform_user_id = corr.rootly_user_id or corr.email
+                                if not platform_user_id:
+                                    continue
+
+                            user_data = {
+                                'id': platform_user_id,
+                                'name': corr.name,
+                                'email': corr.email,
+                                'is_oncall': oncall_emails.get(corr.email.lower(), False),
+                                'github_username': corr.github_username,
+                                'slack_user_id': corr.slack_user_id,
+                                'jira_account_id': corr.jira_account_id,
+                                'linear_user_id': corr.linear_user_id,
+                                'synced': False
+                            }
+                            synced_users.append(user_data)
+                        logger.info(f"✅ ERROR FALLBACK: Recovered {len(synced_users)} manual mappings")
+                    else:
+                        logger.warning(f"⚠️  ERROR FALLBACK: No manual mappings available - will fetch from API")
+                        synced_users = None
+                except Exception as fallback_error:
+                    logger.warning(f"⚠️  ERROR FALLBACK: Failed to query manual mappings: {fallback_error} - will fetch from API")
+                    synced_users = None  # Final fallback to API on error
         else:
             logger.info("BACKGROUND_TASK: Skipping Team Sync query (missing user_id or integration_id)")
 
@@ -2690,11 +2784,12 @@ async def run_analysis_task(
             github_token=github_token if include_github else None,
             slack_token=slack_token if include_slack else None,
             jira_token=jira_token if include_jira else None,
+            linear_token=linear_token if include_linear else None,
             organization_name=organization_name,
             synced_users=synced_users,  # Pass synced users from Team Sync
             current_user_id=user_id  # Pass the current user ID for Jira integration lookup
         )
-        logger.info(f"BACKGROUND_TASK: UnifiedBurnoutAnalyzer initialized - Features: AI={use_ai_analyzer}, GitHub={include_github}, Slack={include_slack}, Jira={include_jira}, current_user_id={user_id}")
+        logger.info(f"BACKGROUND_TASK: UnifiedBurnoutAnalyzer initialized - Features: AI={use_ai_analyzer}, GitHub={include_github}, Slack={include_slack}, Jira={include_jira}, Linear={include_linear}, current_user_id={user_id}")
         
         # Run the analysis with timeout (15 minutes max)
         logger.info(f"BACKGROUND_TASK: Starting burnout analysis with 15-minute timeout for analysis {analysis_id}")

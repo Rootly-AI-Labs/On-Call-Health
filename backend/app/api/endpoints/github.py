@@ -3,6 +3,7 @@ GitHub integration API endpoints for OAuth and data collection.
 """
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy.dialects.postgresql import insert
 from typing import Dict, Any
 import secrets
 import json
@@ -158,23 +159,24 @@ async def github_callback(
             github_username
         )
 
-        # Update user correlations (organization-scoped for multi-tenancy)
+        # Update user correlations using PostgreSQL upsert (INSERT ... ON CONFLICT)
+        # Upsert on (user_id, email) composite key - if record exists, update github_username
         for email in email_addresses:
-            existing_correlation = db.query(UserCorrelation).filter(
-                UserCorrelation.organization_id == current_user.organization_id,
-                UserCorrelation.email == email
-            ).first()
-
-            if existing_correlation:
-                existing_correlation.github_username = github_username
-            else:
-                correlation = UserCorrelation(
-                    user_id=current_user.id,
-                    organization_id=current_user.organization_id,
-                    email=email,
-                    github_username=github_username
-                )
-                db.add(correlation)
+            stmt = insert(UserCorrelation).values(
+                user_id=current_user.id,
+                organization_id=current_user.organization_id,
+                email=email,
+                github_username=github_username,
+                is_active=1
+            ).on_conflict_do_update(
+                index_elements=['user_id', 'email'],  # Composite key to match constraint
+                set_={
+                    'github_username': github_username,
+                    'organization_id': current_user.organization_id,
+                    'is_active': 1
+                }
+            )
+            db.execute(stmt)
 
         db.commit()
 
@@ -455,24 +457,33 @@ async def connect_github_with_token(
             )
             db.add(integration)
         
-        # Update user correlations (organization-scoped for multi-tenancy)
-        for email in email_addresses:
-            existing_correlation = db.query(UserCorrelation).filter(
-                UserCorrelation.organization_id == current_user.organization_id,
-                UserCorrelation.email == email
-            ).first()
+        # Before assigning the GitHub username, remove it from all other users (to maintain uniqueness)
+        from ...services.manual_mapping_service import ManualMappingService
+        service = ManualMappingService(db)
+        service.remove_github_from_all_other_users(
+            current_user.id,
+            github_username
+        )
 
-            if existing_correlation:
-                existing_correlation.github_username = github_username
-            else:
-                correlation = UserCorrelation(
-                    user_id=current_user.id,
-                    organization_id=current_user.organization_id,
-                    email=email,
-                    github_username=github_username
-                )
-                db.add(correlation)
-        
+        # Update user correlations using PostgreSQL upsert (INSERT ... ON CONFLICT)
+        # Upsert on (user_id, email) composite key - if record exists, update github_username
+        for email in email_addresses:
+            stmt = insert(UserCorrelation).values(
+                user_id=current_user.id,
+                organization_id=current_user.organization_id,
+                email=email,
+                github_username=github_username,
+                is_active=1
+            ).on_conflict_do_update(
+                index_elements=['user_id', 'email'],  # Composite key to match constraint
+                set_={
+                    'github_username': github_username,
+                    'organization_id': current_user.organization_id,
+                    'is_active': 1
+                }
+            )
+            db.execute(stmt)
+
         db.commit()
 
         # Build response message with org warning if needed

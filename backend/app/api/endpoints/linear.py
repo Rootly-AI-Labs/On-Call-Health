@@ -251,8 +251,16 @@ async def _process_callback(code: str, state: Optional[str], db: Session, curren
                 db.add(mapping)
                 logger.info("[Linear] Created workspace mapping for org %s", organization_id)
 
-        # 6) Correlate user
+        # 6) Correlate user - enforce one-to-one mapping across all users in org
         if linear_email and linear_user_id and organization_id:
+            # Before assigning this Linear account, remove it from any other users (both tables)
+            from ...services.manual_mapping_service import ManualMappingService
+            service = ManualMappingService(db)
+            service.remove_linear_from_all_other_users(
+                user_id,
+                linear_user_id
+            )
+
             corr = db.query(UserCorrelation).filter(
                 UserCorrelation.organization_id == organization_id,
                 UserCorrelation.email == linear_email,
@@ -766,6 +774,16 @@ async def disconnect_linear(
             detail="Linear integration not found.",
         )
 
+    # Clear Linear fields from UserCorrelation
+    if integration.linear_user_id and current_user.organization_id:
+        correlations = db.query(UserCorrelation).filter(
+            UserCorrelation.organization_id == current_user.organization_id,
+            UserCorrelation.linear_user_id == integration.linear_user_id,
+        ).all()
+        for c in correlations:
+            c.linear_user_id = None
+            c.linear_email = None
+
     # Remove workspace mapping if exists
     if current_user.organization_id:
         db.query(LinearWorkspaceMapping).filter(
@@ -951,63 +969,76 @@ async def auto_map_linear_users(
 
         access_token = await _get_valid_token(integration, db)
 
-        # Fetch all Linear users for matching
-        all_users = []
+        # Fetch Linear workload data (issues aggregated by assignee) - consistent with Jira pattern
+        filter_dict = {
+            "state": {"type": {"nin": ["completed", "canceled"]}},
+        }
+
+        linear_workload = {}
+        all_issues = []
         cursor = None
-        max_pages = 20
+        max_pages = 10
 
         for _ in range(max_pages):
-            result = await linear_integration_oauth.get_users(
+            result = await linear_integration_oauth.get_issues(
                 access_token,
                 first=100,
                 after=cursor,
+                filter_dict=filter_dict,
             )
 
             nodes = result.get("nodes", [])
-            all_users.extend(nodes)
+            all_issues.extend(nodes)
 
             page_info = result.get("pageInfo", {})
             if not page_info.get("hasNextPage"):
                 break
             cursor = page_info.get("endCursor")
 
-        # Filter to active users
-        linear_users = [
-            {
-                "id": u.get("id"),
-                "name": u.get("name"),
-                "email": u.get("email"),
-                "active": u.get("active", True)
-            }
-            for u in all_users
-            if u.get("id") and u.get("name") and u.get("active", True)
-        ]
+        # Aggregate by assignee (linear_user_id -> workload data)
+        for issue in all_issues:
+            assignee = issue.get("assignee") or {}
+            linear_user_id = assignee.get("id")
+            if linear_user_id and linear_user_id not in linear_workload:
+                linear_workload[linear_user_id] = {
+                    "assignee_id": linear_user_id,
+                    "assignee_name": assignee.get("name"),
+                    "assignee_email": assignee.get("email"),
+                    "count": 0,
+                    "priorities": {},
+                    "tickets": [],
+                }
 
-        logger.info("[Linear] Fetched %d Linear users for matching", len(linear_users))
+            if linear_user_id:
+                linear_workload[linear_user_id]["count"] += 1
+                priority = issue.get("priority", 0)
+                priority_name = _priority_to_name(priority)
+                linear_workload[linear_user_id]["priorities"][priority_name] = \
+                    linear_workload[linear_user_id]["priorities"].get(priority_name, 0) + 1
 
-        # Convert team_emails to team_members format
-        team_members = [{"email": email, "name": None} for email in team_emails]
+        logger.info("[Linear] Fetched workload for %d Linear users", len(linear_workload))
 
-        # Record mappings using LinearMappingService
+        # Record mappings using LinearMappingService - consistent with Jira
         mapping_service = LinearMappingService(db)
-        mapping_stats = await mapping_service.auto_map_users(
-            team_members=team_members,
-            linear_users=linear_users,
+        mapping_stats = mapping_service.record_linear_mappings(
+            team_emails=team_emails,
+            linear_workload_data=linear_workload,
             user_id=current_user.id,
+            analysis_id=analysis_id,
             source_platform=source_platform
         )
 
         logger.info(
-            "[Linear] Auto-mapping complete: %d mapped, %d not found",
+            "[Linear] Auto-mapping complete: %d mapped, %d failed",
             mapping_stats.get("mapped", 0),
-            mapping_stats.get("not_found", 0)
+            mapping_stats.get("failed", 0)
         )
 
         return {
             "success": True,
             "message": f"Auto-mapped {mapping_stats.get('mapped', 0)} Linear users to team emails",
             "stats": mapping_stats,
-            "linear_user_count": len(linear_users),
+            "linear_user_count": len(linear_workload),
         }
 
     except HTTPException:
