@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Checkbox } from "@/components/ui/checkbox"
 import { CheckCircle, Users, Send, RefreshCw, Database, Users2, Loader2, Building, Clock, Mail } from "lucide-react"
 
 interface SlackSurveyTabsProps {
@@ -67,6 +68,10 @@ export function SlackSurveyTabs({
   const [savingSchedule, setSavingSchedule] = useState(false)
   const [showSaveConfirmation, setShowSaveConfirmation] = useState(false)
 
+  // Recipient selection state
+  const [selectedRecipients, setSelectedRecipients] = useState<Set<number>>(new Set())
+  const [savingRecipients, setSavingRecipients] = useState(false)
+  const [loadingRecipients, setLoadingRecipients] = useState(false)
 
   // Load schedule on mount - backend uses auth token to determine org
   useEffect(() => {
@@ -79,6 +84,8 @@ export function SlackSurveyTabs({
     if (selectedOrganization) {
       // Fetch users but don't open the drawer (showToast=false, autoSync=true, forceRefresh=false, openDrawer=false)
       fetchSyncedUsers(false, true, false, false)
+      // Load saved recipients
+      loadSurveyRecipients()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedOrganization])
@@ -208,6 +215,90 @@ export function SlackSurveyTabs({
     }
   }
 
+  const loadSurveyRecipients = async () => {
+    if (!selectedOrganization) return
+
+    setLoadingRecipients(true)
+    try {
+      const authToken = localStorage.getItem('auth_token')
+      const response = await fetch(
+        `${API_BASE}/api/rootly/integrations/${selectedOrganization}/survey-recipients`,
+        {
+          headers: {
+            'Authorization': `Bearer ${authToken}`
+          }
+        }
+      )
+
+      if (response.ok) {
+        const data = await response.json()
+        // data.recipient_ids is array of UserCorrelation IDs
+        setSelectedRecipients(new Set(data.recipient_ids || []))
+      }
+    } catch (error) {
+      console.error('Failed to load survey recipients:', error)
+    } finally {
+      setLoadingRecipients(false)
+    }
+  }
+
+  const saveSurveyRecipients = async () => {
+    if (!selectedOrganization) return
+
+    setSavingRecipients(true)
+    try {
+      const authToken = localStorage.getItem('auth_token')
+      const recipientIds = Array.from(selectedRecipients)
+
+      const response = await fetch(
+        `${API_BASE}/api/rootly/integrations/${selectedOrganization}/survey-recipients`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify(recipientIds)
+        }
+      )
+
+      if (response.ok) {
+        const data = await response.json()
+        toast.success(data.message || 'Survey recipients updated')
+        // Refresh the synced users to update the "Auto Survey" badges
+        fetchSyncedUsers(false, false, true, false)
+      } else {
+        const error = await response.json()
+        toast.error(error.detail || 'Failed to update recipients')
+      }
+    } catch (error) {
+      console.error('Failed to save survey recipients:', error)
+      toast.error('Failed to update recipients')
+    } finally {
+      setSavingRecipients(false)
+    }
+  }
+
+  const toggleRecipient = (userId: number) => {
+    const newSet = new Set(selectedRecipients)
+    if (newSet.has(userId)) {
+      newSet.delete(userId)
+    } else {
+      newSet.add(userId)
+    }
+    setSelectedRecipients(newSet)
+  }
+
+  const selectAllRecipients = () => {
+    const slackUsers = syncedUsers.filter((u: any) => u.slack_user_id)
+    const allIds = new Set(slackUsers.map((u: any) => u.id))
+    setSelectedRecipients(allIds)
+  }
+
+  const deselectAllRecipients = () => {
+    setSelectedRecipients(new Set())
+  }
+
   const handleSlackConnect = () => {
     const clientId = process.env.NEXT_PUBLIC_SLACK_CLIENT_ID
     const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL
@@ -316,37 +407,16 @@ export function SlackSurveyTabs({
       <TabsContent value="team" className="space-y-4 mt-4">
         <div className="bg-white rounded-lg border p-4">
           <div className="mb-4">
-            <h4 className="font-medium text-gray-900 mb-2">Survey Correlation</h4>
+            <h4 className="font-medium text-gray-900 mb-2">Automated Survey Recipients</h4>
             <p className="text-sm text-gray-600 mb-3">
-              When team members run <code className="bg-gray-100 px-1 rounded text-xs">/oncall-health</code>,
-              it opens an interactive modal with 2 scored questions + optional text.
-              We match their responses to their profile using:
+              Select which team members should receive automated survey DMs. Only users with Slack accounts can be selected.
             </p>
-            <div className="space-y-2 text-sm">
-              <div className="flex items-start space-x-2">
-                <div className="w-5 h-5 bg-purple-100 rounded flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-purple-600 text-xs">1</span>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-900">Slack email</span> matches
-                  <span className="font-medium text-gray-900"> Rootly/PagerDuty email</span>
-                </div>
-              </div>
-              <div className="flex items-start space-x-2">
-                <div className="w-5 h-5 bg-purple-100 rounded flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-purple-600 text-xs">2</span>
-                </div>
-                <div>
-                  Survey response is linked to their burnout analysis profile
-                </div>
-              </div>
-            </div>
           </div>
 
-          {/* Synced Users List */}
+          {/* Synced Users List with Checkboxes */}
           {selectedOrganization && (
             <div className="border-t pt-4">
-              {loadingSyncedUsers ? (
+              {loadingSyncedUsers || loadingRecipients ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="w-5 h-5 animate-spin text-gray-400 mr-2" />
                   <span className="text-sm text-gray-600">Loading team members...</span>
@@ -356,28 +426,59 @@ export function SlackSurveyTabs({
                 return slackUsers.length > 0 ? (
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <h5 className="text-sm font-medium text-gray-900">Synced Members ({slackUsers.length})</h5>
+                      <h5 className="text-sm font-medium text-gray-900">
+                        Team Members ({slackUsers.length})
+                        {selectedRecipients.size > 0 && (
+                          <span className="ml-2 text-purple-600">
+                            • {selectedRecipients.size} selected for automated surveys
+                          </span>
+                        )}
+                      </h5>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={selectAllRecipients}
+                          className="text-xs"
+                        >
+                          Select All
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={deselectAllRecipients}
+                          className="text-xs"
+                        >
+                          Clear
+                        </Button>
+                      </div>
                     </div>
-                    <div className="max-h-[400px] overflow-y-auto space-y-2 pr-2">
+                    <div className="max-h-[400px] overflow-y-auto space-y-2 pr-2 mb-4">
                       {slackUsers.map((user: any) => (
-                        <div key={user.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-medium text-gray-900 truncate">{user.name}</span>
-                              {user.receives_automated_surveys && (
-                                <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700 border-purple-200">
-                                  📅 Auto Survey
-                                </Badge>
-                              )}
-                              {user.survey_count > 0 && (
-                                <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 border-green-200">
-                                  {user.survey_count} {user.survey_count === 1 ? 'survey' : 'surveys'}
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-1 text-xs text-gray-500">
-                              <Mail className="w-3 h-3" />
-                              <span className="truncate">{user.email}</span>
+                        <div
+                          key={user.id}
+                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                          onClick={() => toggleRecipient(user.id)}
+                        >
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <Checkbox
+                              checked={selectedRecipients.has(user.id)}
+                              onCheckedChange={() => toggleRecipient(user.id)}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-medium text-gray-900 truncate">{user.name}</span>
+                                {user.survey_count > 0 && (
+                                  <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 border-green-200">
+                                    {user.survey_count} {user.survey_count === 1 ? 'survey' : 'surveys'}
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1 text-xs text-gray-500">
+                                <Mail className="w-3 h-3" />
+                                <span className="truncate">{user.email}</span>
+                              </div>
                             </div>
                           </div>
                           <div className="flex items-center gap-1 ml-3">
@@ -398,6 +499,22 @@ export function SlackSurveyTabs({
                           </div>
                         </div>
                       ))}
+                    </div>
+                    <div className="flex justify-end">
+                      <Button
+                        onClick={saveSurveyRecipients}
+                        disabled={savingRecipients}
+                        className="bg-purple-600 hover:bg-purple-700"
+                      >
+                        {savingRecipients ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          <>Save Recipients</>
+                        )}
+                      </Button>
                     </div>
                   </div>
                 ) : (
@@ -423,7 +540,12 @@ export function SlackSurveyTabs({
       <TabsContent value="actions" className="space-y-4 mt-4">
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
           <p className="text-sm text-blue-900">
-            ℹ️ <strong>Tip:</strong> Select which team members should receive surveys in the <strong>Team Members</strong> tab before sending.
+            ℹ️ <strong>Tip:</strong> Configure which team members receive automated surveys in the <strong>Team Members</strong> tab.
+            {selectedRecipients.size > 0 && (
+              <span className="block mt-1">
+                Currently <strong>{selectedRecipients.size} member{selectedRecipients.size !== 1 ? 's' : ''}</strong> selected for automated surveys.
+              </span>
+            )}
           </p>
         </div>
 
@@ -642,7 +764,7 @@ export function SlackSurveyTabs({
                       return `${displayHour}:${String(minute).padStart(2, '0')} ${period}`
                     })()} ({Intl.DateTimeFormat().resolvedOptions().timeZone})</div>
                     <div>• <strong>Frequency:</strong> {frequencyType === 'daily' ? 'Every day' : frequencyType === 'weekday' ? 'Weekdays (Mon-Fri)' : `Every ${['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][dayOfWeek]}`}</div>
-                    <div>• <strong>Recipients:</strong> All team members with Slack</div>
+                    <div>• <strong>Recipients:</strong> {selectedRecipients.size > 0 ? `${selectedRecipients.size} selected member${selectedRecipients.size !== 1 ? 's' : ''}` : 'All team members with Slack (configure in Team Members tab)'}</div>
                   </div>
                 </div>
               </>
