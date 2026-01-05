@@ -347,6 +347,18 @@ export function SlackSurveyTabs({
 
       {/* Setup Tab */}
       <TabsContent value="setup" className="space-y-4 mt-4">
+        {(() => {
+          // Show warning banner if there are unsaved changes
+          const hasChanges = selectedRecipients.size !== savedRecipients.size ||
+            Array.from(selectedRecipients).some(id => !savedRecipients.has(id))
+          return hasChanges && (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-sm text-amber-900">
+                ⚠️ <strong>Unsaved changes:</strong> You have unsaved recipient changes in the <strong>Team Members</strong> tab.
+              </p>
+            </div>
+          )
+        })()}
         <div className="bg-white rounded-lg border p-4 space-y-4">
           {!slackIntegration && !process.env.NEXT_PUBLIC_SLACK_CLIENT_ID && (
             <div className="text-center py-4">
@@ -595,6 +607,18 @@ export function SlackSurveyTabs({
 
       {/* Actions Tab */}
       <TabsContent value="actions" className="space-y-4 mt-4">
+        {(() => {
+          // Show warning banner if there are unsaved changes
+          const hasChanges = selectedRecipients.size !== savedRecipients.size ||
+            Array.from(selectedRecipients).some(id => !savedRecipients.has(id))
+          return hasChanges && (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-sm text-amber-900">
+                ⚠️ <strong>Unsaved changes:</strong> You have unsaved recipient changes in the <strong>Team Members</strong> tab.
+              </p>
+            </div>
+          )
+        })()}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
           <p className="text-sm text-blue-900">
             ℹ️ <strong>Tip:</strong> Configure which team members receive automated surveys in the <strong>Team Members</strong> tab.
