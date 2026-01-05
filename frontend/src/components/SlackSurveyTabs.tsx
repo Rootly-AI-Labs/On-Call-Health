@@ -222,7 +222,7 @@ export function SlackSurveyTabs({
     try {
       const authToken = localStorage.getItem('auth_token')
       const response = await fetch(
-        `${API_BASE}/api/rootly/integrations/${selectedOrganization}/survey-recipients`,
+        `${API_BASE}/rootly/integrations/${selectedOrganization}/survey-recipients`,
         {
           headers: {
             'Authorization': `Bearer ${authToken}`
@@ -251,7 +251,7 @@ export function SlackSurveyTabs({
       const recipientIds = Array.from(selectedRecipients)
 
       const response = await fetch(
-        `${API_BASE}/api/rootly/integrations/${selectedOrganization}/survey-recipients`,
+        `${API_BASE}/rootly/integrations/${selectedOrganization}/survey-recipients`,
         {
           method: 'PUT',
           headers: {
