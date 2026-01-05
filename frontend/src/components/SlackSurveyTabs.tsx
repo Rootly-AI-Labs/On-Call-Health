@@ -518,11 +518,33 @@ export function SlackSurveyTabs({
                         </div>
                       ))}
                     </div>
-                    <div className="flex justify-end">
+                    <div className="flex justify-end gap-2">
+                      {(() => {
+                        // Check if there are unsaved changes
+                        const hasChanges = selectedRecipients.size !== savedRecipients.size ||
+                          Array.from(selectedRecipients).some(id => !savedRecipients.has(id))
+
+                        return hasChanges && (
+                          <Button
+                            onClick={() => {
+                              setSelectedRecipients(new Set(savedRecipients))
+                            }}
+                            variant="outline"
+                            disabled={savingRecipients}
+                          >
+                            Revert Changes
+                          </Button>
+                        )
+                      })()}
                       <Button
                         onClick={saveSurveyRecipients}
-                        disabled={savingRecipients}
-                        className="bg-purple-600 hover:bg-purple-700"
+                        disabled={savingRecipients || (() => {
+                          // Disable if no changes
+                          const hasChanges = selectedRecipients.size !== savedRecipients.size ||
+                            Array.from(selectedRecipients).some(id => !savedRecipients.has(id))
+                          return !hasChanges
+                        })()}
+                        className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {savingRecipients ? (
                           <>
@@ -530,7 +552,24 @@ export function SlackSurveyTabs({
                             Saving...
                           </>
                         ) : (
-                          <>Save Recipients</>
+                          <>
+                            Save Recipients
+                            {(() => {
+                              // Show change count
+                              const hasChanges = selectedRecipients.size !== savedRecipients.size ||
+                                Array.from(selectedRecipients).some(id => !savedRecipients.has(id))
+                              if (!hasChanges) return null
+
+                              // Count added and removed
+                              const added = Array.from(selectedRecipients).filter(id => !savedRecipients.has(id)).length
+                              const removed = Array.from(savedRecipients).filter(id => !selectedRecipients.has(id)).length
+                              const totalChanges = added + removed
+
+                              return totalChanges > 0 && (
+                                <span className="ml-1">({totalChanges} {totalChanges === 1 ? 'change' : 'changes'})</span>
+                              )
+                            })()}
+                          </>
                         )}
                       </Button>
                     </div>
