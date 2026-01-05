@@ -234,7 +234,7 @@ export function SlackSurveyTabs({
       if (response.ok) {
         const data = await response.json()
         // data.recipient_ids is array of UserCorrelation IDs
-        const savedIds = new Set(data.recipient_ids || [])
+        const savedIds = new Set<number>(data.recipient_ids || [])
         setSelectedRecipients(savedIds)
         setSavedRecipients(savedIds) // Track what's saved
       }
