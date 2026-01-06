@@ -483,6 +483,7 @@ export function SlackSurveyTabs({
                   console.log('[Toggle] User changed to:', checked)
                   setScheduleEnabled(checked)
                   hasUnsavedScheduleChangesRef.current = true // Mark as having unsaved changes
+                  toast.info(`Automated surveys ${checked ? 'enabled' : 'disabled'}. Click "Save Schedule" to apply changes.`)
                 }}
                 disabled={savingSchedule}
               />
