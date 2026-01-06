@@ -104,7 +104,7 @@ export function AnalysisProgressSection({
               ? currentAnalysis.error_message
               : hasNoIncidentsInPeriod && hasNoIncidentsInPeriod()
                 ? 'No incidents were found in the selected time period. Try selecting a longer time range or check if there are any incidents in your organization.'
-                : 'This analysis has insufficient data to generate meaningful burnout insights. This could be due to lack of organization member data, incident history, or API access issues.'
+                : 'This analysis has insufficient data to generate meaningful insights. This could be due to lack of organization member data, incident history, or API access issues.'
             }
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">

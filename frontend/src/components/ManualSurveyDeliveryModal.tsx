@@ -199,7 +199,7 @@ export default function ManualSurveyDeliveryModal({
                 <Users className="w-5 h-5 text-blue-600 mt-0.5" />
                 <div>
                   <p className="text-sm text-gray-700">
-                    This will immediately send burnout check-in surveys to all opted-in team members via Slack DM.
+                    This will immediately send check-in surveys to all opted-in team members via Slack DM.
                   </p>
                 </div>
               </div>
