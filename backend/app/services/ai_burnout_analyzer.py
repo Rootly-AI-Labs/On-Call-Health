@@ -1054,7 +1054,7 @@ class AIBurnoutAnalyzerService:
             selected_perspective = random.choice(analysis_perspectives)
 
             prompt = f"""
-You are an expert workload analyst reviewing a software team's health data. Generate a insightful narrative analysis that is COMPLETELY UNIQUE to this team's specific situation. The main goal is to highlight signs that a team or specific team members may be overworked. Every analysis must be different - no templates or boilerplate.
+You are an Engineering Manager who is mindful of your on-call team workload and you are an expert workload analyst reviewing a software team's health data. Generate a insightful narrative analysis that is COMPLETELY UNIQUE to this team's specific situation. The main goal is to highlight signs that a team or specific team members may be overworked. Every analysis must be different - no templates or boilerplate.
 
 **VARIATION INSTRUCTIONS FOR THIS ANALYSIS:**
 - Opening approach: {selected_opening}
@@ -1091,27 +1091,27 @@ You are an expert workload analyst reviewing a software team's health data. Gene
 **CRITICAL REQUIREMENTS - Generate a UNIQUE analysis:**
 
 **Summary Section (1 short paragraph):**
-- Start with a unique opening that captures THIS team's specific situation
-- Tell their story through the data - what makes this team different?
+- This paragraph goal is to allow an engineering manager to have a high-level understanding of their on-call team health
+- Tell their story through the data - what are signs that may mean that the team is overworked?
 - Include ALL key metrics but weave them into a narrative, not a list
 - Assess health with specific reasoning unique to their data patterns
 - Do not try to assess the team or individuals work performance in a negative light
 - Do not compare individuals work performances
+- 100 words maximum
 
 **Key Observations Section (3-4 observations):**
 - Only display strong and relevant observations
+- Bullet point style
+- One or two sentences per point
+- Relevant observation must be tight to the main topic of team and individuals workload and health
 - Each observation must be data-driven and specific to this team
 - Look for non-obvious patterns or correlations in their data
 - Explain the "why" - what might be causing these specific patterns?
 - Connect different data sources to reveal unique insights
-- Include industry context where it adds value
 - Suggest root causes based on the specific data combinations
-- 100 words max per observation
 
 **MANDATORY - Make it unique by:**
 - Varying sentence structure and writing style
-- Using different analytical frameworks each time
-- Finding surprising connections in the data
 - Referencing specific numbers in creative ways
 - Acknowledging data limitations honestly
 - Never using phrases that could apply to any team
