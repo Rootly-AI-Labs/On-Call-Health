@@ -109,7 +109,8 @@ class AIBurnoutAnalyzerService:
     def generate_team_insights(
         self,
         team_members: List[Dict[str, Any]],
-        available_integrations: List[str]
+        available_integrations: List[str],
+        analysis_period_days: int = 30
     ) -> Dict[str, Any]:
         """
         Generate team-level AI insights and recommendations.
@@ -117,6 +118,7 @@ class AIBurnoutAnalyzerService:
         Args:
             team_members: List of team member analyses
             available_integrations: Available data sources
+            analysis_period_days: Number of days analyzed (default 30)
 
         Returns:
             Team-level AI insights
@@ -131,7 +133,7 @@ class AIBurnoutAnalyzerService:
                 "team_size": len(team_members),
                 "data_sources": available_integrations,
                 "executive_summary": self._generate_executive_summary(team_members, available_integrations),
-                "llm_team_analysis": self._generate_llm_team_narrative(team_members, available_integrations),
+                "llm_team_analysis": self._generate_llm_team_narrative(team_members, available_integrations, analysis_period_days),
                 "risk_distribution": self._analyze_team_risk_distribution(team_members),
                 "detailed_risk_analysis": self._generate_detailed_risk_analysis(team_members),
                 "common_patterns": self._identify_common_patterns(team_members),
@@ -1017,7 +1019,7 @@ class AIBurnoutAnalyzerService:
 
         return indicators
 
-    def _generate_llm_team_narrative(self, team_members: List[Dict[str, Any]], available_integrations: List[str]) -> str:
+    def _generate_llm_team_narrative(self, team_members: List[Dict[str, Any]], available_integrations: List[str], analysis_period_days: int = 30) -> str:
         """Generate detailed, colorful LLM-powered team analysis narrative."""
         try:
             # Check if we have an API key available (system or user)
@@ -1026,7 +1028,7 @@ class AIBurnoutAnalyzerService:
                 return self._generate_fallback_detailed_narrative(team_members, available_integrations)
 
             # Prepare comprehensive team data for LLM analysis
-            team_data = self._prepare_comprehensive_team_data(team_members, available_integrations)
+            team_data = self._prepare_comprehensive_team_data(team_members, available_integrations, analysis_period_days)
 
             # Create detailed prompt for rich narrative generation
             import random
@@ -1081,7 +1083,7 @@ You are an Engineering Manager who is mindful of your on-call team workload and 
 {team_data['activity_patterns']}
 
 **Additional Context:**
-- Analysis Period: Last 30 days
+- Analysis Period: Last {analysis_period_days} days
 - High Risk Members: {team_data['high_risk_count']} (using {team_data['risk_criteria']})
 - Total Incidents: {sum(m.get('incident_count', 0) for m in team_members)}
 
@@ -1141,7 +1143,7 @@ You are an Engineering Manager who is mindful of your on-call team workload and 
             self.logger.error(f"Error in LLM team narrative generation: {e}")
             return self._generate_fallback_detailed_narrative(team_members, available_integrations)
 
-    def _prepare_comprehensive_team_data(self, team_members: List[Dict[str, Any]], available_integrations: List[str]) -> Dict[str, Any]:
+    def _prepare_comprehensive_team_data(self, team_members: List[Dict[str, Any]], available_integrations: List[str], analysis_period_days: int = 30) -> Dict[str, Any]:
         """Prepare detailed team data for LLM analysis."""
         active_responders = [m for m in team_members if m.get("incident_count", 0) > 0]
 
