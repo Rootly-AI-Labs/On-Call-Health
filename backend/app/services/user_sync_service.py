@@ -166,14 +166,22 @@ class UserSyncService:
 
         # Extract from JSONAPI format
         users = []
+        spencer_found = False
         for user in filtered_users:
             attrs = user.get("attributes", {})
+            email = attrs.get("email")
             users.append({
                 "id": user.get("id"),
-                "email": attrs.get("email"),
+                "email": email,
                 "name": attrs.get("name") or attrs.get("full_name"),
                 "platform": "rootly"
             })
+            if email and "spencer.cheng" in email.lower():
+                spencer_found = True
+                logger.info(f"✅ SPENCER FOUND in Rootly API: {email} (id: {user.get('id')}, name: {attrs.get('name')})")
+
+        if not spencer_found:
+            logger.warning(f"❌ SPENCER NOT FOUND in {len(users)} Rootly users")
 
         return users
 
@@ -265,11 +273,17 @@ class UserSyncService:
             # This prevents one user from overwriting another user's correlations
             if email.lower() == current_user.email.lower():
                 # This is the current user's own correlation
+                logger.info(f"🔍 SPENCER: Looking for personal correlation with user_id={user_id}, email={email}")
                 # First check if we have an existing user_id correlation
                 correlation = self.db.query(UserCorrelation).filter(
                     UserCorrelation.user_id == user_id,
                     UserCorrelation.email == email
                 ).first()
+
+                if correlation:
+                    logger.info(f"✅ SPENCER: Found existing personal correlation id={correlation.id}, integration_ids={correlation.integration_ids}")
+                else:
+                    logger.warning(f"❌ SPENCER: No personal correlation found with user_id={user_id}, email={email}")
 
                 # If not found, check if there's a NULL user_id correlation we should migrate
                 if not correlation:
@@ -357,9 +371,14 @@ class UserSyncService:
             if not correlation.integration_ids:
                 correlation.integration_ids = [integration_id]
                 updated = True
+                logger.info(f"Added first integration_id {integration_id} to correlation {correlation.id}")
             elif integration_id not in correlation.integration_ids:
+                old_ids = correlation.integration_ids.copy() if correlation.integration_ids else []
                 correlation.integration_ids = correlation.integration_ids + [integration_id]
                 updated = True
+                logger.info(f"Added integration_id {integration_id} to correlation {correlation.id} (was {old_ids}, now {correlation.integration_ids})")
+            else:
+                logger.debug(f"Integration_id {integration_id} already in correlation {correlation.id}: {correlation.integration_ids}")
 
         # Update name if available and different
         if user.get("name") and correlation.name != user["name"]:
