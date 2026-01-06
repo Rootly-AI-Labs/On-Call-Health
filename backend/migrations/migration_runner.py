@@ -869,9 +869,65 @@ class MigrationRunner:
                     """
                 ]
             },
+            {
+                "name": "026_make_user_correlations_user_id_nullable",
+                "description": "Make user_id nullable to support org-scoped team roster data",
+                "sql": [
+                    """
+                    -- Make user_id nullable for organization-scoped team roster data
+                    -- This allows storing team members from integrations (PagerDuty, Jira, Linear)
+                    -- who don't have user accounts yet (org-scoped data)
+                    ALTER TABLE user_correlations
+                    ALTER COLUMN user_id DROP NOT NULL;
+                    """,
+                    """
+                    -- Drop problematic unique constraints on platform IDs (if they exist)
+                    -- These prevent multiple users from having the same platform ID
+                    DO $$
+                    BEGIN
+                        -- Drop jira_account_id unique constraint
+                        IF EXISTS (
+                            SELECT 1 FROM pg_constraint
+                            WHERE conname = 'uq_jira_account_id'
+                            AND conrelid = 'user_correlations'::regclass
+                        ) THEN
+                            ALTER TABLE user_correlations DROP CONSTRAINT uq_jira_account_id;
+                            RAISE NOTICE 'Dropped uq_jira_account_id constraint';
+                        END IF;
+
+                        -- Drop linear_user_id unique constraint
+                        IF EXISTS (
+                            SELECT 1 FROM pg_constraint
+                            WHERE conname = 'uq_linear_user_id'
+                            AND conrelid = 'user_correlations'::regclass
+                        ) THEN
+                            ALTER TABLE user_correlations DROP CONSTRAINT uq_linear_user_id;
+                            RAISE NOTICE 'Dropped uq_linear_user_id constraint';
+                        END IF;
+                    END $$;
+                    """,
+                    """
+                    -- Create unique constraint for org-scoped data (where user_id is NULL)
+                    -- Ensures one record per email per organization for team roster data
+                    CREATE UNIQUE INDEX IF NOT EXISTS uq_user_correlations_org_email_null_user
+                    ON user_correlations (organization_id, email)
+                    WHERE user_id IS NULL;
+                    """,
+                    """
+                    -- Add index for better performance on org-scoped queries
+                    CREATE INDEX IF NOT EXISTS idx_user_correlations_org_null_user
+                    ON user_correlations (organization_id)
+                    WHERE user_id IS NULL;
+                    """,
+                    """
+                    -- Add comment explaining the dual-mode system
+                    COMMENT ON COLUMN user_correlations.user_id IS 'User ID for registered users, NULL for org-scoped team roster data from integrations';
+                    """
+                ]
+            },
 
             # {
-            #     "name": "026_add_user_preferences",
+            #     "name": "027_add_user_preferences",
             #     "description": "Add user preferences table",
             #     "sql": ["CREATE TABLE IF NOT EXISTS user_preferences (...)"]
             # }
