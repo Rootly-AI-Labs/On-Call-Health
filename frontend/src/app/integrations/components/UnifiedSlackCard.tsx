@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { API_BASE } from "../types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
@@ -75,7 +76,7 @@ export function UnifiedSlackCard({
 
   const handleSlackConnect = () => {
     const clientId = process.env.NEXT_PUBLIC_SLACK_CLIENT_ID
-    const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL
+    const backendUrl = API_BASE
 
     if (!backendUrl) {
       toast.error('Backend URL not configured. Please contact support.')
@@ -131,7 +132,7 @@ export function UnifiedSlackCard({
   }
 
   const handleWorkspaceCheck = async () => {
-    const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL
+    const backendUrl = API_BASE
     const authToken = localStorage.getItem('auth_token')
 
     if (!authToken) {
@@ -204,7 +205,7 @@ export function UnifiedSlackCard({
   }
 
   const performFeatureToggle = async (feature: 'survey' | 'communication_patterns', enabled: boolean) => {
-    const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL
+    const backendUrl = API_BASE
 
     try {
       // Optimistically update UI
