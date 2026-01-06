@@ -80,13 +80,15 @@ def get_cors_origins():
             "http://localhost:3002"
         ])
     
-    # TEMPORARY: Allow localhost for OAuth testing (remove after testing)
-    if not any("localhost" in origin for origin in origins):
-        origins.extend([
-            "http://localhost:3000",
-            "http://localhost:3001"
-        ])
-    
+    # ALWAYS allow localhost for development and testing
+    # This is safe because the backend requires auth tokens anyway
+    if not any("localhost:3000" in origin for origin in origins):
+        origins.append("http://localhost:3000")
+    if not any("localhost:3001" in origin for origin in origins):
+        origins.append("http://localhost:3001")
+    if not any("localhost:3002" in origin for origin in origins):
+        origins.append("http://localhost:3002")
+
     # Add production domains if they exist
     production_frontend = os.getenv("PRODUCTION_FRONTEND_URL")
     if production_frontend:
@@ -106,8 +108,8 @@ def get_cors_origins():
     # Remove duplicates while preserving order
     origins = list(dict.fromkeys(origins))
 
-    # Log CORS origins for debugging (only in debug mode)
-    logger.debug(f"CORS allowed origins: {origins}")
+    # Log CORS origins for visibility (at INFO level so it always shows)
+    logger.info(f"CORS allowed origins: {origins}")
 
     return origins
 
