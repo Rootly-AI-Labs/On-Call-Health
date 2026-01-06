@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -60,6 +60,7 @@ export function SlackSurveyTabs({
   // Schedule state
   const [scheduleEnabled, setScheduleEnabled] = useState(false)
   const [savedScheduleEnabled, setSavedScheduleEnabled] = useState(false) // Track saved enabled state
+  const hasUnsavedScheduleChangesRef = useRef(false) // Track if user has made changes (ref for immediate access)
   const [scheduleTime, setScheduleTime] = useState('09:00')
   const [frequencyType, setFrequencyType] = useState<'daily' | 'weekday' | 'weekly'>('weekday')
   const [dayOfWeek, setDayOfWeek] = useState<number>(4) // Default: Friday
@@ -109,16 +110,15 @@ export function SlackSurveyTabs({
 
   const loadSchedule = async (forceLoad = false) => {
     // Don't overwrite local changes unless forced (e.g., after save)
-    // Check if there are unsaved schedule changes
-    const hasUnsavedChanges = scheduleEnabled !== savedScheduleEnabled
+    // Use ref for immediate access without waiting for state updates
     console.log('[loadSchedule] Called with:', {
       forceLoad,
       scheduleEnabled,
       savedScheduleEnabled,
-      hasUnsavedChanges
+      hasUnsavedChangesRef: hasUnsavedScheduleChangesRef.current
     })
-    if (!forceLoad && hasUnsavedChanges) {
-      console.log('[loadSchedule] Skipping due to unsaved changes')
+    if (!forceLoad && hasUnsavedScheduleChangesRef.current) {
+      console.log('[loadSchedule] Skipping due to unsaved changes (from ref)')
       return
     }
 
@@ -139,6 +139,7 @@ export function SlackSurveyTabs({
           console.log('[loadSchedule] Setting enabled to:', data.enabled)
           setScheduleEnabled(data.enabled)
           setSavedScheduleEnabled(data.enabled) // Track saved state
+          hasUnsavedScheduleChangesRef.current = false // Reset unsaved changes flag
 
           // Backend returns "HH:MM:SS", extract only "HH:MM"
           if (data.send_time) {
@@ -481,6 +482,7 @@ export function SlackSurveyTabs({
                 onCheckedChange={(checked) => {
                   console.log('[Toggle] User changed to:', checked)
                   setScheduleEnabled(checked)
+                  hasUnsavedScheduleChangesRef.current = true // Mark as having unsaved changes
                 }}
                 disabled={savingSchedule}
               />
