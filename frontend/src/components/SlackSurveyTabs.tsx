@@ -479,11 +479,49 @@ export function SlackSurveyTabs({
               </div>
               <Switch
                 checked={scheduleEnabled}
-                onCheckedChange={(checked) => {
+                onCheckedChange={async (checked) => {
                   console.log('[Toggle] User changed to:', checked)
                   setScheduleEnabled(checked)
-                  hasUnsavedScheduleChangesRef.current = true // Mark as having unsaved changes
-                  toast.info(`Automated surveys ${checked ? 'enabled' : 'disabled'}. Click "Save Schedule" to apply changes.`)
+                  hasUnsavedScheduleChangesRef.current = true
+
+                  // Auto-save immediately
+                  setSavingSchedule(true)
+                  try {
+                    const authToken = localStorage.getItem('auth_token')
+                    const payload = {
+                      enabled: checked,
+                      send_time: scheduleTime,
+                      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                      frequency_type: frequencyType,
+                      day_of_week: frequencyType === 'weekly' ? dayOfWeek : null,
+                      send_reminder: false,
+                      reminder_hours_after: 5
+                    }
+
+                    const response = await fetch(`${API_BASE}/api/surveys/survey-schedule`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                      },
+                      body: JSON.stringify(payload)
+                    })
+
+                    if (response.ok) {
+                      toast.success(`Automated surveys ${checked ? 'enabled' : 'disabled'}`)
+                      await loadSchedule(true) // Force reload after save
+                    } else {
+                      const error = await response.json()
+                      toast.error(error.detail || 'Failed to save schedule')
+                      setScheduleEnabled(!checked) // Revert on error
+                    }
+                  } catch (error) {
+                    console.error('Failed to save schedule:', error)
+                    toast.error('Failed to save schedule')
+                    setScheduleEnabled(!checked) // Revert on error
+                  } finally {
+                    setSavingSchedule(false)
+                  }
                 }}
                 disabled={savingSchedule}
               />
