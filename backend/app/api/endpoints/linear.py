@@ -251,8 +251,16 @@ async def _process_callback(code: str, state: Optional[str], db: Session, curren
                 db.add(mapping)
                 logger.info("[Linear] Created workspace mapping for org %s", organization_id)
 
-        # 6) Correlate user
+        # 6) Correlate user - enforce one-to-one mapping across all users in org
         if linear_email and linear_user_id and organization_id:
+            # Before assigning this Linear account, remove it from any other users (both tables)
+            from ...services.manual_mapping_service import ManualMappingService
+            service = ManualMappingService(db)
+            service.remove_linear_from_all_other_users(
+                user_id,
+                linear_user_id
+            )
+
             corr = db.query(UserCorrelation).filter(
                 UserCorrelation.organization_id == organization_id,
                 UserCorrelation.email == linear_email,
@@ -766,6 +774,16 @@ async def disconnect_linear(
             detail="Linear integration not found.",
         )
 
+    # Clear Linear fields from UserCorrelation
+    if integration.linear_user_id and current_user.organization_id:
+        correlations = db.query(UserCorrelation).filter(
+            UserCorrelation.organization_id == current_user.organization_id,
+            UserCorrelation.linear_user_id == integration.linear_user_id,
+        ).all()
+        for c in correlations:
+            c.linear_user_id = None
+            c.linear_email = None
+
     # Remove workspace mapping if exists
     if current_user.organization_id:
         db.query(LinearWorkspaceMapping).filter(
@@ -820,3 +838,354 @@ def _priority_to_name(priority: int) -> str:
         4: "Low",
     }
     return mapping.get(priority, "Unknown")
+
+
+# -------------------------------
+# Linear Users (for dropdown)
+# -------------------------------
+@router.get("/linear-users")
+async def get_linear_users(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Get all active Linear users from the connected workspace.
+    Used for dropdown selection in team member mapping interface.
+
+    Returns:
+        List of Linear users with id, name, and email
+    """
+    try:
+        integration = db.query(LinearIntegration).filter(
+            LinearIntegration.user_id == current_user.id
+        ).first()
+
+        if not integration or integration.workspace_id == "pending":
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Linear integration not found. Please connect Linear first."
+            )
+
+        access_token = await _get_valid_token(integration, db)
+
+        # Fetch all users with pagination
+        all_users = []
+        cursor = None
+        max_pages = 20
+
+        for _ in range(max_pages):
+            result = await linear_integration_oauth.get_users(
+                access_token,
+                first=100,
+                after=cursor,
+            )
+
+            nodes = result.get("nodes", [])
+            all_users.extend(nodes)
+
+            page_info = result.get("pageInfo", {})
+            if not page_info.get("hasNextPage"):
+                break
+            cursor = page_info.get("endCursor")
+
+        # Filter to valid users with id and name
+        valid_users = [
+            {
+                "id": u.get("id"),
+                "name": u.get("name"),
+                "email": u.get("email"),
+                "active": u.get("active", True)
+            }
+            for u in all_users
+            if u.get("id") and u.get("name")
+        ]
+
+        logger.info("[Linear] Retrieved %d valid users for dropdown", len(valid_users))
+
+        return {
+            "success": True,
+            "users": valid_users
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("[Linear] Failed to get Linear users: %s", e, exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve Linear users: {str(e)}"
+        )
+
+
+# -------------------------------
+# Auto-map
+# -------------------------------
+@router.post("/auto-map")
+async def auto_map_linear_users(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Auto-map team members to Linear users using email + name matching.
+
+    Request body:
+    {
+        "team_emails": ["email1@company.com", ...],
+        "analysis_id": 123,  // optional
+        "source_platform": "rootly"  // optional
+    }
+
+    Returns:
+        Mapping statistics including success rate and per-user results
+    """
+    from ...services.linear_mapping_service import LinearMappingService
+
+    try:
+        # Parse request body
+        body = await request.json() if request.headers.get("content-type", "").startswith("application/json") else {}
+        team_emails = body.get("team_emails", [])
+        analysis_id = body.get("analysis_id")
+        source_platform = body.get("source_platform", "rootly")
+
+        if not team_emails:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="team_emails list is required"
+            )
+
+        logger.info("[Linear] Auto-mapping Linear users for %d team emails", len(team_emails))
+
+        # Get Linear integration
+        integration = db.query(LinearIntegration).filter(
+            LinearIntegration.user_id == current_user.id
+        ).first()
+
+        if not integration or integration.workspace_id == "pending":
+            raise HTTPException(
+                status_code=404,
+                detail="Linear integration not found. Please connect your Linear account first.",
+            )
+
+        access_token = await _get_valid_token(integration, db)
+
+        # Fetch Linear workload data (issues aggregated by assignee) - consistent with Jira pattern
+        filter_dict = {
+            "state": {"type": {"nin": ["completed", "canceled"]}},
+        }
+
+        linear_workload = {}
+        all_issues = []
+        cursor = None
+        max_pages = 10
+
+        for _ in range(max_pages):
+            result = await linear_integration_oauth.get_issues(
+                access_token,
+                first=100,
+                after=cursor,
+                filter_dict=filter_dict,
+            )
+
+            nodes = result.get("nodes", [])
+            all_issues.extend(nodes)
+
+            page_info = result.get("pageInfo", {})
+            if not page_info.get("hasNextPage"):
+                break
+            cursor = page_info.get("endCursor")
+
+        # Aggregate by assignee (linear_user_id -> workload data)
+        for issue in all_issues:
+            assignee = issue.get("assignee") or {}
+            linear_user_id = assignee.get("id")
+            if linear_user_id and linear_user_id not in linear_workload:
+                linear_workload[linear_user_id] = {
+                    "assignee_id": linear_user_id,
+                    "assignee_name": assignee.get("name"),
+                    "assignee_email": assignee.get("email"),
+                    "count": 0,
+                    "priorities": {},
+                    "tickets": [],
+                }
+
+            if linear_user_id:
+                linear_workload[linear_user_id]["count"] += 1
+                priority = issue.get("priority", 0)
+                priority_name = _priority_to_name(priority)
+                linear_workload[linear_user_id]["priorities"][priority_name] = \
+                    linear_workload[linear_user_id]["priorities"].get(priority_name, 0) + 1
+
+        logger.info("[Linear] Fetched workload for %d Linear users", len(linear_workload))
+
+        # Record mappings using LinearMappingService - consistent with Jira
+        mapping_service = LinearMappingService(db)
+        mapping_stats = mapping_service.record_linear_mappings(
+            team_emails=team_emails,
+            linear_workload_data=linear_workload,
+            user_id=current_user.id,
+            analysis_id=analysis_id,
+            source_platform=source_platform
+        )
+
+        logger.info(
+            "[Linear] Auto-mapping complete: %d mapped, %d failed",
+            mapping_stats.get("mapped", 0),
+            mapping_stats.get("failed", 0)
+        )
+
+        return {
+            "success": True,
+            "message": f"Auto-mapped {mapping_stats.get('mapped', 0)} Linear users to team emails",
+            "stats": mapping_stats,
+            "linear_user_count": len(linear_workload),
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("[Linear] Auto-mapping failed: %s", e, exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Linear auto-mapping failed: {str(e)}"
+        )
+
+
+# -------------------------------
+# Remove mapping
+# -------------------------------
+@router.delete("/mapping/{email}")
+async def remove_linear_mapping(
+    email: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Remove Linear mapping for team member email."""
+    from ...models import UserMapping
+
+    try:
+        logger.info("[Linear] Removing mapping for email: %s", email)
+
+        # Find and delete UserMapping record
+        mapping = db.query(UserMapping).filter(
+            UserMapping.user_id == current_user.id,
+            UserMapping.source_identifier == email,
+            UserMapping.target_platform == "linear"
+        ).first()
+
+        if mapping:
+            db.delete(mapping)
+
+        # Clear Linear fields from UserCorrelation
+        if current_user.organization_id:
+            corr = db.query(UserCorrelation).filter(
+                UserCorrelation.organization_id == current_user.organization_id,
+                UserCorrelation.email == email,
+            ).first()
+
+            if corr:
+                corr.linear_user_id = None
+                corr.linear_email = None
+
+        db.commit()
+
+        return {
+            "success": True,
+            "message": f"Removed Linear mapping for {email}"
+        }
+
+    except Exception as e:
+        logger.error("[Linear] Remove mapping failed: %s", e, exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to remove Linear mapping: {str(e)}"
+        )
+
+
+# -------------------------------
+# Get unmapped users
+# -------------------------------
+@router.get("/unmapped-users")
+async def get_unmapped_linear_users(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Get Linear users not yet mapped to any team member.
+    Returns users available for dropdown selection.
+    """
+    from ...models import UserMapping
+
+    try:
+        integration = db.query(LinearIntegration).filter(
+            LinearIntegration.user_id == current_user.id
+        ).first()
+
+        if not integration or integration.workspace_id == "pending":
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Linear integration not found."
+            )
+
+        access_token = await _get_valid_token(integration, db)
+
+        # Fetch all Linear users
+        all_users = []
+        cursor = None
+        max_pages = 20
+
+        for _ in range(max_pages):
+            result = await linear_integration_oauth.get_users(
+                access_token,
+                first=100,
+                after=cursor,
+            )
+
+            nodes = result.get("nodes", [])
+            all_users.extend(nodes)
+
+            page_info = result.get("pageInfo", {})
+            if not page_info.get("hasNextPage"):
+                break
+            cursor = page_info.get("endCursor")
+
+        # Get all mapped Linear user IDs
+        mapped_ids = set()
+        mappings = db.query(UserMapping).filter(
+            UserMapping.user_id == current_user.id,
+            UserMapping.target_platform == "linear"
+        ).all()
+
+        for m in mappings:
+            if m.target_identifier:
+                mapped_ids.add(m.target_identifier)
+
+        # Filter to unmapped users only
+        unmapped_users = [
+            {
+                "id": u.get("id"),
+                "name": u.get("name"),
+                "email": u.get("email"),
+                "active": u.get("active", True)
+            }
+            for u in all_users
+            if u.get("id") and u.get("name") and u.get("id") not in mapped_ids and u.get("active", True)
+        ]
+
+        logger.info("[Linear] Found %d unmapped users out of %d total", len(unmapped_users), len(all_users))
+
+        return {
+            "success": True,
+            "users": unmapped_users,
+            "total_linear_users": len(all_users),
+            "mapped_count": len(mapped_ids),
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("[Linear] Failed to get unmapped users: %s", e, exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve unmapped Linear users: {str(e)}"
+        )

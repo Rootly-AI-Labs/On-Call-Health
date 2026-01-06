@@ -10,7 +10,7 @@ class UserCorrelation(Base):
     __tablename__ = "user_correlations"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)  # Keep for backwards compatibility
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # NULL for org-scoped team roster data
     organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)  # Multi-tenancy support
     email_domain = Column(String(255), nullable=True, index=True)  # Domain-based grouping for data sharing
     email = Column(String(255), nullable=False, index=True)  # The email that links platforms

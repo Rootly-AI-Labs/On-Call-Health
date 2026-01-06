@@ -64,7 +64,7 @@ interface MappingStatistics {
 interface MappingDrawerProps {
   isOpen: boolean
   onClose: () => void
-  platform: 'github' | 'slack' | 'jira'
+  platform: 'github' | 'slack' | 'jira' | 'linear'
   onRefresh?: () => void
 }
 
@@ -323,8 +323,8 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
   }, [inlineEditingValue, platform, validateGitHubUsername])
 
   const runAutoMapping = async () => {
-    if (platform !== 'github' && platform !== 'jira') {
-      toast.error(`Auto-mapping is only available for GitHub and Jira`)
+    if (platform !== 'github' && platform !== 'jira' && platform !== 'linear') {
+      toast.error(`Auto-mapping is only available for GitHub, Jira, and Linear`)
       return
     }
     setRunningAutoMapping(true)
@@ -341,7 +341,9 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
       // Use platform-specific endpoint
       const endpoint = platform === 'github'
         ? `${API_BASE}/integrations/manual-mappings/run-github-mapping`
-        : `${API_BASE}/integrations/manual-mappings/run-jira-mapping`
+        : platform === 'jira'
+        ? `${API_BASE}/integrations/manual-mappings/run-jira-mapping`
+        : `${API_BASE}/integrations/manual-mappings/run-linear-mapping`
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -355,7 +357,7 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
       if (!response.ok) {
         const error = await response.json().catch(() => ({}))
 
-        if (error.detail === 'GitHub integration not found' || error.detail === 'Jira integration not found') {
+        if (error.detail === 'GitHub integration not found' || error.detail === 'Jira integration not found' || error.detail === 'Linear integration not found') {
           toast.error(`Please connect a ${platformTitle} integration first before running auto-mapping`)
           return
         }
@@ -717,8 +719,8 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
     }
   }
 
-  const platformTitle = platform === 'github' ? 'GitHub' : platform === 'jira' ? 'Jira' : 'Slack'
-  const platformColor = platform === 'github' ? 'blue' : platform === 'jira' ? 'blue' : 'purple'
+  const platformTitle = platform === 'github' ? 'GitHub' : platform === 'jira' ? 'Jira' : platform === 'linear' ? 'Linear' : 'Slack'
+  const platformColor = platform === 'github' ? 'blue' : platform === 'jira' ? 'blue' : platform === 'linear' ? 'purple' : 'purple'
 
   // Platform logo component
   const PlatformLogo = ({ platform, size = 'sm' }: { platform: string, size?: 'sm' | 'md' }) => {

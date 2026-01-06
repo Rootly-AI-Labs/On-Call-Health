@@ -840,9 +840,38 @@ class MigrationRunner:
                     """
                 ]
             },
-            # Add future migrations here with incrementing numbers
+            {
+                "name": "025_remove_github_username_unique_constraint",
+                "description": "Remove orphaned uq_github_username constraint that causes conflicts with multi-email users",
+                "sql": [
+                    """
+                    -- Drop the unique constraint if it exists
+                    -- This constraint was preventing users from connecting multiple emails
+                    -- with the same GitHub username, which is a legitimate use case
+                    DO $$
+                    BEGIN
+                        IF EXISTS (
+                            SELECT 1 FROM pg_constraint
+                            WHERE conname = 'uq_github_username'
+                            AND conrelid = 'user_correlations'::regclass
+                        ) THEN
+                            ALTER TABLE user_correlations DROP CONSTRAINT uq_github_username;
+                            RAISE NOTICE 'Dropped uq_github_username constraint from user_correlations';
+                        ELSE
+                            RAISE NOTICE 'uq_github_username constraint does not exist, skipping drop';
+                        END IF;
+                    END $$;
+                    """,
+                    """
+                    -- The regular index on github_username remains (created in migration 013)
+                    -- This index provides performance benefits without enforcing uniqueness
+                    -- allowing multiple records with the same github_username (one per email)
+                    """
+                ]
+            },
+
             # {
-            #     "name": "024_add_user_preferences",
+            #     "name": "026_add_user_preferences",
             #     "description": "Add user preferences table",
             #     "sql": ["CREATE TABLE IF NOT EXISTS user_preferences (...)"]
             # }

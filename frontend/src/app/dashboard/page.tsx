@@ -143,12 +143,15 @@ function DashboardContent() {
   githubIntegration,
   slackIntegration,
   jiraIntegration,
+  linearIntegration,
   includeGithub,
   setIncludeGithub,
   includeSlack,
   setIncludeSlack,
   includeJira,
   setIncludeJira,
+  includeLinear,
+  setIncludeLinear,
   enableAI,
   setEnableAI,
   llmConfig,
@@ -2170,6 +2173,46 @@ function DashboardContent() {
                                   toast.error("Jira not connected - please connect on integrations page")
                                 } else {
                                   setIncludeJira(checked)
+                                }
+                              }}
+                              disabled={false}
+                            />
+                          </div>
+                          <p className="text-xs text-gray-600 mb-1">Issue tracking</p>
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Linear Toggle Card */}
+                  {true && (
+                    <div className={`border rounded-lg p-3 transition-all ${includeLinear && linearIntegration ? 'border-purple-500 bg-purple-50' : 'border-gray-200 bg-white'}`}>
+                      {(
+                        <>
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center space-x-2">
+                              <div className="w-6 h-6 bg-purple-600 rounded flex items-center justify-center">
+                                <svg
+                                  viewBox="0 0 24 24"
+                                  className="w-4 h-4 text-white"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="1.5"
+                                >
+                                  <path d="M2.5 21.5l19-19M5.5 21.5l16-16M8.5 21.5l13-13M11.5 21.5l10-10M14.5 21.5l7-7M17.5 21.5l4-4" strokeLinecap="round"/>
+                                </svg>
+                              </div>
+                              <div>
+                                <h3 className="text-sm font-medium text-gray-900">Linear</h3>
+                              </div>
+                            </div>
+                            <Switch
+                              checked={includeLinear && !!linearIntegration}
+                              onCheckedChange={(checked) => {
+                                if (!linearIntegration) {
+                                  toast.error("Linear not connected - please connect on integrations page")
+                                } else {
+                                  setIncludeLinear(checked)
                                 }
                               }}
                               disabled={false}

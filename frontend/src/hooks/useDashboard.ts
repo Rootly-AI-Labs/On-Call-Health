@@ -290,7 +290,17 @@ export default function useDashboard() {
               setJiraIntegration(null)
             }
           }
-          
+
+          const cachedLinear = localStorage.getItem('linear_integration')
+          if (cachedLinear) {
+            const linearData = JSON.parse(cachedLinear)
+            if (linearData.connected && linearData.integration) {
+              setLinearIntegration(linearData.integration)
+            } else {
+              setLinearIntegration(null)
+            }
+          }
+
           // Set integration based on URL parameter, saved preference, or first available
           if (orgId) {
             setSelectedIntegration(orgId)
@@ -1052,9 +1062,9 @@ export default function useDashboard() {
 
       // Load both Rootly, PagerDuty, GitHub, Slack, and Jira integrations
 
-      let rootlyResponse, pagerdutyResponse, githubResponse, slackResponse, jiraResponse
+      let rootlyResponse, pagerdutyResponse, githubResponse, slackResponse, jiraResponse, linearResponse
       try {
-        [rootlyResponse, pagerdutyResponse, githubResponse, slackResponse, jiraResponse] = await Promise.all([
+        [rootlyResponse, pagerdutyResponse, githubResponse, slackResponse, jiraResponse, linearResponse] = await Promise.all([
           fetch(`${API_BASE}/rootly/integrations`, {
             headers: { 'Authorization': `Bearer ${authToken}` }
           }),
@@ -1069,6 +1079,9 @@ export default function useDashboard() {
           }),
           fetch(`${API_BASE}/integrations/jira/status`, {
             headers: { 'Authorization': `Bearer ${authToken}` }
+          }),
+          fetch(`${API_BASE}/integrations/linear/status`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
           })
         ])
       } catch (networkError) {
@@ -1080,6 +1093,7 @@ export default function useDashboard() {
       const githubData = githubResponse.ok ? await githubResponse.json() : { connected: false, integration: null }
       const slackData = slackResponse.ok ? await slackResponse.json() : { connected: false, integration: null }
       const jiraData = jiraResponse.ok ? await jiraResponse.json() : { connected: false, integration: null }
+      const linearData = linearResponse.ok ? await linearResponse.json() : { connected: false, integration: null }
 
 
       // Set GitHub, Slack, and Jira integration states
@@ -1101,10 +1115,17 @@ export default function useDashboard() {
         setJiraIntegration(null)
       }
 
-      // Cache GitHub, Slack, and Jira integration status separately
+      if (linearData.connected && linearData.integration) {
+        setLinearIntegration(linearData.integration)
+      } else {
+        setLinearIntegration(null)
+      }
+
+      // Cache GitHub, Slack, Jira, and Linear integration status separately
       localStorage.setItem('github_integration', JSON.stringify(githubData))
       localStorage.setItem('slack_integration', JSON.stringify(slackData))
       localStorage.setItem('jira_integration', JSON.stringify(jiraData))
+      localStorage.setItem('linear_integration', JSON.stringify(linearData))
 
       // Ensure platform is set
       const rootlyIntegrations = (rootlyData.integrations || []).map((i: Integration, index: number) => {
@@ -1306,9 +1327,11 @@ export default function useDashboard() {
   const [githubIntegration, setGithubIntegration] = useState<GitHubIntegration | null>(null)
   const [slackIntegration, setSlackIntegration] = useState<SlackIntegration | null>(null)
   const [jiraIntegration, setJiraIntegration] = useState<JiraIntegration | null>(null)
+  const [linearIntegration, setLinearIntegration] = useState<any>(null)
   const [includeGithub, setIncludeGithub] = useState(true)
   const [includeSlack, setIncludeSlack] = useState(true)
   const [includeJira, setIncludeJira] = useState(true)
+  const [includeLinear, setIncludeLinear] = useState(true)
   const [enableAI, setEnableAI] = useState(true)
   const [llmConfig, setLlmConfig] = useState<{has_token: boolean, provider?: string} | null>(null)
   const [isLoadingGitHubSlack, setIsLoadingGitHubSlack] = useState(false)
@@ -1547,6 +1570,7 @@ export default function useDashboard() {
         include_github: githubIntegration ? includeGithub : false,
         include_slack: slackIntegration ? includeSlack : false,
         include_jira: jiraIntegration ? includeJira : false,
+        include_linear: linearIntegration ? includeLinear : false,
         enable_ai: enableAI  // User can toggle, uses Railway token when enabled
       }
       
@@ -2220,12 +2244,15 @@ return {
   githubIntegration,
   slackIntegration,
   jiraIntegration,
+  linearIntegration,
   includeGithub,
   setIncludeGithub,
   includeSlack,
   setIncludeSlack,
   includeJira,
   setIncludeJira,
+  includeLinear,
+  setIncludeLinear,
   enableAI,
   setEnableAI,
   llmConfig,

@@ -1491,14 +1491,21 @@ class UnifiedBurnoutAnalyzer:
         # Get on-call status if available (from synced users)
         is_oncall = user.get("is_oncall", False)
 
-        # Get Jira account ID if available (from synced users)
+        # Get integration mappings if available (from synced users)
         jira_account_id = user.get("jira_account_id")
+        github_username = user.get("github_username")
+        linear_user_id = user.get("linear_user_id")
+        slack_user_id = user.get("slack_user_id")
 
-        # DEBUG: Log Jira mapping for this user
+        # DEBUG: Log integration mappings for this user
         if jira_account_id:
             logger.info(f"🔍 JIRA MAPPING FOUND: User {user_name} has jira_account_id={jira_account_id}")
-        else:
-            logger.debug(f"⚠️ JIRA MAPPING MISSING: User {user_name} (email: {user_email}) has no jira_account_id. User object keys: {list(user.keys())}")
+        if github_username:
+            logger.info(f"🔍 GITHUB MAPPING FOUND: User {user_name} has github_username={github_username}")
+        if linear_user_id:
+            logger.info(f"🔍 LINEAR MAPPING FOUND: User {user_name} has linear_user_id={linear_user_id}")
+        if not any([jira_account_id, github_username, linear_user_id, slack_user_id]):
+            logger.debug(f"⚠️ NO INTEGRATION MAPPINGS: User {user_name} (email: {user_email}) has no integration mappings. User object keys: {list(user.keys())}")
 
         # If no incidents, return minimal analysis
         if not incidents:
@@ -1532,7 +1539,10 @@ class UnifiedBurnoutAnalyzer:
                 "user_name": user_name,
                 "user_email": user_email,
                 "is_oncall": is_oncall,
+                "github_username": github_username,  # Include GitHub mapping for logo display
+                "slack_user_id": slack_user_id,  # Include Slack mapping for logo display
                 "jira_account_id": jira_account_id,  # Include Jira mapping for workload correlation
+                "linear_user_id": linear_user_id,  # Include Linear mapping for logo display
                 "burnout_score": 0,
                 "ocb_score": round(min(100, composite_ocb['composite_score']), 2),  # Cap display at 100 for UI
                 "risk_level": "low",
@@ -1779,7 +1789,10 @@ class UnifiedBurnoutAnalyzer:
             "user_name": user_name,
             "user_email": user_email,
             "is_oncall": is_oncall,
-            "jira_account_id": jira_account_id,  # Include Jira mapping for workload correlation
+            "github_username": github_username,  # Include GitHub mapping
+            "slack_user_id": slack_user_id,  # Include Slack mapping
+            "jira_account_id": jira_account_id,  # Include Jira mapping
+            "linear_user_id": linear_user_id,  # Include Linear mapping
             "burnout_score": round(burnout_score, 2),
             "ocb_score": round(min(100, composite_ocb['composite_score']), 2),  # Cap display at 100 for UI
             "risk_level": risk_level,

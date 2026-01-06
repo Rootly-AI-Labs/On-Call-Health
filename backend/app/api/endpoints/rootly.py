@@ -1444,11 +1444,17 @@ async def get_synced_users(
     Optionally include on-call status for each user (default: true).
     """
     try:
-        from sqlalchemy import func, cast, String
+        from sqlalchemy import func, cast, String, or_, and_
 
-        # Fetch all user correlations for this user
+        # Fetch all user correlations - both personal (user_id = current_user.id) and org-scoped (user_id = NULL)
         query = db.query(UserCorrelation).filter(
-            UserCorrelation.user_id == current_user.id
+            or_(
+                UserCorrelation.user_id == current_user.id,
+                and_(
+                    UserCorrelation.user_id.is_(None),
+                    UserCorrelation.organization_id == current_user.organization_id
+                )
+            )
         )
 
         # Get all correlations, then filter in Python
@@ -1562,6 +1568,8 @@ async def get_synced_users(
                 platforms.append("slack")
             if corr.jira_account_id:
                 platforms.append("jira")
+            if corr.linear_user_id:
+                platforms.append("linear")
 
             # Check if user is currently on-call
             is_oncall = corr.email.lower() in {email.lower() for email in oncall_emails}
@@ -1577,6 +1585,8 @@ async def get_synced_users(
                 "pagerduty_user_id": corr.pagerduty_user_id,  # Added for PagerDuty incident matching
                 "jira_account_id": corr.jira_account_id,
                 "jira_email": corr.jira_email,
+                "linear_user_id": corr.linear_user_id,
+                "linear_email": corr.linear_email,
                 "is_oncall": is_oncall,
                 "created_at": corr.created_at.isoformat() if corr.created_at else None
             })
@@ -1952,16 +1962,24 @@ async def update_user_correlation_jira_mapping(
     Used for dropdown selection in Team Members panel.
     """
     try:
-        # Fetch the correlation - ensure it belongs to current user
+        from sqlalchemy import or_, and_
+
+        # Fetch the correlation - handle both personal and org-scoped correlations
         correlation = db.query(UserCorrelation).filter(
             UserCorrelation.id == correlation_id,
-            UserCorrelation.user_id == current_user.id
+            or_(
+                UserCorrelation.user_id == current_user.id,
+                and_(
+                    UserCorrelation.user_id.is_(None),
+                    UserCorrelation.organization_id == current_user.organization_id
+                )
+            )
         ).first()
 
         if not correlation:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="User correlation not found or doesn't belong to you"
+                detail="User correlation not found or doesn't belong to your organization"
             )
 
         jira_account_id = (jira_account_id or "").strip()
@@ -2034,4 +2052,114 @@ async def update_user_correlation_jira_mapping(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to update Jira mapping: {str(e)}"
+        )
+
+
+@router.patch("/user-correlation/{correlation_id}/linear-mapping")
+async def update_user_correlation_linear_mapping(
+    correlation_id: int,
+    linear_user_id: str = "",
+    linear_email: str = None,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Manually update Linear user mapping for a UserCorrelation.
+    Enforces exclusive one-to-one mapping across all users in the organization.
+
+    If ANY other user already has this Linear user_id, it will be removed from them first.
+    Used for dropdown selection in Team Members panel.
+    """
+    try:
+        from sqlalchemy import or_, and_
+
+        # Fetch the correlation - handle both personal and org-scoped correlations
+        correlation = db.query(UserCorrelation).filter(
+            UserCorrelation.id == correlation_id,
+            or_(
+                UserCorrelation.user_id == current_user.id,
+                and_(
+                    UserCorrelation.user_id.is_(None),
+                    UserCorrelation.organization_id == current_user.organization_id
+                )
+            )
+        ).first()
+
+        if not correlation:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User correlation not found or doesn't belong to your organization"
+            )
+
+        logger.info(f"LINEAR MAPPING: Found correlation {correlation_id} for user {current_user.id}, email={correlation.email}, user_id={correlation.user_id}")
+
+        linear_user_id = (linear_user_id or "").strip()
+        old_linear_id = correlation.linear_user_id
+
+        if linear_user_id == "":
+            # Clear the mapping
+            correlation.linear_user_id = None
+            correlation.linear_email = None
+            db.commit()
+            logger.info(
+                f"User {current_user.id} cleared Linear mapping for {correlation.email} "
+                f"(was: {old_linear_id})"
+            )
+            message = "Linear mapping cleared"
+        else:
+            # Before assigning the new Linear user, remove it from any other UserCorrelation records
+            removed_count = 0
+
+            # Find all OTHER correlations with this Linear user (excluding current correlation)
+            conflicting_correlations = db.query(UserCorrelation).filter(
+                UserCorrelation.id != correlation_id,
+                UserCorrelation.linear_user_id == linear_user_id
+            ).all()
+
+            logger.info(f"🔍 Found {len(conflicting_correlations)} other UserCorrelation records with Linear user '{linear_user_id}'")
+
+            for other_correlation in conflicting_correlations:
+                logger.info(
+                    f"🗑️  Removing Linear '{linear_user_id}' from UserCorrelation {other_correlation.id}: "
+                    f"{other_correlation.name} ({other_correlation.email})"
+                )
+                other_correlation.linear_user_id = None
+                other_correlation.linear_email = None
+                removed_count += 1
+
+            # Set the new mapping
+            correlation.linear_user_id = linear_user_id
+            correlation.linear_email = linear_email or None
+            db.commit()
+            logger.info(
+                f"✅ User {current_user.id} updated Linear mapping for {correlation.email}: "
+                f"{old_linear_id} → {linear_user_id} (removed from {removed_count} other records)"
+            )
+            message = "Linear mapping updated"
+            if removed_count > 0:
+                message += f" (removed from {removed_count} other user record(s))"
+
+        return {
+            "success": True,
+            "message": message,
+            "correlation": {
+                "id": correlation.id,
+                "email": correlation.email,
+                "name": correlation.name,
+                "linear_user_id": correlation.linear_user_id,
+                "linear_email": correlation.linear_email,
+                "jira_account_id": correlation.jira_account_id,
+                "github_username": correlation.github_username,
+                "slack_user_id": correlation.slack_user_id
+            }
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Failed to update Linear mapping: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update Linear mapping: {str(e)}"
         )

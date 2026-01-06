@@ -109,6 +109,7 @@ import {
   type SlackIntegration,
   type JiraIntegration,
   type LinearIntegration,
+  type LinearUser,
   type PreviewData,
   type IntegrationMapping,
   type MappingStatistics,
@@ -240,6 +241,7 @@ export default function IntegrationsPage() {
       slack_synced?: number
       slack_skipped?: number
       jira_matched?: number
+      linear_matched?: number
     }
   } | null>(null)
   const [editingMapping, setEditingMapping] = useState<ManualMapping | null>(null)
@@ -318,6 +320,13 @@ export default function IntegrationsPage() {
   const [editingJiraUserId, setEditingJiraUserId] = useState<number | null>(null)
   const [editingJiraAccountId, setEditingJiraAccountId] = useState('')
   const [savingJiraMapping, setSavingJiraMapping] = useState(false)
+
+  // Linear mapping state
+  const [linearUsers, setLinearUsers] = useState<LinearUser[]>([])
+  const [loadingLinearUsers, setLoadingLinearUsers] = useState(false)
+  const [editingLinearUserId, setEditingLinearUserId] = useState<number | null>(null)
+  const [editingLinearUserValue, setEditingLinearUserValue] = useState('')
+  const [savingLinearMapping, setSavingLinearMapping] = useState(false)
 
   // Manual survey delivery modal state
   const [showManualSurveyModal, setShowManualSurveyModal] = useState(false)
@@ -482,6 +491,105 @@ export default function IntegrationsPage() {
       toast.error('Failed to update Jira mapping')
     } finally {
       setSavingJiraMapping(false)
+    }
+  }
+
+  // Linear mapping functions
+  const fetchLinearUsers = async () => {
+    if (!linearIntegration) return
+
+    setLoadingLinearUsers(true)
+    try {
+      const authToken = localStorage.getItem('auth_token')
+      if (!authToken) {
+        toast.error('Please log in to load Linear users')
+        return
+      }
+
+      const response = await fetch(`${API_BASE}/integrations/linear/linear-users`, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        const validUsers = (data.users || []).filter(
+          (user: any) => user.id && user.name
+        )
+        setLinearUsers(validUsers)
+      } else {
+        const error = await response.json()
+        console.error('Failed to load Linear users:', error)
+        toast.error('Failed to load Linear users')
+        setLinearUsers([])
+      }
+    } catch (error) {
+      console.error('Error fetching Linear users:', error)
+      toast.error('Error fetching Linear users')
+      setLinearUsers([])
+    } finally {
+      setLoadingLinearUsers(false)
+    }
+  }
+
+  const startEditingLinearMapping = (userId: number, currentLinearUserId: string | null) => {
+    setEditingLinearUserId(userId)
+    setEditingLinearUserValue(currentLinearUserId || '')
+  }
+
+  const cancelEditingLinearMapping = () => {
+    setEditingLinearUserId(null)
+    setEditingLinearUserValue('')
+  }
+
+  const saveLinearMapping = async (userId: number) => {
+    setSavingLinearMapping(true)
+    try {
+      const authToken = localStorage.getItem('auth_token')
+      if (!authToken) {
+        toast.error('Please log in to update Linear mapping')
+        return
+      }
+
+      const userIdToSave = editingLinearUserValue === '__clear__' ? '' : editingLinearUserValue
+      const linearUser = linearUsers.find(u => u.id === userIdToSave)
+
+      const response = await fetch(
+        `${API_BASE}/rootly/user-correlation/${userId}/linear-mapping?linear_user_id=${encodeURIComponent(userIdToSave)}${linearUser?.email ? `&linear_email=${encodeURIComponent(linearUser.email)}` : ''}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${authToken}`
+          }
+        }
+      )
+
+      if (response.ok) {
+        const data = await response.json()
+
+        if (userIdToSave === '') {
+          toast.success('Linear mapping cleared')
+        } else {
+          const message = data.message || 'Linear mapping updated'
+          toast.success(message)
+        }
+
+        const selectedOrg = selectedOrganization || integrations.find(i => i.is_default)?.id?.toString()
+        if (selectedOrg) {
+          syncedUsersCache.current.delete(selectedOrg)
+          await fetchSyncedUsers(false, false, true)
+        }
+        cancelEditingLinearMapping()
+      } else {
+        const error = await response.json()
+        toast.error(error.detail || 'Failed to update Linear mapping')
+      }
+    } catch (error) {
+      console.error('Error updating Linear mapping:', error)
+      toast.error('Failed to update Linear mapping')
+    } finally {
+      setSavingLinearMapping(false)
     }
   }
 
@@ -922,7 +1030,15 @@ export default function IntegrationsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jiraIntegration, teamMembersDrawerOpen, showSyncedUsers])
 
-  // Handle Slack/Jira OAuth success redirect
+  // Fetch Linear users when drawer opens
+  useEffect(() => {
+    if (linearIntegration && teamMembersDrawerOpen && showSyncedUsers) {
+      fetchLinearUsers()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linearIntegration, teamMembersDrawerOpen, showSyncedUsers])
+
+  // Handle Slack/Jira/Linear OAuth success redirect
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
     const slackConnected = urlParams.get('slack_connected')
@@ -930,6 +1046,8 @@ export default function IntegrationsPage() {
     const status = urlParams.get('status')
     const jiraConnected = urlParams.get('jira_connected')
     const jiraError = urlParams.get('jira_error')
+    const linearConnected = urlParams.get('linear_connected')
+    const linearError = urlParams.get('linear_error')
     // Check auth token after OAuth redirect
     const authToken = localStorage.getItem('auth_token')
 
@@ -1191,6 +1309,94 @@ export default function IntegrationsPage() {
       const errorMessage = decodeURIComponent(jiraError)
 
       toast.error('Failed to connect Jira', {
+        description: errorMessage,
+        duration: 8000,
+      })
+
+      // Clean up URL parameters
+      const newUrl = window.location.pathname
+      window.history.replaceState({}, '', newUrl)
+    }
+
+    // Handle Linear OAuth success
+    if (linearConnected === '1' || linearConnected === 'true') {
+      // Show loading toast
+      const loadingToastId = toast.loading('Verifying Linear connection...', {
+        description: 'Please wait while we confirm your Linear integration.',
+      })
+
+      // Clean up URL parameters
+      const newUrl = window.location.pathname
+      window.history.replaceState({}, '', newUrl)
+
+      // Poll for connection status with retries
+      let retries = 0
+      const maxRetries = 15
+      const pollInterval = 500
+
+      const checkLinearConnection = async () => {
+        try {
+          retries++
+
+          // Check if Linear is now connected
+          const authToken = localStorage.getItem('auth_token')
+          if (!authToken) return
+
+          const response = await fetch(`${API_BASE}/integrations/linear/status`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+          })
+
+          if (response.ok) {
+            const data = await response.json()
+            if (data.connected) {
+              // Update Linear integration state
+              setLinearIntegration(data.integration)
+              setLoadingLinear(false)
+              // Update cache
+              localStorage.setItem('linear_integration', JSON.stringify(data))
+              localStorage.setItem('all_integrations_timestamp', Date.now().toString())
+
+              toast.dismiss(loadingToastId)
+
+              // Show success message
+              toast.success(`🎉 Linear integration connected!`, {
+                description: `Successfully connected to ${data.integration.workspace_name || 'your Linear workspace'}.`,
+                duration: 5000,
+              })
+              return
+            }
+          }
+
+          // Not connected yet, retry if we haven't exceeded max retries
+          if (retries < maxRetries) {
+            setTimeout(checkLinearConnection, pollInterval)
+          } else {
+            // Max retries reached, show warning
+            toast.dismiss(loadingToastId)
+            toast.warning('Connection verification timed out', {
+              description: 'Your Linear workspace was connected, but verification took longer than expected. Try refreshing the page.',
+              duration: 8000,
+            })
+          }
+        } catch (error) {
+          if (retries < maxRetries) {
+            setTimeout(checkLinearConnection, pollInterval)
+          } else {
+            toast.dismiss(loadingToastId)
+            toast.error('Failed to verify connection', {
+              description: 'Please refresh the page to check your Linear connection status.',
+            })
+          }
+        }
+      }
+
+      // Start checking immediately
+      checkLinearConnection()
+    } else if (linearError) {
+      // Show error toast
+      const errorMessage = decodeURIComponent(linearError)
+
+      toast.error('Failed to connect Linear', {
         description: errorMessage,
         duration: 8000,
       })
@@ -1994,6 +2200,7 @@ export default function IntegrationsPage() {
           updated: syncResults.updated,
           github_matched: syncResults.github_matched,
           jira_matched: syncResults.jira_matched,
+          linear_matched: syncResults.linear_matched,
           slack_synced: slackResults?.updated,
           slack_skipped: slackResults?.skipped,
         }
@@ -4561,14 +4768,19 @@ export default function IntegrationsPage() {
                                 <span className="text-sm font-medium text-gray-900">
                                   {user.name || 'Unknown'}
                                 </span>
-                                {/* GitHub and Slack logos */}
+                                {/* GitHub, Slack, Jira, and Linear logos */}
                                 {user.platforms?.map((platform: string) => {
                                   const platformLower = platform.toLowerCase()
                                   const isGitHub = platformLower === 'github'
                                   const isSlack = platformLower === 'slack'
                                   const isJira = platformLower === 'jira'
+                                  const isLinear = platformLower === 'linear'
 
-                                  if (isGitHub || isSlack || isJira) {
+                                  if (isGitHub || isSlack || isJira || isLinear) {
+                                    const logoSrc = isGitHub ? '/images/github-logo.png' :
+                                                    isSlack ? '/images/slack-logo.png' :
+                                                    isJira ? '/images/jira-logo.png' :
+                                                    '/images/linear-logo.png'
                                     return (
                                       <div
                                         key={platform}
@@ -4576,7 +4788,7 @@ export default function IntegrationsPage() {
                                         title={platform}
                                       >
                                         <Image
-                                          src={isGitHub ? '/images/github-logo.png' : isSlack ? '/images/slack-logo.png' : '/images/jira-logo.png'}
+                                          src={logoSrc}
                                           alt={platform}
                                           width={14}
                                           height={14}
@@ -4812,6 +5024,108 @@ export default function IntegrationsPage() {
                             )}
                           </div>
                         )}
+
+                        {/* Linear mapping section - always show if Linear connected */}
+                        {linearIntegration && (
+                          <div className="pl-13 mt-2" onClick={(e) => e.stopPropagation()}>
+                            {editingLinearUserId === user.id ? (
+                              // Linear Edit mode
+                              <div className="flex items-center space-x-2">
+                                <Select
+                                  value={editingLinearUserValue}
+                                  onValueChange={setEditingLinearUserValue}
+                                  disabled={savingLinearMapping}
+                                >
+                                  <SelectTrigger className="h-8 text-xs flex-1">
+                                    <SelectValue placeholder="Select Linear user..." />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="__clear__">
+                                      <span className="text-gray-400 italic">Clear mapping</span>
+                                    </SelectItem>
+                                    {linearUsers.length > 0 ? (
+                                      linearUsers
+                                        .filter(u => u.active !== false)
+                                        .map((linearUser) => (
+                                          <SelectItem key={linearUser.id} value={linearUser.id}>
+                                            <div className="space-y-0.5">
+                                              <div className="font-medium">{linearUser.name}</div>
+                                              <div className="text-xs text-gray-500">
+                                                {linearUser.email || '<no-email>'}
+                                              </div>
+                                            </div>
+                                          </SelectItem>
+                                        ))
+                                    ) : (
+                                      <div className="text-xs text-gray-400 p-2">
+                                        {loadingLinearUsers ? 'Loading...' : 'No Linear users found'}
+                                      </div>
+                                    )}
+                                  </SelectContent>
+                                </Select>
+                                <Button
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    saveLinearMapping(user.id)
+                                  }}
+                                  disabled={savingLinearMapping}
+                                  className="h-8 px-2"
+                                >
+                                  {savingLinearMapping ? (
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                  ) : (
+                                    <Check className="w-3 h-3" />
+                                  )}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    cancelEditingLinearMapping()
+                                  }}
+                                  disabled={savingLinearMapping}
+                                  className="h-8 px-2"
+                                >
+                                  <X className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            ) : (
+                              // Linear Display mode
+                              <div className="flex items-center justify-between text-xs">
+                                <div className="text-gray-500">
+                                  Linear: {user.linear_user_id ? (
+                                    <div className="space-y-0.5">
+                                      <div className="font-mono text-gray-700">
+                                        {linearUsers.find(u => u.id === user.linear_user_id)?.name ||
+                                         user.linear_user_id.substring(0, 8) + '...'}
+                                      </div>
+                                      {user.linear_email ? (
+                                        <div className="text-xs text-gray-500">{user.linear_email}</div>
+                                      ) : (
+                                        <div className="text-xs text-gray-400">&lt;no-email&gt;</div>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <span className="text-gray-400 italic">Not mapped</span>
+                                  )}
+                                </div>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    startEditingLinearMapping(user.id, user.linear_user_id)
+                                  }}
+                                  className="h-6 px-2 text-gray-400 hover:text-gray-700"
+                                >
+                                  <Edit3 className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                     )
@@ -4987,6 +5301,12 @@ export default function IntegrationsPage() {
                           <div className="flex items-center justify-between py-2 border-b border-gray-200">
                             <span className="text-sm text-gray-700">Jira accounts matched</span>
                             <span className="font-semibold text-gray-900">{syncProgress.results.jira_matched}</span>
+                          </div>
+                        )}
+                        {syncProgress.results.linear_matched !== undefined && (
+                          <div className="flex items-center justify-between py-2 border-b border-gray-200">
+                            <span className="text-sm text-gray-700">Linear accounts matched</span>
+                            <span className="font-semibold text-gray-900">{syncProgress.results.linear_matched}</span>
                           </div>
                         )}
                       </div>

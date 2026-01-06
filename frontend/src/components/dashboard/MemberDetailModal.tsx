@@ -13,6 +13,7 @@ import { Info, RefreshCw, BarChart3 } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import { UserObjectiveDataCard } from "@/components/dashboard/UserObjectiveDataCard"
 import { SurveyResultsCard } from "@/components/dashboard/SurveyResultsCard"
+import { TicketingCard } from "@/components/dashboard/TicketingCard"
 
 // Individual Daily Health Chart component
 function IndividualDailyHealthChart({ memberData, analysisId, currentAnalysis }: {
@@ -890,6 +891,9 @@ export function MemberDetailModal({
                         )}
                       </CardContent>
                     </Card>
+
+                    {/* Ticketing Workload Card */}
+                    <TicketingCard memberData={memberData} />
                   </div>
                 );
               })()}

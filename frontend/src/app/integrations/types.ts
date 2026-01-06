@@ -197,6 +197,13 @@ export interface LinearTeamsResponse {
   total_count: number
 }
 
+export interface LinearUser {
+  id: string
+  name: string
+  email: string | null
+  active: boolean
+}
+
 export interface PreviewData {
   organization_name: string
   total_users: number

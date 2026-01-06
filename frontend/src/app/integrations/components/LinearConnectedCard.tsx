@@ -2,7 +2,7 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { AlertCircle, CheckCircle, Calendar, Globe, Key, Trash2, TestTube, Loader2, Users } from "lucide-react"
+import { AlertCircle, CheckCircle, Calendar, Globe, Key, Trash2, TestTube, Loader2 } from "lucide-react"
 import type { LinearIntegration } from "../types"
 
 interface LinearConnectedCardProps {
@@ -128,6 +128,7 @@ export function LinearConnectedCard({
             )}
             Test Connection
           </Button>
+
           <Button
             size="sm"
             variant="destructive"

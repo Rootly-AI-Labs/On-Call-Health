@@ -40,6 +40,8 @@ class ManualMappingService:
             self.remove_github_from_all_other_users(user_id, target_identifier)
         elif target_platform == "jira":
             self.remove_jira_from_all_other_users(user_id, target_identifier)
+        elif target_platform == "linear":
+            self.remove_linear_from_all_other_users(user_id, target_identifier)
 
         # Check if mapping already exists for THIS user
         existing = self.get_mapping(
@@ -135,6 +137,10 @@ class ManualMappingService:
             old_value = correlation.slack_user_id
             correlation.slack_user_id = target_identifier
             logger.info(f"✅ Updated Slack in UserCorrelation {correlation.id if correlation.id else 'NEW'}: '{old_value}' -> '{target_identifier}'")
+        elif target_platform == "linear":
+            old_value = correlation.linear_user_id
+            correlation.linear_user_id = target_identifier
+            logger.info(f"✅ Updated Linear in UserCorrelation {correlation.id if correlation.id else 'NEW'}: '{old_value}' -> '{target_identifier}'")
 
         self.db.commit()
         logger.info(f"💾 Committed sync to UserCorrelation for {source_identifier}")
@@ -315,7 +321,10 @@ class ManualMappingService:
         logger.info(f"🔍 Searching UserCorrelation table for conflicting correlations...")
         conflicting_correlations = self.db.query(UserCorrelation).filter(
             and_(
-                UserCorrelation.user_id != current_user_id,
+                or_(
+                    UserCorrelation.user_id != current_user_id,
+                    UserCorrelation.user_id.is_(None)  # Also match NULL user_ids (org-scoped data)
+                ),
                 UserCorrelation.github_username == github_username
             )
         ).all()
@@ -381,7 +390,10 @@ class ManualMappingService:
         logger.info(f"🔍 Searching UserCorrelation table for conflicting correlations...")
         conflicting_correlations = self.db.query(UserCorrelation).filter(
             and_(
-                UserCorrelation.user_id != current_user_id,
+                or_(
+                    UserCorrelation.user_id != current_user_id,
+                    UserCorrelation.user_id.is_(None)  # Also match NULL user_ids (org-scoped data)
+                ),
                 UserCorrelation.jira_account_id == jira_account_id
             )
         ).all()
@@ -403,6 +415,76 @@ class ManualMappingService:
             logger.info(f"✅ Committed removal of Jira account '{jira_account_id}' from {removed_count} records")
         else:
             logger.info(f"ℹ️  No conflicting records found for Jira account '{jira_account_id}'")
+
+        return removed_count
+
+    def remove_linear_from_all_other_users(
+        self,
+        current_user_id: int,
+        linear_user_id: str
+    ) -> int:
+        """Remove Linear user ID from ALL other users (both UserMapping and UserCorrelation).
+
+        This ensures complete deduplication across manual mappings and synced correlations.
+
+        Args:
+            current_user_id: The user who should keep the mapping
+            linear_user_id: The Linear user ID to make unique
+
+        Returns:
+            Total number of records updated (from both tables)
+        """
+        logger.info(f"🔍 Starting removal of Linear user '{linear_user_id}' from all users except {current_user_id}")
+        removed_count = 0
+
+        # 1. Remove from UserMapping table (manual mappings)
+        logger.info(f"🔍 Searching UserMapping table for conflicting mappings...")
+        conflicting_mappings = self.db.query(UserMapping).filter(
+            and_(
+                UserMapping.user_id != current_user_id,
+                UserMapping.target_platform == "linear",
+                UserMapping.target_identifier == linear_user_id
+            )
+        ).all()
+
+        logger.info(f"🔍 Found {len(conflicting_mappings)} conflicting UserMapping records")
+        for mapping in conflicting_mappings:
+            logger.info(
+                f"🗑️  Deleting UserMapping {mapping.id}: user {mapping.user_id}, "
+                f"source: {mapping.source_identifier} -> Linear: {linear_user_id}"
+            )
+            self.db.delete(mapping)
+            removed_count += 1
+
+        # 2. Remove from UserCorrelation table (synced correlations)
+        logger.info(f"🔍 Searching UserCorrelation table for conflicting correlations...")
+        conflicting_correlations = self.db.query(UserCorrelation).filter(
+            and_(
+                or_(
+                    UserCorrelation.user_id != current_user_id,
+                    UserCorrelation.user_id.is_(None)  # Also match NULL user_ids (org-scoped data)
+                ),
+                UserCorrelation.linear_user_id == linear_user_id
+            )
+        ).all()
+
+        logger.info(f"🔍 Found {len(conflicting_correlations)} conflicting UserCorrelation records")
+        for correlation in conflicting_correlations:
+            logger.info(
+                f"🗑️  Clearing Linear from UserCorrelation {correlation.id}: "
+                f"user {correlation.user_id}, email: {correlation.email}, "
+                f"Linear: {correlation.linear_user_id} -> None"
+            )
+            correlation.linear_user_id = None
+            correlation.linear_email = None
+            removed_count += 1
+
+        # Commit the removals immediately to ensure they're persisted
+        if removed_count > 0:
+            self.db.commit()
+            logger.info(f"✅ Committed removal of Linear user '{linear_user_id}' from {removed_count} records")
+        else:
+            logger.info(f"ℹ️  No conflicting records found for Linear user '{linear_user_id}'")
 
         return removed_count
 

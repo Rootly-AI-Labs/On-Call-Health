@@ -65,7 +65,7 @@ export async function syncUsersToCorrelation(
   fetchSyncedUsers: (showToast?: boolean, autoSync?: boolean) => Promise<void>,
   onProgress?: (message: string) => void,
   suppressToast?: boolean
-): Promise<{ created: number; updated: number; github_matched?: number; jira_matched?: number }> {
+): Promise<{ created: number; updated: number; github_matched?: number; jira_matched?: number; linear_matched?: number }> {
   if (!selectedOrganization) {
     toast.error('Please select an organization first')
     throw new Error('No organization selected')
@@ -111,8 +111,15 @@ export async function syncUsersToCorrelation(
       if (stats.jira_error) {
         onProgress?.(`⚠️  Jira sync failed: ${stats.jira_error}`)
       }
+      if (stats.linear_matched !== undefined) {
+        onProgress?.(`🔶 Matched ${stats.linear_matched} users to Linear`)
+        onProgress?.(`⏭️  Skipped ${stats.linear_skipped || 0} Linear matches`)
+      }
+      if (stats.linear_error) {
+        onProgress?.(`⚠️  Linear sync failed: ${stats.linear_error}`)
+      }
 
-      // Build success message with GitHub and Jira matching info
+      // Build success message with GitHub, Jira, and Linear matching info
       let message = `Synced ${stats.created} new users, updated ${stats.updated} existing users.`
       if (stats.github_matched !== undefined) {
         message += ` Matched ${stats.github_matched} users to GitHub.`
@@ -125,6 +132,12 @@ export async function syncUsersToCorrelation(
       }
       if (stats.jira_error) {
         message += ` Jira sync failed.`
+      }
+      if (stats.linear_matched !== undefined) {
+        message += ` Matched ${stats.linear_matched} users to Linear.`
+      }
+      if (stats.linear_error) {
+        message += ` Linear sync failed.`
       }
       message += ` All team members can now submit burnout surveys via Slack!`
 
@@ -141,7 +154,8 @@ export async function syncUsersToCorrelation(
         created: stats.created,
         updated: stats.updated,
         github_matched: stats.github_matched,
-        jira_matched: stats.jira_matched
+        jira_matched: stats.jira_matched,
+        linear_matched: stats.linear_matched
       }
     } else {
       const errorData = await response.json()
