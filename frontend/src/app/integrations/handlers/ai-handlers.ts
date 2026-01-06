@@ -117,8 +117,17 @@ export async function handleConnectAI(
       throw new Error(description)
     }
   } catch (error) {
-    console.error('Failed to connect AI:', error)
     const errorMessage = error instanceof Error ? error.message : "Failed to connect to AI service"
+
+    // Don't log or show toast for "No custom token found" - this is expected when switching to custom token
+    // The calling code will handle this gracefully
+    if (errorMessage.includes('No custom token found')) {
+      setTokenError(null) // Don't set error for expected scenario
+      throw error // Re-throw so calling code can handle
+    }
+
+    // Log error for actual failures
+    console.error('Failed to connect AI:', error)
 
     // Determine toast title based on error content
     let toastTitle = "Connection Failed"

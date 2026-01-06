@@ -691,8 +691,8 @@ export default function IntegrationsPage() {
     // loadPagerDutyIntegrations()
     // loadGitHubIntegration()
     // loadSlackIntegration()
-    // loadLlmConfig() // Disabled - AI is always enabled with system token
-    
+    loadLlmConfig() // Load AI config to persist connection state
+
     // Load saved organization preference
     const savedOrg = localStorage.getItem('selected_organization')
     // Accept both numeric IDs and beta string IDs (like "beta-rootly")
