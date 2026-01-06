@@ -106,7 +106,12 @@ export function SlackSurveyTabs({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const loadSchedule = async () => {
+  const loadSchedule = async (forceLoad = false) => {
+    // Don't overwrite local changes unless forced (e.g., after save)
+    if (!forceLoad && savingSchedule) {
+      return
+    }
+
     setLoadingSchedule(true)
     try {
       const authToken = localStorage.getItem('auth_token')
@@ -195,7 +200,7 @@ export function SlackSurveyTabs({
         const responseData = await response.json()
         toast.success('Schedule saved successfully')
         // Reload schedule from DB to ensure we display exactly what's saved
-        await loadSchedule()
+        await loadSchedule(true) // Force reload after save
       } else {
         const error = await response.json()
         toast.error(error.detail || 'Failed to save schedule')
