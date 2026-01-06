@@ -1309,7 +1309,7 @@ export default function useDashboard() {
   const [includeGithub, setIncludeGithub] = useState(true)
   const [includeSlack, setIncludeSlack] = useState(true)
   const [includeJira, setIncludeJira] = useState(true)
-  const [enableAI, setEnableAI] = useState(true)
+  const [enableAI, setEnableAI] = useState(false)
   const [llmConfig, setLlmConfig] = useState<{has_token: boolean, provider?: string} | null>(null)
   const [isLoadingGitHubSlack, setIsLoadingGitHubSlack] = useState(false)
 
