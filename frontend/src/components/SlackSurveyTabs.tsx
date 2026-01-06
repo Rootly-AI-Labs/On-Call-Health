@@ -60,6 +60,7 @@ export function SlackSurveyTabs({
 
   // Schedule state
   const [scheduleEnabled, setScheduleEnabled] = useState(false)
+  const [savedScheduleEnabled, setSavedScheduleEnabled] = useState(false) // Track saved enabled state
   const [scheduleTime, setScheduleTime] = useState('09:00')
   const [frequencyType, setFrequencyType] = useState<'daily' | 'weekday' | 'weekly'>('weekday')
   const [dayOfWeek, setDayOfWeek] = useState<number>(4) // Default: Friday
@@ -116,7 +117,16 @@ export function SlackSurveyTabs({
 
   const loadSchedule = async (forceLoad = false) => {
     // Don't overwrite local changes unless forced (e.g., after save)
-    if (!forceLoad && savingSchedule) {
+    // Check if there are unsaved schedule changes
+    const hasUnsavedChanges = scheduleEnabled !== savedScheduleEnabled
+    console.log('[loadSchedule] Called with:', {
+      forceLoad,
+      scheduleEnabled,
+      savedScheduleEnabled,
+      hasUnsavedChanges
+    })
+    if (!forceLoad && hasUnsavedChanges) {
+      console.log('[loadSchedule] Skipping due to unsaved changes')
       return
     }
 
@@ -134,7 +144,9 @@ export function SlackSurveyTabs({
 
         // Handle case where schedule exists
         if (data.enabled !== undefined) {
+          console.log('[loadSchedule] Setting enabled to:', data.enabled)
           setScheduleEnabled(data.enabled)
+          setSavedScheduleEnabled(data.enabled) // Track saved state
 
           // Backend returns "HH:MM:SS", extract only "HH:MM"
           if (data.send_time) {
@@ -676,7 +688,10 @@ export function SlackSurveyTabs({
               </div>
               <Switch
                 checked={scheduleEnabled}
-                onCheckedChange={setScheduleEnabled}
+                onCheckedChange={(checked) => {
+                  console.log('[Toggle] User changed to:', checked)
+                  setScheduleEnabled(checked)
+                }}
                 disabled={savingSchedule}
               />
             </div>
