@@ -2083,7 +2083,11 @@ function DashboardContent() {
                               checked={includeGithub && !!githubIntegration}
                               onCheckedChange={(checked) => {
                                 if (!githubIntegration) {
-                                  toast.error("GitHub not connected - please connect on integrations page")
+                                  toast.error(
+                                    <span>
+                                      GitHub not connected - please connect on <a href="/integrations" className="underline font-medium hover:text-red-800">integrations page</a>
+                                    </span>
+                                  )
                                 } else {
                                   setIncludeGithub(checked)
                                 }
@@ -2126,9 +2130,17 @@ function DashboardContent() {
                               checked={includeSlack && !!slackIntegration && slackIntegration.communication_patterns_enabled === true}
                               onCheckedChange={(checked) => {
                                 if (!slackIntegration) {
-                                  toast.error("Slack not connected - please connect on integrations page")
+                                  toast.error(
+                                    <span>
+                                      Slack not connected - please connect on <a href="/integrations" className="underline font-medium hover:text-red-800">integrations page</a>
+                                    </span>
+                                  )
                                 } else if (!slackIntegration.communication_patterns_enabled) {
-                                  toast.error("Slack communication patterns analysis is disabled. Enable it in the integrations page.")
+                                  toast.error(
+                                    <span>
+                                      Slack communication patterns analysis is disabled. Enable it on the <a href="/integrations" className="underline font-medium hover:text-red-800">integrations page</a>.
+                                    </span>
+                                  )
                                 } else {
                                   setIncludeSlack(checked)
                                 }
@@ -2167,7 +2179,11 @@ function DashboardContent() {
                               checked={includeJira && !!jiraIntegration}
                               onCheckedChange={(checked) => {
                                 if (!jiraIntegration) {
-                                  toast.error("Jira not connected - please connect on integrations page")
+                                  toast.error(
+                                    <span>
+                                      Jira not connected - please connect on <a href="/integrations" className="underline font-medium hover:text-red-800">integrations page</a>
+                                    </span>
+                                  )
                                 } else {
                                   setIncludeJira(checked)
                                 }
