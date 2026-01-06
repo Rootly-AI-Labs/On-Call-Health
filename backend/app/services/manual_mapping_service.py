@@ -321,7 +321,10 @@ class ManualMappingService:
         logger.info(f"🔍 Searching UserCorrelation table for conflicting correlations...")
         conflicting_correlations = self.db.query(UserCorrelation).filter(
             and_(
-                UserCorrelation.user_id != current_user_id,
+                or_(
+                    UserCorrelation.user_id != current_user_id,
+                    UserCorrelation.user_id.is_(None)  # Also match NULL user_ids (org-scoped data)
+                ),
                 UserCorrelation.github_username == github_username
             )
         ).all()
@@ -387,7 +390,10 @@ class ManualMappingService:
         logger.info(f"🔍 Searching UserCorrelation table for conflicting correlations...")
         conflicting_correlations = self.db.query(UserCorrelation).filter(
             and_(
-                UserCorrelation.user_id != current_user_id,
+                or_(
+                    UserCorrelation.user_id != current_user_id,
+                    UserCorrelation.user_id.is_(None)  # Also match NULL user_ids (org-scoped data)
+                ),
                 UserCorrelation.jira_account_id == jira_account_id
             )
         ).all()
@@ -454,7 +460,10 @@ class ManualMappingService:
         logger.info(f"🔍 Searching UserCorrelation table for conflicting correlations...")
         conflicting_correlations = self.db.query(UserCorrelation).filter(
             and_(
-                UserCorrelation.user_id != current_user_id,
+                or_(
+                    UserCorrelation.user_id != current_user_id,
+                    UserCorrelation.user_id.is_(None)  # Also match NULL user_ids (org-scoped data)
+                ),
                 UserCorrelation.linear_user_id == linear_user_id
             )
         ).all()

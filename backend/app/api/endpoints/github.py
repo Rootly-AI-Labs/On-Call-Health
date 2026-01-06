@@ -4,6 +4,7 @@ GitHub integration API endpoints for OAuth and data collection.
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.exc import IntegrityError
 from typing import Dict, Any
 import secrets
 import json
@@ -161,24 +162,32 @@ async def github_callback(
 
         # Update user correlations using PostgreSQL upsert (INSERT ... ON CONFLICT)
         # Upsert on (user_id, email) composite key - if record exists, update github_username
-        for email in email_addresses:
-            stmt = insert(UserCorrelation).values(
-                user_id=current_user.id,
-                organization_id=current_user.organization_id,
-                email=email,
-                github_username=github_username,
-                is_active=1
-            ).on_conflict_do_update(
-                index_elements=['user_id', 'email'],  # Composite key to match constraint
-                set_={
-                    'github_username': github_username,
-                    'organization_id': current_user.organization_id,
-                    'is_active': 1
-                }
-            )
-            db.execute(stmt)
+        try:
+            for email in email_addresses:
+                stmt = insert(UserCorrelation).values(
+                    user_id=current_user.id,
+                    organization_id=current_user.organization_id,
+                    email=email,
+                    github_username=github_username,
+                    is_active=1
+                ).on_conflict_do_update(
+                    index_elements=['user_id', 'email'],  # Composite key to match constraint
+                    set_={
+                        'github_username': github_username,
+                        'organization_id': current_user.organization_id,
+                        'is_active': 1
+                    }
+                )
+                db.execute(stmt)
 
-        db.commit()
+            db.commit()
+        except IntegrityError as e:
+            db.rollback()
+            logger.error(f"Database integrity error during GitHub connection: {str(e)}")
+            raise HTTPException(
+                status_code=409,
+                detail="This GitHub account is already connected or there's a data conflict. Please try again or contact support."
+            )
 
         return {
             "success": True,
@@ -467,24 +476,32 @@ async def connect_github_with_token(
 
         # Update user correlations using PostgreSQL upsert (INSERT ... ON CONFLICT)
         # Upsert on (user_id, email) composite key - if record exists, update github_username
-        for email in email_addresses:
-            stmt = insert(UserCorrelation).values(
-                user_id=current_user.id,
-                organization_id=current_user.organization_id,
-                email=email,
-                github_username=github_username,
-                is_active=1
-            ).on_conflict_do_update(
-                index_elements=['user_id', 'email'],  # Composite key to match constraint
-                set_={
-                    'github_username': github_username,
-                    'organization_id': current_user.organization_id,
-                    'is_active': 1
-                }
-            )
-            db.execute(stmt)
+        try:
+            for email in email_addresses:
+                stmt = insert(UserCorrelation).values(
+                    user_id=current_user.id,
+                    organization_id=current_user.organization_id,
+                    email=email,
+                    github_username=github_username,
+                    is_active=1
+                ).on_conflict_do_update(
+                    index_elements=['user_id', 'email'],  # Composite key to match constraint
+                    set_={
+                        'github_username': github_username,
+                        'organization_id': current_user.organization_id,
+                        'is_active': 1
+                    }
+                )
+                db.execute(stmt)
 
-        db.commit()
+            db.commit()
+        except IntegrityError as e:
+            db.rollback()
+            logger.error(f"Database integrity error during GitHub connection: {str(e)}")
+            raise HTTPException(
+                status_code=409,
+                detail="This GitHub account is already connected or there's a data conflict. Please try again or contact support."
+            )
 
         # Build response message with org warning if needed
         message = "GitHub integration connected successfully with personal access token"

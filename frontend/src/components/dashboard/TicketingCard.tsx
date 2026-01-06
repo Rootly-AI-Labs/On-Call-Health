@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { AlertCircle, Clock } from "lucide-react"
-import { formatDistanceToNow, isPast, parseISO } from "date-fns"
+import { Clock } from "lucide-react"
+import { formatDistanceToNow, isPast, parseISO, isBefore, addDays, isAfter } from "date-fns"
 
 interface TicketingCardProps {
   memberData: any
@@ -49,38 +49,39 @@ function getPriorityColor(priority: string | number): string {
   }
 }
 
-// Helper function to format risk level badge
-function getRiskBadgeColor(riskLevel: string): string {
-  switch (riskLevel?.toLowerCase()) {
-    case "low":
-      return "bg-green-100 text-green-800"
-    case "moderate":
-      return "bg-yellow-100 text-yellow-800"
-    case "high":
-      return "bg-orange-100 text-orange-800"
-    case "severe":
-      return "bg-red-100 text-red-800"
-    default:
-      return "bg-gray-100 text-gray-800"
+// Check if ticket is due within 7 days
+function isDueIn7Days(dueDate: string | null): boolean {
+  if (!dueDate) return false
+  try {
+    const date = parseISO(dueDate)
+    const today = new Date()
+    const sevenDaysFromNow = addDays(today, 7)
+    return isAfter(date, today) && isBefore(date, sevenDaysFromNow)
+  } catch {
+    return false
   }
 }
 
-// Helper function to format deadline pressure
-function getDeadlinePressureBadgeColor(pressure: string): string {
-  switch (pressure?.toLowerCase()) {
-    case "none":
-      return "bg-green-100 text-green-800"
-    case "low":
-      return "bg-blue-100 text-blue-800"
-    case "moderate":
-      return "bg-yellow-100 text-yellow-800"
-    case "high":
-      return "bg-orange-100 text-orange-800"
-    case "critical":
-      return "bg-red-100 text-red-800"
-    default:
-      return "bg-gray-100 text-gray-800"
+// Check if ticket is overdue
+function isOverdue(dueDate: string | null): boolean {
+  if (!dueDate) return false
+  try {
+    const date = parseISO(dueDate)
+    return isPast(date)
+  } catch {
+    return false
   }
+}
+
+// Check if Jira priority is high/critical
+function isJiraHighCritical(priority: string | null): boolean {
+  if (!priority) return false
+  return ["highest", "high"].includes(priority.toLowerCase())
+}
+
+// Check if Linear priority is urgent/high
+function isLinearUrgentHigh(priority: number | null): boolean {
+  return priority === 1 || priority === 2
 }
 
 // Format due date relative to today
@@ -115,11 +116,16 @@ function JiraTicketCard({ memberData }: TicketingCardProps) {
     )
   }
 
-  const jiraIndicators = memberData.jira_burnout_breakdown?.jira_indicators || {}
-  const jiraAddedRisk = memberData.jira_burnout_breakdown?.jira_added_risk || 0
+  const tickets = memberData.jira_tickets
+
+  // Calculate metrics from raw data
+  const totalTickets = tickets.length
+  const highCriticalCount = tickets.filter((ticket: any) => isJiraHighCritical(ticket.priority)).length
+  const dueIn7DaysCount = tickets.filter((ticket: any) => isDueIn7Days(ticket.duedate)).length
+  const overdueCount = tickets.filter((ticket: any) => isOverdue(ticket.duedate)).length
 
   // Sort tickets by priority (high to low) then by due date
-  const sortedTickets = [...memberData.jira_tickets].sort((a, b) => {
+  const sortedTickets = [...tickets].sort((a, b) => {
     const priorityOrder: { [key: string]: number } = {
       highest: 1,
       high: 2,
@@ -153,33 +159,19 @@ function JiraTicketCard({ memberData }: TicketingCardProps) {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="bg-gray-50 p-3 rounded-md">
             <p className="text-xs text-gray-600">Total Tickets</p>
-            <p className="text-lg font-semibold text-gray-900">{jiraIndicators.ticket_count || 0}</p>
+            <p className="text-lg font-semibold text-gray-900">{totalTickets}</p>
           </div>
           <div className="bg-gray-50 p-3 rounded-md">
-            <p className="text-xs text-gray-600">Critical</p>
-            <p className="text-lg font-semibold text-red-600">{jiraIndicators.critical_count || 0}</p>
+            <p className="text-xs text-gray-600">High/Critical</p>
+            <p className="text-lg font-semibold text-red-600">{highCriticalCount}</p>
           </div>
           <div className="bg-gray-50 p-3 rounded-md">
-            <p className="text-xs text-gray-600">Overload Risk</p>
-            <Badge className={`${getRiskBadgeColor(jiraIndicators.overload_risk)} text-xs`}>
-              {jiraIndicators.overload_risk || "Unknown"}
-            </Badge>
+            <p className="text-xs text-gray-600">Due in 7 Days</p>
+            <p className="text-lg font-semibold text-orange-600">{dueIn7DaysCount}</p>
           </div>
           <div className="bg-gray-50 p-3 rounded-md">
-            <p className="text-xs text-gray-600">Deadline</p>
-            <Badge className={`${getDeadlinePressureBadgeColor(jiraIndicators.deadline_pressure)} text-xs`}>
-              {jiraIndicators.deadline_pressure || "None"}
-            </Badge>
-          </div>
-        </div>
-
-        {/* Burnout Impact */}
-        <div className="bg-red-50 border border-red-200 p-3 rounded-md">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-red-600" />
-            <span className="text-sm font-medium text-red-900">
-              Jira Added Risk: <span className="font-bold">+{jiraAddedRisk.toFixed(0)}</span> points to OCB score
-            </span>
+            <p className="text-xs text-gray-600">Overdue</p>
+            <p className="text-lg font-semibold text-red-600">{overdueCount}</p>
           </div>
         </div>
 
@@ -227,11 +219,16 @@ function LinearIssueCard({ memberData }: TicketingCardProps) {
     )
   }
 
-  const linearIndicators = memberData.linear_burnout_breakdown?.linear_indicators || {}
-  const linearAddedRisk = memberData.linear_burnout_breakdown?.linear_added_risk || 0
+  const issues = memberData.linear_issues
+
+  // Calculate metrics from raw data
+  const totalIssues = issues.length
+  const urgentHighCount = issues.filter((issue: any) => isLinearUrgentHigh(issue.priority)).length
+  const dueIn7DaysCount = issues.filter((issue: any) => isDueIn7Days(issue.dueDate)).length
+  const overdueCount = issues.filter((issue: any) => isOverdue(issue.dueDate)).length
 
   // Sort issues by priority (urgent to low) then by due date
-  const sortedIssues = [...memberData.linear_issues].sort((a, b) => {
+  const sortedIssues = [...issues].sort((a, b) => {
     // Linear priority: 1=Urgent, 2=High, 3=Medium, 4=Low, 0=None
     const aPriority = a.priority ?? 0
     const bPriority = b.priority ?? 0
@@ -260,33 +257,19 @@ function LinearIssueCard({ memberData }: TicketingCardProps) {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="bg-gray-50 p-3 rounded-md">
             <p className="text-xs text-gray-600">Total Issues</p>
-            <p className="text-lg font-semibold text-gray-900">{linearIndicators.issue_count || 0}</p>
+            <p className="text-lg font-semibold text-gray-900">{totalIssues}</p>
           </div>
           <div className="bg-gray-50 p-3 rounded-md">
             <p className="text-xs text-gray-600">Urgent/High</p>
-            <p className="text-lg font-semibold text-red-600">{linearIndicators.urgent_high_count || 0}</p>
+            <p className="text-lg font-semibold text-red-600">{urgentHighCount}</p>
           </div>
           <div className="bg-gray-50 p-3 rounded-md">
-            <p className="text-xs text-gray-600">Overload Risk</p>
-            <Badge className={`${getRiskBadgeColor(linearIndicators.overload_risk)} text-xs`}>
-              {linearIndicators.overload_risk || "Unknown"}
-            </Badge>
+            <p className="text-xs text-gray-600">Due in 7 Days</p>
+            <p className="text-lg font-semibold text-orange-600">{dueIn7DaysCount}</p>
           </div>
           <div className="bg-gray-50 p-3 rounded-md">
-            <p className="text-xs text-gray-600">Deadline</p>
-            <Badge className={`${getDeadlinePressureBadgeColor(linearIndicators.deadline_pressure)} text-xs`}>
-              {linearIndicators.deadline_pressure || "None"}
-            </Badge>
-          </div>
-        </div>
-
-        {/* Burnout Impact */}
-        <div className="bg-purple-50 border border-purple-200 p-3 rounded-md">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-purple-600" />
-            <span className="text-sm font-medium text-purple-900">
-              Linear Added Risk: <span className="font-bold">+{linearAddedRisk.toFixed(0)}</span> points to OCB score
-            </span>
+            <p className="text-xs text-gray-600">Overdue</p>
+            <p className="text-lg font-semibold text-red-600">{overdueCount}</p>
           </div>
         </div>
 
