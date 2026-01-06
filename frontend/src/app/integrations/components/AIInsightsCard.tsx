@@ -236,6 +236,17 @@ export function AIInsightsCard({
                     </div>
                   </div>
                 </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={async () => {
+                    await onDisconnect()
+                    toast.success("AI Insights disconnected")
+                  }}
+                  className="text-green-700 hover:text-red-600 hover:bg-red-50 text-xs"
+                >
+                  Disconnect
+                </Button>
               </div>
             </div>
 
@@ -259,21 +270,6 @@ export function AIInsightsCard({
                   Use Your Own Key →
                 </Button>
               </div>
-            </div>
-
-            {/* Disconnect option */}
-            <div className="pt-2 border-t border-slate-200">
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={async () => {
-                  await onDisconnect()
-                  toast.success("AI Insights disconnected")
-                }}
-                className="text-slate-500 hover:text-red-600 hover:bg-red-50 text-xs"
-              >
-                Disconnect AI Insights
-              </Button>
             </div>
           </div>
         )}
@@ -371,24 +367,34 @@ export function AIInsightsCard({
           </div>
         )}
 
-        {/* Show system token info when toggle is OFF and not connected */}
+        {/* Show inactive state when not connected */}
         {!isConnected && !useCustomToken && (
-          <div className="p-5 bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl">
-            <div className="flex items-start gap-3">
-              <div className="mt-0.5">
-                <Sparkles className="w-5 h-5 text-purple-600" />
-              </div>
+          <div className="p-5 bg-gradient-to-br from-slate-50 to-slate-100 border-2 border-slate-200 rounded-xl">
+            <div className="flex items-start justify-between">
               <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <h4 className="font-semibold text-slate-900">System Token</h4>
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 border border-purple-200">
-                    PROVIDED
-                  </span>
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="w-5 h-5 text-slate-400" />
+                  <span className="font-semibold text-slate-500 text-lg">AI Insights Inactive</span>
                 </div>
-                <p className="text-sm text-slate-600">
-                  Provided AI insights powered by our Anthropic Claude API. No setup required.
-                </p>
+                <div className="text-sm text-slate-500">
+                  <div className="flex items-center gap-2">
+                    <span>Anthropic Claude API</span>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-500 border border-slate-300">
+                      Provided by Rootly
+                    </span>
+                  </div>
+                </div>
               </div>
+              <Button
+                size="sm"
+                onClick={async () => {
+                  await onConnect('', 'anthropic', true)
+                }}
+                disabled={isConnecting}
+                className="bg-purple-600 hover:bg-purple-700 text-white text-xs"
+              >
+                {isConnecting ? 'Connecting...' : 'Connect'}
+              </Button>
             </div>
           </div>
         )}
@@ -493,11 +499,11 @@ export function AIInsightsCard({
         </div>
         )}
 
-        {/* Show Connect button when not connected or switching to custom token */}
-        {(!isConnected || (useCustomToken && llmConfig.token_source !== 'custom')) && (
+        {/* Show Connect button when using custom token form */}
+        {useCustomToken && (!isConnected || llmConfig.token_source !== 'custom') && (
           <Button
             onClick={handleConnect}
-            disabled={isConnecting || isSwitching || (useCustomToken && !customToken.trim())}
+            disabled={isConnecting || isSwitching || !customToken.trim()}
             className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-md h-11 text-base font-semibold"
           >
             {isConnecting || isSwitching ? (
