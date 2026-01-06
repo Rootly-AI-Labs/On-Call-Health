@@ -3552,9 +3552,14 @@ class UnifiedBurnoutAnalyzer:
             analysis_result["team_analysis"]["members"] = enhanced_members
             
             # Generate team-level AI insights
+            # Extract analysis period from result metadata
+            period_summary = analysis_result.get("period_summary", {})
+            analysis_period_days = period_summary.get("days_analyzed", 30) if isinstance(period_summary, dict) else 30
+
             team_insights = ai_analyzer.generate_team_insights(
                 enhanced_members,
-                available_integrations
+                available_integrations,
+                analysis_period_days
             )
             
             if team_insights.get("available"):

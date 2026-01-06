@@ -288,7 +288,7 @@ export default function LandingPage() {
 		</p>
               <p className="mb-2">That’s why we built this as <strong>open source</strong>, in the open, for the community.</p>
               <p>
-                Spearheaded by Rootly AI Labs fellows Spencer Cheng and Sylvain Kalache, the project continues to evolve with contributions from engineers like you. Share feedback, file issues, or contribute code on GitHub—and help shape the future of burnout detection.
+                Spearheaded by Rootly AI Labs fellows Spencer Cheng and Sylvain Kalache, the project continues to evolve with contributions from engineers like you. Share feedback, file issues, or contribute code on GitHub—and help shape the future of burnout prevention.
               </p>
             </div>
             <Image 
