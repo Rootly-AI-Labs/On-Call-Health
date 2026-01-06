@@ -241,9 +241,9 @@ export function AIInsightsCard({
                   </div>
                   <div className="text-sm text-green-800">
                     <div className="flex items-center gap-2">
-                      <span>Using system-provided Anthropic Claude API</span>
+                      <span>Using Anthropic Claude API</span>
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-300">
-                        Free • No Setup Required
+                        Provided by Rootly
                       </span>
                     </div>
                   </div>
@@ -259,7 +259,7 @@ export function AIInsightsCard({
                     Want more control?
                   </div>
                   <div className="text-xs text-slate-600">
-                    Use your own OpenAI or Anthropic API key for custom usage and billing
+                    Use your own OpenAI or Anthropic API key
                   </div>
                 </div>
                 <Button
