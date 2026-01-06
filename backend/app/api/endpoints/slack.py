@@ -126,7 +126,7 @@ async def slack_oauth_callback(
         organization_id = None
         user_id = None
         user_email = None
-        enable_survey = True  # Default to True for backward compatibility
+        enable_survey = False  # Default to False - admin must explicitly enable
         enable_communication_patterns = False  # Default to False
 
         if state:
@@ -138,7 +138,7 @@ async def slack_oauth_callback(
                 organization_id = decoded_state.get("orgId")
                 user_id = decoded_state.get("userId")
                 user_email = decoded_state.get("email")
-                enable_survey = decoded_state.get("enableSurvey", True)  # Default True
+                enable_survey = decoded_state.get("enableSurvey", False)  # Default False
                 enable_communication_patterns = decoded_state.get("enableCommunicationPatterns", False)  # Default False
                 logger.debug(f"Decoded state - org_id: {organization_id}, user_id: {user_id}, email: {user_email}, survey: {enable_survey}, communication_patterns: {enable_communication_patterns}")
             except Exception as state_error:
@@ -752,10 +752,32 @@ async def disconnect_slack(
 
         # Store workspace name before marking inactive
         workspace_name = workspace_mapping.workspace_name
+        organization_id = workspace_mapping.organization_id
 
         # Mark as inactive instead of deleting (preserves historical data)
         workspace_mapping.status = 'inactive'
+
+        # Disable survey schedule for this organization
+        from ..models.survey_schedule import SurveySchedule
+        if organization_id:
+            survey_schedule = db.query(SurveySchedule).filter(
+                SurveySchedule.organization_id == organization_id
+            ).first()
+            if survey_schedule:
+                survey_schedule.enabled = False
+                logger.info(f"Disabled survey schedule for org {organization_id} due to Slack disconnection")
+
         db.commit()
+
+        # Reload scheduler to remove scheduled jobs for this org
+        try:
+            from ..services.survey_scheduler import survey_scheduler
+            if survey_scheduler:
+                survey_scheduler.schedule_organization_surveys(db)
+                logger.info(f"Reloaded scheduler after disabling surveys for org {organization_id}")
+        except Exception as e:
+            logger.error(f"Failed to reload scheduler: {e}")
+            # Continue anyway - schedule is disabled in DB
 
         logger.info(f"User {current_user.id} disconnected Slack workspace {workspace_mapping.workspace_id}")
 
