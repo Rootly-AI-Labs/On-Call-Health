@@ -260,6 +260,21 @@ export function AIInsightsCard({
                 </Button>
               </div>
             </div>
+
+            {/* Disconnect option */}
+            <div className="pt-2 border-t border-slate-200">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={async () => {
+                  await onDisconnect()
+                  toast.success("AI Insights disconnected")
+                }}
+                className="text-slate-500 hover:text-red-600 hover:bg-red-50 text-xs"
+              >
+                Disconnect AI Insights
+              </Button>
+            </div>
           </div>
         )}
 
