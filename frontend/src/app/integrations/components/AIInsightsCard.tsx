@@ -49,18 +49,6 @@ export function AIInsightsCard({
   const isInitialMount = useRef(true)
   const hasAutoConnected = useRef(false)
 
-  // Auto-connect with system token on mount if not connected
-  useEffect(() => {
-    if (!hasAutoConnected.current && !llmConfig?.has_token && !isConnecting) {
-      hasAutoConnected.current = true
-      // Auto-connect with system token
-      onConnect('', 'anthropic', true).catch(() => {
-        // Silently fail - user can manually connect if needed
-        hasAutoConnected.current = false
-      })
-    }
-  }, [llmConfig, isConnecting, onConnect])
-
   // Update toggle state based on connected token source (bidirectional sync)
   useEffect(() => {
     if (llmConfig?.has_token) {
