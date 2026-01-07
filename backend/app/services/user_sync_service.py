@@ -261,14 +261,15 @@ class UserSyncService:
         updated = 0
         skipped = 0
 
-        # Use organization_id for multi-tenancy (fallback to user_id for beta mode)
+        # Use organization_id for multi-tenancy
         organization_id = current_user.organization_id
         user_id = current_user.id
 
-        # Beta mode: If no organization, isolate by user_id instead
+        # Beta mode: If no organization, set organization_id to None
+        # Data will be isolated by user_id instead (personal correlations)
         if not organization_id:
-            organization_id = user_id  # Use user_id as organization_id in beta mode
-            logger.info(f"User {user_id} has no organization_id - using user_id for isolation (beta mode)")
+            organization_id = None  # Allow NULL for users without organizations
+            logger.info(f"User {user_id} has no organization_id - creating personal correlations (beta mode)")
 
         for user in users:
             email = user.get("email")
@@ -306,26 +307,42 @@ class UserSyncService:
                         correlation = null_correlation
                         logger.info(f"Migrated org-scoped correlation {correlation.id} to user {current_user.id}")
             else:
-                # This is a team member - check by organization and email
-                correlation = self.db.query(UserCorrelation).filter(
-                    UserCorrelation.organization_id == organization_id,
-                    UserCorrelation.email == email,
-                    UserCorrelation.user_id.is_(None)  # Only match org-scoped records
-                ).first()
+                # This is a team member
+                # In multi-tenant mode: check by organization and email (user_id=NULL)
+                # In beta mode (no organization): check by user_id and email
+                if organization_id:
+                    # Multi-tenant: org-scoped team member record
+                    correlation = self.db.query(UserCorrelation).filter(
+                        UserCorrelation.organization_id == organization_id,
+                        UserCorrelation.email == email,
+                        UserCorrelation.user_id.is_(None)  # Only match org-scoped records
+                    ).first()
+                else:
+                    # Beta mode: personal team member record (isolated by user_id)
+                    correlation = self.db.query(UserCorrelation).filter(
+                        UserCorrelation.user_id == user_id,
+                        UserCorrelation.email == email
+                    ).first()
 
             if correlation:
                 # Update existing correlation
                 updated += self._update_correlation(correlation, user, platform, integration_id)
             else:
-                # Determine user_id assignment
-                # Current user's own email gets user_id=current_user.id (personal data)
-                # Team members get user_id=NULL (org-scoped roster data)
+                # Determine user_id assignment based on mode
                 if email.lower() == current_user.email.lower():
+                    # Current user's own email always gets user_id=current_user.id
                     assigned_user_id = current_user.id
                     logger.info(f"Assigning correlation for {email} to current user {current_user.id}")
                 else:
-                    assigned_user_id = None  # NULL for team roster data
-                    logger.debug(f"Creating org-scoped correlation for team member {email}")
+                    # Team members:
+                    # - In multi-tenant mode: user_id=NULL (org-scoped roster data)
+                    # - In beta mode: user_id=current_user.id (personal isolation)
+                    if organization_id:
+                        assigned_user_id = None  # Org-scoped
+                        logger.debug(f"Creating org-scoped correlation for team member {email}")
+                    else:
+                        assigned_user_id = current_user.id  # Beta mode: isolate by user_id
+                        logger.debug(f"Creating personal correlation for team member {email} (beta mode)")
 
                 # Safety check: ensure (user_id, email) doesn't already exist
                 existing_record = self.db.query(UserCorrelation).filter(
@@ -343,10 +360,13 @@ class UserSyncService:
                     updated += self._update_correlation(existing_record, user, platform, integration_id)
                 else:
                     # Safe to create new correlation
+                    # Extract email domain from the user's email address
+                    email_domain = email.split("@")[1].lower() if "@" in email else None
+
                     correlation = UserCorrelation(
-                        user_id=assigned_user_id,  # NULL for team members, current_user.id for own email
-                        organization_id=organization_id,  # Multi-tenancy key
-                        email_domain=current_user.email_domain,  # Domain-based data sharing
+                        user_id=assigned_user_id,  # NULL for team members (org mode), current_user.id for own/beta mode
+                        organization_id=organization_id,  # Multi-tenancy key (or NULL for beta mode)
+                        email_domain=email_domain,  # User's actual domain for data sharing
                         email=email,
                         name=user.get("name"),  # Store user's display name
                         integration_ids=[integration_id] if integration_id else []  # Initialize array
