@@ -69,7 +69,6 @@ export function UnifiedSlackCard({
   toast
 }: UnifiedSlackCardProps) {
   const [surveyEnabled, setSurveyEnabled] = useState(slackIntegration?.survey_enabled ?? true)
-  const [communicationPatternsEnabled, setCommunicationPatternsEnabled] = useState(slackIntegration?.communication_patterns_enabled ?? true)
   const [showSurveyDisableConfirm, setShowSurveyDisableConfirm] = useState(false)
 
   const isConnected = !!slackIntegration
@@ -194,7 +193,7 @@ export function UnifiedSlackCard({
     }
   }
 
-  const handleFeatureToggle = async (feature: 'survey' | 'communication_patterns', enabled: boolean) => {
+  const handleFeatureToggle = async (feature: 'survey', enabled: boolean) => {
     // Show confirmation when disabling survey
     if (feature === 'survey' && !enabled) {
       setShowSurveyDisableConfirm(true)
@@ -204,16 +203,12 @@ export function UnifiedSlackCard({
     await performFeatureToggle(feature, enabled)
   }
 
-  const performFeatureToggle = async (feature: 'survey' | 'communication_patterns', enabled: boolean) => {
+  const performFeatureToggle = async (feature: 'survey', enabled: boolean) => {
     const backendUrl = API_BASE
 
     try {
       // Optimistically update UI
-      if (feature === 'survey') {
-        setSurveyEnabled(enabled)
-      } else {
-        setCommunicationPatternsEnabled(enabled)
-      }
+      setSurveyEnabled(enabled)
 
       // Call backend API to persist the change
       const response = await fetch(`${backendUrl}/integrations/slack/features/toggle`, {
@@ -233,7 +228,7 @@ export function UnifiedSlackCard({
       }
 
       const data = await response.json()
-      toast.success(`${feature === 'survey' ? 'Survey Delivery' : 'Communication Patterns'} ${enabled ? 'enabled' : 'disabled'}`)
+      toast.success(`Survey Delivery ${enabled ? 'enabled' : 'disabled'}`)
 
       // Reload Slack status to ensure UI is in sync with backend
       if (loadSlackStatus) {
@@ -243,13 +238,9 @@ export function UnifiedSlackCard({
       console.error('Error toggling feature:', error)
 
       // Revert optimistic update on error
-      if (feature === 'survey') {
-        setSurveyEnabled(!enabled)
-      } else {
-        setCommunicationPatternsEnabled(!enabled)
-      }
+      setSurveyEnabled(!enabled)
 
-      toast.error(`Failed to ${enabled ? 'enable' : 'disable'} ${feature === 'survey' ? 'Survey Delivery' : 'Communication Patterns'}`)
+      toast.error(`Failed to ${enabled ? 'enable' : 'disable'} Survey Delivery`)
     }
   }
 
@@ -437,24 +428,6 @@ export function UnifiedSlackCard({
                     id="survey-toggle"
                     checked={surveyEnabled}
                     onCheckedChange={(checked) => handleFeatureToggle('survey', checked)}
-                    className="ml-4"
-                  />
-                </div>
-
-                {/* Communication Patterns Toggle */}
-                <div className="p-4 flex items-center justify-between">
-                  <div className="flex-1">
-                    <Label htmlFor="communication-patterns-toggle" className="text-base font-medium text-gray-900 cursor-pointer">
-                      Communication Patterns
-                    </Label>
-                    <p className="text-sm text-gray-600 mt-1">
-                      Analyze channel messages for burnout patterns
-                    </p>
-                  </div>
-                  <Switch
-                    id="communication-patterns-toggle"
-                    checked={communicationPatternsEnabled}
-                    onCheckedChange={(checked) => handleFeatureToggle('communication_patterns', checked)}
                     className="ml-4"
                   />
                 </div>

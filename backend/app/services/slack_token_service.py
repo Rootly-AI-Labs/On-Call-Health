@@ -16,14 +16,12 @@ logger = logging.getLogger(__name__)
 
 class SlackFeatureConfig:
     """Configuration for Slack features enabled for a workspace."""
-    def __init__(self, survey_enabled: bool = False, communication_patterns_enabled: bool = False):
+    def __init__(self, survey_enabled: bool = False):
         self.survey_enabled = survey_enabled
-        self.communication_patterns_enabled = communication_patterns_enabled
 
     def to_dict(self) -> Dict[str, bool]:
         return {
-            'survey_enabled': self.survey_enabled,
-            'communication_patterns_enabled': self.communication_patterns_enabled
+            'survey_enabled': self.survey_enabled
         }
 
 
@@ -148,8 +146,7 @@ class SlackTokenService:
             return None
 
         return SlackFeatureConfig(
-            survey_enabled=workspace_mapping.survey_enabled or False,
-            communication_patterns_enabled=workspace_mapping.communication_patterns_enabled or False
+            survey_enabled=workspace_mapping.survey_enabled or False
         )
 
     def get_feature_config_for_organization(self, organization_id: int) -> Optional[SlackFeatureConfig]:
@@ -171,8 +168,7 @@ class SlackTokenService:
             return None
 
         return SlackFeatureConfig(
-            survey_enabled=workspace_mapping.survey_enabled or False,
-            communication_patterns_enabled=workspace_mapping.communication_patterns_enabled or False
+            survey_enabled=workspace_mapping.survey_enabled or False
         )
 
 

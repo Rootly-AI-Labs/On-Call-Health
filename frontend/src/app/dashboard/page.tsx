@@ -2127,7 +2127,7 @@ function DashboardContent() {
                               </div>
                             </div>
                             <Switch
-                              checked={includeSlack && !!slackIntegration && slackIntegration.communication_patterns_enabled === true}
+                              checked={includeSlack && !!slackIntegration}
                               onCheckedChange={(checked) => {
                                 if (!slackIntegration) {
                                   toast.error(
@@ -2135,17 +2135,11 @@ function DashboardContent() {
                                       Slack not connected - please connect on <a href="/integrations" className="underline font-medium hover:text-red-800">integrations page</a>
                                     </span>
                                   )
-                                } else if (!slackIntegration.communication_patterns_enabled) {
-                                  toast.error(
-                                    <span>
-                                      Slack communication patterns analysis is disabled. Enable it on the <a href="/integrations" className="underline font-medium hover:text-red-800">integrations page</a>.
-                                    </span>
-                                  )
                                 } else {
                                   setIncludeSlack(checked)
                                 }
                               }}
-                              disabled={!slackIntegration || !slackIntegration.communication_patterns_enabled}
+                              disabled={!slackIntegration}
                             />
                           </div>
                           <p className="text-xs text-gray-600 mb-1">Communication patterns</p>
