@@ -140,19 +140,43 @@ export async function handleGitHubTest(): Promise<void> {
 
     if (response.ok) {
       const data = await response.json()
-      // Show permissions info if available
-      if (data.permissions) {
-        const missingPerms = []
-        if (!data.permissions.repo_access) missingPerms.push('repository access')
-        if (!data.permissions.org_access) missingPerms.push('organization access')
 
-        if (missingPerms.length > 0) {
-          toast.warning(`✅ Connected as ${data.user_info?.username || 'GitHub user'}, but missing: ${missingPerms.join(', ')}`)
+      // Build the success message with data summary
+      let successMessage = `✅ Connected as ${data.user_info?.username || 'GitHub user'}`
+
+      // Add data summary if available
+      if (data.data_summary) {
+        const summary = data.data_summary
+        if (summary.note) {
+          // No team members synced yet
+          toast.info(`${successMessage}. ${summary.note}`)
+          return
+        }
+
+        const totalActivity = summary.total_commits + summary.total_pull_requests + summary.total_reviews
+
+        if (totalActivity > 0) {
+          successMessage += ` • Last 30 days: ${summary.total_commits} commits, ${summary.total_pull_requests} PRs, ${summary.total_reviews} reviews (${summary.synced_members} team members)`
+          toast.success(successMessage)
         } else {
-          toast.success(`✅ GitHub test successful! Connected as ${data.user_info?.username || 'GitHub user'} with full access.`)
+          successMessage += ` • No GitHub activity found in the last 30 days for synced team members (${summary.synced_members} synced)`
+          toast.info(successMessage)
         }
       } else {
-        toast.success(`✅ GitHub test successful! Connected as ${data.user_info?.username || 'GitHub user'}. Integration is working properly.`)
+        // Fallback to permissions message if no data summary
+        if (data.permissions) {
+          const missingPerms = []
+          if (!data.permissions.repo_access) missingPerms.push('repository access')
+          if (!data.permissions.org_access) missingPerms.push('organization access')
+
+          if (missingPerms.length > 0) {
+            toast.warning(`${successMessage}, but missing: ${missingPerms.join(', ')}`)
+          } else {
+            toast.success(`${successMessage} with full access.`)
+          }
+        } else {
+          toast.success(`${successMessage}. Integration is working properly.`)
+        }
       }
     } else {
       const errorData = await response.json().catch(() => ({}))

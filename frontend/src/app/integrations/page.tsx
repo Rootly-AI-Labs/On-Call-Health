@@ -274,6 +274,7 @@ export default function IntegrationsPage() {
   const [slackSurveyDisconnectDialogOpen, setSlackSurveyDisconnectDialogOpen] = useState(false)
   const [slackSurveyConfirmDisconnectOpen, setSlackSurveyConfirmDisconnectOpen] = useState(false)
   const [isDisconnectingGithub, setIsDisconnectingGithub] = useState(false)
+  const [isTestingGithub, setIsTestingGithub] = useState(false)
   const [isDisconnectingSlack, setIsDisconnectingSlack] = useState(false)
   const [isDisconnectingJira, setIsDisconnectingJira] = useState(false)
   const [isDisconnectingLinear, setIsDisconnectingLinear] = useState(false)
@@ -2010,7 +2011,12 @@ export default function IntegrationsPage() {
   }
 
   const handleGitHubTest = async () => {
-    return GithubHandlers.handleGitHubTest()
+    setIsTestingGithub(true)
+    try {
+      await GithubHandlers.handleGitHubTest()
+    } finally {
+      setIsTestingGithub(false)
+    }
   }
 
   // Slack integration handlers
@@ -3427,6 +3433,7 @@ export default function IntegrationsPage() {
                 integration={githubIntegration}
                 onDisconnect={() => setGithubDisconnectDialogOpen(true)}
                 onTest={handleGitHubTest}
+                isLoading={isTestingGithub}
               />
             )}
             {/* Jira Integration Card - Not Connected */}

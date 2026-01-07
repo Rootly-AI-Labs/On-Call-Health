@@ -9,12 +9,14 @@ interface GitHubConnectedCardProps {
   integration: GitHubIntegration
   onDisconnect: () => void
   onTest: () => void
+  isLoading?: boolean
 }
 
 export function GitHubConnectedCard({
   integration,
   onDisconnect,
-  onTest
+  onTest,
+  isLoading = false
 }: GitHubConnectedCardProps) {
   const [orgMemberCount, setOrgMemberCount] = useState<number | null>(null)
   const [loadingMembers, setLoadingMembers] = useState(false)
@@ -68,6 +70,21 @@ export function GitHubConnectedCard({
             </div>
           </div>
           <div className="flex items-center space-x-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onTest}
+              disabled={isLoading}
+              className="bg-white text-gray-700 border-gray-200 hover:bg-gray-50 hover:text-gray-800 hover:border-gray-300"
+              title="Test connection and view collected data"
+            >
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <TestTube className="w-4 h-4 mr-2" />
+              )}
+              Test
+            </Button>
             <Button
               size="sm"
               variant="outline"

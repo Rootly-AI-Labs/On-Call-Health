@@ -216,16 +216,17 @@ async def test_github_integration(
 ):
     """
     Test GitHub integration permissions and connectivity.
+    Also returns collected data summary for team members.
     Supports both personal integrations and beta token.
     """
     # Check for personal integration first
     integration = db.query(GitHubIntegration).filter(
         GitHubIntegration.user_id == current_user.id
     ).first()
-    
+
     access_token = None
     is_beta = False
-    
+
     if integration and integration.github_token:
         # User has personal integration
         try:
@@ -240,7 +241,7 @@ async def test_github_integration(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="No GitHub integration found"
         )
-    
+
     try:
         # Test token with GitHub API
         import httpx
@@ -248,7 +249,7 @@ async def test_github_integration(
             "Authorization": f"token {access_token}",
             "Accept": "application/json"
         }
-        
+
         async with httpx.AsyncClient() as client:
             # Get user info
             user_response = await client.get("https://api.github.com/user", headers=headers)
@@ -257,28 +258,92 @@ async def test_github_integration(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"GitHub API error: {user_response.status_code}"
                 )
-            
+
             user_info = user_response.json()
-            
+
             # Test repository access
             repos_response = await client.get("https://api.github.com/user/repos?per_page=1", headers=headers)
             can_access_repos = repos_response.status_code == 200
-            
+
             # Test organization access
             orgs_response = await client.get("https://api.github.com/user/orgs", headers=headers)
             can_access_orgs = orgs_response.status_code == 200
             orgs = orgs_response.json() if can_access_orgs else []
-            
+
             # Check rate limit
             rate_limit_response = await client.get("https://api.github.com/rate_limit", headers=headers)
             rate_limit_info = rate_limit_response.json() if rate_limit_response.status_code == 200 else {}
-            
+
             permissions = {
                 "repo_access": can_access_repos,
                 "org_access": can_access_orgs,
                 "rate_limit": rate_limit_info.get("rate", {})
             }
-        
+
+        # Collect data summary for team members synced with GitHub
+        data_summary = None
+        try:
+            from ...services.github_collector import GitHubCollector
+
+            # Get all synced team members from user correlations
+            synced_members = db.query(UserCorrelation).filter(
+                UserCorrelation.organization_id == current_user.organization_id,
+                UserCorrelation.github_username.isnot(None)
+            ).all()
+
+            if synced_members:
+                collector = GitHubCollector()
+                total_commits = 0
+                total_pull_requests = 0
+                total_reviews = 0
+                synced_count = 0
+
+                # Collect data for last 30 days
+                for member in synced_members:
+                    try:
+                        github_data = await collector.collect_github_data_for_user(
+                            user_email=member.email,
+                            days=30,
+                            github_token=access_token,
+                            user_id=current_user.id
+                        )
+
+                        if github_data and github_data.get('metrics'):
+                            synced_count += 1
+                            total_commits += github_data['metrics'].get('total_commits', 0)
+                            total_pull_requests += github_data['metrics'].get('total_pull_requests', 0)
+                            total_reviews += github_data['metrics'].get('total_reviews', 0)
+                    except Exception as e:
+                        logger.warning(f"Failed to collect data for {member.github_username}: {e}")
+                        continue
+
+                data_summary = {
+                    "synced_members": synced_count,
+                    "total_commits": total_commits,
+                    "total_pull_requests": total_pull_requests,
+                    "total_reviews": total_reviews,
+                    "period_days": 30
+                }
+            else:
+                data_summary = {
+                    "synced_members": 0,
+                    "total_commits": 0,
+                    "total_pull_requests": 0,
+                    "total_reviews": 0,
+                    "period_days": 30,
+                    "note": "No team members synced to GitHub accounts yet. Use 'Sync Members' on the integrations page to map team members."
+                }
+        except Exception as e:
+            logger.warning(f"Failed to collect data summary: {e}")
+            data_summary = {
+                "synced_members": 0,
+                "total_commits": 0,
+                "total_pull_requests": 0,
+                "total_reviews": 0,
+                "period_days": 30,
+                "error": str(e)
+            }
+
         if is_beta:
             # Return beta token test results
             return {
@@ -298,7 +363,8 @@ async def test_github_integration(
                     "public_repos": user_info.get("public_repos"),
                     "followers": user_info.get("followers"),
                     "following": user_info.get("following")
-                }
+                },
+                "data_summary": data_summary
             }
         else:
             # Return personal integration test results
@@ -319,9 +385,10 @@ async def test_github_integration(
                     "public_repos": user_info.get("public_repos"),
                     "followers": user_info.get("followers"),
                     "following": user_info.get("following")
-                }
+                },
+                "data_summary": data_summary
             }
-        
+
     except HTTPException:
         raise
     except Exception as e:

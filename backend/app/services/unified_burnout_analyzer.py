@@ -693,7 +693,9 @@ class UnifiedBurnoutAnalyzer:
             data_sources = {
                 "incident_data": True,
                 "github_data": self.features['github'],
-                "slack_data": self.features['slack']
+                "slack_data": self.features['slack'],
+                "jira_data": self.features['jira'],
+                "linear_data": self.features['linear']
             }
             
             # Create GitHub insights if enabled
@@ -884,11 +886,13 @@ class UnifiedBurnoutAnalyzer:
                 "metadata": {
                     **{k: v for k, v in metadata.items() if not (k == "organization_name" and v is None)},
                     "organization_name": self.organization_name if self.organization_name else (metadata.get("organization_name") or "Organization"),
-                    "include_weekends": include_weekends,
-                    "include_github": self.features['github'],
-                    "include_slack": self.features['slack'],
-                    "enable_ai": self.features['ai']
-                },
+                "include_weekends": include_weekends,
+                "include_github": self.features['github'],
+                "include_slack": self.features['slack'],
+                "include_jira": self.features['jira'],
+                "include_linear": self.features['linear'],
+                "enable_ai": self.features['ai']
+            },
                 "data_sources": data_sources,
                 "team_health": team_health,
                 "team_analysis": team_analysis,
