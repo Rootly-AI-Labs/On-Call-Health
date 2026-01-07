@@ -2445,19 +2445,14 @@ export default function IntegrationsPage() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         {/* Introduction Text */}
-        <div className="text-center mb-6 max-w-2xl mx-auto">
-          <h2 className="text-4xl font-bold text-black mb-2">Connect Your Platform</h2>
-          <p className="text-lg text-slate-600">
-            Integrate with Rootly or PagerDuty to analyze team health patterns
-          </p>
+        <div className="text-center mb-2 max-w-2xl mx-auto">
+          <h2 className="text-4xl font-bold text-black">Connect Your Incident Management Platform</h2>
         </div>
 
         {/* No integrations message - Show right below intro */}
         {integrations.length === 0 && !loadingRootly && !loadingPagerDuty && (
-          <div className="text-center py-8 mb-6 max-w-2xl mx-auto">
-            <Shield className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-            <p className="text-lg font-medium mb-2 text-gray-700">No integrations yet</p>
-            <p className="text-sm text-gray-500">Add a Rootly or PagerDuty integration to get started!</p>
+          <div className="text-center mb-6 max-w-2xl mx-auto">
+            <p className="text-lg font-medium text-gray-700">Add a Rootly or PagerDuty integration to get started!</p>
           </div>
         )}
 
@@ -3129,9 +3124,6 @@ export default function IntegrationsPage() {
             <p className="text-lg text-slate-600 mb-2">
               Sync and manage your team members for an analysis
             </p>
-            <p className="text-slate-500">
-              View synced users, manage enhanced integration mappings, and select survey recipients
-            </p>
           </div>
 
           {/* Team Members Card */}
@@ -3205,10 +3197,7 @@ export default function IntegrationsPage() {
           <div className="text-center">
             <h2 className="text-2xl font-bold text-slate-900 mb-3">Enhanced Integrations</h2>
             <p className="text-lg text-slate-600 mb-2">
-              Connect GitHub and Slack for deeper insights
-            </p>
-            <p className="text-slate-500">
-              Analyze code patterns, team communication, and collect direct feedback
+              Connect additional services for deeper insights
             </p>
           </div>
 

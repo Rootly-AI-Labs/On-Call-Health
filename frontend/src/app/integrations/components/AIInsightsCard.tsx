@@ -12,7 +12,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Brain, Sparkles, Trash2, Loader2, ExternalLink, CheckCircle2 } from "lucide-react"
+import { Brain, Sparkles, Trash2, Loader2, ExternalLink, CheckCircle2, X } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import { toast } from "sonner"
 import { API_BASE } from "../types"
@@ -414,21 +414,20 @@ export function AIInsightsCard({
                 <div>
                   <h4 className="font-semibold text-slate-900 mb-1">Custom Token</h4>
                   <p className="text-xs text-slate-500">
-                    Use your own API key • Your billing applies • Advanced users
+                    Use your own API key
                   </p>
                 </div>
                 <Button
                   size="sm"
-                  variant="outline"
+                  variant="ghost"
                   onClick={() => handleTokenSourceChange('system')}
                   disabled={isSwitching}
-                  className="border-blue-300 text-blue-700 hover:bg-blue-50 shrink-0 -mt-1"
+                  className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 shrink-0 -mt-1 p-1 h-auto"
                 >
-                  ← Back to System
+                  <X className="w-5 h-5" />
                 </Button>
               </div>
             <div>
-              <Label className="text-sm font-semibold text-slate-700 mb-3 block">Choose Your Provider</Label>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
