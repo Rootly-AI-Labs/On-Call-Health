@@ -14,6 +14,7 @@ interface SurveyFeedbackSectionProps {
   teamMembers: any[]
   loadingTeamMembers: boolean
   loadingSyncedUsers: boolean
+  syncedUsers: any[]
   fetchTeamMembers: () => void
   syncUsersToCorrelation: () => void
   fetchSyncedUsers: () => void
@@ -36,6 +37,7 @@ export function SurveyFeedbackSection({
   teamMembers,
   loadingTeamMembers,
   loadingSyncedUsers,
+  syncedUsers,
   fetchTeamMembers,
   syncUsersToCorrelation,
   fetchSyncedUsers,
@@ -61,6 +63,7 @@ export function SurveyFeedbackSection({
           teamMembers={teamMembers}
           loadingTeamMembers={loadingTeamMembers}
           loadingSyncedUsers={loadingSyncedUsers}
+          syncedUsers={syncedUsers}
           fetchTeamMembers={fetchTeamMembers}
           syncUsersToCorrelation={syncUsersToCorrelation}
           fetchSyncedUsers={fetchSyncedUsers}

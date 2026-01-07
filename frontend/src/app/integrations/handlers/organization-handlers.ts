@@ -26,7 +26,7 @@ export async function handleInvite(
       return
     }
 
-    const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/invitations/create`
+    const apiUrl = `${API_BASE}/api/invitations/create`
 
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -127,7 +127,7 @@ export async function loadOrganizationData(
   setLoadingOrgData(true)
   try {
     // Load organization members
-    const membersResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/invitations/organization/members`, {
+    const membersResponse = await fetch(`${API_BASE}/api/invitations/organization/members`, {
       headers: {
         'Authorization': `Bearer ${authToken}`,
       }
@@ -139,7 +139,7 @@ export async function loadOrganizationData(
     }
 
     // Load pending invitations
-    const invitationsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/invitations/pending`, {
+    const invitationsResponse = await fetch(`${API_BASE}/api/invitations/pending`, {
       headers: {
         'Authorization': `Bearer ${authToken}`,
       }

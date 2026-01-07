@@ -2,22 +2,53 @@
 Service for recording integration mapping attempts and results.
 """
 import logging
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Tuple
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
-from ..models import IntegrationMapping, get_db
+from ..models import IntegrationMapping, UserCorrelation, Analysis, get_db
 
 logger = logging.getLogger(__name__)
 
 class MappingRecorder:
     """Records and manages integration mapping data."""
-    
+
     def __init__(self, db: Session = None):
         self.db = db or next(get_db())
+
+    def get_user_and_org_for_email(self, email: str, analysis_id: int) -> Tuple[Optional[int], Optional[int]]:
+        """
+        Look up user_id and organization_id for an email address.
+
+        Returns:
+            (user_id, organization_id) tuple
+            - user_id: The registered user's ID if they've logged in, else NULL
+            - organization_id: The organization this person belongs to
+        """
+        # Get organization_id from analysis
+        analysis = self.db.query(Analysis).filter(Analysis.id == analysis_id).first()
+        if not analysis or not analysis.organization_id:
+            logger.warning(f"Analysis {analysis_id} has no organization_id")
+            return (None, None)
+
+        organization_id = analysis.organization_id
+
+        # Look up user_correlation for this email in this organization
+        correlation = self.db.query(UserCorrelation).filter(
+            UserCorrelation.email == email,
+            UserCorrelation.organization_id == organization_id
+        ).first()
+
+        if correlation:
+            return (correlation.user_id, organization_id)  # user_id may be NULL
+        else:
+            # Email not in user_correlations - shouldn't happen but handle gracefully
+            logger.warning(f"Email {email} not found in user_correlations for org {organization_id}")
+            return (None, organization_id)
     
     def record_mapping_attempt(
         self,
-        user_id: int,
+        user_id: Optional[int],
+        organization_id: int,
         analysis_id: Optional[int],
         source_platform: str,
         source_identifier: str,
@@ -29,19 +60,28 @@ class MappingRecorder:
         data_collected: bool = False,
         data_points_count: Optional[int] = None
     ) -> Optional[IntegrationMapping]:
-        """Record a mapping attempt."""
+        """
+        Record a mapping attempt.
 
-        # Validate user_id is an integer (not a PagerDuty/Rootly user ID string)
-        if not isinstance(user_id, int):
-            logger.warning(f"Skipping mapping record - user_id must be an integer database ID, got {type(user_id).__name__}: {user_id}")
-            return None
+        Args:
+            user_id: User ID if this is for a logged-in user, NULL for org-scoped team members
+            organization_id: Required - the organization this mapping belongs to
+            analysis_id: The analysis this mapping was created for
+            ...
+        """
 
-        # Verify user exists to prevent foreign key violations
-        from ..models import User
-        user_exists = self.db.query(User).filter(User.id == user_id).first()
-        if not user_exists:
-            logger.warning(f"Skipping mapping record - user {user_id} does not exist")
-            return None
+        # Validate user_id if provided
+        if user_id is not None:
+            if not isinstance(user_id, int):
+                logger.warning(f"Skipping mapping record - user_id must be an integer database ID, got {type(user_id).__name__}: {user_id}")
+                return None
+
+            # Verify user exists to prevent foreign key violations
+            from ..models import User
+            user_exists = self.db.query(User).filter(User.id == user_id).first()
+            if not user_exists:
+                logger.warning(f"Skipping mapping record - user {user_id} does not exist")
+                return None
 
         # If analysis_id is provided, verify it exists
         if analysis_id is not None:
@@ -52,16 +92,23 @@ class MappingRecorder:
                 return None
         
         # Check if this exact mapping already exists for this analysis
-        existing = self.db.query(IntegrationMapping).filter(
-            and_(
-                IntegrationMapping.user_id == user_id,
-                IntegrationMapping.analysis_id == analysis_id,
-                IntegrationMapping.source_platform == source_platform,
-                IntegrationMapping.source_identifier == source_identifier,
-                IntegrationMapping.target_platform == target_platform
-            )
-        ).first()
-        
+        # Match by organization + analysis + source/target, not user_id (which can be NULL)
+        existing_filter = and_(
+            IntegrationMapping.organization_id == organization_id,
+            IntegrationMapping.analysis_id == analysis_id,
+            IntegrationMapping.source_platform == source_platform,
+            IntegrationMapping.source_identifier == source_identifier,
+            IntegrationMapping.target_platform == target_platform
+        )
+
+        # Add user_id check if provided (handles NULL properly)
+        if user_id is not None:
+            existing_filter = and_(existing_filter, IntegrationMapping.user_id == user_id)
+        else:
+            existing_filter = and_(existing_filter, IntegrationMapping.user_id.is_(None))
+
+        existing = self.db.query(IntegrationMapping).filter(existing_filter).first()
+
         if existing:
             # Update existing record
             existing.mapping_successful = mapping_successful
@@ -75,6 +122,7 @@ class MappingRecorder:
             # Create new record
             mapping = IntegrationMapping(
                 user_id=user_id,
+                organization_id=organization_id,
                 analysis_id=analysis_id,
                 source_platform=source_platform,
                 source_identifier=source_identifier,
@@ -96,7 +144,8 @@ class MappingRecorder:
     
     def record_successful_mapping(
         self,
-        user_id: int,
+        user_id: Optional[int],
+        organization_id: int,
         analysis_id: Optional[int],
         source_platform: str,
         source_identifier: str,
@@ -108,6 +157,7 @@ class MappingRecorder:
         """Record a successful mapping."""
         return self.record_mapping_attempt(
             user_id=user_id,
+            organization_id=organization_id,
             analysis_id=analysis_id,
             source_platform=source_platform,
             source_identifier=source_identifier,
@@ -121,7 +171,8 @@ class MappingRecorder:
     
     def record_failed_mapping(
         self,
-        user_id: int,
+        user_id: Optional[int],
+        organization_id: int,
         analysis_id: Optional[int],
         source_platform: str,
         source_identifier: str,
@@ -132,6 +183,7 @@ class MappingRecorder:
         """Record a failed mapping."""
         return self.record_mapping_attempt(
             user_id=user_id,
+            organization_id=organization_id,
             analysis_id=analysis_id,
             source_platform=source_platform,
             source_identifier=source_identifier,
