@@ -11,8 +11,7 @@ class IntegrationMapping(Base):
     __tablename__ = "integration_mappings"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # NULL for org-scoped users
-    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True)  # For org-scoped mappings
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     analysis_id = Column(Integer, ForeignKey("analyses.id"), nullable=True)  # Track which analysis this was from
     
     # Source platform (where we got the identifier from)
@@ -42,8 +41,7 @@ class IntegrationMapping(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     # Relationships
-    user = relationship("User", back_populates="integration_mappings", foreign_keys=[user_id])
-    organization = relationship("Organization")
+    user = relationship("User", back_populates="integration_mappings")
     analysis = relationship("Analysis", back_populates="integration_mappings")
     # created_by = relationship("User", foreign_keys=[created_by_user_id], post_update=True)  # TEMPORARILY COMMENTED OUT
     

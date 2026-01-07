@@ -801,8 +801,33 @@ class MigrationRunner:
             },
             {
                 "name": "024_add_survey_frequency_options",
-                "description": "Add frequency_type and day_of_week to survey_schedules",
+                "description": "Add survey configuration columns to survey_schedules",
                 "sql": [
+                    """
+                    -- Add send_reminder column if missing
+                    ALTER TABLE survey_schedules
+                    ADD COLUMN IF NOT EXISTS send_reminder BOOLEAN DEFAULT TRUE
+                    """,
+                    """
+                    -- Add reminder_time column if missing
+                    ALTER TABLE survey_schedules
+                    ADD COLUMN IF NOT EXISTS reminder_time TIME
+                    """,
+                    """
+                    -- Add reminder_hours_after column if missing
+                    ALTER TABLE survey_schedules
+                    ADD COLUMN IF NOT EXISTS reminder_hours_after INTEGER DEFAULT 5
+                    """,
+                    """
+                    -- Add message_template column if missing
+                    ALTER TABLE survey_schedules
+                    ADD COLUMN IF NOT EXISTS message_template VARCHAR(500)
+                    """,
+                    """
+                    -- Add reminder_message_template column if missing
+                    ALTER TABLE survey_schedules
+                    ADD COLUMN IF NOT EXISTS reminder_message_template VARCHAR(500)
+                    """,
                     """
                     -- Add frequency_type column to replace send_weekdays_only with more options
                     ALTER TABLE survey_schedules
@@ -814,29 +839,30 @@ class MigrationRunner:
                     ADD COLUMN IF NOT EXISTS day_of_week INTEGER
                     """,
                     """
-                    -- Migrate existing data: convert send_weekdays_only to frequency_type
-                    UPDATE survey_schedules
-                    SET frequency_type = CASE
-                        WHEN send_weekdays_only = true THEN 'weekday'
-                        ELSE 'daily'
-                    END
-                    WHERE frequency_type = 'weekday'  -- Only update if still default
+                    -- Add CHECK constraint for frequency_type (with existence check)
+                    DO $$
+                    BEGIN
+                        IF NOT EXISTS (
+                            SELECT 1 FROM pg_constraint WHERE conname = 'check_frequency_type'
+                        ) THEN
+                            ALTER TABLE survey_schedules
+                            ADD CONSTRAINT check_frequency_type
+                            CHECK (frequency_type IN ('daily', 'weekday', 'weekly'));
+                        END IF;
+                    END $$;
                     """,
                     """
-                    -- Add CHECK constraint for frequency_type
-                    ALTER TABLE survey_schedules
-                    ADD CONSTRAINT check_frequency_type
-                    CHECK (frequency_type IN ('daily', 'weekday', 'weekly'))
-                    """,
-                    """
-                    -- Add CHECK constraint for day_of_week (0-6 or NULL)
-                    ALTER TABLE survey_schedules
-                    ADD CONSTRAINT check_day_of_week
-                    CHECK (day_of_week IS NULL OR (day_of_week >= 0 AND day_of_week <= 6))
-                    """,
-                    """
-                    -- Keep send_weekdays_only column for backwards compatibility (don't drop yet)
-                    -- Will be marked as deprecated in API but still functional
+                    -- Add CHECK constraint for day_of_week (with existence check)
+                    DO $$
+                    BEGIN
+                        IF NOT EXISTS (
+                            SELECT 1 FROM pg_constraint WHERE conname = 'check_day_of_week'
+                        ) THEN
+                            ALTER TABLE survey_schedules
+                            ADD CONSTRAINT check_day_of_week
+                            CHECK (day_of_week IS NULL OR (day_of_week >= 0 AND day_of_week <= 6));
+                        END IF;
+                    END $$;
                     """
                 ]
             },
@@ -861,11 +887,6 @@ class MigrationRunner:
                             RAISE NOTICE 'uq_github_username constraint does not exist, skipping drop';
                         END IF;
                     END $$;
-                    """,
-                    """
-                    -- The regular index on github_username remains (created in migration 013)
-                    -- This index provides performance benefits without enforcing uniqueness
-                    -- allowing multiple records with the same github_username (one per email)
                     """
                 ]
             },
