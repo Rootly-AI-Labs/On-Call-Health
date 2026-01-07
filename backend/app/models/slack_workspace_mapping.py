@@ -34,7 +34,6 @@ class SlackWorkspaceMapping(Base):
 
     # Feature flags - what capabilities are enabled for this workspace
     survey_enabled = Column(Boolean, default=False)  # Slash command surveys via /burnout
-    communication_patterns_enabled = Column(Boolean, default=False)  # Communication patterns analysis
     granted_scopes = Column(String(500), nullable=True)  # Comma-separated list of OAuth scopes
 
     # Relationships
@@ -57,7 +56,6 @@ class SlackWorkspaceMapping(Base):
             'registered_at': self.registered_at.isoformat() if self.registered_at else None,
             'status': self.status,
             'survey_enabled': self.survey_enabled,
-            'communication_patterns_enabled': self.communication_patterns_enabled,
             'granted_scopes': self.granted_scopes
         }
 
