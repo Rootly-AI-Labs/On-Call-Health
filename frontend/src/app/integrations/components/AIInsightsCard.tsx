@@ -15,6 +15,7 @@ import {
 import { Brain, Sparkles, Trash2, Loader2, ExternalLink, CheckCircle2 } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import { toast } from "sonner"
+import { API_BASE } from "../types"
 
 interface AIInsightsCardProps {
   llmConfig: {
@@ -46,6 +47,7 @@ export function AIInsightsCard({
   // Track if toggle change is user-initiated to prevent toast spam
   const isUserInitiatedRef = useRef(false)
   const isInitialMount = useRef(true)
+  const hasAutoConnected = useRef(false)
 
   // Update toggle state based on connected token source (bidirectional sync)
   useEffect(() => {
@@ -112,14 +114,30 @@ export function AIInsightsCard({
       return
     }
 
-    // Case 3: Not connected - toggle UI and persist preference
+    // Case 3: Not connected - toggle UI and auto-connect if switching to system
     const previousState = useCustomToken
     setUseCustomToken(checked)
 
-    // Persist the preference to backend
-    const preferenceSource = checked ? 'custom' : 'system'
+    // If switching to system token (not connected), auto-connect
+    if (!checked) {
+      setIsSwitching(true)
+      try {
+        await onConnect('', 'anthropic', true, false)
+        toast.success("Connected with system token")
+      } catch (error) {
+        console.error('Auto-connect failed:', error)
+        toast.error("Failed to connect. Please try again.")
+        setUseCustomToken(previousState) // Revert
+      } finally {
+        setIsSwitching(false)
+      }
+      return
+    }
+
+    // Persist the preference to backend for custom token
+    const preferenceSource = 'custom'
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/llm/token/preference`, {
+      const response = await fetch(`${API_BASE}/llm/token/preference`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -186,7 +204,7 @@ export function AIInsightsCard({
     <Card className="max-w-2xl mx-auto border-purple-200 bg-purple-50/30">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <div>
+          <div className="flex-1">
             <CardTitle className="flex items-center gap-2 text-xl">
               AI Insights
               {isConnected && <CheckCircle2 className="w-5 h-5 text-green-600" />}
@@ -195,71 +213,62 @@ export function AIInsightsCard({
               AI-powered insights that highlight patterns and key concerns
             </CardDescription>
           </div>
-          {/* Segmented Control for Token Selection */}
-          <div className="flex items-center gap-2">
-            {/* Loader to the left of toggle */}
-            {isSwitching && (
-              <Loader2 className="w-4 h-4 animate-spin text-slate-600" />
-            )}
-            <div
-              role="radiogroup"
-              aria-label="Token source selection"
-              className="inline-flex rounded-md border border-slate-300 p-0.5 bg-slate-100"
-            >
-              {/* System Token Button */}
-              <button
-                type="button"
-                role="radio"
-                aria-checked={!useCustomToken}
-                onClick={() => handleTokenSourceChange('system')}
-                disabled={isSwitching}
-                className={`px-3 py-1.5 rounded text-xs font-semibold transition-all duration-150 ${
-                  !useCustomToken
-                    ? 'bg-white text-slate-900 shadow-md border border-slate-200'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                } ${isSwitching ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                System
-              </button>
-
-              {/* Custom Token Button */}
-              <button
-                type="button"
-                role="radio"
-                aria-checked={useCustomToken}
-                onClick={() => handleTokenSourceChange('custom')}
-                disabled={isSwitching}
-                className={`px-3 py-1.5 rounded text-xs font-semibold transition-all duration-150 ${
-                  useCustomToken
-                    ? 'bg-white text-slate-900 shadow-md border border-slate-200'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                } ${isSwitching ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                Custom
-              </button>
-            </div>
-          </div>
         </div>
       </CardHeader>
 
       <CardContent className="space-y-4">
         {/* Show current connection status if connected with system token */}
         {isConnected && !useCustomToken && (
-          <div className="p-5 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <Sparkles className="w-5 h-5 text-green-600" />
-                  <span className="font-semibold text-green-900 text-lg">AI Insights Enabled</span>
-                </div>
-                <div className="text-sm text-green-800">
-                  <div className="flex items-center gap-2">
-                    <span>Using system-provided Anthropic Claude API</span>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-300">
-                      Free
-                    </span>
+          <div className="space-y-3">
+            <div className="p-5 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    <span className="font-semibold text-green-900 text-lg">AI Insights Active</span>
+                  </div>
+                  <div className="text-sm text-green-800">
+                    <div className="flex items-center gap-2">
+                      <span>Using Anthropic Claude API</span>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-300">
+                        Provided by Rootly
+                      </span>
+                    </div>
                   </div>
                 </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={async () => {
+                    await onDisconnect()
+                    toast.success("AI Insights disconnected")
+                  }}
+                  className="text-green-700 hover:text-red-600 hover:bg-red-50 text-xs"
+                >
+                  Disconnect
+                </Button>
+              </div>
+            </div>
+
+            {/* Want more control section */}
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <div className="text-sm font-medium text-slate-900 mb-1">
+                    Want more control?
+                  </div>
+                  <div className="text-xs text-slate-600">
+                    Use your own OpenAI or Anthropic API key
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleTokenSourceChange('custom')}
+                  className="shrink-0 border-purple-300 text-purple-700 hover:bg-purple-50"
+                >
+                  Use Your Own Key →
+                </Button>
               </div>
             </div>
           </div>
@@ -267,36 +276,68 @@ export function AIInsightsCard({
 
         {/* Show custom token connected state */}
         {isConnected && llmConfig.token_source === 'custom' && (
-          <div className="p-5 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <Sparkles className="w-5 h-5 text-green-600" />
-                  <span className="font-semibold text-green-900 text-lg">AI Insights Enabled</span>
-                </div>
-                <div className="text-sm text-green-800">
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">Provider:</span>
-                      <span>{llmConfig.provider === 'anthropic' ? 'Anthropic (Claude)' : 'OpenAI (GPT)'}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">Token:</span>
-                      <code className="font-mono text-xs bg-green-100 px-2 py-0.5 rounded border border-green-300">
-                        {llmConfig.token_suffix}
-                      </code>
+          <div className="space-y-3">
+            <div className="p-5 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    <span className="font-semibold text-green-900 text-lg">AI Insights Active</span>
+                  </div>
+                  <div className="text-sm text-green-800">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Provider:</span>
+                        <span>{llmConfig.provider === 'anthropic' ? 'Anthropic (Claude)' : 'OpenAI (GPT)'}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Your API Key:</span>
+                        <code className="font-mono text-xs bg-green-100 px-2 py-0.5 rounded border border-green-300">
+                          {llmConfig.token_suffix}
+                        </code>
+                      </div>
                     </div>
                   </div>
                 </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setShowDeleteDialog(true)}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-100"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
               </div>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setShowDeleteDialog(true)}
-                className="text-red-600 hover:text-red-700 hover:bg-red-100"
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
+            </div>
+
+            {/* Switch back to system option */}
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <div className="text-sm font-medium text-blue-900 mb-1">
+                    Switch to free system token
+                  </div>
+                  <div className="text-xs text-blue-700">
+                    No API costs • Managed by On-Call Health
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleTokenSourceChange('system')}
+                  disabled={isSwitching}
+                  className="shrink-0 border-blue-300 text-blue-700 hover:bg-blue-100"
+                >
+                  {isSwitching ? (
+                    <>
+                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                      Switching...
+                    </>
+                  ) : (
+                    'Switch to System Token'
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
         )}
@@ -326,37 +367,76 @@ export function AIInsightsCard({
           </div>
         )}
 
-        {/* Show system token info when toggle is OFF and not connected */}
+        {/* Show inactive state when not connected */}
         {!isConnected && !useCustomToken && (
-          <div className="p-5 bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl">
-            <div className="flex items-start gap-3">
-              <div className="mt-0.5">
-                <Sparkles className="w-5 h-5 text-purple-600" />
-              </div>
+          <div className="p-5 bg-gradient-to-br from-slate-50 to-slate-100 border-2 border-slate-200 rounded-xl">
+            <div className="flex items-start justify-between">
               <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <h4 className="font-semibold text-slate-900">System Token</h4>
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 border border-purple-200">
-                    PROVIDED
-                  </span>
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="w-5 h-5 text-slate-400" />
+                  <span className="font-semibold text-slate-500 text-lg">AI Insights Inactive</span>
                 </div>
-                <p className="text-sm text-slate-600">
-                  Provided AI insights powered by our Anthropic Claude API. No setup required.
-                </p>
+                <div className="text-sm text-slate-500">
+                  <div className="flex items-center gap-2">
+                    <span>Anthropic Claude API</span>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-500 border border-slate-300">
+                      Provided by Rootly
+                    </span>
+                  </div>
+                </div>
               </div>
+              <Button
+                size="sm"
+                onClick={async () => {
+                  await onConnect('', 'anthropic', true)
+                }}
+                disabled={isConnecting}
+                className="bg-purple-600 hover:bg-purple-700 text-white text-xs"
+              >
+                {isConnecting ? 'Connecting...' : 'Connect'}
+              </Button>
             </div>
           </div>
         )}
 
         {/* Show custom token input form when toggle is ON */}
         {useCustomToken && (!isConnected || llmConfig.token_source !== 'custom') && (
-          <div className="space-y-4 p-5 bg-white border-2 border-slate-200 rounded-xl">
-            <div className="pb-3 border-b border-slate-200">
-              <h4 className="font-semibold text-slate-900 mb-1">Custom Token</h4>
-              <p className="text-xs text-slate-500">
-                Use your own API key • Your billing applies • Advanced users
-              </p>
-            </div>
+          <div className="space-y-4">
+            {/* Banner showing current active token is still system */}
+            {isConnected && llmConfig.token_source === 'system' && (
+              <div className="p-3 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-blue-900">
+                      Currently using system token
+                    </p>
+                    <p className="text-xs text-blue-700">
+                      Enter your custom API key below to switch
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="p-5 bg-white border-2 border-slate-200 rounded-xl space-y-4">
+              <div className="pb-3 border-b border-slate-200 flex items-start justify-between">
+                <div>
+                  <h4 className="font-semibold text-slate-900 mb-1">Custom Token</h4>
+                  <p className="text-xs text-slate-500">
+                    Use your own API key • Your billing applies • Advanced users
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleTokenSourceChange('system')}
+                  disabled={isSwitching}
+                  className="border-blue-300 text-blue-700 hover:bg-blue-50 shrink-0 -mt-1"
+                >
+                  ← Back to System
+                </Button>
+              </div>
             <div>
               <Label className="text-sm font-semibold text-slate-700 mb-3 block">Choose Your Provider</Label>
               <div className="grid grid-cols-2 gap-3">
@@ -416,13 +496,14 @@ export function AIInsightsCard({
               </div>
             </div>
           </div>
+        </div>
         )}
 
-        {/* Show Connect button when not connected or switching to custom token */}
-        {(!isConnected || (useCustomToken && llmConfig.token_source !== 'custom')) && (
+        {/* Show Connect button when using custom token form */}
+        {useCustomToken && (!isConnected || llmConfig.token_source !== 'custom') && (
           <Button
             onClick={handleConnect}
-            disabled={isConnecting || isSwitching || (useCustomToken && !customToken.trim())}
+            disabled={isConnecting || isSwitching || !customToken.trim()}
             className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-md h-11 text-base font-semibold"
           >
             {isConnecting || isSwitching ? (

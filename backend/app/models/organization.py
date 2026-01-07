@@ -72,12 +72,12 @@ class Organization(Base):
     @property
     def admin_users(self):
         """Get all admin users for this organization."""
-        return [user for user in self.users if user.role in ['admin', 'org_admin', 'super_admin']]
+        return [user for user in self.users if user.role == 'admin']
 
     @property
     def regular_users(self):
         """Get all non-admin users for this organization."""
-        return [user for user in self.users if user.role in ['member', 'viewer', 'user', 'manager']]
+        return [user for user in self.users if user.role == 'member']
 
     def can_add_user(self) -> bool:
         """Check if organization can add more users based on plan limits."""

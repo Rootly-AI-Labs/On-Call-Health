@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { API_BASE } from "../types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
@@ -20,6 +21,7 @@ interface UnifiedSlackCardProps {
   teamMembers: any[]
   loadingTeamMembers: boolean
   loadingSyncedUsers: boolean
+  syncedUsers: any[]
   fetchTeamMembers: () => void
   syncUsersToCorrelation: () => void
   fetchSyncedUsers: () => void
@@ -55,6 +57,7 @@ export function UnifiedSlackCard({
   teamMembers,
   loadingTeamMembers,
   loadingSyncedUsers,
+  syncedUsers,
   fetchTeamMembers,
   syncUsersToCorrelation,
   fetchSyncedUsers,
@@ -73,7 +76,7 @@ export function UnifiedSlackCard({
 
   const handleSlackConnect = () => {
     const clientId = process.env.NEXT_PUBLIC_SLACK_CLIENT_ID
-    const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL
+    const backendUrl = API_BASE
 
     if (!backendUrl) {
       toast.error('Backend URL not configured. Please contact support.')
@@ -99,7 +102,7 @@ export function UnifiedSlackCard({
     }
 
     // Request ALL scopes upfront (both features enabled by default)
-    const scopes = 'commands,chat:write,team:read,channels:history,channels:read,users:read,users:read.email'
+    const scopes = 'commands,chat:write,im:write,team:read,channels:history,channels:read,users:read,users:read.email'
 
     // Include feature flags in state parameter - both enabled by default
     const redirectUri = `${backendUrl}/integrations/slack/oauth/callback`
@@ -129,7 +132,7 @@ export function UnifiedSlackCard({
   }
 
   const handleWorkspaceCheck = async () => {
-    const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL
+    const backendUrl = API_BASE
     const authToken = localStorage.getItem('auth_token')
 
     if (!authToken) {
@@ -202,7 +205,7 @@ export function UnifiedSlackCard({
   }
 
   const performFeatureToggle = async (feature: 'survey' | 'communication_patterns', enabled: boolean) => {
-    const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL
+    const backendUrl = API_BASE
 
     try {
       // Optimistically update UI
@@ -308,7 +311,14 @@ export function UnifiedSlackCard({
           {/* Connection Status */}
           {isConnected ? (
             <button
-              onClick={() => setSlackSurveyDisconnectDialogOpen(true)}
+              onClick={() => {
+                const isAdmin = userInfo?.role === 'admin'
+                if (!isAdmin) {
+                  toast.error('Only admins can disconnect Slack integration')
+                  return
+                }
+                setSlackSurveyDisconnectDialogOpen(true)
+              }}
               disabled={isDisconnectingSlackSurvey}
               className="inline-flex items-center space-x-2 bg-green-100 text-green-800 px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -369,7 +379,14 @@ export function UnifiedSlackCard({
               {process.env.NEXT_PUBLIC_SLACK_CLIENT_ID ? (
                 <div className="flex justify-center pt-2">
                   <Button
-                    onClick={handleSlackConnect}
+                    onClick={() => {
+                      const isAdmin = userInfo?.role === 'admin'
+                      if (!isAdmin) {
+                        toast.error('Only admins can connect Slack integration')
+                        return
+                      }
+                      handleSlackConnect()
+                    }}
                     disabled={isConnectingSlackOAuth}
                     className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2.5 text-base"
                     size="lg"
@@ -472,6 +489,7 @@ export function UnifiedSlackCard({
                   teamMembers={teamMembers}
                   loadingTeamMembers={loadingTeamMembers}
                   loadingSyncedUsers={loadingSyncedUsers}
+                  syncedUsers={syncedUsers}
                   userInfo={userInfo}
                   fetchTeamMembers={fetchTeamMembers}
                   syncUsersToCorrelation={syncUsersToCorrelation}

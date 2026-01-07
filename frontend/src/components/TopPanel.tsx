@@ -50,7 +50,7 @@ export function TopPanel() {
   const isActive = (path: string) => pathname === path
 
   // Check if user is admin (support both old and new role names during transition)
-  const isAdmin = userInfo?.role === 'admin' || userInfo?.role === 'org_admin'
+  const isAdmin = userInfo?.role === 'admin'
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200/60">

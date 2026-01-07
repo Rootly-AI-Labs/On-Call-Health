@@ -809,8 +809,8 @@ export default function IntegrationsPage() {
     // loadPagerDutyIntegrations()
     // loadGitHubIntegration()
     // loadSlackIntegration()
-    // loadLlmConfig() // Disabled - AI is always enabled with system token
-    
+    loadLlmConfig() // Load AI config to persist connection state
+
     // Load saved organization preference
     const savedOrg = localStorage.getItem('selected_organization')
     // Accept both numeric IDs and beta string IDs (like "beta-rootly")
@@ -1997,7 +1997,7 @@ export default function IntegrationsPage() {
       loadGitHubIntegration
     )
     // Show sync prompt after successful connection
-    setSyncPromptMessage("GitHub connected! Sync team members to enable accurate burnout analysis")
+    setSyncPromptMessage("GitHub connected! Sync team members to enable accurate  analysis")
     setShowSyncPrompt(true)
   }
 
@@ -2237,7 +2237,7 @@ export default function IntegrationsPage() {
   }
 
   // Fetch synced users from database
-  const fetchSyncedUsers = async (showToast = true, autoSync = true, forceRefresh = false) => {
+  const fetchSyncedUsers = async (showToast = true, autoSync = true, forceRefresh = false, openDrawer = true) => {
     return TeamHandlers.fetchSyncedUsers(
       selectedOrganization,
       setLoadingSyncedUsers,
@@ -2251,7 +2251,8 @@ export default function IntegrationsPage() {
       setSavedRecipients,
       syncedUsersCache.current,
       forceRefresh,
-      recipientsCache.current
+      recipientsCache.current,
+      openDrawer
     )
   }
 
@@ -2447,7 +2448,7 @@ export default function IntegrationsPage() {
         <div className="text-center mb-6 max-w-2xl mx-auto">
           <h2 className="text-4xl font-bold text-black mb-2">Connect Your Platform</h2>
           <p className="text-lg text-slate-600">
-            Integrate with Rootly or PagerDuty to analyze team burnout patterns
+            Integrate with Rootly or PagerDuty to analyze team health patterns
           </p>
         </div>
 
@@ -2478,11 +2479,11 @@ export default function IntegrationsPage() {
                 <CheckCircle className="w-6 h-6 text-white" />
               </div>
               <h3 className="text-xl font-semibold text-slate-900 mb-2">
-                Ready to analyze your team's burnout risk!
+                Ready to analyze your team's risk!
               </h3>
               <p className="text-slate-600">
                 You have {integrations.length} integration{integrations.length > 1 ? 's' : ''} connected.
-                Run your first analysis to identify burnout patterns across your team.
+                Run your first analysis to identify overwork patterns across your team.
               </p>
             </div>
           </div>
@@ -2500,13 +2501,17 @@ export default function IntegrationsPage() {
                 <Select
                   value={selectedOrganization}
                   onValueChange={async (value) => {
-                    // Only show toast if selecting a different organization
+                    // Update state immediately for instant UI response
+                    setSelectedOrganization(value)
+                    localStorage.setItem('selected_organization', value)
+
+                    // Only show toast and check permissions if selecting a different organization
                     if (value !== selectedOrganization) {
                       const selected = integrations.find(i => i.id.toString() === value)
                       if (selected) {
                         toast.success(`${selected.name} set as default`)
 
-                        // Check if the integration has valid permissions
+                        // Check permissions in background (non-blocking)
                         try {
                           const authToken = localStorage.getItem('auth_token')
                           const response = await fetch(
@@ -2540,10 +2545,6 @@ export default function IntegrationsPage() {
                         }
                       }
                     }
-
-                    setSelectedOrganization(value)
-                    // Save to localStorage for persistence
-                    localStorage.setItem('selected_organization', value)
                   }}
                 >
                   <SelectTrigger className="flex-1 h-10 bg-slate-50 border-slate-300 hover:bg-slate-100 transition-colors">
@@ -3001,11 +3002,11 @@ export default function IntegrationsPage() {
                                     <>
                                       <div className="flex items-center space-x-1">
                                         {integration.permissions?.users?.access ? (
-                                          <Tooltip content="✓ User read permissions: Required to run burnout analysis and identify team members">
+                                          <Tooltip content="✓ User read permissions: Required to run an analysis and identify team members">
                                             <CheckCircle className="w-4 h-4 text-green-500 cursor-help" />
                                           </Tooltip>
                                         ) : (
-                                          <Tooltip content={`✗ User read permissions required: ${integration.permissions?.users?.error || "Permission denied"}. Both User and Incident read permissions are required to run burnout analysis.`}>
+                                          <Tooltip content={`✗ User read permissions required: ${integration.permissions?.users?.error || "Permission denied"}. Both User and Incident read permissions are required to run an analysis.`}>
                                             <AlertCircle className="w-4 h-4 text-red-500 cursor-help" />
                                           </Tooltip>
                                         )}
@@ -3013,11 +3014,11 @@ export default function IntegrationsPage() {
                                       </div>
                                       <div className="flex items-center space-x-1">
                                         {integration.permissions?.incidents?.access ? (
-                                          <Tooltip content="✓ Incident read permissions: Required to run burnout analysis and analyze incident response patterns">
+                                          <Tooltip content="✓ Incident read permissions: Required to run an analysis and analyze incident response patterns">
                                             <CheckCircle className="w-4 h-4 text-green-500 cursor-help" />
                                           </Tooltip>
                                         ) : (
-                                          <Tooltip content={`✗ Incident read permissions required: ${integration.permissions?.incidents?.error || "Permission denied"}. Both User and Incident read permissions are required to run burnout analysis.`}>
+                                          <Tooltip content={`✗ Incident read permissions required: ${integration.permissions?.incidents?.error || "Permission denied"}. Both User and Incident read permissions are required to run an analysis.`}>
                                             <AlertCircle className="w-4 h-4 text-red-500 cursor-help" />
                                           </Tooltip>
                                         )}
@@ -3126,7 +3127,7 @@ export default function IntegrationsPage() {
           <div className="text-center">
             <h2 className="text-2xl font-bold text-slate-900 mb-3">Team Management</h2>
             <p className="text-lg text-slate-600 mb-2">
-              Sync and manage your team members for burnout analysis
+              Sync and manage your team members for an analysis
             </p>
             <p className="text-slate-500">
               View synced users, manage enhanced integration mappings, and select survey recipients
@@ -3191,7 +3192,7 @@ export default function IntegrationsPage() {
                     title={!selectedOrganization ? 'Please select an organization first' : ''}
                   >
                     <Users className="w-4 h-4 mr-2" />
-                    View Members
+                    Sync Members
                   </Button>
                 </div>
               </CardContent>
@@ -3418,6 +3419,7 @@ export default function IntegrationsPage() {
                 teamMembers={teamMembers}
                 loadingTeamMembers={loadingTeamMembers}
                 loadingSyncedUsers={loadingSyncedUsers}
+                syncedUsers={syncedUsers}
                 fetchTeamMembers={fetchTeamMembers}
                 syncUsersToCorrelation={syncUsersToCorrelation}
                 fetchSyncedUsers={fetchSyncedUsers}
@@ -3507,7 +3509,7 @@ export default function IntegrationsPage() {
             <div className="text-center">
               <h2 className="text-2xl font-bold text-slate-900 mb-3">AI Insights Included</h2>
               <p className="text-lg text-slate-600 mb-2">
-                Enable AI-powered burnout analysis with natural language reasoning
+                Enable AI-powered analysis with natural language reasoning
               </p>
               <p className="text-slate-500">
                 Get intelligent insights and recommendations automatically with every analysis
@@ -3617,7 +3619,7 @@ export default function IntegrationsPage() {
                           <div className="text-sm text-blue-800">
                             <p className="font-medium mb-1">AI Features Include:</p>
                             <ul className="space-y-1 text-xs">
-                              <li>• Natural language reasoning about burnout patterns</li>
+                              <li>• Natural language reasoning about overwork patterns</li>
                               <li>• Intelligent risk assessment with explanations</li>
                               <li>• Context-aware recommendations</li>
                               <li>• Team-level insights and trends</li>
@@ -4640,7 +4642,7 @@ export default function IntegrationsPage() {
                     <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                       <div className="flex items-center justify-between">
                         <p className="text-xs text-blue-900 font-medium">
-                          ✓ Check users to send them automated burnout survey invitations via Slack
+                          ✓ Check users to send them automated a survey invitations via Slack
                         </p>
                         <div className="text-xs font-semibold text-blue-900 bg-blue-100 px-2 py-1 rounded">
                           {selectedRecipients.size || 0} / {syncedUsers.length} will receive surveys
@@ -5352,7 +5354,7 @@ export default function IntegrationsPage() {
                           <li><strong>All Users:</strong> All users from your PagerDuty account will be synced.</li>
                         )}
                         <li><strong>Clean Sync:</strong> All existing users from this integration will be removed and replaced with the fresh list.</li>
-                        <li><strong>Used in Analysis:</strong> These synced users will be used when running burnout analysis.</li>
+                        <li><strong>Used in Analysis:</strong> These synced users will be used when running an analysis.</li>
                         <li><strong>Cross-Platform Matching:</strong> Users will be matched across GitHub, Slack, and Jira accounts when possible.</li>
                       </ul>
                     </div>
