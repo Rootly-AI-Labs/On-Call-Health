@@ -127,7 +127,6 @@ async def slack_oauth_callback(
         user_id = None
         user_email = None
         enable_survey = False  # Default to False - admin must explicitly enable
-        enable_communication_patterns = False  # Default to False
 
         if state:
             import base64
@@ -139,8 +138,7 @@ async def slack_oauth_callback(
                 user_id = decoded_state.get("userId")
                 user_email = decoded_state.get("email")
                 enable_survey = decoded_state.get("enableSurvey", False)  # Default False
-                enable_communication_patterns = decoded_state.get("enableCommunicationPatterns", False)  # Default False
-                logger.debug(f"Decoded state - org_id: {organization_id}, user_id: {user_id}, email: {user_email}, survey: {enable_survey}, communication_patterns: {enable_communication_patterns}")
+                logger.debug(f"Decoded state - org_id: {organization_id}, user_id: {user_id}, email: {user_email}, survey: {enable_survey}")
             except Exception as state_error:
                 # If state parsing fails, continue without org mapping and use defaults
                 logger.warning(f"Failed to parse state parameter: {state_error}")
@@ -295,7 +293,6 @@ async def slack_oauth_callback(
                 existing_mapping.organization_id = organization_id
             # Update feature flags based on user selection
             existing_mapping.survey_enabled = enable_survey
-            existing_mapping.communication_patterns_enabled = enable_communication_patterns
             existing_mapping.granted_scopes = granted_scopes
             mapping = existing_mapping
         else:
@@ -307,7 +304,6 @@ async def slack_oauth_callback(
                 owner_user_id=owner_user.id,
                 status='active',
                 survey_enabled=enable_survey,
-                communication_patterns_enabled=enable_communication_patterns,
                 granted_scopes=granted_scopes
             )
             db.add(mapping)
@@ -339,8 +335,6 @@ async def slack_oauth_callback(
         features = []
         if enable_survey:
             features.append("survey")
-        if enable_communication_patterns:
-            features.append("communication_patterns")
         features_str = "+".join(features) if features else "none"
         logger.info(f"Slack OAuth successful - workspace: {workspace_name}, workspace_id: {workspace_id}, organization_id: {organization_id}, features: {features_str}")
 
@@ -612,7 +606,6 @@ async def get_slack_status(
             "synced_users_count": synced_users_count,
             # Feature flags for OAuth integrations
             "survey_enabled": workspace_mapping.survey_enabled if hasattr(workspace_mapping, 'survey_enabled') else False,
-            "communication_patterns_enabled": workspace_mapping.communication_patterns_enabled if hasattr(workspace_mapping, 'communication_patterns_enabled') else False,
             "granted_scopes": workspace_mapping.granted_scopes if hasattr(workspace_mapping, 'granted_scopes') else None
         }
     }
@@ -665,19 +658,16 @@ async def toggle_slack_feature(
             )
 
         # Validate feature name
-        if request.feature not in ['survey', 'communication_patterns']:
+        if request.feature not in ['survey']:
             raise HTTPException(
                 status_code=400,
-                detail="Invalid feature name. Must be 'survey' or 'communication_patterns'"
+                detail="Invalid feature name. Must be 'survey'"
             )
 
         # Update the appropriate feature flag
         if request.feature == 'survey':
             workspace_mapping.survey_enabled = request.enabled
             logger.info(f"User {current_user.id} toggled survey to {request.enabled} for workspace {workspace_mapping.workspace_id}")
-        elif request.feature == 'communication_patterns':
-            workspace_mapping.communication_patterns_enabled = request.enabled
-            logger.info(f"User {current_user.id} toggled communication_patterns to {request.enabled} for workspace {workspace_mapping.workspace_id}")
 
         db.commit()
 
