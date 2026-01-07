@@ -113,7 +113,7 @@ export function AnalysisProgressSection({
               className="bg-red-600 hover:bg-red-700 text-white"
             >
               <Play className="w-4 h-4 mr-2" />
-              Rerun Analysis
+              Change Analysis Settings
             </Button>
             <Button 
               variant="outline" 
@@ -125,7 +125,7 @@ export function AnalysisProgressSection({
               className="border-red-300 text-red-600 hover:bg-red-50"
             >
               <Trash2 className="w-4 h-4 mr-2" />
-              Remove Selection
+              Cancel Analysis
             </Button>
           </div>
         </Card>
