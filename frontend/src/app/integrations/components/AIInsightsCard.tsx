@@ -123,7 +123,7 @@ export function AIInsightsCard({
       setIsSwitching(true)
       try {
         await onConnect('', 'anthropic', true, false)
-        toast.success("Connected with system token")
+        toast.success("AI Insights enabled")
       } catch (error) {
         console.error('Auto-connect failed:', error)
         toast.error("Failed to connect. Please try again.")
@@ -241,11 +241,11 @@ export function AIInsightsCard({
                   variant="ghost"
                   onClick={async () => {
                     await onDisconnect()
-                    toast.success("AI Insights disconnected")
+                    toast.success("AI Insights disabled")
                   }}
                   className="text-green-700 hover:text-red-600 hover:bg-red-50 text-xs"
                 >
-                  Disconnect
+                  Disable
                 </Button>
               </div>
             </div>
@@ -370,20 +370,10 @@ export function AIInsightsCard({
         {/* Show inactive state when not connected */}
         {!isConnected && !useCustomToken && (
           <div className="p-5 bg-gradient-to-br from-slate-50 to-slate-100 border-2 border-slate-200 rounded-xl">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <Sparkles className="w-5 h-5 text-slate-400" />
-                  <span className="font-semibold text-slate-500 text-lg">AI Insights Inactive</span>
-                </div>
-                <div className="text-sm text-slate-500">
-                  <div className="flex items-center gap-2">
-                    <span>Anthropic Claude API</span>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-500 border border-slate-300">
-                      Provided by Rootly
-                    </span>
-                  </div>
-                </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-slate-400" />
+                <span className="font-semibold text-slate-500 text-lg">AI Insights Inactive</span>
               </div>
               <Button
                 size="sm"
@@ -393,7 +383,7 @@ export function AIInsightsCard({
                 disabled={isConnecting}
                 className="bg-purple-600 hover:bg-purple-700 text-white text-xs"
               >
-                {isConnecting ? 'Connecting...' : 'Connect'}
+                {isConnecting ? 'Enabling...' : 'Enable'}
               </Button>
             </div>
           </div>
@@ -509,12 +499,12 @@ export function AIInsightsCard({
             {isConnecting || isSwitching ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Connecting...
+                Enabling...
               </>
             ) : (
               <>
                 <Sparkles className="w-4 h-4 mr-2" />
-                Connect
+                Enable
               </>
             )}
           </Button>
