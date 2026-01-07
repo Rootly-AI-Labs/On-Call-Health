@@ -301,7 +301,7 @@ class SurveyScheduler:
         except Exception as e:
             logger.error(f"Error in daily survey delivery for org {organization_id}: {str(e)}")
 
-    def _get_survey_recipients(self, organization_id: int, db: Session, is_reminder: bool = False) -> List[Dict]:
+    def _get_survey_recipients(self, organization_id: int, db: Session, is_reminder: bool = False, apply_saved_recipients: bool = True) -> List[Dict]:
         """
         Get list of users who should receive surveys.
         Returns users with Slack correlation and survey opt-in.
@@ -311,35 +311,39 @@ class SurveyScheduler:
             organization_id: Organization ID
             db: Database session
             is_reminder: If True, also check reminder preferences
+            apply_saved_recipients: If True, apply saved recipient filter (for automated surveys). If False, return all eligible users (for manual sends).
         """
         from app.models.user import User
         from app.models.rootly_integration import RootlyIntegration
 
-        # Get saved recipient selections for this organization
+        # Get saved recipient selections for this organization (only if apply_saved_recipients is True)
         # SIMPLE APPROACH: Find any integration owned by a user in this organization
         # that has survey_recipients configured
         saved_recipient_ids = None
 
-        # First, get any user from this organization
-        org_user = db.query(User).filter(
-            User.organization_id == organization_id
-        ).first()
-
-        if org_user:
-            # Find their integration with saved recipients
-            integration = db.query(RootlyIntegration).filter(
-                RootlyIntegration.user_id == org_user.id,
-                RootlyIntegration.is_active == True,
-                RootlyIntegration.survey_recipients.isnot(None)
+        if apply_saved_recipients:
+            # First, get any user from this organization
+            org_user = db.query(User).filter(
+                User.organization_id == organization_id
             ).first()
 
-            if integration and integration.survey_recipients:
-                saved_recipient_ids = set(integration.survey_recipients)
-                logger.info(f"Using saved recipient list for org {organization_id}: {len(saved_recipient_ids)} users selected")
+            if org_user:
+                # Find their integration with saved recipients
+                integration = db.query(RootlyIntegration).filter(
+                    RootlyIntegration.user_id == org_user.id,
+                    RootlyIntegration.is_active == True,
+                    RootlyIntegration.survey_recipients.isnot(None)
+                ).first()
+
+                if integration and integration.survey_recipients:
+                    saved_recipient_ids = set(integration.survey_recipients)
+                    logger.info(f"Using saved recipient list for org {organization_id}: {len(saved_recipient_ids)} users selected")
+                else:
+                    logger.debug(f"No saved recipient list found for org {organization_id}, using default (all users)")
             else:
-                logger.debug(f"No saved recipient list found for org {organization_id}, using default (all users)")
+                logger.warning(f"No users found for organization {organization_id}")
         else:
-            logger.warning(f"No users found for organization {organization_id}")
+            logger.debug(f"Skipping saved recipient filter for org {organization_id} (manual send)")
 
         # Query users with preferences
         # Join on organization + email instead of user_id to support team roster (user_id=NULL)

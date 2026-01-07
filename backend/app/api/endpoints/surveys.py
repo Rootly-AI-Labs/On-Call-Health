@@ -412,8 +412,8 @@ async def manual_survey_delivery(
 
     # First call without confirmation - return preview
     if not request.confirmed:
-        # Get recipients count
-        recipients = survey_scheduler._get_survey_recipients(organization_id, db, is_reminder=False)
+        # Get recipients count - for manual sends, don't apply saved recipient filter
+        recipients = survey_scheduler._get_survey_recipients(organization_id, db, is_reminder=False, apply_saved_recipients=False)
 
         # Filter by recipient_emails if provided (but not if empty array)
         if request.recipient_emails is not None and len(request.recipient_emails) > 0:
@@ -450,8 +450,8 @@ async def manual_survey_delivery(
                 detail="Slack workspace surveys have been disabled. Please enable surveys and try again."
             )
 
-        # Get recipients before sending
-        all_recipients = survey_scheduler._get_survey_recipients(organization_id, db, is_reminder=False)
+        # Get recipients before sending - for manual sends, don't apply saved recipient filter
+        all_recipients = survey_scheduler._get_survey_recipients(organization_id, db, is_reminder=False, apply_saved_recipients=False)
 
         # CRITICAL: Must provide recipient_emails when confirmed (cannot send to all)
         # This prevents accidental mass sends when empty array is provided
