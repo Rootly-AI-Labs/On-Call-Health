@@ -46,7 +46,7 @@ class LLMTokenResponse(BaseModel):
     has_token: bool
     provider: Optional[str] = None
     token_suffix: Optional[str] = None
-    token_source: str = 'system'  # 'system' or 'custom'
+    token_source: Optional[str] = None  # 'system', 'custom', or None (disconnected)
     created_at: Optional[datetime] = None
     # Info about stored custom token (even if not active)
     has_stored_custom_token: bool = False
@@ -243,8 +243,8 @@ async def get_llm_token_info(
 ):
     """Get information about user's active LLM token (system or custom)."""
 
-    # Determine which token is active (default to 'system' if not set)
-    active_source = getattr(current_user, 'active_llm_token_source', 'system') or 'system'
+    # Get the active source - None means disconnected
+    active_source = getattr(current_user, 'active_llm_token_source', None)
 
     # Get stored custom token info (if any)
     stored_custom_info = {}
@@ -259,6 +259,14 @@ async def get_llm_token_info(
             }
         except Exception as e:
             logger.error(f"Failed to decrypt stored token for user {current_user.id}: {e}")
+
+    # If explicitly disconnected (active_source is None), return has_token: false
+    if active_source is None:
+        return LLMTokenResponse(
+            has_token=False,
+            token_source=None,
+            **stored_custom_info
+        )
 
     # If custom token is active and user has one stored
     if active_source == 'custom' and current_user.has_llm_token():
@@ -278,7 +286,7 @@ async def get_llm_token_info(
             logger.error(f"Failed to decrypt token for user {current_user.id}: {e}")
             # Fall through to system token
 
-    # Return system token info (default)
+    # Return system token info (active_source is 'system')
     import os
     system_api_key = os.getenv('ANTHROPIC_API_KEY')
     if system_api_key:
@@ -294,7 +302,7 @@ async def get_llm_token_info(
     # No token available at all
     return LLMTokenResponse(
         has_token=False,
-        token_source='system',
+        token_source=None,
         **stored_custom_info
     )
 
@@ -337,26 +345,20 @@ async def delete_llm_token(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Delete user's custom LLM token and revert to system token."""
-
-    if not current_user.has_llm_token():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No LLM token found"
-        )
+    """Disconnect from AI Insights (both custom and system tokens)."""
 
     try:
-        # Clear the custom token and switch back to system
+        # Clear any custom token and set to disabled/disconnected state
         current_user.llm_token = None
         current_user.llm_provider = None
-        current_user.active_llm_token_source = 'system'
+        current_user.active_llm_token_source = None  # None means disconnected
         current_user.updated_at = datetime.now()
 
         db.commit()
 
-        logger.info(f"Custom LLM token deleted for user {current_user.id}, switched to system token")
+        logger.info(f"AI Insights disconnected for user {current_user.id}")
 
-        return {"message": "Custom LLM token deleted successfully, switched to system token"}
+        return {"message": "AI Insights disconnected successfully"}
         
     except Exception as e:
         logger.error(f"Failed to delete LLM token for user {current_user.id}: {e}")
