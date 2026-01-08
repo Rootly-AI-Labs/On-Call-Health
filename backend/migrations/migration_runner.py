@@ -823,16 +823,32 @@ class MigrationRunner:
                     WHERE frequency_type = 'weekday'  -- Only update if still default
                     """,
                     """
-                    -- Add CHECK constraint for frequency_type
-                    ALTER TABLE survey_schedules
-                    ADD CONSTRAINT check_frequency_type
-                    CHECK (frequency_type IN ('daily', 'weekday', 'weekly'))
+                    -- Add CHECK constraint for frequency_type (idempotent)
+                    DO $$
+                    BEGIN
+                        IF NOT EXISTS (
+                            SELECT 1 FROM pg_constraint
+                            WHERE conname = 'check_frequency_type'
+                        ) THEN
+                            ALTER TABLE survey_schedules
+                            ADD CONSTRAINT check_frequency_type
+                            CHECK (frequency_type IN ('daily', 'weekday', 'weekly'));
+                        END IF;
+                    END $$
                     """,
                     """
-                    -- Add CHECK constraint for day_of_week (0-6 or NULL)
-                    ALTER TABLE survey_schedules
-                    ADD CONSTRAINT check_day_of_week
-                    CHECK (day_of_week IS NULL OR (day_of_week >= 0 AND day_of_week <= 6))
+                    -- Add CHECK constraint for day_of_week (idempotent)
+                    DO $$
+                    BEGIN
+                        IF NOT EXISTS (
+                            SELECT 1 FROM pg_constraint
+                            WHERE conname = 'check_day_of_week'
+                        ) THEN
+                            ALTER TABLE survey_schedules
+                            ADD CONSTRAINT check_day_of_week
+                            CHECK (day_of_week IS NULL OR (day_of_week >= 0 AND day_of_week <= 6));
+                        END IF;
+                    END $$
                     """,
                     """
                     -- Keep send_weekdays_only column for backwards compatibility (don't drop yet)
