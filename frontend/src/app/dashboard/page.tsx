@@ -2178,17 +2178,7 @@ function DashboardContent() {
                         <>
                           <div className="flex items-start justify-between mb-2">
                             <div className="flex items-center space-x-2">
-                              <div className="w-6 h-6 bg-purple-600 rounded flex items-center justify-center">
-                                <svg
-                                  viewBox="0 0 24 24"
-                                  className="w-4 h-4 text-white"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="1.5"
-                                >
-                                  <path d="M2.5 21.5l19-19M5.5 21.5l16-16M8.5 21.5l13-13M11.5 21.5l10-10M14.5 21.5l7-7M17.5 21.5l4-4" strokeLinecap="round"/>
-                                </svg>
-                              </div>
+                              <Image src="/images/linear-logo.png" alt="Linear" width={24} height={24} className="rounded" />
                               <div>
                                 <h3 className="text-sm font-medium text-gray-900">Linear</h3>
                               </div>
