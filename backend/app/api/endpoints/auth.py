@@ -589,6 +589,44 @@ async def update_user_role(
         "message": f"Successfully updated {target_user.name}'s role from {old_role} to {new_role}"
     }
 
+@router.get("/users/promotable")
+async def get_promotable_users(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+) -> Dict[str, Any]:
+    """
+    Get list of team members who can be promoted to admin.
+    Only returns users with active accounts (not just UserCorrelations).
+    Used when sole admin needs to promote someone before deleting their account.
+    """
+    # Check if current user is admin
+    if current_user.role != 'admin':
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins can view promotable users"
+        )
+
+    # Get all active users in the organization who are not admins
+    promotable_users = db.query(User).filter(
+        User.organization_id == current_user.organization_id,
+        User.role != 'admin',
+        User.status == 'active',
+        User.id != current_user.id
+    ).all()
+
+    return {
+        "users": [
+            {
+                "id": user.id,
+                "name": user.name,
+                "email": user.email,
+                "role": user.role
+            }
+            for user in promotable_users
+        ],
+        "total": len(promotable_users)
+    }
+
 class DeleteAccountRequest(BaseValidatedModel):
     """Delete account request validation."""
     email_confirmation: str = Field(..., min_length=3, max_length=255, description="Email confirmation")
@@ -639,7 +677,7 @@ async def delete_current_user_account(
             detail="Email confirmation does not match your account email"
         )
 
-    # Additional safety check - prevent deletion if user is sole admin
+    # Additional safety check - prevent deletion if user is sole admin WITH other team members
     if current_user.organization_id and current_user.role == 'admin':
         # Check if there are other admins
         other_admins = db.query(User).filter(
@@ -650,11 +688,23 @@ async def delete_current_user_account(
         ).count()
 
         if other_admins == 0:
-            logger.warning(f"Account deletion blocked - user {current_user.id} is sole org admin")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cannot delete account: You are the only admin in your organization. Please transfer admin rights to another user first, or contact support."
-            )
+            # Check if there are other team members in the organization
+            from ...models.user_correlation import UserCorrelation
+            other_members = db.query(UserCorrelation).filter(
+                UserCorrelation.organization_id == current_user.organization_id,
+                UserCorrelation.email != current_user.email
+            ).count()
+
+            if other_members > 0:
+                # Block deletion - there are team members but no other admins
+                logger.warning(f"Account deletion blocked - user {current_user.id} is sole admin with {other_members} team members")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="You are the only admin. Please promote another team member to admin before deleting your account."
+                )
+            else:
+                # Allow deletion - user is sole member, org will be disbanded
+                logger.info(f"Account deletion proceeding - user {current_user.id} is sole member, org will be disbanded")
 
     try:
         logger.info(f"Starting account deletion for user {current_user.id} ({current_user.email})")
