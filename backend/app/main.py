@@ -80,7 +80,7 @@ def get_cors_origins():
             "http://localhost:3002"
         ])
     
-    # ALWAYS allow localhost for development and testing
+    # ALWAYS allow localhost and 127.0.0.1 for development and testing
     # This is safe because the backend requires auth tokens anyway
     if not any("localhost:3000" in origin for origin in origins):
         origins.append("http://localhost:3000")
@@ -88,6 +88,10 @@ def get_cors_origins():
         origins.append("http://localhost:3001")
     if not any("localhost:3002" in origin for origin in origins):
         origins.append("http://localhost:3002")
+    # Also allow 127.0.0.1 (same as localhost but different origin)
+    origins.append("http://127.0.0.1:3000")
+    origins.append("http://127.0.0.1:3001")
+    origins.append("http://127.0.0.1:3002")
 
     # Add production domains if they exist
     production_frontend = os.getenv("PRODUCTION_FRONTEND_URL")
