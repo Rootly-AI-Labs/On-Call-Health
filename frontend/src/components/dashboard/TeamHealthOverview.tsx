@@ -55,7 +55,7 @@ export function TeamHealthOverview({
         id="health-rubric-tooltip"
         style={{ top: '-200px', left: '-200px' }}>
         <div className="space-y-3">
-          <div className="text-purple-300 font-semibold text-sm mb-3">OCB Risk Level Scale</div>
+          <div className="text-purple-300 font-semibold text-sm mb-3">OCH Risk Level Scale</div>
 
           <div className="space-y-3">
             <div>
@@ -66,7 +66,7 @@ export function TeamHealthOverview({
                 </div>
                 <span className="text-gray-300">0-24</span>
               </div>
-              <div className="text-gray-400 text-xs pl-5">No significant burnout symptoms</div>
+              <div className="text-gray-400 text-xs pl-5">No significant signs of overwork</div>
             </div>
 
             <div>
@@ -77,7 +77,7 @@ export function TeamHealthOverview({
                 </div>
                 <span className="text-gray-300">25-49</span>
               </div>
-              <div className="text-gray-400 text-xs pl-5">Mild burnout symptoms, monitor trends</div>
+              <div className="text-gray-400 text-xs pl-5">Mild signs of overwork, monitor trends</div>
             </div>
 
             <div>
@@ -88,7 +88,7 @@ export function TeamHealthOverview({
                 </div>
                 <span className="text-gray-300">50-74</span>
               </div>
-              <div className="text-gray-400 text-xs pl-5">Moderate burnout, intervention recommended</div>
+              <div className="text-gray-400 text-xs pl-5">Moderate signs of overwork, intervention recommended</div>
             </div>
 
             <div>
@@ -99,7 +99,7 @@ export function TeamHealthOverview({
                 </div>
                 <span className="text-gray-300">75-100</span>
               </div>
-              <div className="text-gray-400 text-xs pl-5">Severe burnout risk, immediate action needed</div>
+              <div className="text-gray-400 text-xs pl-5">Severe signs of overwork, immediate action needed</div>
             </div>
           </div>
 
@@ -172,7 +172,7 @@ export function TeamHealthOverview({
                                 }
                               }}
                             >
-                              OCB
+                              OCH
                             </span>
                           </>
                         );
@@ -254,7 +254,7 @@ export function TeamHealthOverview({
                                       }
                                     }}
                                   >
-                                    OCB
+                                    OCH
                                   </span>
                                 </>
                               );
@@ -454,26 +454,26 @@ export function TeamHealthOverview({
                           {riskCounts.critical > 0 && (
                             <div className="flex items-center space-x-2">
                               <div className="text-2xl font-bold text-red-800">{riskCounts.critical}</div>
-                              <span className="text-sm text-gray-600">Critical (OCB 75-100)</span>
+                              <span className="text-sm text-gray-600">Critical (OCH 75-100)</span>
                             </div>
                           )}
                           {riskCounts.high > 0 && (
                             <div className="flex items-center space-x-2">
                               <div className="text-2xl font-bold text-red-600">{riskCounts.high}</div>
-                              <span className="text-sm text-gray-600">High (OCB 50-74)</span>
+                              <span className="text-sm text-gray-600">High (OCH 50-74)</span>
                             </div>
                           )}
                           {riskCounts.medium > 0 && (
                             <div className="flex items-center space-x-2">
                               <div className="text-2xl font-bold text-orange-600">{riskCounts.medium}</div>
-                              <span className="text-sm text-gray-600">Medium (OCB 25-49)</span>
+                              <span className="text-sm text-gray-600">Medium (OCH 25-49)</span>
                             </div>
                           )}
                           {/* Only show low risk count if it's the majority or no other risks */}
                           {(riskCounts.low > 0 && (riskCounts.critical + riskCounts.high + riskCounts.medium === 0)) && (
                             <div className="flex items-center space-x-2">
                               <div className="text-2xl font-bold text-green-600">{riskCounts.low}</div>
-                              <span className="text-sm text-gray-600">Low (OCB 0-24)</span>
+                              <span className="text-sm text-gray-600">Low (OCH 0-24)</span>
                             </div>
                           )}
                           {/* Show "Everyone healthy" message if all low risk */}

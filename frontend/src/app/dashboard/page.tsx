@@ -1704,7 +1704,7 @@ function DashboardContent() {
                   className="bg-yellow-600 hover:bg-yellow-700 text-white"
                 >
                   <Play className="w-4 h-4 mr-2" />
-                  Rerun Analysis
+                  Change Analysis Settings
                 </Button>
                 <Button 
                   variant="outline" 
@@ -1716,7 +1716,7 @@ function DashboardContent() {
                   className="border-red-300 text-red-700 hover:bg-red-100"
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
-                  Remove Selection
+                  Cancel Analysis
                 </Button>
               </div>
             </Card>
