@@ -484,82 +484,6 @@ function DashboardContent() {
       {/* Main Content */}
       <div className="flex-1 overflow-auto bg-gray-100">
         <div className="p-6">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center justify-between w-full">
-              <div>
-                <h1 className="text-4xl font-bold text-black">Analysis Dashboard</h1>
-                <p className="text-lg text-gray-600">
-                  {(() => {
-                    if (currentAnalysis) {
-                      // Find the integration for this specific analysis
-                      const analysisIntegration = integrations.find(i => i.id === currentAnalysis.integration_id);
-
-                      // Use multiple sources to get the organization name (to handle different integrations)
-                      const orgName = analysisIntegration?.name ||
-                                    analysisIntegration?.organization_name ||
-                                    (currentAnalysis.analysis_data as any)?.metadata?.organization_name ||
-                                    'Organization';
-
-                      const analysisDateTime = new Date(currentAnalysis.created_at);
-                      const date = analysisDateTime.toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      });
-                      const time = analysisDateTime.toLocaleTimeString('en-US', {
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        hour12: true
-                      });
-                      return `${orgName} • ${date} at ${time}`;
-                    }
-                    return '';
-                  })()}
-                </p>
-              </div>
-              <div className="flex items-center space-x-4">
-                {/* Export Dropdown */}
-                {!shouldShowInsufficientDataCard() && currentAnalysis && currentAnalysis.analysis_data && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="flex items-center space-x-2 border-gray-300 hover:bg-gray-50"
-                        title="Export analysis data"
-                      >
-                        <Download className="w-5 h-5" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56">
-                      <DropdownMenuItem onClick={exportAsJSON} className="flex items-center space-x-2">
-                        <Download className="w-5 h-5" />
-                        <div className="flex flex-col">
-                          <span className="font-medium text-base">Export as JSON</span>
-                          <span className="text-sm text-gray-500">Complete analysis data</span>
-                        </div>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem disabled className="flex items-center space-x-2 opacity-50">
-                        <Download className="w-5 h-5" />
-                        <div className="flex flex-col">
-                          <span className="font-medium text-base">Export as CSV</span>
-                          <span className="text-sm text-gray-500">Organization member scores</span>
-                        </div>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem disabled className="flex items-center space-x-2 opacity-50">
-                        <FileText className="w-5 h-5" />
-                        <div className="flex flex-col">
-                          <span className="font-medium text-base">Generate PDF Report</span>
-                          <span className="text-sm text-gray-500">Executive summary</span>
-                        </div>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-              </div>
-            </div>
-          </div>
 
           {/* Debug Section - Only show in development */}
           {false && process.env.NODE_ENV === 'development' && currentAnalysis && (
@@ -1261,10 +1185,7 @@ function DashboardContent() {
                             )}
                           </CardTitle>
                           <CardDescription>
-                            {highRiskFactors.length > 0
-                              ? "Risk factors requiring immediate attention based on combined incident response and development activity patterns"
-                              : "Current risk factors based on team activity patterns"
-                            }
+                            Current factors affecting team health
                           </CardDescription>
                         </div>
                         <button
@@ -1860,6 +1781,67 @@ function DashboardContent() {
               )}
             </>
           )}
+
+          {/* Export Button and Footer */}
+          {!shouldShowInsufficientDataCard() && currentAnalysis && currentAnalysis.analysis_data && (
+            <div className="flex justify-end mt-6">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="flex items-center space-x-2 border-gray-300 hover:bg-gray-50"
+                    title="Export analysis data"
+                  >
+                    <Download className="w-5 h-5" />
+                    <span>Export</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem onClick={exportAsJSON} className="flex items-center space-x-2">
+                    <Download className="w-5 h-5" />
+                    <div className="flex flex-col">
+                      <span className="font-medium text-base">Export as JSON</span>
+                      <span className="text-sm text-gray-500">Complete analysis data</span>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem disabled className="flex items-center space-x-2 opacity-50">
+                    <Download className="w-5 h-5" />
+                    <div className="flex flex-col">
+                      <span className="font-medium text-base">Export as CSV</span>
+                      <span className="text-sm text-gray-500">Organization member scores</span>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem disabled className="flex items-center space-x-2 opacity-50">
+                    <FileText className="w-5 h-5" />
+                    <div className="flex flex-col">
+                      <span className="font-medium text-base">Generate PDF Report</span>
+                      <span className="text-sm text-gray-500">Executive summary</span>
+                    </div>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
+
+          {/* Powered by Rootly AI Footer */}
+          <div className="mt-12 pt-8 border-t border-gray-200 text-center">
+            <a
+              href="https://rootly.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex flex-col items-center space-y-1 hover:opacity-80 transition-opacity"
+            >
+              <span className="text-lg text-gray-600">powered by</span>
+              <Image
+                src="/images/rootly-ai-logo.png"
+                alt="Rootly AI"
+                width={200}
+                height={80}
+                className="h-12 w-auto"
+              />
+            </a>
+          </div>
         </div>
       </div>
 

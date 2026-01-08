@@ -100,9 +100,6 @@ export function TeamHealthOverview({
             </div>
           </div>
 
-          <div className="text-gray-400 text-xs pt-2 border-t border-gray-700">
-            Higher scores indicate greater overwork risk
-          </div>
         </div>
         <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900"></div>
       </div>

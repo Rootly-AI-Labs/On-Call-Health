@@ -232,7 +232,7 @@ export function ObjectiveDataCard({
           <CardTitle>Team Objective Data</CardTitle>
           <CardDescription>
             {hasData
-              ? `Over the last ${timeRange} days, your average ${METRIC_CONFIG[selectedMetric].yAxisLabel.toLowerCase()} was ${Math.round(stats.mean)}${selectedMetric === 'health_score' ? ' points' : ''}.`
+              ? `Over the last ${timeRange} days, the average ${METRIC_CONFIG[selectedMetric].yAxisLabel.toLowerCase()} was ${Math.round(stats.mean)}${selectedMetric === 'health_score' ? ' points' : ''}.`
               : "No daily trend data available for this analysis"
             }
           </CardDescription>
