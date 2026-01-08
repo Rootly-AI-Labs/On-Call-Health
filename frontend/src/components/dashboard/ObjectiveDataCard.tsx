@@ -243,8 +243,8 @@ export function ObjectiveDataCard({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="health_score">Health Score</SelectItem>
-            <SelectItem value="incident_load">Incident Load</SelectItem>
+            <SelectItem value="health_score">Risk Level</SelectItem>
+            <SelectItem value="incident_load">Incident Count</SelectItem>
             <SelectItem value="after_hours">After Hours Activity</SelectItem>
             <SelectItem value="severity_weighted">Workload Intensity</SelectItem>
             <SelectItem value="weekend_work">Weekend Work</SelectItem>
