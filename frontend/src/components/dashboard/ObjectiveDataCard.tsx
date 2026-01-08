@@ -22,7 +22,7 @@ export function ObjectiveDataCard({
     health_score: {
       label: "Health Score",
       color: "#3b82f6",
-      yAxisLabel: "OCB Health Score",
+      yAxisLabel: "Risk Level",
       dataKey: "dailyScore",
       showMeanLine: true,
       transformer: (trend: any) => Math.max(0, Math.min(100, 100 - Math.round(trend.overall_score * 10)))
@@ -65,7 +65,7 @@ export function ObjectiveDataCard({
   const METRIC_DESCRIPTIONS: any = {
     health_score: {
       title: "Health Score",
-      description: "Measures the Team's overall on-call health based on factors such as incident frequency, after-hours work and severity. Higher scores indicate higher burnout risk."
+      description: "Measures the Team's overall on-call health based on factors such as incident frequency, after-hours work and severity. Higher scores indicate higher risk of overwork."
     },
     incident_load: {
       title: "Incident Load",

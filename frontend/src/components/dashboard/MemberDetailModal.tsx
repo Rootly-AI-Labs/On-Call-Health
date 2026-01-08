@@ -111,7 +111,7 @@ function IndividualDailyHealthChart({ memberData, analysisId, currentAnalysis }:
       <CardHeader>
         <CardTitle className="text-base">Daily Health Timeline</CardTitle>
         <CardDescription>
-          Individual daily burnout risk over the analysis period
+          Individual daily risk level over the analysis period
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -339,7 +339,7 @@ export function MemberDetailModal({
                 </DialogTitle>
                 <DialogDescription id="member-detail-description" className="sr-only">
                   Detailed burnout analysis and daily health timeline for team member.
-                  Shows burnout risk factors, incident response metrics, and daily health scores.
+                  Shows risk factors, incident response metrics, and daily health scores.
                 </DialogDescription>
               </DialogHeader>
 
@@ -442,7 +442,7 @@ export function MemberDetailModal({
                               }
                             </div>
                             <p className="text-xs text-gray-500">
-                              {memberData?.ocb_score !== undefined ? 'OCB Score' : 'No Score Available'}
+                              {memberData?.ocb_score !== undefined ? 'Risk Level' : 'No Score Available'}
                             </p>
                           </div>
                         </CardContent>
@@ -471,11 +471,11 @@ export function MemberDetailModal({
                       </Card>
                     </div>
 
-                    {/* OCB Scores */}
+                    {/* OCH Risk Levels */}
                     {memberData?.ocb_personal_score !== undefined && memberData?.ocb_work_score !== undefined && (
                       <Card>
                         <CardHeader>
-                          <CardTitle className="text-base">OCB Scores</CardTitle>
+                          <CardTitle className="text-base">Risk Level Scores</CardTitle>
                           <CardDescription>Copenhagen Burnout Inventory dimensional assessment</CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -499,7 +499,7 @@ export function MemberDetailModal({
                             <div className="text-2xl font-bold text-gray-900">
                               {memberData.ocb_score.toFixed(1)}/100
                             </div>
-                            <p className="text-sm text-gray-600">Composite OCB Score</p>
+                            <p className="text-sm text-gray-600">Composite Risk Level</p>
                           </div>
                         </CardContent>
                       </Card>
@@ -513,11 +513,11 @@ export function MemberDetailModal({
                       currentAnalysis={currentAnalysis}
                     />
 
-                    {/* Burnout Risk Factors – Radar */}
+                    {/* Risk Factors – Radar */}
                     <Card>
                       <CardHeader>
-                        <CardTitle className="text-base">Burnout Risk Factors</CardTitle>
-                        <CardDescription>Key factors contributing to burnout risk</CardDescription>
+                        <CardTitle className="text-base">Risk Factors</CardTitle>
+                        <CardDescription>Key factors contributing to risk of overwork</CardDescription>
                       </CardHeader>
                       <CardContent>
                         <div className="h-64">
@@ -886,7 +886,7 @@ export function MemberDetailModal({
                           </div>
                         ) : (
                           <p className="text-sm text-gray-500 italic">
-                            OCB burnout analysis not available. Run a new analysis to see detailed burnout factors.
+                            Risk level analysis not available. Run a new analysis to see detailed risk factors.
                           </p>
                         )}
                       </CardContent>

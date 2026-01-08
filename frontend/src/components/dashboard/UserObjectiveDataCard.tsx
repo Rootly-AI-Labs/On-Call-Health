@@ -41,7 +41,7 @@ export function UserObjectiveDataCard({
     health_score: {
       label: "Health Score",
       color: "#3b82f6",  // Blue
-      yAxisLabel: "OCB Health Score",
+      yAxisLabel: "Risk Level",
       dataKey: "dailyScore",
       showMeanLine: true,
       transformer: (day: any) => day.health_score || 0

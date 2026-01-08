@@ -91,10 +91,10 @@ export function HealthTrendsChart({
                     
                     return {
                       date: new Date(trend.date).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' }),
-                      // Use OCB score methodology (0-100, where higher = more burnout)
+                      // Use OCH risk level methodology (0-100, where higher = more burnout)
                       // Convert health score (0-10) to OCB scale (0-100): OCB = 100 - (health * 10)
                       score: hasRealData ? Math.max(0, Math.min(100, 100 - Math.round(trend.overall_score * 10))) : 0, 
-                      // Calculate risk level based on OCB score (0-100, higher = more burnout)
+                      // Calculate risk level based on OCH risk level (0-100, higher = more burnout)
                       riskLevel: hasRealData ? (() => {
                         const ocbScore = 100 - Math.round(trend.overall_score * 10);
                         if (ocbScore < 25) return 'healthy';      // 0-24: Healthy
@@ -168,7 +168,7 @@ export function HealthTrendsChart({
                               <p className="font-semibold text-gray-900 mb-2">{label}</p>
                               {data.hasRealData ? (
                                 <>
-                                  <p className="text-green-600 mb-1">OCB Score: {data.score}%</p>
+                                  <p className="text-green-600 mb-1">Risk Level: {data.score}%</p>
                                   <p className="text-sm text-gray-600">Incidents: {data.incidentCount}</p>
                                   {data.membersAtRisk > 0 && (
                                     <p className="text-sm text-orange-600">At Risk: {data.membersAtRisk}/{data.totalMembers} members</p>

@@ -801,8 +801,8 @@ function DashboardContent() {
                     {/* Individual Burnout Scores - Takes 2/3 width on large screens, full width if no AI Insights */}
                     {/* <Card className={hasAIInsights ? "lg:col-span-2" : ""}>
                       <CardHeader>
-                        <CardTitle>Individual Burnout Scores</CardTitle>
-                        <CardDescription>Team member OCB burnout scores (higher = more burnout risk)</CardDescription>
+                        <CardTitle>Individual Risk Levels</CardTitle>
+                        <CardDescription>Team member risk levels (higher = more risk)</CardDescription>
                       </CardHeader>
                       <CardContent>
                         {memberBarData.length > 0 ? (
@@ -948,7 +948,7 @@ function DashboardContent() {
                           // Transform data and detect standout events (same logic as chart)
                           const chartData = dailyTrends.map((trend: any, index: number) => ({
                             date: trend.date,
-                            // Use OCB score methodology (0-100, where higher = more burnout)
+                            // Use OCH risk level methodology (0-100, where higher = more burnout)
                             score: Math.round(trend.overall_score * 10), // Convert 0-10 to 0-100 OCB scale
                             membersAtRisk: trend.members_at_risk,
                             totalMembers: trend.total_members,
@@ -975,33 +975,33 @@ function DashboardContent() {
                               // Detect peaks (local maxima)
                               if (prev && next && point.score > prev.score && point.score > next.score && point.score >= 75) {
                                 eventType = 'peak';
-                                // Convert health score to OCB score for display (100 - health_percentage = OCB score)
-                                const ocbScore = Math.round(100 - point.score);
-                                eventDescription = `Team wellness at peak (${ocbScore} OCB score) - ${point.incidentCount} incidents handled without stress signs`;
+                                // Convert health score to risk level for display (100 - health_percentage = risk level)
+                                const riskLevel = Math.round(100 - point.score);
+                                eventDescription = `Team wellness at peak (${riskLevel} risk level) - ${point.incidentCount} incidents handled without stress signs`;
                                 significance = point.score >= 90 ? 3 : 2;
                               }
                               // Detect valleys (local minima)
                               else if (prev && next && point.score < prev.score && point.score < next.score && point.score <= 60) {
                                 eventType = 'valley';
-                                // Convert health score to OCB score for display (100 - health_percentage = OCB score)
-                                const ocbScore = Math.round(100 - point.score);
-                                eventDescription = `Team showing signs of strain (${ocbScore} OCB score) - ${point.incidentCount} incidents, ${point.membersAtRisk} team members need support`;
+                                // Convert health score to risk level for display (100 - health_percentage = risk level)
+                                const riskLevel = Math.round(100 - point.score);
+                                eventDescription = `Team showing signs of strain (${riskLevel} risk level) - ${point.incidentCount} incidents, ${point.membersAtRisk} team members need support`;
                                 significance = point.score <= 40 ? 3 : 2;
                               }
                               // Detect sharp improvements
                               else if (prevChange >= 20) {
                                 eventType = 'recovery';
-                                // For improvement, show it as OCB score reduction (health increase = OCB decrease)
-                                const ocbImprovement = Math.abs(prevChange);
-                                eventDescription = `Great turnaround! Team burnout reduced by ${ocbImprovement} OCB points - interventions working well`;
+                                // For improvement, show it as risk level reduction (health increase = risk decrease)
+                                const riskImprovement = Math.abs(prevChange);
+                                eventDescription = `Great turnaround! Team risk reduced by ${riskImprovement} points - interventions working well`;
                                 significance = prevChange >= 30 ? 3 : 2;
                               }
                               // Detect sharp declines
                               else if (prevChange <= -20) {
                                 eventType = 'decline';
-                                // For decline, show it as OCB score increase (health decrease = OCB increase)
-                                const ocbIncrease = Math.abs(prevChange);
-                                eventDescription = `Warning: Team burnout increased by ${ocbIncrease} OCB points - immediate attention recommended`;
+                                // For decline, show it as risk level increase (health decrease = risk increase)
+                                const riskIncrease = Math.abs(prevChange);
+                                eventDescription = `Warning: Team risk increased by ${riskIncrease} points - immediate attention recommended`;
                                 significance = prevChange <= -30 ? 3 : 2;
                               }
                               // Detect high incident volume days
@@ -1013,9 +1013,9 @@ function DashboardContent() {
                               // Detect critical health days
                               else if (point.score <= 45 && point.membersAtRisk >= 3) {
                                 eventType = 'critical';
-                                // Convert health score to OCB score for display (100 - health_percentage = OCB score)
-                                const ocbScore = Math.round(100 - point.score);
-                                eventDescription = `URGENT: Team at burnout risk (${ocbScore} OCB score) - ${point.membersAtRisk} members need immediate support`;
+                                // Convert health score to risk level for display (100 - health_percentage = risk level)
+                                const riskLevel = Math.round(100 - point.score);
+                                eventDescription = `URGENT: Team at high risk (${riskLevel} risk level) - ${point.membersAtRisk} members need immediate support`;
                                 significance = 3;
                               }
 
@@ -1046,9 +1046,9 @@ function DashboardContent() {
                               title: event.eventType === 'peak' ? 'Team Wellness Peak' :
                                     event.eventType === 'valley' ? 'Team Support Needed' :
                                     event.eventType === 'recovery' ? 'Wellness Recovery' :
-                                    event.eventType === 'decline' ? 'Burnout Risk Increase' :
+                                    event.eventType === 'decline' ? 'Risk Increase' :
                                     event.eventType === 'high-volume' ? 'High Workload Period' :
-                                    event.eventType === 'critical' ? 'Burnout Alert' :
+                                    event.eventType === 'critical' ? 'Risk Alert' :
                                     'Significant Event',
                               description: event.eventDescription,
                               color: event.eventType === 'peak' ? 'bg-green-500' :
@@ -1165,7 +1165,7 @@ function DashboardContent() {
                 <Card>
                   <CardHeader>
                     <div className="flex items-center justify-between">
-                      <CardTitle>Team Burnout Risk Factors</CardTitle>
+                      <CardTitle>Team Risk Factors</CardTitle>
                       {highRiskFactors.length > 0 && (
                         <div className="flex items-center space-x-2">
                           <AlertTriangle className="w-4 h-4 text-red-500" />
@@ -1185,9 +1185,9 @@ function DashboardContent() {
                         } else if (hasGitHubMembers && !hasIncidentMembers) {
                           return `Development-focused burnout analysis based on GitHub activity patterns from ${membersWithGitHubData.length} active developers`;
                         } else if (!hasGitHubMembers && hasIncidentMembers) {
-                          return `Incident response burnout analysis from ${membersWithIncidents.length} team members handling incidents`;
+                          return `Incident response analysis from ${membersWithIncidents.length} team members handling incidents`;
                         } else {
-                          return "Team burnout risk assessment based on available activity data";
+                          return "Team risk assessment based on available activity data";
                         }
                       })()}
                     </CardDescription>

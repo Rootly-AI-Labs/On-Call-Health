@@ -1246,7 +1246,7 @@ export default function useDashboard() {
     stages.push({
       key: "calculating_health",
       label: "Calculating Team Health",
-      detail: "Computing burnout scores and risk levels", 
+      detail: "Computing risk levels", 
       progress: currentProgress + 10
     })
     currentProgress += 10
@@ -1842,7 +1842,7 @@ export default function useDashboard() {
 
   const getRiskColor = (riskLevel: string) => {
     switch (riskLevel) {
-      // OCB 4-tier system
+      // OCH 4-tier system
       case "critical":
         return "text-red-800 bg-red-100 border-red-300"    // Critical (75-100): Dark red
       case "poor": 
@@ -1952,7 +1952,7 @@ export default function useDashboard() {
     const members = Array.isArray(teamAnalysis) ? teamAnalysis : teamAnalysis?.members
     return members
       ?.filter((member) => {
-        // Only include members with OCB scores
+        // Only include members with OCH risk levels
         const memberWithOcb = member as any;
         return memberWithOcb.ocb_score !== undefined && memberWithOcb.ocb_score !== null && memberWithOcb.ocb_score > 0
       })
@@ -2020,7 +2020,7 @@ export default function useDashboard() {
   // NO FALLBACK DATA: Only show burnout factors if we have REAL API data
   // Include ALL members with burnout scores, not just those with incidents
   // Members with high GitHub activity but no incidents should still be included
-  // Filter members with OCB scores only
+  // Filter members with OCH risk levels only
   const membersWithOcbScores = useMemo(() => members.filter((m: any) =>
     m?.ocb_score !== undefined && m?.ocb_score !== null && m?.ocb_score > 0
   ), [members]);
