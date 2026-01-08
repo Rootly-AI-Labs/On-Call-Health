@@ -173,8 +173,6 @@ class NotificationService:
                 type='integration',
                 title=title,
                 message=message,
-                action_url="/integrations",
-                action_text="View Integrations",
                 priority='normal'
             )
             notifications.append(notification)
@@ -213,8 +211,6 @@ class NotificationService:
                 type='integration',
                 title=title,
                 message=message,
-                action_url="/integrations",
-                action_text="View Integrations",
                 priority='normal'
             )
             notifications.append(notification)
