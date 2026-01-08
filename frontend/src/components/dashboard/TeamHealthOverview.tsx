@@ -197,7 +197,7 @@ export function TeamHealthOverview({
                       // NO FALLBACK DATA - show actual system state
                       return "No data";
                     })()}</div>
-                    <div className="text-xs text-gray-500">Current</div>
+                    <div className="text-xs text-gray-500">/100</div>
                   </div>
                   {(() => {
                     // Show average if we have either historical data OR OCH risk levels (since we can compute meaningful averages from OCB)
@@ -450,26 +450,26 @@ export function TeamHealthOverview({
                           {riskCounts.critical > 0 && (
                             <div className="flex items-center space-x-2">
                               <div className="text-2xl font-bold text-red-800">{riskCounts.critical}</div>
-                              <span className="text-sm text-gray-600">Critical (OCH 75-100)</span>
+                              <span className="text-sm text-gray-600">Critical (risk level 75-100)</span>
                             </div>
                           )}
                           {riskCounts.high > 0 && (
                             <div className="flex items-center space-x-2">
                               <div className="text-2xl font-bold text-red-600">{riskCounts.high}</div>
-                              <span className="text-sm text-gray-600">High (OCH 50-74)</span>
+                              <span className="text-sm text-gray-600">High (risk level 50-74)</span>
                             </div>
                           )}
                           {riskCounts.medium > 0 && (
                             <div className="flex items-center space-x-2">
                               <div className="text-2xl font-bold text-orange-600">{riskCounts.medium}</div>
-                              <span className="text-sm text-gray-600">Medium (OCH 25-49)</span>
+                              <span className="text-sm text-gray-600">Medium (risk level 25-49)</span>
                             </div>
                           )}
                           {/* Only show low risk count if it's the majority or no other risks */}
                           {(riskCounts.low > 0 && (riskCounts.critical + riskCounts.high + riskCounts.medium === 0)) && (
                             <div className="flex items-center space-x-2">
                               <div className="text-2xl font-bold text-green-600">{riskCounts.low}</div>
-                              <span className="text-sm text-gray-600">Low (OCH 0-24)</span>
+                              <span className="text-sm text-gray-600">Low (risk level 0-24)</span>
                             </div>
                           )}
                           {/* Show "Everyone healthy" message if all low risk */}

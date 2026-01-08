@@ -1299,7 +1299,7 @@ function DashboardContent() {
                             {sortedBurnoutFactors.map((factor) => {
                               const color = getRiskHex(factor.severity, factor.value)
                               return (
-                                <div key={factor.factor} className="relative">
+                                <div key={factor.factor} className="relative border border-gray-200 rounded-lg p-4 bg-white">
                                   <div className="flex items-center justify-between mb-2">
                                     <div className="flex items-center space-x-2">
                                       <span className="font-medium text-gray-900">{factor.factor}</span>
@@ -1337,11 +1337,6 @@ function DashboardContent() {
 
                                   <div className="text-sm text-gray-600">
                                     <div>{factor.metrics}</div>
-                                    {factor.value >= 5 && (
-                                      <div className="mt-1 text-blue-600">
-                                        <strong>Action:</strong> {factor.recommendation}
-                                      </div>
-                                    )}
                                   </div>
                                 </div>
                               )
@@ -1788,7 +1783,7 @@ function DashboardContent() {
                   </div>
                   <h3 className="text-lg font-semibold mb-2">Loading Your Analyses</h3>
                   <p className="text-gray-600 mb-4">
-                    We're checking for your previous burnout analyses...
+                    We're checking for your previous analyses...
                   </p>
                 </Card>
               ) : (
