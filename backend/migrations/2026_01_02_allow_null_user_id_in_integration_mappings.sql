@@ -3,7 +3,11 @@
 -- Issue: Analyses only create mappings for users with user_id set, excluding org-scoped team roster
 -- Fix: Make user_id nullable to allow mappings for organization-wide users (user_id=NULL)
 
--- Step 1: Make user_id nullable
+-- Step 1: Drop the explicit NOT NULL constraint first
+ALTER TABLE integration_mappings
+DROP CONSTRAINT IF EXISTS integration_mappings_user_id_not_null;
+
+-- Step 1b: Make user_id nullable
 ALTER TABLE integration_mappings
 ALTER COLUMN user_id DROP NOT NULL;
 

@@ -18,7 +18,6 @@ if not os.getenv("DATABASE_URL"):
     # Try to load from .env file if available
     from dotenv import load_dotenv
     load_dotenv()
-
 # Add the app directory to the Python path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -228,3 +227,13 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+"""
+
+  python assign_analysis_to_user.py --analysis-id 612 --user-id 46 --dry-run
+
+  python assign_analysis_to_user.py --analysis-id 612 --user-id 16 --apply
+
+"""
+
