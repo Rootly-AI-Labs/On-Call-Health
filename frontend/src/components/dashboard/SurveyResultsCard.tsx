@@ -69,14 +69,17 @@ const getWorkloadText = (score: number) => {
 const getStressSourceLabel = (source: string) => {
   const labels: { [key: string]: string } = {
     'oncall_frequency': 'On-call frequency',
-    'after_hours': 'After-hours work',
+    'after_hours': 'After-hours incidents',
     'incident_complexity': 'Incident complexity',
-    'time_pressure': 'Time pressure / deadlines',
-    'lack_support': 'Lack of support / documentation',
-    'context_switches': 'Too many context switches',
-    'unclear_expectations': 'Unclear expectations',
-    'personal': 'Personal / life circumstances',
-    'other': 'Other'
+    'time_pressure': 'Time pressure',
+    'team_support': 'Team support',
+    'work_life_balance': 'Work-life balance',
+    'personal': 'Personal',
+    'other': 'Other',
+    // Legacy labels (for backwards compatibility)
+    'lack_support': 'Lack of support',
+    'context_switches': 'Context switches',
+    'unclear_expectations': 'Unclear expectations'
   }
   return labels[source] || source
 }

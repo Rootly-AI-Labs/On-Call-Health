@@ -1797,19 +1797,18 @@ def create_burnout_survey_modal(organization_id: int, user_id: int, analysis_id:
                     },
                     "options": [
                         {"text": {"type": "plain_text", "text": "On-call frequency"}, "value": "oncall_frequency"},
-                        {"text": {"type": "plain_text", "text": "After-hours work"}, "value": "after_hours"},
+                        {"text": {"type": "plain_text", "text": "After-hours incidents"}, "value": "after_hours"},
                         {"text": {"type": "plain_text", "text": "Incident complexity"}, "value": "incident_complexity"},
-                        {"text": {"type": "plain_text", "text": "Time pressure / deadlines"}, "value": "time_pressure"},
-                        {"text": {"type": "plain_text", "text": "Lack of support / documentation"}, "value": "lack_support"},
-                        {"text": {"type": "plain_text", "text": "Too many context switches"}, "value": "context_switches"},
-                        {"text": {"type": "plain_text", "text": "Unclear expectations"}, "value": "unclear_expectations"},
-                        {"text": {"type": "plain_text", "text": "Personal / life circumstances"}, "value": "personal"},
+                        {"text": {"type": "plain_text", "text": "Time pressure"}, "value": "time_pressure"},
+                        {"text": {"type": "plain_text", "text": "Team support"}, "value": "team_support"},
+                        {"text": {"type": "plain_text", "text": "Work-life balance"}, "value": "work_life_balance"},
+                        {"text": {"type": "plain_text", "text": "Personal"}, "value": "personal"},
                         {"text": {"type": "plain_text", "text": "Other"}, "value": "other"}
                     ]
                 },
                 "label": {
                     "type": "plain_text",
-                    "text": "Where is the stress coming from?"
+                    "text": "What's having the biggest impact on you right now?"
                 },
                 "optional": True
             },
