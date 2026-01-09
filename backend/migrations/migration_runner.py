@@ -885,12 +885,23 @@ class MigrationRunner:
                     """
                 ]
             },
+            {
+                "name": "026_add_organization_id_to_integration_mappings",
+                "description": "Add organization_id column to integration_mappings for org-scoped mappings",
+                "sql": [
+                    """
+                    -- Add organization_id column to integration_mappings
+                    ALTER TABLE integration_mappings
+                    ADD COLUMN IF NOT EXISTS organization_id INTEGER REFERENCES organizations(id)
+                    """,
+                    """
+                    -- Add index for faster lookups by organization
+                    CREATE INDEX IF NOT EXISTS idx_integration_mappings_org_id
+                    ON integration_mappings(organization_id)
+                    """
+                ]
+            },
 
-            # {
-            #     "name": "026_add_user_preferences",
-            #     "description": "Add user preferences table",
-            #     "sql": ["CREATE TABLE IF NOT EXISTS user_preferences (...)"]
-            # }
             # Add future migrations here with incrementing numbers
         ]
 
