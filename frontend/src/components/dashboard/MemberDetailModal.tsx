@@ -810,9 +810,8 @@ export function MemberDetailModal({
 
                           <TabsContent value="surveys" className="space-y-4">
                             <SurveyResultsCard
-                              userId={selectedMember.user_id}
+                              surveyData={currentAnalysis?.analysis_data?.member_surveys?.[selectedMember.user_email] || null}
                               userEmail={selectedMember.user_email}
-                              days={30}
                             />
                           </TabsContent>
                         </Tabs>
