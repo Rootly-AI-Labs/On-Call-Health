@@ -471,6 +471,12 @@ export function MemberDetailModal({
                       </Card>
                     </div>
 
+                    {/* Health Check-ins (Survey Data) */}
+                    <SurveyResultsCard
+                      surveyData={currentAnalysis?.analysis_data?.member_surveys?.[selectedMember.user_email] || null}
+                      userEmail={selectedMember.user_email}
+                    />
+
                     {/* OCH Risk Levels */}
                     {memberData?.ocb_personal_score !== undefined && memberData?.ocb_work_score !== undefined && (
                       <Card>
@@ -596,10 +602,9 @@ export function MemberDetailModal({
 
                       const hasSlackData = selectedMember.slack_activity?.messages_sent > 0 ||
                                            selectedMember.slack_activity?.channels_active > 0;
-                      const hasSurveyData = true; // Always show survey tab
 
-                      const tabCount = [hasGitHubData, hasSlackData, hasSurveyData].filter(Boolean).length;
-                      const defaultTab = hasGitHubData ? "github" : hasSurveyData ? "surveys" : "communication";
+                      const tabCount = [hasGitHubData, hasSlackData].filter(Boolean).length;
+                      const defaultTab = hasGitHubData ? "github" : "communication";
 
                       if (tabCount === 0) {
                         return null;
@@ -613,7 +618,6 @@ export function MemberDetailModal({
                           <TabsList className={`grid w-full ${gridColsClass}`}>
                             {hasGitHubData && <TabsTrigger value="github">GitHub</TabsTrigger>}
                             {hasSlackData && <TabsTrigger value="communication">Communication</TabsTrigger>}
-                            {hasSurveyData && <TabsTrigger value="surveys">Health Check-ins</TabsTrigger>}
                           </TabsList>
 
                           <TabsContent value="github" className="space-y-4">
@@ -806,13 +810,6 @@ export function MemberDetailModal({
                                 </CardContent>
                               </Card>
                             )}
-                          </TabsContent>
-
-                          <TabsContent value="surveys" className="space-y-4">
-                            <SurveyResultsCard
-                              surveyData={currentAnalysis?.analysis_data?.member_surveys?.[selectedMember.user_email] || null}
-                              userEmail={selectedMember.user_email}
-                            />
                           </TabsContent>
                         </Tabs>
                       );
