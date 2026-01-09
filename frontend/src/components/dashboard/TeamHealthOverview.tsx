@@ -34,17 +34,14 @@ export function TeamHealthOverview({
 }: TeamHealthOverviewProps) {
   return (
     <>
-      {/* OCB Score Tooltip Portal */}
+      {/* OCH Risk Level Tooltip Portal */}
       <div className="fixed z-[99999] invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gray-900 text-white text-xs rounded-lg p-3 w-72 shadow-lg pointer-events-none"
         id="ocb-score-tooltip"
         style={{ top: '-200px', left: '-200px' }}>
         <div className="space-y-2">
-          <div className="text-purple-300 font-semibold mb-2">On-Call Health (OCH)</div>
+          <div className="text-purple-300 font-semibold mb-2">On-Call Health Risk Level</div>
           <div className="text-gray-300 text-sm">
-            OCH scores range from <strong>0 to 100</strong>, where higher scores indicate more burnout risk.
-          </div>
-          <div className="text-gray-300 text-xs mt-2 pt-2 border-t border-gray-600">
-            Scientifically validated burnout assessment methodology
+            On-Call Health risk levels range from <strong>0 to 100</strong>, where higher scores indicate a higher risk of overwork.
           </div>
         </div>
         <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900"></div>
@@ -55,7 +52,7 @@ export function TeamHealthOverview({
         id="health-rubric-tooltip"
         style={{ top: '-200px', left: '-200px' }}>
         <div className="space-y-3">
-          <div className="text-purple-300 font-semibold text-sm mb-3">OCH Risk Level Scale</div>
+          <div className="text-purple-300 font-semibold text-sm mb-3">On-Call Health Risk Level Scale</div>
 
           <div className="space-y-3">
             <div>
@@ -103,9 +100,6 @@ export function TeamHealthOverview({
             </div>
           </div>
 
-          <div className="text-gray-400 text-xs pt-2 border-t border-gray-700">
-            Higher scores indicate greater burnout risk
-          </div>
         </div>
         <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900"></div>
       </div>
@@ -125,14 +119,14 @@ export function TeamHealthOverview({
                 <div className="flex items-start space-x-3">
                   <div>
                     <div className="text-2xl font-bold text-gray-900">{(() => {
-                      // Helper function to calculate OCB score from team data - FORCE FRONTEND CALCULATION
+                      // Helper function to calculate OCH risk level from team data - FORCE FRONTEND CALCULATION
                       const calculateOCBFromTeam = () => {
                         const teamAnalysis = currentAnalysis?.analysis_data?.team_analysis;
                         const members = Array.isArray(teamAnalysis) ? teamAnalysis : teamAnalysis?.members;
 
                         if (!members || members.length === 0) return null;
 
-                        // ALWAYS calculate from individual member OCB scores first
+                        // ALWAYS calculate from individual member OCH risk levels first
                         const ocbScores = members
                           .map((m: any) => m.ocb_score)
                           .filter((s: any) => s !== undefined && s !== null && s > 0);
@@ -142,7 +136,7 @@ export function TeamHealthOverview({
                           return Math.round(avgOcbScore); // Round to whole integer
                         }
 
-                        // No OCB scores available - return null
+                        // No OCH risk levels available - return null
                         return null;
                       };
 
@@ -172,7 +166,7 @@ export function TeamHealthOverview({
                                 }
                               }}
                             >
-                              OCH
+                              Risk Level
                             </span>
                           </>
                         );
@@ -200,10 +194,10 @@ export function TeamHealthOverview({
                       // NO FALLBACK DATA - show actual system state
                       return "No data";
                     })()}</div>
-                    <div className="text-xs text-gray-500">Current</div>
+                    <div className="text-xs text-gray-500">/100</div>
                   </div>
                   {(() => {
-                    // Show average if we have either historical data OR OCB scores (since we can compute meaningful averages from OCB)
+                    // Show average if we have either historical data OR OCH risk levels (since we can compute meaningful averages from OCB)
                     const teamAnalysis = currentAnalysis?.analysis_data?.team_analysis;
                     const members = Array.isArray(teamAnalysis) ? teamAnalysis : teamAnalysis?.members;
                     const hasOCBScores = members && members.some((m: any) => m.ocb_score !== undefined && m.ocb_score !== null);
@@ -215,7 +209,7 @@ export function TeamHealthOverview({
                   })() && (
                       <div className="hidden">
                         <div className="text-2xl font-bold text-gray-900 flex items-baseline space-x-1">{(() => {
-                          // PRIORITY 1: Use OCB scores for meaningful 30-day average (same as current calculation)
+                          // PRIORITY 1: Use OCH risk levels for meaningful 30-day average (same as current calculation)
                           const teamAnalysis = currentAnalysis?.analysis_data?.team_analysis;
                           const members = Array.isArray(teamAnalysis) ? teamAnalysis : teamAnalysis?.members;
 
@@ -254,14 +248,14 @@ export function TeamHealthOverview({
                                       }
                                     }}
                                   >
-                                    OCH
+                                    Risk Level
                                   </span>
                                 </>
                               );
                             }
                           }
 
-                          // PRIORITY 2: Fallback to backend historical data if no OCB scores
+                          // PRIORITY 2: Fallback to backend historical data if no OCH risk levels
 
                           // Calculate average from Health Trends chart data (legacy method)
                           if (historicalTrends?.daily_trends?.length > 0) {
@@ -306,12 +300,11 @@ export function TeamHealthOverview({
                           
                           if (ocbScores.length > 0) {
                             const avgOcbScore = ocbScores.reduce((a: number, b: number) => a + b, 0) / ocbScores.length;
-                            // OCB: Return raw OCB score (0-100 where higher = more burnout)
                             return avgOcbScore;
                           }
                         }
 
-                        // No OCB scores - no health percentage available
+                        // No OCH risk levels - no health percentage available
                       }
 
                       // Fallback to existing daily trends logic
@@ -332,12 +325,12 @@ export function TeamHealthOverview({
 
                     const ocbScore = getCurrentHealthPercentage();
 
-                    // Convert to health status based on raw OCB score (0-100, higher=worse burnout)
+                    // Convert to health status based on raw OCH risk level
                     // Match OCB ranges: Healthy (0-24), Fair (25-49), Poor (50-74), Critical (75-100)
-                    if (ocbScore < 25) return 'Healthy';      // OCB 0-24 - Low/minimal burnout risk
-                    if (ocbScore < 50) return 'Fair';         // OCB 25-49 - Mild burnout symptoms 
-                    if (ocbScore < 75) return 'Poor';         // OCB 50-74 - Moderate burnout risk
-                    return 'Critical';                        // OCB 75-100 - High/severe burnout risk
+                    if (ocbScore < 25) return 'Healthy';      // OCH 0-24 - Low/minimal burnout risk
+                    if (ocbScore < 50) return 'Fair';         // OCH 25-49 - Mild burnout symptoms 
+                    if (ocbScore < 75) return 'Poor';         // OCH 50-74 - Moderate burnout risk
+                    return 'Critical';                        // OCH 75-100 - High/severe burnout risk
                   })()}</div>
                   <Info className="w-3 h-3 text-purple-500"
                     onMouseEnter={(e) => {
@@ -374,11 +367,11 @@ export function TeamHealthOverview({
                           
                           if (ocbScores.length > 0) {
                             const avgOcbScore = ocbScores.reduce((a: number, b: number) => a + b, 0) / ocbScores.length;
-                            return avgOcbScore; // Return raw OCB score
+                            return avgOcbScore; // Return raw OCH risk level
                           }
                         }
 
-                        // No OCB scores - return null
+                        // No OCH risk levels - return null
                       }
 
                       // Fallback to legacy daily trends logic
@@ -395,15 +388,15 @@ export function TeamHealthOverview({
 
                     const ocbScore = getCurrentHealthPercentage();
 
-                    // Match OCB score ranges and descriptions (0-100, higher = more burnout)
+                    // Match OCH risk level ranges and descriptions (0-100, higher = more overwork)
                     if (ocbScore < 25) {
-                      return 'Low/minimal burnout risk, sustainable workload'  // Healthy
+                      return 'Low/minimal signs of overwork, sustainable workload'  // Healthy
                     } else if (ocbScore < 50) {
-                      return 'Mild burnout symptoms, watch for trends'         // Fair
+                      return 'Mild signs of overwork, watch for trends'             // Fair
                     } else if (ocbScore < 75) {
-                      return 'Moderate burnout risk, intervention recommended' // Poor
+                      return 'Moderate signs of overwork, intervention recommended' // Poor
                     } else {
-                      return 'High/severe burnout risk, urgent action needed'  // Critical
+                      return 'High/severe signs of overwork, urgent action needed'  // Critical
                     }
                   })()}
                 </p>
@@ -446,7 +439,7 @@ export function TeamHealthOverview({
                           else if (member.ocb_score >= 25) riskCounts.medium++;
                           else riskCounts.low++;
                         }
-                        // No fallback - only count members with OCB scores
+                        // No fallback - only count members with OCH risk levels
                       });
 
                       return (
@@ -454,33 +447,33 @@ export function TeamHealthOverview({
                           {riskCounts.critical > 0 && (
                             <div className="flex items-center space-x-2">
                               <div className="text-2xl font-bold text-red-800">{riskCounts.critical}</div>
-                              <span className="text-sm text-gray-600">Critical (OCH 75-100)</span>
+                              <span className="text-sm text-gray-600">Critical (risk level 75-100)</span>
                             </div>
                           )}
                           {riskCounts.high > 0 && (
                             <div className="flex items-center space-x-2">
                               <div className="text-2xl font-bold text-red-600">{riskCounts.high}</div>
-                              <span className="text-sm text-gray-600">High (OCH 50-74)</span>
+                              <span className="text-sm text-gray-600">High (risk level 50-74)</span>
                             </div>
                           )}
                           {riskCounts.medium > 0 && (
                             <div className="flex items-center space-x-2">
                               <div className="text-2xl font-bold text-orange-600">{riskCounts.medium}</div>
-                              <span className="text-sm text-gray-600">Medium (OCH 25-49)</span>
+                              <span className="text-sm text-gray-600">Medium (risk level 25-49)</span>
                             </div>
                           )}
                           {/* Only show low risk count if it's the majority or no other risks */}
                           {(riskCounts.low > 0 && (riskCounts.critical + riskCounts.high + riskCounts.medium === 0)) && (
                             <div className="flex items-center space-x-2">
                               <div className="text-2xl font-bold text-green-600">{riskCounts.low}</div>
-                              <span className="text-sm text-gray-600">Low (OCH 0-24)</span>
+                              <span className="text-sm text-gray-600">Low (risk level 0-24)</span>
                             </div>
                           )}
                           {/* Show "Everyone healthy" message if all low risk */}
                           {(riskCounts.critical + riskCounts.high + riskCounts.medium === 0) && (
                             <div className="text-center py-2">
-                              <div className="text-sm text-green-700 font-medium">🎉 Team shows healthy burnout levels</div>
-                              <div className="text-xs text-green-600">{riskCounts.low} member{riskCounts.low !== 1 ? 's' : ''} with low burnout risk</div>
+                              <div className="text-sm text-green-700 font-medium">🎉 Team shows healthy levels</div>
+                              <div className="text-xs text-green-600">{riskCounts.low} member{riskCounts.low !== 1 ? 's' : ''} with low risk of overwork</div>
                             </div>
                           )}
                         </>

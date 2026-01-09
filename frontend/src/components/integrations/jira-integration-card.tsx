@@ -239,7 +239,7 @@ export function JiraIntegrationCard({
               ))}
             </div>
             <div className="mt-1 text-xs text-gray-500">
-              We collect issue assignments, worklogs, time tracking, and project membership data to analyze workload patterns and identify burnout risk.
+              We collect issue assignments, worklogs, time tracking, and project membership data to analyze workload patterns and identify risk of overwork.
             </div>
           </div>
 
@@ -344,7 +344,7 @@ export function JiraIntegrationCard({
             <div className="space-y-2">
               <h4 className="font-medium">Workload Metrics</h4>
               <p className="text-sm text-gray-600">
-                We collect issue assignments, worklogs, and time tracking data to analyze team workload and identify burnout risk factors.
+                We collect issue assignments, worklogs, and time tracking data to analyze team workload and identify overwork risk factors.
               </p>
             </div>
             <div className="space-y-2">

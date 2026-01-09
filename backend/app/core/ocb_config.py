@@ -516,46 +516,6 @@ def generate_ocb_score_reasoning(
     return reasons
 
 
-def get_ocb_recommendations(ocb_result: Dict[str, Any]) -> List[str]:
-    """
-    Generate actionable recommendations based on OCB scores.
-    
-    Args:
-        ocb_result: Result from calculate_composite_ocb_score
-        
-    Returns:
-        List of recommendation strings
-    """
-    recommendations = []
-    composite_score = ocb_result['composite_score']
-    personal_score = ocb_result['personal_score']
-    work_related_score = ocb_result['work_related_score']
-    
-    # General recommendations based on composite score
-    if composite_score >= 75:
-        recommendations.append("Consider taking time off or reducing workload immediately")
-        recommendations.append("Schedule a meeting with your manager about workload concerns")
-    elif composite_score >= 50:
-        recommendations.append("Monitor workload and stress levels closely")
-        recommendations.append("Consider stress management techniques or counseling")
-    elif composite_score >= 25:
-        recommendations.append("Practice good work-life balance habits")
-        recommendations.append("Regular exercise and adequate sleep are important")
-    else:
-        recommendations.append("Maintain current work-life balance habits")
-        recommendations.append("Continue regular exercise and adequate sleep routines")
-    
-    # Specific recommendations based on dimension scores
-    if personal_score > work_related_score + 15:
-        recommendations.append("Focus on personal recovery: sleep, exercise, and downtime")
-        recommendations.append("Consider if work hours are sustainable long-term")
-    elif work_related_score > personal_score + 15:
-        recommendations.append("Address work-specific stressors: deadlines, workload, or team dynamics")
-        recommendations.append("Discuss work processes and expectations with your team")
-    
-    return recommendations
-
-
 def validate_factor_consistency(personal_result: Dict, work_result: Dict, raw_metrics: Dict) -> Dict[str, Any]:
     """
     Validate that OCB factors don't double count underlying data sources.

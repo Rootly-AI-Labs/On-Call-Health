@@ -823,16 +823,32 @@ class MigrationRunner:
                     WHERE frequency_type = 'weekday'  -- Only update if still default
                     """,
                     """
-                    -- Add CHECK constraint for frequency_type
-                    ALTER TABLE survey_schedules
-                    ADD CONSTRAINT check_frequency_type
-                    CHECK (frequency_type IN ('daily', 'weekday', 'weekly'))
+                    -- Add CHECK constraint for frequency_type (idempotent)
+                    DO $$
+                    BEGIN
+                        IF NOT EXISTS (
+                            SELECT 1 FROM pg_constraint
+                            WHERE conname = 'check_frequency_type'
+                        ) THEN
+                            ALTER TABLE survey_schedules
+                            ADD CONSTRAINT check_frequency_type
+                            CHECK (frequency_type IN ('daily', 'weekday', 'weekly'));
+                        END IF;
+                    END $$
                     """,
                     """
-                    -- Add CHECK constraint for day_of_week (0-6 or NULL)
-                    ALTER TABLE survey_schedules
-                    ADD CONSTRAINT check_day_of_week
-                    CHECK (day_of_week IS NULL OR (day_of_week >= 0 AND day_of_week <= 6))
+                    -- Add CHECK constraint for day_of_week (idempotent)
+                    DO $$
+                    BEGIN
+                        IF NOT EXISTS (
+                            SELECT 1 FROM pg_constraint
+                            WHERE conname = 'check_day_of_week'
+                        ) THEN
+                            ALTER TABLE survey_schedules
+                            ADD CONSTRAINT check_day_of_week
+                            CHECK (day_of_week IS NULL OR (day_of_week >= 0 AND day_of_week <= 6));
+                        END IF;
+                    END $$
                     """,
                     """
                     -- Keep send_weekdays_only column for backwards compatibility (don't drop yet)
@@ -869,12 +885,23 @@ class MigrationRunner:
                     """
                 ]
             },
+            {
+                "name": "026_add_organization_id_to_integration_mappings",
+                "description": "Add organization_id column to integration_mappings for org-scoped mappings",
+                "sql": [
+                    """
+                    -- Add organization_id column to integration_mappings
+                    ALTER TABLE integration_mappings
+                    ADD COLUMN IF NOT EXISTS organization_id INTEGER REFERENCES organizations(id)
+                    """,
+                    """
+                    -- Add index for faster lookups by organization
+                    CREATE INDEX IF NOT EXISTS idx_integration_mappings_org_id
+                    ON integration_mappings(organization_id)
+                    """
+                ]
+            },
 
-            # {
-            #     "name": "026_add_user_preferences",
-            #     "description": "Add user preferences table",
-            #     "sql": ["CREATE TABLE IF NOT EXISTS user_preferences (...)"]
-            # }
             # Add future migrations here with incrementing numbers
         ]
 

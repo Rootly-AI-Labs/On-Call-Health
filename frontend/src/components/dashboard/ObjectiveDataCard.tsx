@@ -20,15 +20,15 @@ export function ObjectiveDataCard({
   // Metric configuration
   const METRIC_CONFIG: any = {
     health_score: {
-      label: "Health Score",
+      label: "Risk Level",
       color: "#3b82f6",
-      yAxisLabel: "OCB Health Score",
+      yAxisLabel: "Risk Level",
       dataKey: "dailyScore",
       showMeanLine: true,
       transformer: (trend: any) => Math.max(0, Math.min(100, 100 - Math.round(trend.overall_score * 10)))
     },
     incident_load: {
-      label: "Incident Load",
+      label: "Incident Count",
       color: "#8b5cf6",
       yAxisLabel: "Incident Count",
       dataKey: "incidentCount",
@@ -64,11 +64,11 @@ export function ObjectiveDataCard({
   // Metric descriptions for the info tooltip
   const METRIC_DESCRIPTIONS: any = {
     health_score: {
-      title: "Health Score",
-      description: "Measures the Team's overall on-call health based on factors such as incident frequency, after-hours work and severity. Higher scores indicate higher burnout risk."
+      title: "Risk Level",
+      description: "Measures the team's overall on-call health based on factors such as incident frequency, after-hours work and severity. Higher scores indicate higher risk of overwork."
     },
     incident_load: {
-      title: "Incident Load",
+      title: "Incident Count",
       description: "Total count of incidents handled per day. Counts all incidents regardless of severity or timing."
     },
     after_hours: {
@@ -229,10 +229,10 @@ export function ObjectiveDataCard({
     <Card className="mb-6 flex flex-col min-h-full">
       <CardHeader className="flex flex-row items-center justify-between">
         <div className="space-y-1.5">
-          <CardTitle>Team Objective Data</CardTitle>
+          <CardTitle>Team Trends</CardTitle>
           <CardDescription>
             {hasData
-              ? `Over the last ${timeRange} days, your average ${METRIC_CONFIG[selectedMetric].yAxisLabel.toLowerCase()} was ${Math.round(stats.mean)}${selectedMetric === 'health_score' ? ' points' : ''}.`
+              ? `Over the last ${timeRange} days, the average ${METRIC_CONFIG[selectedMetric].yAxisLabel.toLowerCase()} was ${Math.round(stats.mean)}${selectedMetric === 'health_score' ? ' points' : ''}.`
               : "No daily trend data available for this analysis"
             }
           </CardDescription>
@@ -243,8 +243,8 @@ export function ObjectiveDataCard({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="health_score">Health Score</SelectItem>
-            <SelectItem value="incident_load">Incident Load</SelectItem>
+            <SelectItem value="health_score">Risk Level</SelectItem>
+            <SelectItem value="incident_load">Incident Count</SelectItem>
             <SelectItem value="after_hours">After Hours Activity</SelectItem>
             <SelectItem value="severity_weighted">Workload Intensity</SelectItem>
             <SelectItem value="weekend_work">Weekend Work</SelectItem>

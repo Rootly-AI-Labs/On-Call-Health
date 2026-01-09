@@ -481,6 +481,25 @@ export default function MethodologyPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Powered by Rootly AI Footer */}
+        <div className="mt-12 pt-8 border-t border-gray-200 text-center">
+          <a
+            href="https://rootly.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex flex-col items-center space-y-1 hover:opacity-80 transition-opacity"
+          >
+            <span className="text-lg text-gray-600">powered by</span>
+            <Image
+              src="/images/rootly-ai-logo.png"
+              alt="Rootly AI"
+              width={200}
+              height={80}
+              className="h-12 w-auto"
+            />
+          </a>
+        </div>
       </div>
     </div>
   )

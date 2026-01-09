@@ -112,3 +112,5 @@ frontend/.next/
 
 # Emacs
 *~
+\#*\#
+.\#*

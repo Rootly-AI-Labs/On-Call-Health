@@ -52,7 +52,7 @@ export function TeamMembersList({
         id: member.user_id || '',
         name: member.user_name || 'Unknown',
         email: member.user_email || '',
-        burnoutScore: member.ocb_score || 0, // Use OCB score directly
+        burnoutScore: member.ocb_score || 0, // Use OCH risk level directly
         riskLevel: (member.risk_level || 'low') as 'high' | 'medium' | 'low',
         trend: 'stable' as const,
         incidentsHandled: member.incident_count || 0,
@@ -92,7 +92,7 @@ export function TeamMembersList({
               </Badge>
             )}
             {(() => {
-              // Calculate risk level based on OCB score when available
+              // Calculate risk level based on OCH risk level when available
               const getOCBRiskLevel = (member: any) => {
                 if (member.ocb_score !== undefined && member.ocb_score !== null) {
                   // Use OCB scoring (0-100, higher = more burnout)
@@ -101,7 +101,7 @@ export function TeamMembersList({
                   if (member.ocb_score < 75) return 'poor';         // 50-74: Moderate burnout risk
                   return 'critical';                                // 75-100: High/severe burnout
                 }
-                // No OCB score available - default to low risk
+                // No OCH risk level available - default to low risk
                 return 'low';
               };
 
@@ -167,14 +167,14 @@ export function TeamMembersList({
         <div className="space-y-2">
           {member?.ocb_score !== undefined ? (
             <div className="flex justify-between text-sm">
-              <span>Burnout Score</span>
+              <span>Risk Level</span>
               <span className="font-bold text-black">
                 {member.ocb_score.toFixed(1)}/100
               </span>
             </div>
           ) : (
             <div className="flex justify-between text-sm">
-              <span>No OCB Score Available</span>
+              <span>No Risk Level Available</span>
               <span className="font-medium text-gray-500">-</span>
             </div>
           )}
@@ -234,11 +234,11 @@ export function TeamMembersList({
             })
             
             // Separate members with incidents/burnout and those with neither
-            // Include members with incidents OR OCB score (e.g., from Jira) in main section
+            // Include members with incidents OR OCH risk level (e.g., from Jira) in main section
             const membersWithIncidents = validMembers.filter(member =>
               (member.incident_count || 0) > 0 || (member.ocb_score || 0) > 0
             )
-            // Only hide members with BOTH zero incidents AND zero OCB score
+            // Only hide members with BOTH zero incidents AND zero OCH risk level
             const membersWithoutIncidents = validMembers.filter(member =>
               (member.incident_count || 0) === 0 && (member.ocb_score || 0) === 0
             )
@@ -246,7 +246,7 @@ export function TeamMembersList({
             
             // Sort members by score (highest risk first)
             const sortMembers = (members: any[]) => members.sort((a, b) => {
-              // Sort by OCB score only (higher score = higher risk)
+              // Sort by OCH risk level only (higher score = higher risk)
               return (b.ocb_score || 0) - (a.ocb_score || 0);
             })
 

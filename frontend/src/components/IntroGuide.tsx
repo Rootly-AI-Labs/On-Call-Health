@@ -47,7 +47,7 @@ function IntroGuide({ isOpen, currentStep, onNext, onPrev, onClose }: IntroGuide
     },
     {
       title: "Learn More About Our Methodology",
-      description: "Understand how we calculate burnout risk and our motivation behind the analysis.",
+      description: "Understand how we calculate risk of overwork and our motivation behind the analysis.",
       details: (
         <>
           Click your user profile in the top right corner and select <strong>&quot;Getting Started&quot;</strong> anytime to review
@@ -128,7 +128,7 @@ function IntroGuide({ isOpen, currentStep, onNext, onPrev, onClose }: IntroGuide
                       <div>
                         <p className="font-medium text-slate-900 dark:text-white">Center Section</p>
                         <p className="text-slate-600 dark:text-slate-400">
-                          Displays burnout scores, incidents, and analysis charts
+                          Displays risk levels, incidents, and analysis charts
                         </p>
                       </div>
                     </div>

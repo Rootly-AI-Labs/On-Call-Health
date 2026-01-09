@@ -484,82 +484,6 @@ function DashboardContent() {
       {/* Main Content */}
       <div className="flex-1 overflow-auto bg-gray-100">
         <div className="p-6">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center justify-between w-full">
-              <div>
-                <h1 className="text-4xl font-bold text-black">Analysis Dashboard</h1>
-                <p className="text-lg text-gray-600">
-                  {(() => {
-                    if (currentAnalysis) {
-                      // Find the integration for this specific analysis
-                      const analysisIntegration = integrations.find(i => i.id === currentAnalysis.integration_id);
-
-                      // Use multiple sources to get the organization name (to handle different integrations)
-                      const orgName = analysisIntegration?.name ||
-                                    analysisIntegration?.organization_name ||
-                                    (currentAnalysis.analysis_data as any)?.metadata?.organization_name ||
-                                    'Organization';
-
-                      const analysisDateTime = new Date(currentAnalysis.created_at);
-                      const date = analysisDateTime.toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      });
-                      const time = analysisDateTime.toLocaleTimeString('en-US', {
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        hour12: true
-                      });
-                      return `${orgName} • ${date} at ${time}`;
-                    }
-                    return '';
-                  })()}
-                </p>
-              </div>
-              <div className="flex items-center space-x-4">
-                {/* Export Dropdown */}
-                {!shouldShowInsufficientDataCard() && currentAnalysis && currentAnalysis.analysis_data && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="flex items-center space-x-2 border-gray-300 hover:bg-gray-50"
-                        title="Export analysis data"
-                      >
-                        <Download className="w-5 h-5" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56">
-                      <DropdownMenuItem onClick={exportAsJSON} className="flex items-center space-x-2">
-                        <Download className="w-5 h-5" />
-                        <div className="flex flex-col">
-                          <span className="font-medium text-base">Export as JSON</span>
-                          <span className="text-sm text-gray-500">Complete analysis data</span>
-                        </div>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem disabled className="flex items-center space-x-2 opacity-50">
-                        <Download className="w-5 h-5" />
-                        <div className="flex flex-col">
-                          <span className="font-medium text-base">Export as CSV</span>
-                          <span className="text-sm text-gray-500">Organization member scores</span>
-                        </div>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem disabled className="flex items-center space-x-2 opacity-50">
-                        <FileText className="w-5 h-5" />
-                        <div className="flex flex-col">
-                          <span className="font-medium text-base">Generate PDF Report</span>
-                          <span className="text-sm text-gray-500">Executive summary</span>
-                        </div>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-              </div>
-            </div>
-          </div>
 
           {/* Debug Section - Only show in development */}
           {false && process.env.NODE_ENV === 'development' && currentAnalysis && (
@@ -801,8 +725,8 @@ function DashboardContent() {
                     {/* Individual Burnout Scores - Takes 2/3 width on large screens, full width if no AI Insights */}
                     {/* <Card className={hasAIInsights ? "lg:col-span-2" : ""}>
                       <CardHeader>
-                        <CardTitle>Individual Burnout Scores</CardTitle>
-                        <CardDescription>Team member OCB burnout scores (higher = more burnout risk)</CardDescription>
+                        <CardTitle>Individual Risk Levels</CardTitle>
+                        <CardDescription>Team member risk levels (higher = more risk)</CardDescription>
                       </CardHeader>
                       <CardContent>
                         {memberBarData.length > 0 ? (
@@ -948,7 +872,7 @@ function DashboardContent() {
                           // Transform data and detect standout events (same logic as chart)
                           const chartData = dailyTrends.map((trend: any, index: number) => ({
                             date: trend.date,
-                            // Use OCB score methodology (0-100, where higher = more burnout)
+                            // Use OCH risk level methodology (0-100, where higher = more burnout)
                             score: Math.round(trend.overall_score * 10), // Convert 0-10 to 0-100 OCB scale
                             membersAtRisk: trend.members_at_risk,
                             totalMembers: trend.total_members,
@@ -975,33 +899,33 @@ function DashboardContent() {
                               // Detect peaks (local maxima)
                               if (prev && next && point.score > prev.score && point.score > next.score && point.score >= 75) {
                                 eventType = 'peak';
-                                // Convert health score to OCB score for display (100 - health_percentage = OCB score)
-                                const ocbScore = Math.round(100 - point.score);
-                                eventDescription = `Team wellness at peak (${ocbScore} OCB score) - ${point.incidentCount} incidents handled without stress signs`;
+                                // Convert health score to risk level for display (100 - health_percentage = risk level)
+                                const riskLevel = Math.round(100 - point.score);
+                                eventDescription = `Team wellness at peak (${riskLevel} risk level) - ${point.incidentCount} incidents handled without stress signs`;
                                 significance = point.score >= 90 ? 3 : 2;
                               }
                               // Detect valleys (local minima)
                               else if (prev && next && point.score < prev.score && point.score < next.score && point.score <= 60) {
                                 eventType = 'valley';
-                                // Convert health score to OCB score for display (100 - health_percentage = OCB score)
-                                const ocbScore = Math.round(100 - point.score);
-                                eventDescription = `Team showing signs of strain (${ocbScore} OCB score) - ${point.incidentCount} incidents, ${point.membersAtRisk} team members need support`;
+                                // Convert health score to risk level for display (100 - health_percentage = risk level)
+                                const riskLevel = Math.round(100 - point.score);
+                                eventDescription = `Team showing signs of strain (${riskLevel} risk level) - ${point.incidentCount} incidents, ${point.membersAtRisk} team members need support`;
                                 significance = point.score <= 40 ? 3 : 2;
                               }
                               // Detect sharp improvements
                               else if (prevChange >= 20) {
                                 eventType = 'recovery';
-                                // For improvement, show it as OCB score reduction (health increase = OCB decrease)
-                                const ocbImprovement = Math.abs(prevChange);
-                                eventDescription = `Great turnaround! Team burnout reduced by ${ocbImprovement} OCB points - interventions working well`;
+                                // For improvement, show it as risk level reduction (health increase = risk decrease)
+                                const riskImprovement = Math.abs(prevChange);
+                                eventDescription = `Great turnaround! Team risk reduced by ${riskImprovement} points - interventions working well`;
                                 significance = prevChange >= 30 ? 3 : 2;
                               }
                               // Detect sharp declines
                               else if (prevChange <= -20) {
                                 eventType = 'decline';
-                                // For decline, show it as OCB score increase (health decrease = OCB increase)
-                                const ocbIncrease = Math.abs(prevChange);
-                                eventDescription = `Warning: Team burnout increased by ${ocbIncrease} OCB points - immediate attention recommended`;
+                                // For decline, show it as risk level increase (health decrease = risk increase)
+                                const riskIncrease = Math.abs(prevChange);
+                                eventDescription = `Warning: Team risk increased by ${riskIncrease} points - immediate attention recommended`;
                                 significance = prevChange <= -30 ? 3 : 2;
                               }
                               // Detect high incident volume days
@@ -1013,9 +937,9 @@ function DashboardContent() {
                               // Detect critical health days
                               else if (point.score <= 45 && point.membersAtRisk >= 3) {
                                 eventType = 'critical';
-                                // Convert health score to OCB score for display (100 - health_percentage = OCB score)
-                                const ocbScore = Math.round(100 - point.score);
-                                eventDescription = `URGENT: Team at burnout risk (${ocbScore} OCB score) - ${point.membersAtRisk} members need immediate support`;
+                                // Convert health score to risk level for display (100 - health_percentage = risk level)
+                                const riskLevel = Math.round(100 - point.score);
+                                eventDescription = `URGENT: Team at high risk (${riskLevel} risk level) - ${point.membersAtRisk} members need immediate support`;
                                 significance = 3;
                               }
 
@@ -1046,9 +970,9 @@ function DashboardContent() {
                               title: event.eventType === 'peak' ? 'Team Wellness Peak' :
                                     event.eventType === 'valley' ? 'Team Support Needed' :
                                     event.eventType === 'recovery' ? 'Wellness Recovery' :
-                                    event.eventType === 'decline' ? 'Burnout Risk Increase' :
+                                    event.eventType === 'decline' ? 'Risk Increase' :
                                     event.eventType === 'high-volume' ? 'High Workload Period' :
-                                    event.eventType === 'critical' ? 'Burnout Alert' :
+                                    event.eventType === 'critical' ? 'Risk Alert' :
                                     'Significant Event',
                               description: event.eventDescription,
                               color: event.eventType === 'peak' ? 'bg-green-500' :
@@ -1165,7 +1089,7 @@ function DashboardContent() {
                 <Card>
                   <CardHeader>
                     <div className="flex items-center justify-between">
-                      <CardTitle>Team Burnout Risk Factors</CardTitle>
+                      <CardTitle>Team Risk Factors</CardTitle>
                       {highRiskFactors.length > 0 && (
                         <div className="flex items-center space-x-2">
                           <AlertTriangle className="w-4 h-4 text-red-500" />
@@ -1185,9 +1109,9 @@ function DashboardContent() {
                         } else if (hasGitHubMembers && !hasIncidentMembers) {
                           return `Development-focused burnout analysis based on GitHub activity patterns from ${membersWithGitHubData.length} active developers`;
                         } else if (!hasGitHubMembers && hasIncidentMembers) {
-                          return `Incident response burnout analysis from ${membersWithIncidents.length} team members handling incidents`;
+                          return `Incident response analysis from ${membersWithIncidents.length} team members handling incidents`;
                         } else {
-                          return "Team burnout risk assessment based on available activity data";
+                          return "Team risk assessment based on available activity data";
                         }
                       })()}
                     </CardDescription>
@@ -1261,10 +1185,7 @@ function DashboardContent() {
                             )}
                           </CardTitle>
                           <CardDescription>
-                            {highRiskFactors.length > 0
-                              ? "Risk factors requiring immediate attention based on combined incident response and development activity patterns"
-                              : "Current risk factors based on team activity patterns"
-                            }
+                            Current factors affecting team health
                           </CardDescription>
                         </div>
                         <button
@@ -1299,7 +1220,7 @@ function DashboardContent() {
                             {sortedBurnoutFactors.map((factor) => {
                               const color = getRiskHex(factor.severity, factor.value)
                               return (
-                                <div key={factor.factor} className="relative">
+                                <div key={factor.factor} className="relative border border-gray-200 rounded-lg p-4 bg-white">
                                   <div className="flex items-center justify-between mb-2">
                                     <div className="flex items-center space-x-2">
                                       <span className="font-medium text-gray-900">{factor.factor}</span>
@@ -1337,11 +1258,6 @@ function DashboardContent() {
 
                                   <div className="text-sm text-gray-600">
                                     <div>{factor.metrics}</div>
-                                    {factor.value >= 5 && (
-                                      <div className="mt-1 text-blue-600">
-                                        <strong>Action:</strong> {factor.recommendation}
-                                      </div>
-                                    )}
                                   </div>
                                 </div>
                               )
@@ -1788,7 +1704,7 @@ function DashboardContent() {
                   </div>
                   <h3 className="text-lg font-semibold mb-2">Loading Your Analyses</h3>
                   <p className="text-gray-600 mb-4">
-                    We're checking for your previous burnout analyses...
+                    We're checking for your previous analyses...
                   </p>
                 </Card>
               ) : (
@@ -1865,6 +1781,67 @@ function DashboardContent() {
               )}
             </>
           )}
+
+          {/* Export Button and Footer */}
+          {!shouldShowInsufficientDataCard() && currentAnalysis && currentAnalysis.analysis_data && (
+            <div className="flex justify-end mt-6">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="flex items-center space-x-2 border-gray-300 hover:bg-gray-50"
+                    title="Export analysis data"
+                  >
+                    <Download className="w-5 h-5" />
+                    <span>Export</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem onClick={exportAsJSON} className="flex items-center space-x-2">
+                    <Download className="w-5 h-5" />
+                    <div className="flex flex-col">
+                      <span className="font-medium text-base">Export as JSON</span>
+                      <span className="text-sm text-gray-500">Complete analysis data</span>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem disabled className="flex items-center space-x-2 opacity-50">
+                    <Download className="w-5 h-5" />
+                    <div className="flex flex-col">
+                      <span className="font-medium text-base">Export as CSV</span>
+                      <span className="text-sm text-gray-500">Organization member scores</span>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem disabled className="flex items-center space-x-2 opacity-50">
+                    <FileText className="w-5 h-5" />
+                    <div className="flex flex-col">
+                      <span className="font-medium text-base">Generate PDF Report</span>
+                      <span className="text-sm text-gray-500">Executive summary</span>
+                    </div>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
+
+          {/* Powered by Rootly AI Footer */}
+          <div className="mt-12 pt-8 border-t border-gray-200 text-center">
+            <a
+              href="https://rootly.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex flex-col items-center space-y-1 hover:opacity-80 transition-opacity"
+            >
+              <span className="text-lg text-gray-600">powered by</span>
+              <Image
+                src="/images/rootly-ai-logo.png"
+                alt="Rootly AI"
+                width={200}
+                height={80}
+                className="h-12 w-auto"
+              />
+            </a>
+          </div>
         </div>
       </div>
 
@@ -2201,17 +2178,7 @@ function DashboardContent() {
                         <>
                           <div className="flex items-start justify-between mb-2">
                             <div className="flex items-center space-x-2">
-                              <div className="w-6 h-6 bg-purple-600 rounded flex items-center justify-center">
-                                <svg
-                                  viewBox="0 0 24 24"
-                                  className="w-4 h-4 text-white"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="1.5"
-                                >
-                                  <path d="M2.5 21.5l19-19M5.5 21.5l16-16M8.5 21.5l13-13M11.5 21.5l10-10M14.5 21.5l7-7M17.5 21.5l4-4" strokeLinecap="round"/>
-                                </svg>
-                              </div>
+                              <Image src="/images/linear-logo.png" alt="Linear" width={24} height={24} className="rounded" />
                               <div>
                                 <h3 className="text-sm font-medium text-gray-900">Linear</h3>
                               </div>

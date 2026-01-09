@@ -158,7 +158,7 @@ export function JiraConnectedCard({
         <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-600">
           <div className="font-medium mb-1">Data Collection</div>
           <div>
-            We collect issue assignments, worklogs, time tracking, and project membership data to analyze workload patterns and identify burnout risk.
+            We collect issue assignments, worklogs, time tracking, and project membership data to analyze workload patterns and identify risk of overwork.
           </div>
         </div>
       </CardContent>

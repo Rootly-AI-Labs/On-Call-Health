@@ -20,7 +20,6 @@ from core.ocb_config import (
     calculate_composite_ocb_score,
     get_ocb_interpretation,
     validate_ocb_config,
-    get_ocb_recommendations,
     DEFAULT_ocb_CONFIG
 )
 
@@ -311,66 +310,6 @@ class TestocbValidation(unittest.TestCase):
         
         validation = validate_ocb_config(config)
         self.assertFalse(validation['dimension_weights_sum'])
-
-
-class TestocbRecommendations(unittest.TestCase):
-    """Test ocb-based recommendations."""
-    
-    def test_get_recommendations_high_composite(self):
-        """Test recommendations for high composite score."""
-        ocb_result = {
-            'composite_score': 80.0,
-            'personal_score': 75.0,
-            'work_related_score': 85.0,
-            'interpretation': 'high'
-        }
-        
-        recommendations = get_ocb_recommendations(ocb_result)
-        
-        self.assertGreater(len(recommendations), 0)
-        self.assertTrue(any('time off' in rec.lower() for rec in recommendations))
-        self.assertTrue(any('manager' in rec.lower() for rec in recommendations))
-    
-    def test_get_recommendations_personal_dominant(self):
-        """Test recommendations when personal burnout is dominant."""
-        ocb_result = {
-            'composite_score': 55.0,
-            'personal_score': 70.0,  # 15+ points higher
-            'work_related_score': 40.0,
-            'interpretation': 'moderate'
-        }
-        
-        recommendations = get_ocb_recommendations(ocb_result)
-        
-        self.assertTrue(any('personal recovery' in rec.lower() for rec in recommendations))
-        self.assertTrue(any('sleep' in rec.lower() or 'exercise' in rec.lower() for rec in recommendations))
-    
-    def test_get_recommendations_work_dominant(self):
-        """Test recommendations when work-related burnout is dominant."""
-        ocb_result = {
-            'composite_score': 55.0,
-            'personal_score': 40.0,
-            'work_related_score': 70.0,  # 30+ points higher
-            'interpretation': 'moderate'
-        }
-        
-        recommendations = get_ocb_recommendations(ocb_result)
-        
-        self.assertTrue(any('work-specific' in rec.lower() for rec in recommendations))
-        self.assertTrue(any('team' in rec.lower() for rec in recommendations))
-    
-    def test_get_recommendations_low_score(self):
-        """Test recommendations for low burnout score."""
-        ocb_result = {
-            'composite_score': 15.0,
-            'personal_score': 12.0,
-            'work_related_score': 18.0,
-            'interpretation': 'low'
-        }
-        
-        recommendations = get_ocb_recommendations(ocb_result)
-        
-        self.assertTrue(any('work-life balance' in rec.lower() for rec in recommendations))
 
 
 class TestocbEdgeCases(unittest.TestCase):
