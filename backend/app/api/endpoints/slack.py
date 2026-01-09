@@ -1399,28 +1399,31 @@ async def handle_slack_interactions(
                     # Store feeling as feeling_score (1-5 scale: higher = feeling better)
                     feeling_score = feeling_map.get(feeling_str, 3)
 
-                    # Question 2: Where is the stress coming from? (multi-select)
+                    # Question 2: What's having the biggest impact? (single-select)
                     stress_sources_block = values.get("stress_sources_block", {})
                     stress_sources_input = stress_sources_block.get("stress_sources_input", {})
-                    selected_options = stress_sources_input.get("selected_options", [])
-                    stress_factors = [opt.get("value") for opt in selected_options] if selected_options else []
+                    selected_option = stress_sources_input.get("selected_option", {})
+                    selected_value = selected_option.get("value") if selected_option else None
 
-                    # Derive workload_score from stress factors count (inverse relationship)
-                    # 0 factors = 5 (great), 1-2 = 4, 3-4 = 3, 5-6 = 2, 7+ = 1
-                    stress_count = len(stress_factors)
-                    if stress_count == 0:
-                        workload_score = 5
-                    elif stress_count <= 2:
-                        workload_score = 4
-                    elif stress_count <= 4:
-                        workload_score = 3
-                    elif stress_count <= 6:
-                        workload_score = 2
-                    else:
-                        workload_score = 1
+                    # Store as array for consistency with database schema
+                    stress_factors = [selected_value] if selected_value else []
+
+                    # Derive workload_score based on selected stress source
+                    # Map stress sources to workload intensity (inverse relationship)
+                    stress_intensity_map = {
+                        'oncall_frequency': 2,      # High impact
+                        'after_hours': 2,           # High impact
+                        'incident_complexity': 3,   # Moderate impact
+                        'time_pressure': 3,         # Moderate impact
+                        'team_support': 2,          # High impact (lack of support)
+                        'work_life_balance': 2,     # High impact
+                        'personal': 4,              # Lower work impact (external)
+                        'other': 3                  # Moderate impact (unknown)
+                    }
+                    workload_score = stress_intensity_map.get(selected_value, 5) if selected_value else 5
 
                     # Check if personal circumstances was selected
-                    personal_circumstances = 'yes' if 'personal' in stress_factors else None
+                    personal_circumstances = 'yes' if selected_value == 'personal' else None
 
                     # Get optional comments
                     comments_block = values.get("comments_block") or {}
@@ -1789,11 +1792,11 @@ def create_burnout_survey_modal(organization_id: int, user_id: int, analysis_id:
                 "type": "input",
                 "block_id": "stress_sources_block",
                 "element": {
-                    "type": "multi_static_select",
+                    "type": "static_select",
                     "action_id": "stress_sources_input",
                     "placeholder": {
                         "type": "plain_text",
-                        "text": "Select all that apply"
+                        "text": "Select one"
                     },
                     "options": [
                         {"text": {"type": "plain_text", "text": "On-call frequency"}, "value": "oncall_frequency"},
