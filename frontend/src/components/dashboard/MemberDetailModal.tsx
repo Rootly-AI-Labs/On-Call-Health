@@ -473,8 +473,8 @@ export function MemberDetailModal({
 
                     {/* Health Check-ins (Survey Data) */}
                     <SurveyResultsCard
-                      surveyData={currentAnalysis?.analysis_data?.member_surveys?.[selectedMember.user_email] || null}
-                      userEmail={selectedMember.user_email}
+                      surveyData={currentAnalysis?.analysis_data?.member_surveys?.[selectedMember.email] || null}
+                      userEmail={selectedMember.email}
                     />
 
                     {/* OCH Risk Levels */}

@@ -67,8 +67,6 @@ const getWorkloadText = (score: number) => {
 }
 
 export function SurveyResultsCard({ surveyData, userEmail }: SurveyResultsCardProps) {
-  console.log('SurveyResultsCard - userEmail:', userEmail, 'surveyData:', surveyData);
-
   if (!surveyData || surveyData.survey_count_in_period === 0) {
     return (
       <Card>
