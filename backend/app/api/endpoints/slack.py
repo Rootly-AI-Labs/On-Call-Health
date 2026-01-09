@@ -939,8 +939,8 @@ class SlackSurveySubmission(BaseModel):
     """Model for Slack burnout survey submissions."""
     analysis_id: int
     user_email: str
-    self_reported_score: int  # 0-100 scale
-    energy_level: int  # 1-5 scale
+    feeling_score: int  # 1-5 scale: How user is feeling (1=struggling, 5=very good)
+    workload_score: int  # 1-5 scale: How manageable workload feels (1=overwhelming, 5=very manageable)
     stress_factors: list[str]  # Array of stress factors
     personal_circumstances: str = None  # 'significantly', 'somewhat', 'no', 'prefer_not_say'
     additional_comments: str = ""
@@ -1591,8 +1591,8 @@ async def submit_slack_burnout_survey(
             organization_id=None,  # No org_id for this endpoint
             email_domain=user.email_domain if user else None,
             analysis_id=submission.analysis_id,
-            self_reported_score=submission.self_reported_score,
-            energy_level=submission.energy_level,
+            feeling_score=submission.feeling_score,
+            workload_score=submission.workload_score,
             stress_factors=submission.stress_factors,
             personal_circumstances=submission.personal_circumstances,
             additional_comments=submission.additional_comments,
@@ -1682,8 +1682,8 @@ async def get_team_survey_status(
                     "user_email": db.query(UserCorrelation).filter(
                         UserCorrelation.user_id == response.user_id
                     ).first().user_email,
-                    "self_reported_score": response.self_reported_score,
-                    "energy_level": response.energy_level,
+                    "feeling_score": response.feeling_score,
+                    "workload_score": response.workload_score,
                     "stress_factors": response.stress_factors,
                     "submitted_at": response.submitted_at.isoformat(),
                     "submitted_via": response.submitted_via,

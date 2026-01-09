@@ -98,7 +98,9 @@ export function SurveyResultsCard({ surveyData, userEmail }: SurveyResultsCardPr
             </div>
           </div>
           <CardDescription>
-            {new Date(latestResponse.submitted_at).toLocaleString()} via {latestResponse.submitted_via || 'web'}
+            {new Date(latestResponse.submitted_at).toLocaleString(undefined, {
+              timeZoneName: 'short'
+            })} via {latestResponse.submitted_via || 'web'}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
