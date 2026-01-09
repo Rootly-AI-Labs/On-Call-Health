@@ -107,6 +107,39 @@ class MigrationRunner:
             self.db.rollback()
             return False
 
+    def load_sql_file(self, filename: str) -> List[str]:
+        """Load SQL commands from a .sql file in the migrations directory"""
+        import os
+        filepath = os.path.join(os.path.dirname(__file__), filename)
+        try:
+            with open(filepath, 'r') as f:
+                content = f.read()
+
+                # Remove comment lines starting with --
+                lines = []
+                for line in content.split('\n'):
+                    # Remove inline comments but preserve strings
+                    stripped = line.split('--')[0].strip() if not "'" in line else line.strip()
+                    if stripped and not line.strip().startswith('--'):
+                        lines.append(stripped)
+
+                # Join all lines and split by semicolon
+                full_content = '\n'.join(lines)
+                commands = []
+
+                for statement in full_content.split(';'):
+                    stmt = statement.strip()
+                    if stmt and stmt.upper() not in ('BEGIN', 'COMMIT', 'BEGIN;', 'COMMIT;'):
+                        commands.append(stmt + ';')
+
+                return commands
+        except FileNotFoundError:
+            logger.warning(f"⚠️  SQL file not found: {filepath}")
+            return []
+        except Exception as e:
+            logger.error(f"❌ Failed to load SQL file {filename}: {e}")
+            return []
+
     def run_all_migrations(self):
         """Run all pending migrations in order"""
         logger.info("🚀 Starting migration process...")
@@ -946,9 +979,34 @@ class MigrationRunner:
                     """
                 ]
             },
+            {
+                "name": "027_simplify_roles",
+                "description": "Simplify role system from 5 roles to 3 roles",
+                "sql_file": "2025_01_17_simplify_roles.sql"
+            },
+            {
+                "name": "028_create_organizations_for_existing_users",
+                "description": "Create organizations for existing users based on email domains",
+                "sql_file": "2025_01_18_create_organizations_for_existing_users.sql"
+            },
+            {
+                "name": "029_migrate_user_role_to_member",
+                "description": "Convert legacy 'user' role to 'member'",
+                "sql_file": "2025_01_30_migrate_user_role_to_member.sql"
+            },
+            {
+                "name": "030_allow_null_user_id_in_integration_mappings",
+                "description": "Make user_id nullable in integration_mappings and add organization_id for org-scoped users",
+                "sql_file": "2026_01_02_allow_null_user_id_in_integration_mappings.sql"
+            },
+            {
+                "name": "031_remove_communication_patterns_toggle",
+                "description": "Remove communication_patterns_enabled column from slack_workspace_mappings",
+                "sql_file": "2026_01_06_remove_communication_patterns_toggle.sql"
+            },
 
             # {
-            #     "name": "027_add_user_preferences",
+            #     "name": "032_add_user_preferences",
             #     "description": "Add user preferences table",
             #     "sql": ["CREATE TABLE IF NOT EXISTS user_preferences (...)"]
             # }
@@ -961,7 +1019,12 @@ class MigrationRunner:
         for migration in migrations:
             name = migration["name"]
             description = migration["description"]
-            sql_commands = migration["sql"]
+
+            # Handle both inline SQL and SQL files
+            if "sql_file" in migration:
+                sql_commands = self.load_sql_file(migration["sql_file"])
+            else:
+                sql_commands = migration.get("sql", [])
 
             logger.info(f"📋 Migration: {description}")
 
