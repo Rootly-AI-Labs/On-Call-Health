@@ -748,7 +748,7 @@ async def disconnect_slack(
         workspace_mapping.status = 'inactive'
 
         # Disable survey schedule for this organization
-        from ..models.survey_schedule import SurveySchedule
+        from ...models.survey_schedule import SurveySchedule
         if organization_id:
             survey_schedule = db.query(SurveySchedule).filter(
                 SurveySchedule.organization_id == organization_id
