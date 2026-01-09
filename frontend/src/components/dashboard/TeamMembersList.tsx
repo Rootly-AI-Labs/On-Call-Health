@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { ChevronDown, ChevronRight, Users, Loader2 } from "lucide-react"
 import { useState } from "react"
-import { SurveySparkline } from "./SurveySparkline"
 
 interface TeamMembersListProps {
   currentAnalysis: any
@@ -165,41 +164,6 @@ export function TeamMembersList({
             </div>
           )}
         </div>
-
-        {/* Survey Data - show if available */}
-        {(() => {
-          const memberSurveys = currentAnalysis?.analysis_data?.member_surveys?.[member.user_email]
-          if (!memberSurveys) return null
-
-          const trendArrow = memberSurveys.trend === 'improving' ? '↗' :
-                           memberSurveys.trend === 'declining' ? '↘' : '→'
-          const trendColor = memberSurveys.trend === 'improving' ? 'text-green-600' :
-                            memberSurveys.trend === 'declining' ? 'text-red-600' : 'text-gray-500'
-
-          return (
-            <div className="mb-3 p-2 bg-blue-50 rounded-lg border border-blue-100">
-              <div className="flex items-center justify-between text-xs mb-1">
-                <span className="font-medium text-blue-900">Survey Data</span>
-                <span className="text-blue-700">{memberSurveys.survey_count_in_period} responses</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex-1 space-y-0.5 text-xs">
-                  <div className="text-gray-700">Feeling: {memberSurveys.latest_feeling_score}/5</div>
-                  <div className="text-gray-700">Workload: {memberSurveys.latest_workload_score}/5</div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <SurveySparkline
-                    surveyData={memberSurveys.survey_responses}
-                    width={50}
-                    height={24}
-                    color="#3b82f6"
-                  />
-                  <span className={`text-lg font-bold ${trendColor}`}>{trendArrow}</span>
-                </div>
-              </div>
-            </div>
-          )
-        })()}
 
         <div className="space-y-2">
           {member?.ocb_score !== undefined ? (
