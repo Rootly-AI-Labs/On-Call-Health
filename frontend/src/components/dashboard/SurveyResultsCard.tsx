@@ -66,6 +66,21 @@ const getWorkloadText = (score: number) => {
   return 'Overwhelming'
 }
 
+const getStressSourceLabel = (source: string) => {
+  const labels: { [key: string]: string } = {
+    'oncall_frequency': 'On-call frequency',
+    'after_hours': 'After-hours work',
+    'incident_complexity': 'Incident complexity',
+    'time_pressure': 'Time pressure / deadlines',
+    'lack_support': 'Lack of support / documentation',
+    'context_switches': 'Too many context switches',
+    'unclear_expectations': 'Unclear expectations',
+    'personal': 'Personal / life circumstances',
+    'other': 'Other'
+  }
+  return labels[source] || source
+}
+
 export function SurveyResultsCard({ surveyData, userEmail }: SurveyResultsCardProps) {
   if (!surveyData || surveyData.survey_count_in_period === 0) {
     return (
@@ -130,11 +145,11 @@ export function SurveyResultsCard({ surveyData, userEmail }: SurveyResultsCardPr
             <>
               <Separator />
               <div>
-                <div className="text-xs font-medium text-gray-700 mb-2">Stress Factors</div>
+                <div className="text-xs font-medium text-gray-700 mb-2">Stress Sources</div>
                 <div className="flex flex-wrap gap-1">
                   {latestResponse.stress_factors.map((factor, index) => (
                     <Badge key={index} variant="outline" className="text-xs">
-                      {factor}
+                      {getStressSourceLabel(factor)}
                     </Badge>
                   ))}
                 </div>

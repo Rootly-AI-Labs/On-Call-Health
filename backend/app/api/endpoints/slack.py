@@ -1399,21 +1399,28 @@ async def handle_slack_interactions(
                     # Store feeling as feeling_score (1-5 scale: higher = feeling better)
                     feeling_score = feeling_map.get(feeling_str, 3)
 
-                    # Question 2: How manageable does your workload feel? (1-5 scale)
-                    workload_str = values.get("workload_block", {}).get("workload_input", {}).get("selected_option", {}).get("value", "somewhat_manageable")
-                    workload_map = {
-                        "very_manageable": 5,
-                        "manageable": 4,
-                        "somewhat_manageable": 3,
-                        "barely_manageable": 2,
-                        "overwhelming": 1
-                    }
-                    # Store workload as workload_score (1-5 scale: higher = more manageable)
-                    workload_score = workload_map.get(workload_str, 3)
+                    # Question 2: Where is the stress coming from? (multi-select)
+                    stress_sources_block = values.get("stress_sources_block", {})
+                    stress_sources_input = stress_sources_block.get("stress_sources_input", {})
+                    selected_options = stress_sources_input.get("selected_options", [])
+                    stress_factors = [opt.get("value") for opt in selected_options] if selected_options else []
 
-                    # No longer collecting stress factors or personal circumstances
-                    stress_factors = []
-                    personal_circumstances = None
+                    # Derive workload_score from stress factors count (inverse relationship)
+                    # 0 factors = 5 (great), 1-2 = 4, 3-4 = 3, 5-6 = 2, 7+ = 1
+                    stress_count = len(stress_factors)
+                    if stress_count == 0:
+                        workload_score = 5
+                    elif stress_count <= 2:
+                        workload_score = 4
+                    elif stress_count <= 4:
+                        workload_score = 3
+                    elif stress_count <= 6:
+                        workload_score = 2
+                    else:
+                        workload_score = 1
+
+                    # Check if personal circumstances was selected
+                    personal_circumstances = 'yes' if 'personal' in stress_factors else None
 
                     # Get optional comments
                     comments_block = values.get("comments_block") or {}
@@ -1780,26 +1787,31 @@ def create_burnout_survey_modal(organization_id: int, user_id: int, analysis_id:
             },
             {
                 "type": "input",
-                "block_id": "workload_block",
+                "block_id": "stress_sources_block",
                 "element": {
-                    "type": "static_select",
-                    "action_id": "workload_input",
+                    "type": "multi_static_select",
+                    "action_id": "stress_sources_input",
                     "placeholder": {
                         "type": "plain_text",
-                        "text": "Select workload level"
+                        "text": "Select all that apply"
                     },
                     "options": [
-                        {"text": {"type": "plain_text", "text": "Very manageable"}, "value": "very_manageable"},
-                        {"text": {"type": "plain_text", "text": "Manageable"}, "value": "manageable"},
-                        {"text": {"type": "plain_text", "text": "Somewhat manageable"}, "value": "somewhat_manageable"},
-                        {"text": {"type": "plain_text", "text": "Barely manageable"}, "value": "barely_manageable"},
-                        {"text": {"type": "plain_text", "text": "Overwhelming"}, "value": "overwhelming"}
+                        {"text": {"type": "plain_text", "text": "On-call frequency"}, "value": "oncall_frequency"},
+                        {"text": {"type": "plain_text", "text": "After-hours work"}, "value": "after_hours"},
+                        {"text": {"type": "plain_text", "text": "Incident complexity"}, "value": "incident_complexity"},
+                        {"text": {"type": "plain_text", "text": "Time pressure / deadlines"}, "value": "time_pressure"},
+                        {"text": {"type": "plain_text", "text": "Lack of support / documentation"}, "value": "lack_support"},
+                        {"text": {"type": "plain_text", "text": "Too many context switches"}, "value": "context_switches"},
+                        {"text": {"type": "plain_text", "text": "Unclear expectations"}, "value": "unclear_expectations"},
+                        {"text": {"type": "plain_text", "text": "Personal / life circumstances"}, "value": "personal"},
+                        {"text": {"type": "plain_text", "text": "Other"}, "value": "other"}
                     ]
                 },
                 "label": {
                     "type": "plain_text",
-                    "text": "How manageable does your workload feel?"
-                }
+                    "text": "Where is the stress coming from?"
+                },
+                "optional": True
             },
             {
                 "type": "input",
