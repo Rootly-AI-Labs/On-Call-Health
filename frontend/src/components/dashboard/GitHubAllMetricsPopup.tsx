@@ -113,9 +113,10 @@ export default function GitHubAllMetricsPopup({
                           <Avatar className="flex-shrink-0 mt-0.5 h-10 w-10">
                             <AvatarFallback className="text-xs font-medium">
                               {member.user_name
-                                .split(' ')
-                                .map((n: string) => n[0])
-                                .join('')}
+                                ? member.user_name.split(' ')
+                                    .map((n: string) => n[0])
+                                    .join('')
+                                : '?'}
                             </AvatarFallback>
                           </Avatar>
 
