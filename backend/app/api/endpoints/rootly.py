@@ -384,7 +384,8 @@ async def list_integrations(
 
         async def check_with_timeout(idx, task, integration_id):
             try:
-                result = await asyncio.wait_for(task, timeout=10.0)
+                # 65s timeout: allows for two 30s API calls (users + incidents) + buffer
+                result = await asyncio.wait_for(task, timeout=65.0)
                 return (idx, result, None, integration_id)
             except asyncio.TimeoutError:
                 return (idx, None, "timeout", integration_id)
