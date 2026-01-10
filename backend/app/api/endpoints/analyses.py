@@ -400,21 +400,29 @@ async def get_analysis_by_uuid(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=error_detail
         )
-    
+
+    # Fetch survey data for team members within analysis timeline
+    member_surveys = get_member_surveys(analysis, db)
+
+    # Add survey data to analysis results
+    analysis_data = analysis.results or {}
+    if member_surveys:
+        analysis_data['member_surveys'] = member_surveys
+
     return AnalysisResponse(
         id=analysis.id,
         uuid=getattr(analysis, 'uuid', None),
         integration_id=analysis.rootly_integration_id,
-        
+
         # Include new integration fields
         integration_name=analysis.integration_name,
         platform=analysis.platform,
-        
+
         status=analysis.status,
         created_at=analysis.created_at,
         completed_at=analysis.completed_at,
         time_range=analysis.time_range or 30,
-        analysis_data=analysis.results,
+        analysis_data=analysis_data,
         config=analysis.config
     )
 
@@ -449,23 +457,116 @@ async def get_analysis(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=error_detail
         )
-    
+
+    # Fetch survey data for team members within analysis timeline
+    member_surveys = get_member_surveys(analysis, db)
+
+    # Add survey data to analysis results
+    analysis_data = analysis.results or {}
+    if member_surveys:
+        analysis_data['member_surveys'] = member_surveys
+
     return AnalysisResponse(
         id=analysis.id,
         uuid=getattr(analysis, 'uuid', None),
         integration_id=analysis.rootly_integration_id,
-        
+
         # Include new integration fields
         integration_name=analysis.integration_name,
         platform=analysis.platform,
-        
+
         status=analysis.status,
         created_at=analysis.created_at,
         completed_at=analysis.completed_at,
         time_range=analysis.time_range or 30,
-        analysis_data=analysis.results,
+        analysis_data=analysis_data,
         config=analysis.config
     )
+
+
+def get_member_surveys(analysis: Analysis, db: Session) -> dict:
+    """
+    Fetch survey responses for all team members within the analysis timeline.
+    Returns a dict keyed by user email with survey data.
+    """
+    from datetime import timedelta
+    from ...models.user_burnout_report import UserBurnoutReport
+    from ...models.user_correlation import UserCorrelation
+
+    # Calculate analysis date range
+    analysis_end_date = analysis.created_at
+    analysis_start_date = analysis_end_date - timedelta(days=analysis.time_range or 30)
+
+    # Get all team members for this organization
+    if not analysis.organization_id:
+        return {}
+
+    correlations = db.query(UserCorrelation).filter(
+        UserCorrelation.organization_id == analysis.organization_id
+    ).all()
+
+    member_surveys = {}
+
+    for corr in correlations:
+        if not corr.user_id or not corr.email:
+            continue
+
+        # Get surveys within analysis period for this user
+        surveys = db.query(UserBurnoutReport).filter(
+            UserBurnoutReport.user_id == corr.user_id,
+            UserBurnoutReport.submitted_at >= analysis_start_date,
+            UserBurnoutReport.submitted_at <= analysis_end_date
+        ).order_by(UserBurnoutReport.submitted_at.asc()).all()
+
+        if not surveys:
+            continue
+
+        # Build survey responses
+        survey_responses = []
+        combined_scores = []
+
+        for survey in surveys:
+            # Combined score: average of feeling and workload (1-5 scale, higher = better)
+            combined = (survey.feeling_score + survey.workload_score) / 2.0
+            combined_scores.append(combined)
+
+            survey_responses.append({
+                'feeling_score': survey.feeling_score,
+                'workload_score': survey.workload_score,
+                'combined_score': round(combined, 1),
+                'submitted_at': survey.submitted_at.isoformat(),
+                'stress_factors': survey.stress_factors,
+                'personal_circumstances': survey.personal_circumstances,
+                'additional_comments': survey.additional_comments,
+                'submitted_via': survey.submitted_via
+            })
+
+        # Calculate trend (first half vs second half)
+        trend = 'stable'
+        if len(combined_scores) >= 2:
+            mid = len(combined_scores) // 2
+            first_half_avg = sum(combined_scores[:mid]) / mid
+            second_half_avg = sum(combined_scores[mid:]) / (len(combined_scores) - mid)
+
+            # Higher score = better (less burnout), so improving means score went up
+            if second_half_avg > first_half_avg + 0.3:
+                trend = 'improving'
+            elif second_half_avg < first_half_avg - 0.3:
+                trend = 'declining'
+
+        # Get latest scores
+        latest = surveys[-1]
+
+        member_surveys[corr.email] = {
+            'survey_count_in_period': len(surveys),
+            'latest_feeling_score': latest.feeling_score,
+            'latest_workload_score': latest.workload_score,
+            'latest_combined_score': round((latest.feeling_score + latest.workload_score) / 2.0, 1),
+            'trend': trend,
+            'survey_responses': survey_responses
+        }
+
+    return member_surveys
 
 
 def is_uuid(value: str) -> bool:
@@ -532,21 +633,29 @@ async def get_analysis_by_identifier(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=error_detail
         )
-    
+
+    # Fetch survey data for team members within analysis timeline
+    member_surveys = get_member_surveys(analysis, db)
+
+    # Add survey data to analysis results
+    analysis_data = analysis.results or {}
+    if member_surveys:
+        analysis_data['member_surveys'] = member_surveys
+
     return AnalysisResponse(
         id=analysis.id,
         uuid=getattr(analysis, 'uuid', None),
         integration_id=analysis.rootly_integration_id,
-        
+
         # Include new integration fields
         integration_name=analysis.integration_name,
         platform=analysis.platform,
-        
+
         status=analysis.status,
         created_at=analysis.created_at,
         completed_at=analysis.completed_at,
         time_range=analysis.time_range or 30,
-        analysis_data=analysis.results,
+        analysis_data=analysis_data,
         config=analysis.config
     )
 
