@@ -91,29 +91,6 @@ export function TeamMembersList({
                 ON-CALL
               </Badge>
             )}
-            {(() => {
-              // Calculate risk level based on OCH risk level when available
-              const getOCBRiskLevel = (member: any) => {
-                if (member.ocb_score !== undefined && member.ocb_score !== null) {
-                  // Use OCB scoring (0-100, higher = more burnout)
-                  if (member.ocb_score < 25) return 'healthy';      // 0-24: Low/minimal burnout
-                  if (member.ocb_score < 50) return 'fair';         // 25-49: Mild burnout symptoms
-                  if (member.ocb_score < 75) return 'poor';         // 50-74: Moderate burnout risk
-                  return 'critical';                                // 75-100: High/severe burnout
-                }
-                // No OCH risk level available - default to low risk
-                return 'low';
-              };
-
-              const riskLevel = getOCBRiskLevel(member);
-              const displayLabel = riskLevel === 'healthy' ? 'HEALTHY' :
-                                 riskLevel === 'fair' ? 'FAIR' :
-                                 riskLevel === 'poor' ? 'POOR' :
-                                 riskLevel === 'critical' ? 'CRITICAL' :
-                                 riskLevel.toUpperCase();
-
-              return <Badge className={getRiskColor(riskLevel)}>{displayLabel}</Badge>;
-            })()}
           </div>
         </div>
         
@@ -176,11 +153,24 @@ export function TeamMembersList({
 
         <div className="space-y-2">
           {member?.ocb_score !== undefined ? (
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between items-center text-sm">
               <span>Risk Level</span>
-              <span className="font-bold text-black">
-                {member.ocb_score.toFixed(1)}/100
-              </span>
+              {(() => {
+                const getOCBRiskLevel = (ocb_score: number): string => {
+                  if (ocb_score < 25) return 'healthy';
+                  if (ocb_score < 50) return 'fair';
+                  if (ocb_score < 75) return 'poor';
+                  return 'critical';
+                };
+
+                const riskLevel = getOCBRiskLevel(member.ocb_score);
+                const displayLabel = riskLevel === 'healthy' ? 'HEALTHY' :
+                                   riskLevel === 'fair' ? 'FAIR' :
+                                   riskLevel === 'poor' ? 'POOR' :
+                                   'CRITICAL';
+
+                return <Badge className={getRiskColor(riskLevel)}>{displayLabel}</Badge>;
+              })()}
             </div>
           ) : (
             <div className="flex justify-between text-sm">
