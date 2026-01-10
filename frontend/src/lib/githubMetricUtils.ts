@@ -2,7 +2,7 @@
  * Utility functions for GitHub Activity metrics and burnout factor analysis
  */
 
-export type MetricType = 'after_hours' | 'weekend_work' | 'high_commits' | 'code_reviews' | 'pull_requests'
+export type MetricType = 'after_hours' | 'high_commits' | 'code_reviews' | 'pull_requests'
 
 export interface MemberWithContribution {
   [key: string]: any
@@ -40,14 +40,6 @@ export function getAffectedMembers(
         if (commitsCount === 0) return false
         const afterHoursPercent = (member.github_activity.after_hours_commits || 0) / commitsCount
         return afterHoursPercent >= 0.15
-      }
-
-      case 'weekend_work': {
-        // Weekend commits: >= 10% (0.1) of total commits (matches backend medium threshold)
-        const commitsCount = member.github_activity.commits_count || 0
-        if (commitsCount === 0) return false
-        const weekendPercent = (member.github_activity.weekend_commits || 0) / commitsCount
-        return weekendPercent >= 0.1
       }
 
       case 'high_commits': {
@@ -98,14 +90,6 @@ export function calculateContribution(member: any, metricType: MetricType): numb
       return afterHoursCommits * 2 + percentage
     }
 
-    case 'weekend_work': {
-      // Score based on weekend commits count and percentage
-      const weekendCommits = member.github_activity.weekend_commits || 0
-      const totalCommits = member.github_activity.commits_count || 1
-      const percentage = (weekendCommits / totalCommits) * 100
-      return weekendCommits * 2 + percentage
-    }
-
     case 'high_commits':
       return member.github_activity.commits_count || 0
 
@@ -150,24 +134,6 @@ export function getVulnerabilityTags(
     const afterHoursCount = member.github_activity.after_hours_commits || 0
     if (afterHoursCount > 0) {
       tags.push({ label: `${afterHoursCount} commits`, color: 'blue' })
-    }
-  }
-
-  if (metricType === 'weekend_work') {
-    const weekendPercent = member.github_activity.weekend_commits
-      ? ((member.github_activity.weekend_commits / commitsCount) * 100)
-      : 0
-
-    // Backend thresholds: high >= 25%, medium >= 10%
-    if (weekendPercent >= 25) {
-      tags.push({ label: `${Math.round(weekendPercent)}% Weekend`, color: 'purple' })
-    } else if (weekendPercent >= 10) {
-      tags.push({ label: `${Math.round(weekendPercent)}% Weekend`, color: 'orange' })
-    }
-
-    const weekendCount = member.github_activity.weekend_commits || 0
-    if (weekendCount > 0) {
-      tags.push({ label: `${weekendCount} commits`, color: 'blue' })
     }
   }
 
@@ -254,24 +220,6 @@ function getAllVulnerabilityTags(
     const afterHoursCount = member.github_activity.after_hours_commits || 0
     if (afterHoursCount > 0) {
       tags.push({ label: `${afterHoursCount} commits`, color: 'blue' })
-    }
-  }
-
-  if (metricType === 'weekend_work') {
-    const weekendPercent = member.github_activity.weekend_commits
-      ? ((member.github_activity.weekend_commits / commitsCount) * 100)
-      : 0
-
-    // Backend thresholds: high >= 25%, medium >= 10%
-    if (weekendPercent >= 25) {
-      tags.push({ label: `${Math.round(weekendPercent)}% Weekend`, color: 'purple' })
-    } else if (weekendPercent >= 10) {
-      tags.push({ label: `${Math.round(weekendPercent)}% Weekend`, color: 'orange' })
-    }
-
-    const weekendCount = member.github_activity.weekend_commits || 0
-    if (weekendCount > 0) {
-      tags.push({ label: `${weekendCount} commits`, color: 'blue' })
     }
   }
 
@@ -362,13 +310,6 @@ export function getContributionText(member: any, metricType: MetricType): string
       return `${commits} commits (${percent}% after-hours)`
     }
 
-    case 'weekend_work': {
-      const commits = member.github_activity?.weekend_commits || 0
-      const total = member.github_activity?.commits_count || 1
-      const percent = ((commits / total) * 100).toFixed(0)
-      return `${commits} commits (${percent}% weekend)`
-    }
-
     case 'high_commits':
       return `${member.github_activity?.commits_count || 0} total commits`
 
@@ -414,11 +355,6 @@ export function getAllMetricsAffectedMembers(members: any[]): MetricWithMembers[
       metricType: 'after_hours',
       label: 'After Hours Activity',
       members: getAffectedMembers(members, 'after_hours')
-    },
-    {
-      metricType: 'weekend_work',
-      label: 'Weekend Work Activity',
-      members: getAffectedMembers(members, 'weekend_work')
     }
   ]
 }

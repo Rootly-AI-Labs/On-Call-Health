@@ -60,9 +60,7 @@ export function TeamMembersList({
         factors: {
           workload: Math.round(((member.factors?.workload || (member as any).key_metrics?.incidents_per_week || 0)) * 10) / 10,
           afterHours: Math.round(((member.factors?.after_hours || (member as any).key_metrics?.after_hours_percentage || 0)) * 10) / 10,
-          weekendWork: Math.round(((member.factors?.weekend_work || 0)) * 10) / 10,
           incidentLoad: Math.round(((member.factors?.incident_load || (member as any).key_metrics?.incidents_per_week || 0)) * 10) / 10,
-          responseTime: Math.round(((member.factors?.response_time || (member as any).key_metrics?.avg_resolution_hours || 0)) * 10) / 10,
         },
         metrics: member.metrics || {},
         github_activity: member.github_activity || null,

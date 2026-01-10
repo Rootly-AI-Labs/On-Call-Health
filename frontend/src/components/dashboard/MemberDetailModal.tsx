@@ -462,10 +462,6 @@ export function MemberDetailModal({
                               <span className="text-gray-600">After Hours Work</span>
                               <span className="font-medium">{(memberData?.metrics?.after_hours_percentage || 0).toFixed(1)}%</span>
                             </div>
-                            <div className="flex justify-between text-sm">
-                              <span className="text-gray-600">Weekend Work</span>
-                              <span className="font-medium">{(memberData?.metrics?.weekend_percentage || 0).toFixed(1)}%</span>
-                            </div>
                           </div>
                         </CardContent>
                       </Card>
@@ -538,16 +534,8 @@ export function MemberDetailModal({
                                 value: selectedMember.factors?.afterHours || 0
                               },
                               {
-                                factor: 'Weekend Work',
-                                value: selectedMember.factors?.weekendWork || 0
-                              },
-                              {
                                 factor: 'Incident Load',
                                 value: selectedMember.factors?.incidentLoad || 0
-                              },
-                              {
-                                factor: 'Response Time',
-                                value: selectedMember.factors?.responseTime || 0
                               }
                             ]}>
                               <PolarGrid />

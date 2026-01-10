@@ -42,15 +42,9 @@ class OCBConfig:
             'calculation': 'hours_over_45_per_week',
             'scale_max': 100
         },
-        'weekend_work': {
-            'weight': 0.20,
-            'description': 'Work-life boundary erosion affecting recovery',
-            'calculation': 'weekend_activity_percentage',
-            'scale_max': 50  # >50% weekend work = 100 burnout
-        },
         'after_hours_activity': {
-            'weight': 0.20,
-            'description': 'Recovery time interference',
+            'weight': 0.40,
+            'description': 'Recovery time interference and work-life boundary erosion (includes weekend work)',
             'calculation': 'after_hours_percentage',
             'scale_max': 40  # >40% after hours = 100 burnout
         },
@@ -430,9 +424,6 @@ def generate_ocb_score_reasoning(
                 elif factor_name == 'after_hours_activity':
                     personal_factors.append(f"Non-business hours incident activity ({display_score:.1f} points)")
 
-                elif factor_name == 'weekend_work':
-                    personal_factors.append(f"Weekend incident activity ({display_score:.1f} points)")
-    
     # Work-related burnout contributors
     # Always show work-related factors regardless of score
     work_components = work_result.get('components', {})
@@ -538,8 +529,7 @@ def validate_factor_consistency(personal_result: Dict, work_result: Dict, raw_me
     # Warning: If both personal and work factors reference incident data heavily
     incident_related_personal = sum([
         personal_components.get('sleep_quality_proxy', {}).get('weighted_score', 0),
-        personal_components.get('after_hours_activity', {}).get('weighted_score', 0),
-        personal_components.get('weekend_work', {}).get('weighted_score', 0)
+        personal_components.get('after_hours_activity', {}).get('weighted_score', 0)
     ])
 
     incident_related_work = sum([

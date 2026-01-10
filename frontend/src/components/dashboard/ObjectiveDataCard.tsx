@@ -50,14 +50,6 @@ export function ObjectiveDataCard({
       dataKey: "severityWeightedCount",
       showMeanLine: true,
       transformer: (trend: any) => Math.round(trend.severity_weighted_count || 0)
-    },
-    weekend_work: {
-      label: "Weekend Work",
-      color: "#10b981",
-      yAxisLabel: "Weekend Incidents",
-      dataKey: "weekendCount",
-      showMeanLine: true,
-      transformer: null
     }
   }
 
@@ -78,10 +70,6 @@ export function ObjectiveDataCard({
     severity_weighted: {
       title: "Workload Intensity",
       description: "Measures workload stress by weighting incidents based on their severity level. Higher values indicate more stressful workload."
-    },
-    weekend_work: {
-      title: "Weekend Work",
-      description: "Incidents handled on Saturdays and Sundays. Aggregated from individual user data and timezone-aware."
     }
   }
 
@@ -93,13 +81,7 @@ export function ObjectiveDataCard({
 
     const config = METRIC_CONFIG[metric];
 
-    const values = dailyTrends.map(d => {
-      if (metric === 'weekend_work') {
-        return aggregateWeekendWork(d.date, individualData);
-      } else {
-        return config.transformer(d);
-      }
-    });
+    const values = dailyTrends.map(d => config.transformer(d));
 
     const mean = values.reduce((a, b) => a + b, 0) / values.length;
     const min = Math.min(...values);
@@ -258,7 +240,6 @@ export function ObjectiveDataCard({
               <SelectItem value="incident_load">Incident Count</SelectItem>
               <SelectItem value="after_hours">After Hours Activity</SelectItem>
               <SelectItem value="severity_weighted">Workload Intensity</SelectItem>
-              <SelectItem value="weekend_work">Weekend Work</SelectItem>
             </SelectContent>
           </Select>
         </div>

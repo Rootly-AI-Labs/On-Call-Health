@@ -2,7 +2,7 @@
  * Utility functions for Risk Factor metrics and member risk analysis
  */
 
-export type RiskFactorType = 'workload' | 'after_hours' | 'weekend_work' | 'incident_load' | 'response_time'
+export type RiskFactorType = 'workload' | 'after_hours' | 'incident_load'
 
 export interface MemberWithRiskScore {
   [key: string]: any
@@ -21,9 +21,7 @@ export interface VulnerabilityTag {
 export const RISK_THRESHOLDS = {
   workload: { medium: 50, high: 70 },
   after_hours: { medium: 50, high: 70 },
-  weekend_work: { medium: 50, high: 70 },
-  incident_load: { medium: 50, high: 70 },
-  response_time: { medium: 50, high: 70 }
+  incident_load: { medium: 50, high: 70 }
 } as const
 
 /**
@@ -86,9 +84,7 @@ export function getFactorDisplayName(factorType: RiskFactorType): string {
   const names: Record<RiskFactorType, string> = {
     workload: 'Workload Intensity',
     after_hours: 'After Hours Activity',
-    weekend_work: 'Weekend Work',
-    incident_load: 'Incident Load',
-    response_time: 'Response Time'
+    incident_load: 'Incident Load'
   }
   return names[factorType]
 }
@@ -198,7 +194,7 @@ export function getAllFactorsAffectedMembers(members: any[]): Array<{
   label: string
   members: MemberWithRiskScore[]
 }> {
-  const factorTypes: RiskFactorType[] = ['workload', 'after_hours', 'weekend_work', 'response_time', 'incident_load']
+  const factorTypes: RiskFactorType[] = ['workload', 'after_hours', 'incident_load']
 
   return factorTypes.map(factorType => ({
     factorType,
