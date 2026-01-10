@@ -95,14 +95,25 @@ class RootlyAPIClient:
     async def test_connection(self) -> Dict[str, Any]:
         """Test API connection and return basic account info with permissions."""
         try:
+            import asyncio
+
             async with httpx.AsyncClient() as client:
-                # Call /v1/users/me to get organization from the API key's user
-                me_response = await client.get(
+                # Make both API calls in parallel for faster response
+                me_task = client.get(
                     f"{self.base_url}/v1/users/me",
                     headers=self.headers,
                     timeout=30.0
                 )
+                users_task = client.get(
+                    f"{self.base_url}/v1/users?page[size]=1",
+                    headers=self.headers,
+                    timeout=30.0
+                )
 
+                # Wait for both calls to complete in parallel
+                me_response, users_response = await asyncio.gather(me_task, users_task)
+
+                # Check /v1/users/me response for errors
                 if me_response.status_code != 200:
                     if me_response.status_code == 401:
                         return {
@@ -154,13 +165,7 @@ class RootlyAPIClient:
                             organization_name = attrs["company"]
                             logger.info(f" Using company attribute: '{organization_name}'")
 
-                # Call /v1/users to get total user count
-                users_response = await client.get(
-                    f"{self.base_url}/v1/users?page[size]=1",
-                    headers=self.headers,
-                    timeout=30.0
-                )
-
+                # Extract total user count from /v1/users response
                 total_users = 0
                 if users_response.status_code == 200:
                     users_data = users_response.json()
@@ -177,7 +182,7 @@ class RootlyAPIClient:
                 if organization_name:
                     account_info["organization_name"] = organization_name
 
-                # Check permissions for required endpoints
+                # Check permissions for required endpoints (run in parallel with main requests if needed)
                 permissions = await self.check_permissions()
                 account_info["permissions"] = permissions
 
