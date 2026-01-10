@@ -96,16 +96,17 @@ class RootlyAPIClient:
         """Test API connection and return basic account info with permissions."""
         try:
             async with httpx.AsyncClient() as client:
+                # Use /v1/users/me to get organization from the API key's user
+                # This avoids getting a random first user's organization
                 response = await client.get(
-                    f"{self.base_url}/v1/users",
+                    f"{self.base_url}/v1/users/me",
                     headers=self.headers,
-                    params={"page[size]": 1},
                     timeout=30.0
                 )
                 
                 if response.status_code == 200:
                     data = response.json()
-                    
+
                     # Safety check for data
                     if data is None:
                         logger.error("API response json() returned None")
@@ -114,30 +115,21 @@ class RootlyAPIClient:
                             "message": "Invalid JSON response from API",
                             "error_code": "INVALID_RESPONSE"
                         }
-                    
-                    # Log summary instead of full response to reduce noise
-                    logger.debug(f"Rootly users API: Retrieved {len(data.get('data', []))} users from {data.get('meta', {}).get('total_count', 'unknown')} total")
-                    
-                    # Extract any organization/account info from the response
+
+                    # /v1/users/me returns a single user object under "data", not an array
+                    logger.debug(f"Rootly /v1/users/me API: Retrieved authenticated user info")
+
+                    # Extract organization info from the authenticated user
                     organization_name = None
                     account_info = {
-                        "total_users": data.get("meta", {}).get("total_count", 0),
                         "api_version": "v1"
                     }
-                    
-                    # Check if there's organization info in meta or data
-                    if "meta" in data:
-                        meta = data["meta"]
-                        if "organization" in meta:
-                            organization_name = meta.get("organization", {}).get("name")
-                        elif "account" in meta:
-                            organization_name = meta.get("account", {}).get("name")
-                    
-                    # Check first user data for organization info
-                    if "data" in data and data["data"] and len(data["data"]) > 0:
-                        first_user = data["data"][0]
-                        if "attributes" in first_user:
-                            attrs = first_user["attributes"]
+
+                    # Check user data for organization info
+                    if "data" in data and isinstance(data["data"], dict):
+                        user = data["data"]
+                        if "attributes" in user:
+                            attrs = user["attributes"]
 
                             # Log what Rootly actually returns for debugging
                             logger.info(f" Rootly API returned user attributes: full_name_with_team='{attrs.get('full_name_with_team')}', organization_name='{attrs.get('organization_name')}', company='{attrs.get('company')}'")
@@ -155,7 +147,7 @@ class RootlyAPIClient:
                             elif "company" in attrs:
                                 organization_name = attrs["company"]
                                 logger.info(f" Using company attribute: '{organization_name}'")
-                    
+
                     # Only include organization name if available
                     if organization_name:
                         account_info["organization_name"] = organization_name
