@@ -315,15 +315,15 @@ class GitHubCollector:
 
         try:
             # Phase 2.3: Use API manager for resilient GitHub API calls
-            from .github_api_manager import github_api_manager
-            
+            from .github_api_manager import github_api_manager, GitHubPermissionError
+
             # Use search API to get counts only (1 call instead of paginating)
             # Get commits across all repos
             commits_url = f"https://api.github.com/search/commits?q=author:{username}+author-date:{start_date.strftime('%Y-%m-%d')}..{end_date.strftime('%Y-%m-%d')}&per_page=1"
-            
+
             # Get pull requests count
             prs_url = f"https://api.github.com/search/issues?q=author:{username}+type:pr+created:{start_date.strftime('%Y-%m-%d')}..{end_date.strftime('%Y-%m-%d')}&per_page=1"
-            
+
             # Make resilient API calls with rate limiting and circuit breaker
             async def fetch_commits():
                 import aiohttp
@@ -334,10 +334,10 @@ class GitHubCollector:
                         elif resp.status == 401:
                             raise aiohttp.ClientError(f"GitHub API authentication failed (401) - token may be expired or invalid")
                         elif resp.status == 403:
-                            raise aiohttp.ClientError(f"GitHub API forbidden (403) - token needs 'repo' permission for private repos")
+                            raise GitHubPermissionError(f"GitHub API forbidden (403) - token needs 'repo' permission for private repos")
                         else:
                             raise aiohttp.ClientError(f"GitHub API error for commits: {resp.status}")
-            
+
             async def fetch_prs():
                 import aiohttp
                 async with aiohttp.ClientSession() as session:
@@ -347,7 +347,7 @@ class GitHubCollector:
                         elif resp.status == 401:
                             raise aiohttp.ClientError(f"GitHub API authentication failed (401) - token may be expired or invalid")
                         elif resp.status == 403:
-                            raise aiohttp.ClientError(f"GitHub API forbidden (403) - token needs 'repo' permission for private repos") 
+                            raise GitHubPermissionError(f"GitHub API forbidden (403) - token needs 'repo' permission for private repos")
                         else:
                             raise aiohttp.ClientError(f"GitHub API error for PRs: {resp.status}")
             

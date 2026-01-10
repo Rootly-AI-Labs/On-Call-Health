@@ -15,6 +15,15 @@ import aiohttp
 logger = logging.getLogger(__name__)
 
 
+class GitHubPermissionError(Exception):
+    """Raised when GitHub API returns 403 Forbidden due to insufficient permissions.
+
+    This is a non-retryable error - retrying will not help since the permission
+    issue won't change during the request retry window.
+    """
+    pass
+
+
 class CircuitBreakerState(Enum):
     CLOSED = "closed"      # Normal operation
     OPEN = "open"          # Failing, blocking requests
@@ -101,28 +110,34 @@ class GitHubAPIManager:
                     delay = self._calculate_backoff_delay(attempt)
                     logger.info(f"🔄 Retry attempt {attempt}/{max_retries} after {delay:.2f}s delay")
                     await asyncio.sleep(delay)
-                
+
                 # Execute the API call
                 result = await func(*args, **kwargs)
-                
+
                 # Success: update metrics and circuit breaker
                 duration = time.time() - request_start
                 self._record_success(duration)
-                
+
                 return result
-                
+
+            except GitHubPermissionError as e:
+                # Non-retryable permission error: fail fast without retry
+                logger.warning(f"⚠️ GitHub permission error (non-retryable): {e}")
+                self._record_failure()
+                return None
+
             except aiohttp.ClientError as e:
                 logger.warning(f"API call attempt {attempt + 1} failed: {e}")
                 if attempt == max_retries:
                     # Final failure: update circuit breaker
                     self._record_failure()
                     return None
-                    
+
             except Exception as e:
                 logger.error(f"Unexpected error in API call: {e}")
                 self._record_failure()
                 return None
-        
+
         return None
     
     def _check_circuit_breaker(self) -> bool:
