@@ -122,8 +122,8 @@ class GitHubAPIManager:
 
             except GitHubPermissionError as e:
                 # Non-retryable permission error: fail fast without retry
+                # Note: Don't record as failure for circuit breaker - 403 is expected for private repos
                 logger.warning(f"⚠️ GitHub permission error (non-retryable): {e}")
-                self._record_failure()
                 return None
 
             except aiohttp.ClientError as e:
