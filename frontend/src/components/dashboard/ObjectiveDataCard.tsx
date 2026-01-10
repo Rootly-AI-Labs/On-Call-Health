@@ -238,18 +238,30 @@ export function ObjectiveDataCard({
           </CardDescription>
         </div>
 
-        <Select value={selectedMetric} onValueChange={setSelectedMetric}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="health_score">Risk Level</SelectItem>
-            <SelectItem value="incident_load">Incident Count</SelectItem>
-            <SelectItem value="after_hours">After Hours Activity</SelectItem>
-            <SelectItem value="severity_weighted">Workload Intensity</SelectItem>
-            <SelectItem value="weekend_work">Weekend Work</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center space-x-2">
+          {/* Info icon with tooltip */}
+          <div className="relative group">
+            <Info className="w-4 h-4 text-gray-500 cursor-help hover:text-gray-700 transition-colors" />
+            <div className="absolute top-full right-0 mt-2 px-3 py-2 bg-gray-900/95 text-white text-xs rounded-lg w-64 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+              <div className="font-semibold mb-1">{METRIC_DESCRIPTIONS[selectedMetric].title}</div>
+              <div>{METRIC_DESCRIPTIONS[selectedMetric].description}</div>
+              <div className="absolute bottom-full right-4 w-0 h-0 border-l-4 border-r-4 border-b-4 border-l-transparent border-r-transparent border-b-gray-900/95"></div>
+            </div>
+          </div>
+
+          <Select value={selectedMetric} onValueChange={setSelectedMetric}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="health_score">Risk Level</SelectItem>
+              <SelectItem value="incident_load">Incident Count</SelectItem>
+              <SelectItem value="after_hours">After Hours Activity</SelectItem>
+              <SelectItem value="severity_weighted">Workload Intensity</SelectItem>
+              <SelectItem value="weekend_work">Weekend Work</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col pb-2">
         <div className="space-y-3 flex-1 flex flex-col">
@@ -402,28 +414,17 @@ export function ObjectiveDataCard({
           </div>
 
           {/* Legend */}
-          <div className="mt-4 flex items-center justify-between text-xs text-gray-600">
-            <div className="flex items-center space-x-6">
+          <div className="mt-4 flex items-center space-x-6 text-xs text-gray-600">
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 rounded" style={{ backgroundColor: METRIC_CONFIG[selectedMetric].color }}></div>
+              <span>{METRIC_CONFIG[selectedMetric].label}</span>
+            </div>
+            {METRIC_CONFIG[selectedMetric].showMeanLine && (
               <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 rounded" style={{ backgroundColor: METRIC_CONFIG[selectedMetric].color }}></div>
-                <span>{METRIC_CONFIG[selectedMetric].label}</span>
+                <div className="w-3 h-0.5 bg-red-500"></div>
+                <span className="ml-1">{timeRange}-Day Mean</span>
               </div>
-              {METRIC_CONFIG[selectedMetric].showMeanLine && (
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-0.5 bg-red-500"></div>
-                  <span className="ml-1">{timeRange}-Day Mean</span>
-                </div>
-              )}
-            </div>
-            {/* Info icon with tooltip */}
-            <div className="relative group">
-              <Info className="w-4 h-4 text-gray-500 cursor-help hover:text-gray-700 transition-colors" />
-              <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900/95 text-white text-xs rounded-lg w-64 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                <div className="font-semibold mb-1">{METRIC_DESCRIPTIONS[selectedMetric].title}</div>
-                <div>{METRIC_DESCRIPTIONS[selectedMetric].description}</div>
-                <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900/95"></div>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </CardContent>

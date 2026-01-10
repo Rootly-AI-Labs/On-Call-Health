@@ -1222,26 +1222,19 @@ function DashboardContent() {
                               return (
                                 <div key={factor.factor} className="relative border border-gray-200 rounded-lg p-4 bg-white">
                                   <div className="flex items-center justify-between mb-2">
-                                    <div className="flex items-center space-x-2">
-                                      <span className="font-medium text-gray-900">{factor.factor}</span>
-                                      <span
-                                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                          factor.severity === 'Critical'
-                                            ? 'bg-red-100 text-red-800'
-                                            : factor.severity === 'Poor'
-                                            ? 'bg-orange-100 text-orange-800'
-                                            : factor.severity === 'Fair'
-                                            ? 'bg-yellow-100 text-yellow-800'
-                                            : 'bg-green-100 text-green-800'
-                                        }`}
-                                      >
-                                        {factor.severity}
-                                      </span>
-                                    </div>
-
-                                    {/* Unified text color */}
-                                    <span className="text-lg font-bold" style={{ color }}>
-                                      {factor.value}/100
+                                    <span className="font-medium text-gray-900">{factor.factor}</span>
+                                    <span
+                                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                        factor.severity === 'Critical'
+                                          ? 'bg-red-100 text-red-800'
+                                          : factor.severity === 'Poor'
+                                          ? 'bg-orange-100 text-orange-800'
+                                          : factor.severity === 'Fair'
+                                          ? 'bg-yellow-100 text-yellow-800'
+                                          : 'bg-green-100 text-green-800'
+                                      }`}
+                                    >
+                                      {factor.severity}
                                     </span>
                                   </div>
 
