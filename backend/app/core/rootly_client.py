@@ -96,89 +96,96 @@ class RootlyAPIClient:
         """Test API connection and return basic account info with permissions."""
         try:
             async with httpx.AsyncClient() as client:
-                # Use /v1/users/me to get organization from the API key's user
-                # This avoids getting a random first user's organization
-                response = await client.get(
+                # Call /v1/users/me to get organization from the API key's user
+                me_response = await client.get(
                     f"{self.base_url}/v1/users/me",
                     headers=self.headers,
                     timeout=30.0
                 )
-                
-                if response.status_code == 200:
-                    data = response.json()
 
-                    # Safety check for data
-                    if data is None:
-                        logger.error("API response json() returned None")
+                if me_response.status_code != 200:
+                    if me_response.status_code == 401:
                         return {
                             "status": "error",
-                            "message": "Invalid JSON response from API",
-                            "error_code": "INVALID_RESPONSE"
+                            "message": "Invalid API token",
+                            "error_code": "UNAUTHORIZED"
+                        }
+                    elif me_response.status_code == 404:
+                        return {
+                            "status": "error",
+                            "message": "API endpoint not found - check your Rootly configuration",
+                            "error_code": "NOT_FOUND"
+                        }
+                    else:
+                        return {
+                            "status": "error",
+                            "message": f"API request failed with status {me_response.status_code}",
+                            "error_code": "API_ERROR"
                         }
 
-                    # /v1/users/me returns a single user object under "data", not an array
-                    logger.debug(f"Rootly /v1/users/me API: Retrieved authenticated user info")
-
-                    # Extract organization info from the authenticated user
-                    organization_name = None
-                    account_info = {
-                        "api_version": "v1"
-                    }
-
-                    # Check user data for organization info
-                    if "data" in data and isinstance(data["data"], dict):
-                        user = data["data"]
-                        if "attributes" in user:
-                            attrs = user["attributes"]
-
-                            # Log what Rootly actually returns for debugging
-                            logger.info(f" Rootly API returned user attributes: full_name_with_team='{attrs.get('full_name_with_team')}', organization_name='{attrs.get('organization_name')}', company='{attrs.get('company')}'")
-
-                            # Extract organization name from full_name_with_team: "[Team Name] User Name"
-                            if "full_name_with_team" in attrs:
-                                full_name_with_team = attrs["full_name_with_team"]
-                                if full_name_with_team and full_name_with_team.startswith("[") and "]" in full_name_with_team:
-                                    organization_name = full_name_with_team.split("]")[0][1:]  # Extract text between [ ]
-                                    logger.info(f" Extracted org name from full_name_with_team: '{organization_name}'")
-                            # Fallback to other fields
-                            elif "organization_name" in attrs:
-                                organization_name = attrs["organization_name"]
-                                logger.info(f" Using organization_name attribute: '{organization_name}'")
-                            elif "company" in attrs:
-                                organization_name = attrs["company"]
-                                logger.info(f" Using company attribute: '{organization_name}'")
-
-                    # Only include organization name if available
-                    if organization_name:
-                        account_info["organization_name"] = organization_name
-                    
-                    # Check permissions for required endpoints
-                    permissions = await self.check_permissions()
-                    account_info["permissions"] = permissions
-                    
-                    return {
-                        "status": "success",
-                        "message": "Connected successfully",
-                        "account_info": account_info
-                    }
-                elif response.status_code == 401:
+                me_data = me_response.json()
+                if me_data is None:
+                    logger.error("API response json() returned None")
                     return {
                         "status": "error",
-                        "message": "Invalid API token",
-                        "error_code": "UNAUTHORIZED"
+                        "message": "Invalid JSON response from API",
+                        "error_code": "INVALID_RESPONSE"
                     }
-                elif response.status_code == 404:
-                    return {
-                        "status": "error", 
-                        "message": "API endpoint not found - check your Rootly configuration",
-                        "error_code": "NOT_FOUND"
-                    }
-                else:
-                    return {
-                        "status": "error",
-                        "message": f"API request failed with status {response.status_code}",
-                        "error_code": "API_ERROR"
-                    }
+
+                # Extract organization name from authenticated user
+                organization_name = None
+                if "data" in me_data and isinstance(me_data["data"], dict):
+                    user = me_data["data"]
+                    if "attributes" in user:
+                        attrs = user["attributes"]
+                        logger.info(f" Rootly API returned user attributes: full_name_with_team='{attrs.get('full_name_with_team')}', organization_name='{attrs.get('organization_name')}', company='{attrs.get('company')}'")
+
+                        # Extract organization name from full_name_with_team: "[Team Name] User Name"
+                        if "full_name_with_team" in attrs:
+                            full_name_with_team = attrs["full_name_with_team"]
+                            if full_name_with_team and full_name_with_team.startswith("[") and "]" in full_name_with_team:
+                                organization_name = full_name_with_team.split("]")[0][1:]
+                                logger.info(f" Extracted org name from full_name_with_team: '{organization_name}'")
+                        # Fallback to other fields
+                        elif "organization_name" in attrs:
+                            organization_name = attrs["organization_name"]
+                            logger.info(f" Using organization_name attribute: '{organization_name}'")
+                        elif "company" in attrs:
+                            organization_name = attrs["company"]
+                            logger.info(f" Using company attribute: '{organization_name}'")
+
+                # Call /v1/users to get total user count
+                users_response = await client.get(
+                    f"{self.base_url}/v1/users?page[size]=1",
+                    headers=self.headers,
+                    timeout=30.0
+                )
+
+                total_users = 0
+                if users_response.status_code == 200:
+                    users_data = users_response.json()
+                    if users_data and "meta" in users_data:
+                        total_users = users_data["meta"].get("total_count", 0)
+                        logger.debug(f"Rootly users API: {total_users} total users")
+
+                # Build account info
+                account_info = {
+                    "api_version": "v1",
+                    "total_users": total_users
+                }
+
+                if organization_name:
+                    account_info["organization_name"] = organization_name
+
+                # Check permissions for required endpoints
+                permissions = await self.check_permissions()
+                account_info["permissions"] = permissions
+
+                return {
+                    "status": "success",
+                    "message": "Connected successfully",
+                    "account_info": account_info
+                }
                     
         except httpx.ConnectError:
             return {
