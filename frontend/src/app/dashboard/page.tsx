@@ -1198,7 +1198,7 @@ function DashboardContent() {
                       </div>
                     </CardHeader>
                     
-                    <CardContent>
+                      <CardContent className="pb-0">
                       {(() => {
                         // One source of truth for risk colors (severity preferred; fallback to value thresholds)
                         const getRiskHex = (severity?: string, value?: number) => {
@@ -1216,7 +1216,7 @@ function DashboardContent() {
                         }
 
                         return (
-                          <div className="space-y-4">
+                          <div className="space-y-4 -mb-4">
                             {sortedBurnoutFactors.map((factor) => {
                               const color = getRiskHex(factor.severity, factor.value)
                               return (

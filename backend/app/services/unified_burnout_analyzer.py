@@ -1583,9 +1583,7 @@ class UnifiedBurnoutAnalyzer:
                 "factors": {
                     "workload": 0,
                     "after_hours": 0,
-                    "weekend_work": 0,
-                    "incident_load": 0,
-                    "response_time": 0
+                    "incident_load": 0
                 },
                 "burnout_dimensions": {
                     "personal_burnout": 0,
@@ -2806,19 +2804,9 @@ class UnifiedBurnoutAnalyzer:
         after_hours_pct = float(after_hours_pct) if after_hours_pct is not None else 0.0
         after_hours = min(10, after_hours_pct * 100 * 0.1)
 
-        # Weekend work factor - ensure numeric value
-        # Convert decimal percentage (0.0-1.0) to 0-10 scale
-        weekend_pct = metrics.get("weekend_percentage", 0)
-        weekend_pct = float(weekend_pct) if weekend_pct is not None else 0.0
-        weekend_work = min(10, weekend_pct * 100 * 0.1)
-        
         # REMOVED incident_load factor - was duplicate of workload factor
         # Both were calculated from incidents_per_week, causing double-counting
-        
-        # Response time factor - based on actual response times (backward compatibility)
-        response_time_mins = metrics.get("avg_response_time_minutes", 0)
-        response_time_mins = float(response_time_mins) if response_time_mins is not None else 0.0
-        response_time = min(10, response_time_mins / 6) if response_time_mins and response_time_mins >= 0 else 0.0
+        # REMOVED weekend_work and response_time factors - after_hours already includes weekend work
 
         # Incident load factor - severity-weighted total burden
         # Uses actual severity weights: Critical=4, High=3, Medium=2, Low=1
@@ -2833,8 +2821,6 @@ class UnifiedBurnoutAnalyzer:
         factors = {
             "workload": workload,
             "after_hours": after_hours,
-            "weekend_work": weekend_work,
-            "response_time": response_time,
             "incident_load": incident_load
         }
         
@@ -5479,8 +5465,6 @@ class UnifiedBurnoutAnalyzer:
                 factors = {
                     "workload": min((incident_count or 0) / 5.0 * 10, 10),  # Scale incidents to 0-10
                     "after_hours": ((after_hours_count or 0) / max((incident_count or 1), 1)) * 10 if (incident_count or 0) > 0 else 0,
-                    "response_time": member_factors.get("response_time", 0) or 0,
-                    "weekend_work": member_factors.get("weekend_work", 0) or 0,
                     "severity_pressure": ((high_severity_count or 0) / max((incident_count or 1), 1)) * 10 if (incident_count or 0) > 0 else 0
                 }
             else:
@@ -5488,8 +5472,6 @@ class UnifiedBurnoutAnalyzer:
                 factors = {
                     "workload": min((incident_count or 0) / 3.0 * 10, 10),
                     "after_hours": ((after_hours_count or 0) / max((incident_count or 1), 1)) * 10 if (incident_count or 0) > 0 else 0,
-                    "response_time": 5.0,  # Default moderate
-                    "weekend_work": 0,     # Can't determine from daily data
                     "severity_pressure": ((high_severity_count or 0) / max((incident_count or 1), 1)) * 10 if (incident_count or 0) > 0 else 0
                 }
             

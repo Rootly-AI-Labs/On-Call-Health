@@ -46,14 +46,12 @@ class BurnoutConfig:
     }
     
     DEPERSONALIZATION_FACTORS = {
-        'response_time': 0.50,    # Time pressure
-        'workload': 0.30,         # Shared with exhaustion but lower weight
-        'weekend_work': 0.20      # Boundary violations
+        'workload': 0.60,         # Shared with exhaustion but lower weight
+        'after_hours': 0.40       # Boundary violations (includes weekend work)
     }
-    
+
     PERSONAL_ACCOMPLISHMENT_FACTORS = {
-        'response_time': 0.40,    # Effectiveness indicator (inverted)
-        'workload': 0.60          # Ability to handle tasks (inverted)
+        'workload': 1.00          # Ability to handle tasks (inverted)
     }
     
     # GitHub-Specific Thresholds
@@ -66,10 +64,6 @@ class BurnoutConfig:
         'after_hours_percentage': {
             'concerning': 0.15,   # >15%
             'excessive': 0.30     # >30%
-        },
-        'weekend_percentage': {
-            'concerning': 0.10,   # >10%
-            'excessive': 0.25     # >25%
         },
         'pr_size_lines': {
             'large': 500,
@@ -101,13 +95,8 @@ class BurnoutConfig:
     INCIDENT_THRESHOLDS = {
         'incidents_per_week': {
             'moderate': 1.0,      # Even 1/week is notable workload
-            'high': 2.0,          # 2+ incidents/week is high stress  
+            'high': 2.0,          # 2+ incidents/week is high stress
             'excessive': 3.5      # 3.5+ incidents/week is excessive
-        },
-        'response_time_minutes': {
-            'acceptable': 15,     # <15 min
-            'concerning': 60,     # 15-60 min
-            'excessive': 120      # >120 min
         },
         'severity_weights': {
             'SEV0': 15.0,        # Life-defining events, PTSD risk, press attention (research-based)

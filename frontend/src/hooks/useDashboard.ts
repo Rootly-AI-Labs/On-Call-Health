@@ -2090,50 +2090,6 @@ export default function useDashboard() {
       })()
     },
     {
-      factor: "Weekend Work",
-      value: (() => {
-        if (allActiveMembers.length === 0) return null;
-
-        // Use backend-calculated weekend_work factors
-        const weekendScores = allActiveMembers
-          .map((m: any) => m?.factors?.weekend_work ?? 0)
-          .filter(score => score > 0);
-
-        if (weekendScores.length === 0) return 0;
-
-        const sum = weekendScores.reduce((total, score) => total + score, 0);
-        const average = sum / weekendScores.length;
-        // Convert 0-10 scale to OCB 0-100 scale (whole integer)
-        return Math.round(average * 10);
-      })(),
-      metrics: (() => {
-        const affectedCount = allActiveMembers.filter(m => (m?.factors?.weekend_work ?? 0) >= 5).length
-        return `${affectedCount} of ${allActiveMembers.length} members at medium/high risk`
-      })()
-    },
-    {
-      factor: "Response Time",
-      value: (() => {
-        if (allActiveMembers.length === 0) return null;
-
-        // Use backend-calculated response_time factors
-        const responseScores = allActiveMembers
-          .map((m: any) => m?.factors?.response_time ?? 0)
-          .filter(score => score > 0);
-
-        if (responseScores.length === 0) return 0;
-
-        const sum = responseScores.reduce((total, score) => total + score, 0);
-        const average = sum / responseScores.length;
-        // Convert 0-10 scale to OCB 0-100 scale (whole integer)
-        return Math.round(average * 10);
-      })(),
-      metrics: (() => {
-        const affectedCount = allActiveMembers.filter(m => (m?.factors?.response_time ?? 0) >= 5).length
-        return `${affectedCount} of ${allActiveMembers.length} members at medium/high risk`
-      })()
-    },
-    {
       factor: "Incident Load",
       value: (() => {
         if (allActiveMembers.length === 0) return null;

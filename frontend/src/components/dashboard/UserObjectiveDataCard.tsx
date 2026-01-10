@@ -69,14 +69,6 @@ export function UserObjectiveDataCard({
       dataKey: "severityWeightedCount",
       showMeanLine: true,
       transformer: (day: any) => Math.round(day.severity_weighted_count || 0)
-    },
-    weekend_work: {
-      label: "Weekend Work",
-      color: "#10b981",  // Green
-      yAxisLabel: "Weekend Incidents",
-      dataKey: "weekendCount",
-      showMeanLine: true,
-      transformer: (day: any) => day.weekend_count || 0
     }
   };
 
@@ -238,7 +230,6 @@ export function UserObjectiveDataCard({
               <SelectItem value="incident_load">Incident Load</SelectItem>
               <SelectItem value="after_hours">After Hours</SelectItem>
               <SelectItem value="severity_weighted">Workload Intensity</SelectItem>
-              <SelectItem value="weekend_work">Weekend Work</SelectItem>
             </SelectContent>
           </Select>
         </div>

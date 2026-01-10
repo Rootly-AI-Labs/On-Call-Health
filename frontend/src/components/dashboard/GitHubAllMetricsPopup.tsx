@@ -47,9 +47,7 @@ export default function GitHubAllMetricsPopup({
       factors: {
         workload: Math.round(((member.factors?.workload || 0)) * 10) / 10,
         afterHours: Math.round(((member.factors?.after_hours || 0)) * 10) / 10,
-        weekendWork: Math.round(((member.factors?.weekend_work || 0)) * 10) / 10,
         incidentLoad: Math.round(((member.factors?.incident_load || 0)) * 10) / 10,
-        responseTime: Math.round(((member.factors?.response_time || 0)) * 10) / 10,
       },
       metrics: member.metrics || {},
       github_activity: member.github_activity || null,
