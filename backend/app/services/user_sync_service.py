@@ -307,10 +307,11 @@ class UserSyncService:
                         logger.info(f"Migrated org-scoped correlation {correlation.id} to user {current_user.id}")
             else:
                 # This is a team member - check by organization and email
+                # IMPORTANT: Check for ANY record with this org+email, regardless of user_id
+                # This prevents creating duplicates when user_id gets set by other processes
                 correlation = self.db.query(UserCorrelation).filter(
                     UserCorrelation.organization_id == organization_id,
-                    UserCorrelation.email == email,
-                    UserCorrelation.user_id.is_(None)  # Only match org-scoped records
+                    UserCorrelation.email == email
                 ).first()
 
             if correlation:
@@ -327,17 +328,18 @@ class UserSyncService:
                     assigned_user_id = None  # NULL for team roster data
                     logger.debug(f"Creating org-scoped correlation for team member {email}")
 
-                # Safety check: ensure (user_id, email) doesn't already exist
+                # Final safety check: ensure no record exists for this org+email
+                # This is a last-resort check in case the query above missed something
                 existing_record = self.db.query(UserCorrelation).filter(
-                    UserCorrelation.user_id == assigned_user_id,
+                    UserCorrelation.organization_id == organization_id,
                     UserCorrelation.email == email
                 ).first()
 
                 if existing_record:
-                    # Record exists but wasn't found by previous queries
+                    # Record exists but wasn't found by previous query
                     # Update it instead of creating new one
                     logger.warning(
-                        f"Found existing record via safety check: user_id={assigned_user_id}, "
+                        f"Found existing record via safety check: org={organization_id}, "
                         f"email={email}. Updating instead of inserting."
                     )
                     updated += self._update_correlation(existing_record, user, platform, integration_id)
