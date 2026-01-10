@@ -2218,11 +2218,10 @@ export default function IntegrationsPage() {
   const handleSyncPromptAction = async () => {
     // Close the prompt
     setShowSyncPrompt(false)
-    // Open team members drawer
-    await fetchSyncedUsers(false, false)
-    setTeamMembersDrawerOpen(true)
-    // Open the sync modal to show progress
+    // Open the sync modal immediately to show progress
     setShowSyncConfirmModal(true)
+    // Open team members drawer
+    setTeamMembersDrawerOpen(true)
     // Automatically start the sync
     await performTeamSync()
   }
