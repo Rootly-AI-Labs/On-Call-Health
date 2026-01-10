@@ -91,6 +91,22 @@ export function TeamMembersList({
                 ON-CALL
               </Badge>
             )}
+            {member?.ocb_score !== undefined && (() => {
+              const getOCBRiskLevel = (ocb_score: number): string => {
+                if (ocb_score < 25) return 'healthy';
+                if (ocb_score < 50) return 'fair';
+                if (ocb_score < 75) return 'poor';
+                return 'critical';
+              };
+
+              const riskLevel = getOCBRiskLevel(member.ocb_score);
+              const displayLabel = riskLevel === 'healthy' ? 'HEALTHY' :
+                                 riskLevel === 'fair' ? 'FAIR' :
+                                 riskLevel === 'poor' ? 'POOR' :
+                                 'CRITICAL';
+
+              return <Badge className={getRiskColor(riskLevel)}>{displayLabel}</Badge>;
+            })()}
           </div>
         </div>
         
@@ -153,29 +169,12 @@ export function TeamMembersList({
 
         <div className="space-y-2">
           {member?.ocb_score !== undefined ? (
-            <div className="flex justify-between items-center text-sm">
+            <div className="text-sm">
               <span>Risk Level</span>
-              {(() => {
-                const getOCBRiskLevel = (ocb_score: number): string => {
-                  if (ocb_score < 25) return 'healthy';
-                  if (ocb_score < 50) return 'fair';
-                  if (ocb_score < 75) return 'poor';
-                  return 'critical';
-                };
-
-                const riskLevel = getOCBRiskLevel(member.ocb_score);
-                const displayLabel = riskLevel === 'healthy' ? 'HEALTHY' :
-                                   riskLevel === 'fair' ? 'FAIR' :
-                                   riskLevel === 'poor' ? 'POOR' :
-                                   'CRITICAL';
-
-                return <Badge className={getRiskColor(riskLevel)}>{displayLabel}</Badge>;
-              })()}
             </div>
           ) : (
-            <div className="flex justify-between text-sm">
+            <div className="text-sm">
               <span>No Risk Level Available</span>
-              <span className="font-medium text-gray-500">-</span>
             </div>
           )}
           <div className="relative h-2 w-full overflow-hidden rounded-full bg-gray-200">
