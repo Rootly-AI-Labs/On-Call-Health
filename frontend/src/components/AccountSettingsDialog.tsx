@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import {
   Dialog,
@@ -11,7 +11,14 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Loader2, Trash2 } from "lucide-react"
+import { Loader2, Trash2, UserPlus } from "lucide-react"
+
+interface PromotableUser {
+  id: number
+  name: string
+  email: string
+  role: string
+}
 
 interface AccountSettingsDialogProps {
   isOpen: boolean
@@ -29,6 +36,63 @@ export function AccountSettingsDialog({
   const [emailConfirmation, setEmailConfirmation] = useState("")
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [showPromoteUsers, setShowPromoteUsers] = useState(false)
+  const [promotableUsers, setPromotableUsers] = useState<PromotableUser[]>([])
+  const [loadingUsers, setLoadingUsers] = useState(false)
+  const [promotingUserId, setPromotingUserId] = useState<number | null>(null)
+
+  const fetchPromotableUsers = async () => {
+    setLoadingUsers(true)
+    try {
+      const authToken = localStorage.getItem("auth_token")
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+
+      const response = await fetch(`${API_BASE}/auth/users/promotable`, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setPromotableUsers(data.users || [])
+      }
+    } catch (error) {
+      console.error("Error fetching promotable users:", error)
+    } finally {
+      setLoadingUsers(false)
+    }
+  }
+
+  const handlePromoteUser = async (userId: number) => {
+    setPromotingUserId(userId)
+    try {
+      const authToken = localStorage.getItem("auth_token")
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+
+      const response = await fetch(`${API_BASE}/auth/users/${userId}/role?new_role=admin`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      })
+
+      if (response.ok) {
+        // Refresh promotable users list
+        await fetchPromotableUsers()
+        setShowPromoteUsers(false)
+        setDeleteError(null)
+      } else {
+        const error = await response.json()
+        setDeleteError(error.detail || "Failed to promote user")
+      }
+    } catch (error) {
+      console.error("Error promoting user:", error)
+      setDeleteError("An unexpected error occurred")
+    } finally {
+      setPromotingUserId(null)
+    }
+  }
 
   const handleDeleteAccount = async () => {
     if (emailConfirmation !== userEmail) {
@@ -56,7 +120,15 @@ export function AccountSettingsDialog({
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.detail || "Failed to delete account")
+        const errorMessage = error.detail || "Failed to delete account"
+
+        // Check if error is about being sole admin
+        if (errorMessage.includes("promote another team member")) {
+          setShowPromoteUsers(true)
+          await fetchPromotableUsers()
+        }
+
+        throw new Error(errorMessage)
       }
 
       // Success - clear all localStorage and redirect
@@ -174,6 +246,55 @@ export function AccountSettingsDialog({
               {deleteError && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                   <p className="text-sm text-red-800">{deleteError}</p>
+                </div>
+              )}
+
+              {showPromoteUsers && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <UserPlus className="w-5 h-5 text-blue-600" />
+                    <h4 className="text-sm font-semibold text-blue-900">
+                      Promote a Team Member to Admin
+                    </h4>
+                  </div>
+                  <p className="text-sm text-blue-800 mb-3">
+                    Select a team member to promote to admin before deleting your account:
+                  </p>
+                  {loadingUsers ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+                    </div>
+                  ) : promotableUsers.length === 0 ? (
+                    <p className="text-sm text-blue-700">
+                      No team members with accounts found. Please invite a team member first.
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {promotableUsers.map((user) => (
+                        <div
+                          key={user.id}
+                          className="flex items-center justify-between p-3 bg-white rounded border border-blue-200"
+                        >
+                          <div>
+                            <p className="font-medium text-gray-900">{user.name}</p>
+                            <p className="text-sm text-gray-600">{user.email}</p>
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => handlePromoteUser(user.id)}
+                            disabled={promotingUserId !== null}
+                            className="bg-blue-600 hover:bg-blue-700"
+                          >
+                            {promotingUserId === user.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              "Promote to Admin"
+                            )}
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 

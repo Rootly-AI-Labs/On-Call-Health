@@ -748,7 +748,7 @@ async def disconnect_slack(
         workspace_mapping.status = 'inactive'
 
         # Disable survey schedule for this organization
-        from ..models.survey_schedule import SurveySchedule
+        from ...models.survey_schedule import SurveySchedule
         if organization_id:
             survey_schedule = db.query(SurveySchedule).filter(
                 SurveySchedule.organization_id == organization_id
@@ -939,8 +939,8 @@ class SlackSurveySubmission(BaseModel):
     """Model for Slack burnout survey submissions."""
     analysis_id: int
     user_email: str
-    self_reported_score: int  # 0-100 scale
-    energy_level: int  # 1-5 scale
+    feeling_score: int  # 1-5 scale: How user is feeling (1=struggling, 5=very good)
+    workload_score: int  # 1-5 scale: How manageable workload feels (1=overwhelming, 5=very manageable)
     stress_factors: list[str]  # Array of stress factors
     personal_circumstances: str = None  # 'significantly', 'somewhat', 'no', 'prefer_not_say'
     additional_comments: str = ""
@@ -1399,21 +1399,31 @@ async def handle_slack_interactions(
                     # Store feeling as feeling_score (1-5 scale: higher = feeling better)
                     feeling_score = feeling_map.get(feeling_str, 3)
 
-                    # Question 2: How manageable does your workload feel? (1-5 scale)
-                    workload_str = values.get("workload_block", {}).get("workload_input", {}).get("selected_option", {}).get("value", "somewhat_manageable")
-                    workload_map = {
-                        "very_manageable": 5,
-                        "manageable": 4,
-                        "somewhat_manageable": 3,
-                        "barely_manageable": 2,
-                        "overwhelming": 1
-                    }
-                    # Store workload as workload_score (1-5 scale: higher = more manageable)
-                    workload_score = workload_map.get(workload_str, 3)
+                    # Question 2: What's having the biggest impact? (single-select)
+                    stress_sources_block = values.get("stress_sources_block", {})
+                    stress_sources_input = stress_sources_block.get("stress_sources_input", {})
+                    selected_option = stress_sources_input.get("selected_option", {})
+                    selected_value = selected_option.get("value") if selected_option else None
 
-                    # No longer collecting stress factors or personal circumstances
-                    stress_factors = []
-                    personal_circumstances = None
+                    # Store as array for consistency with database schema
+                    stress_factors = [selected_value] if selected_value else []
+
+                    # Derive workload_score based on selected stress source
+                    # Map stress sources to workload intensity (inverse relationship)
+                    stress_intensity_map = {
+                        'oncall_frequency': 2,      # High impact
+                        'after_hours': 2,           # High impact
+                        'incident_complexity': 3,   # Moderate impact
+                        'time_pressure': 3,         # Moderate impact
+                        'team_support': 2,          # High impact (lack of support)
+                        'work_life_balance': 2,     # High impact
+                        'personal': 4,              # Lower work impact (external)
+                        'other': 3                  # Moderate impact (unknown)
+                    }
+                    workload_score = stress_intensity_map.get(selected_value, 5) if selected_value else 5
+
+                    # Check if personal circumstances was selected
+                    personal_circumstances = 'yes' if selected_value == 'personal' else None
 
                     # Get optional comments
                     comments_block = values.get("comments_block") or {}
@@ -1591,8 +1601,8 @@ async def submit_slack_burnout_survey(
             organization_id=None,  # No org_id for this endpoint
             email_domain=user.email_domain if user else None,
             analysis_id=submission.analysis_id,
-            self_reported_score=submission.self_reported_score,
-            energy_level=submission.energy_level,
+            feeling_score=submission.feeling_score,
+            workload_score=submission.workload_score,
             stress_factors=submission.stress_factors,
             personal_circumstances=submission.personal_circumstances,
             additional_comments=submission.additional_comments,
@@ -1682,8 +1692,8 @@ async def get_team_survey_status(
                     "user_email": db.query(UserCorrelation).filter(
                         UserCorrelation.user_id == response.user_id
                     ).first().user_email,
-                    "self_reported_score": response.self_reported_score,
-                    "energy_level": response.energy_level,
+                    "feeling_score": response.feeling_score,
+                    "workload_score": response.workload_score,
                     "stress_factors": response.stress_factors,
                     "submitted_at": response.submitted_at.isoformat(),
                     "submitted_via": response.submitted_via,
@@ -1780,26 +1790,30 @@ def create_burnout_survey_modal(organization_id: int, user_id: int, analysis_id:
             },
             {
                 "type": "input",
-                "block_id": "workload_block",
+                "block_id": "stress_sources_block",
                 "element": {
                     "type": "static_select",
-                    "action_id": "workload_input",
+                    "action_id": "stress_sources_input",
                     "placeholder": {
                         "type": "plain_text",
-                        "text": "Select workload level"
+                        "text": "Select one"
                     },
                     "options": [
-                        {"text": {"type": "plain_text", "text": "Very manageable"}, "value": "very_manageable"},
-                        {"text": {"type": "plain_text", "text": "Manageable"}, "value": "manageable"},
-                        {"text": {"type": "plain_text", "text": "Somewhat manageable"}, "value": "somewhat_manageable"},
-                        {"text": {"type": "plain_text", "text": "Barely manageable"}, "value": "barely_manageable"},
-                        {"text": {"type": "plain_text", "text": "Overwhelming"}, "value": "overwhelming"}
+                        {"text": {"type": "plain_text", "text": "On-call frequency"}, "value": "oncall_frequency"},
+                        {"text": {"type": "plain_text", "text": "After-hours incidents"}, "value": "after_hours"},
+                        {"text": {"type": "plain_text", "text": "Incident complexity"}, "value": "incident_complexity"},
+                        {"text": {"type": "plain_text", "text": "Time pressure"}, "value": "time_pressure"},
+                        {"text": {"type": "plain_text", "text": "Team support"}, "value": "team_support"},
+                        {"text": {"type": "plain_text", "text": "Work-life balance"}, "value": "work_life_balance"},
+                        {"text": {"type": "plain_text", "text": "Personal"}, "value": "personal"},
+                        {"text": {"type": "plain_text", "text": "Other"}, "value": "other"}
                     ]
                 },
                 "label": {
                     "type": "plain_text",
-                    "text": "How manageable does your workload feel?"
-                }
+                    "text": "What's having the biggest impact on you right now?"
+                },
+                "optional": True
             },
             {
                 "type": "input",
