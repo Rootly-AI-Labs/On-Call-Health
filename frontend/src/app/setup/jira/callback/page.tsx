@@ -92,7 +92,7 @@ function JiraCallbackContent() {
   }, [searchParams])
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
+    <div className="flex min-h-screen items-center justify-center bg-white">
       <div className="text-center space-y-4">
         <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
         <h1 className="text-xl font-semibold">Connecting Jira...</h1>
@@ -107,7 +107,7 @@ function JiraCallbackContent() {
 export default function JiraCallbackPage() {
   return (
     <Suspense fallback={
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex min-h-screen items-center justify-center bg-white">
         <div className="text-center space-y-4">
           <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
           <h1 className="text-xl font-semibold">Loading...</h1>

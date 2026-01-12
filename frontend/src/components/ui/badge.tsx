@@ -8,13 +8,23 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
+        /* Primary badge - Purple background */
         default:
-          "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
+          "border-transparent bg-purple-700 text-white hover:bg-purple-800",
+        /* Secondary badge - Light purple background */
         secondary:
-          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
+          "border-transparent bg-purple-200 text-purple-900 hover:bg-purple-300",
+        /* Success state - Green */
+        success:
+          "border-transparent bg-green-100 text-green-800 hover:bg-green-200",
+        /* Warning state - Orange */
+        warning:
+          "border-transparent bg-orange-700 text-white hover:bg-orange-800",
+        /* Destructive badge - Orange-900 */
         destructive:
-          "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
-        outline: "text-foreground",
+          "border-transparent bg-orange-900 text-white hover:bg-orange-700",
+        /* Outline badge - Border only */
+        outline: "border-neutral-300 bg-white text-neutral-900 hover:bg-neutral-100",
       },
     },
     defaultVariants: {

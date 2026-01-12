@@ -71,7 +71,7 @@ export function TeamSyncPrompt({
                 <RefreshCw className="h-4 w-4 text-blue-600" />
               </div>
               <div className="flex-1">
-                <h3 className="text-base font-bold text-gray-900 mb-0.5">
+                <h3 className="text-base font-bold text-neutral-900 mb-0.5">
                   Sync Recommended
                 </h3>
                 <p className="text-xs text-blue-600 font-medium">
@@ -83,14 +83,14 @@ export function TeamSyncPrompt({
               variant="ghost"
               size="sm"
               onClick={handleDismiss}
-              className="h-7 w-7 p-0 hover:bg-gray-100 rounded-full -mt-1 -mr-1"
+              className="h-7 w-7 p-0 hover:bg-neutral-200 rounded-full -mt-1 -mr-1"
             >
-              <X className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+              <X className="h-4 w-4 text-neutral-500 hover:text-neutral-700" />
             </Button>
           </div>
 
           {/* Message */}
-          <p className="text-sm text-gray-600 leading-relaxed mb-5 pl-15">
+          <p className="text-sm text-neutral-700 leading-relaxed mb-5 pl-15">
             {message}
           </p>
 
@@ -106,7 +106,7 @@ export function TeamSyncPrompt({
             <Button
               variant="ghost"
               onClick={handleDismiss}
-              className="h-10 px-4 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+              className="h-10 px-4 text-sm text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100"
             >
               Dismiss
             </Button>

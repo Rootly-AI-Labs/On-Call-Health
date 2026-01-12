@@ -374,21 +374,21 @@ export function SlackSurveyTabs({
         <div className="bg-white rounded-lg border p-4 space-y-4">
           {!slackIntegration && !process.env.NEXT_PUBLIC_SLACK_CLIENT_ID && (
             <div className="text-center py-4">
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="text-sm text-neutral-700 mb-4">
                 The official Slack app is not currently configured. Use the "Add to Slack" button above to connect your workspace.
               </p>
             </div>
           )}
 
           <div className={!slackIntegration ? "" : "border-t pt-4"}>
-            <h4 className="font-medium text-gray-900 mb-3">How it works:</h4>
+            <h4 className="font-medium text-neutral-900 mb-3">How it works:</h4>
             <div className="space-y-3">
               <div className="flex items-start space-x-3">
                 <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                   <span className="text-green-600 text-xs font-bold">1</span>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-700"><strong>Authorize the app</strong> to deliver 3-question burnout surveys via Slack</p>
+                  <p className="text-sm text-neutral-700"><strong>Authorize the app</strong> to deliver 3-question burnout surveys via Slack</p>
                 </div>
               </div>
 
@@ -397,7 +397,7 @@ export function SlackSurveyTabs({
                   <span className="text-green-600 text-xs font-bold">2</span>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-700"><strong>Team members receive surveys</strong> via automated DMs or by typing <code className="bg-gray-100 px-1 rounded text-xs">/oncall-health</code></p>
+                  <p className="text-sm text-neutral-700"><strong>Team members receive surveys</strong> via automated DMs or by typing <code className="bg-neutral-200 px-1 rounded text-xs">/oncall-health</code></p>
                   <div className="bg-slate-800 rounded p-3 font-mono text-sm text-green-400 mt-2">
                     <div>/oncall-health</div>
                     <div className="text-slate-400 mt-1">→ Opens interactive modal with 3 scored questions + optional text</div>
@@ -410,7 +410,7 @@ export function SlackSurveyTabs({
                   <span className="text-green-600 text-xs font-bold">3</span>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-700"><strong>Survey data automatically integrates</strong> with your burnout analysis to validate automated detection patterns</p>
+                  <p className="text-sm text-neutral-700"><strong>Survey data automatically integrates</strong> with your burnout analysis to validate automated detection patterns</p>
                 </div>
               </div>
             </div>
@@ -418,7 +418,7 @@ export function SlackSurveyTabs({
         </div>
 
 
-        <div className="flex items-center justify-between pt-2 text-sm text-gray-500">
+        <div className="flex items-center justify-between pt-2 text-sm text-neutral-500">
           <div className="flex items-center space-x-2">
             <Users className="w-4 h-4" />
             <span>Available to all workspace members</span>
@@ -436,8 +436,8 @@ export function SlackSurveyTabs({
       <TabsContent value="team" className="space-y-4 mt-4">
         <div className="bg-white rounded-lg border p-4">
           <div className="mb-4">
-            <h4 className="font-medium text-gray-900 mb-2">Automated Survey Recipients</h4>
-            <p className="text-sm text-gray-600 mb-3">
+            <h4 className="font-medium text-neutral-900 mb-2">Automated Survey Recipients</h4>
+            <p className="text-sm text-neutral-700 mb-3">
               Select which team members should receive automated survey DMs. Only users with Slack accounts can be selected.
             </p>
           </div>
@@ -447,8 +447,8 @@ export function SlackSurveyTabs({
             <div className="border-t pt-4">
               {loadingSyncedUsers || loadingRecipients ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-5 h-5 animate-spin text-gray-400 mr-2" />
-                  <span className="text-sm text-gray-600">Loading team members...</span>
+                  <Loader2 className="w-5 h-5 animate-spin text-neutral-500 mr-2" />
+                  <span className="text-sm text-neutral-700">Loading team members...</span>
                 </div>
               ) : (() => {
                 const slackUsers = syncedUsers.filter((u: any) => u.slack_user_id)
@@ -468,7 +468,7 @@ export function SlackSurveyTabs({
                       )
                     })()}
                     <div className="flex items-center justify-between mb-3">
-                      <h5 className="text-sm font-medium text-gray-900">
+                      <h5 className="text-sm font-medium text-neutral-900">
                         Team Members ({slackUsers.length})
                         {savedRecipients.size > 0 && (
                           <span className="ml-2 text-green-600">
@@ -499,7 +499,7 @@ export function SlackSurveyTabs({
                       {slackUsers.map((user: any) => (
                         <div
                           key={user.id}
-                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                          className="flex items-center justify-between p-3 bg-neutral-100 rounded-lg hover:bg-neutral-200 transition-colors cursor-pointer"
                           onClick={() => toggleRecipient(user.id)}
                         >
                           <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -510,14 +510,14 @@ export function SlackSurveyTabs({
                             />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1">
-                                <span className="font-medium text-gray-900 truncate">{user.name}</span>
+                                <span className="font-medium text-neutral-900 truncate">{user.name}</span>
                                 {user.survey_count > 0 && (
                                   <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 border-green-200">
                                     {user.survey_count} {user.survey_count === 1 ? 'survey' : 'surveys'}
                                   </Badge>
                                 )}
                               </div>
-                              <div className="flex items-center gap-1 text-xs text-gray-500">
+                              <div className="flex items-center gap-1 text-xs text-neutral-500">
                                 <Mail className="w-3 h-3" />
                                 <span className="truncate">{user.email}</span>
                               </div>
@@ -529,11 +529,11 @@ export function SlackSurveyTabs({
                                 slack: 'bg-purple-100 text-purple-700',
                                 rootly: 'bg-blue-100 text-blue-700',
                                 pagerduty: 'bg-green-100 text-green-700',
-                                github: 'bg-gray-100 text-gray-700',
+                                github: 'bg-neutral-200 text-neutral-700',
                                 jira: 'bg-indigo-100 text-indigo-700'
                               }
                               return (
-                                <Badge key={platform} variant="outline" className={`text-xs ${colors[platform] || 'bg-gray-100 text-gray-700'}`}>
+                                <Badge key={platform} variant="outline" className={`text-xs ${colors[platform] || 'bg-neutral-200 text-neutral-700'}`}>
                                   {platform}
                                 </Badge>
                               )
@@ -568,7 +568,7 @@ export function SlackSurveyTabs({
                             Array.from(selectedRecipients).some(id => !savedRecipients.has(id))
                           return !hasChanges
                         })()}
-                        className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="bg-purple-700 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {savingRecipients ? (
                           <>
@@ -599,7 +599,7 @@ export function SlackSurveyTabs({
                     </div>
                   </div>
                 ) : (
-                  <div className="text-sm text-gray-600 text-center py-6">
+                  <div className="text-sm text-neutral-700 text-center py-6">
                     <p>No Slack users found. Use the <strong>Sync Members</strong> button at the top to sync users from your organization.</p>
                   </div>
                 )
@@ -609,7 +609,7 @@ export function SlackSurveyTabs({
 
           {!selectedOrganization && (
             <div className="border-t pt-4 text-center py-6">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-neutral-700">
                 Select an organization from the integrations section above to view team members.
               </p>
             </div>
@@ -643,15 +643,15 @@ export function SlackSurveyTabs({
         </div>
 
         <div className="bg-white rounded-lg border p-4">
-          <h4 className="font-medium text-gray-900 mb-3">Survey Delivery</h4>
-          <p className="text-sm text-gray-600 mb-4">
+          <h4 className="font-medium text-neutral-900 mb-3">Survey Delivery</h4>
+          <p className="text-sm text-neutral-700 mb-4">
             Send burnout surveys to your team members immediately via Slack DM.
           </p>
 
           <div className="flex justify-center">
             <Button
               onClick={() => setShowManualSurveyModal(true)}
-              className="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700"
+              className="flex items-center space-x-2 bg-purple-700 hover:bg-purple-700"
             >
               <Send className="w-4 h-4" />
               <span>Send Survey Now</span>
@@ -661,11 +661,11 @@ export function SlackSurveyTabs({
           <div className="mt-6 border-t pt-4">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h5 className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                <h5 className="text-sm font-medium text-neutral-900 flex items-center gap-2">
                   <Clock className="w-4 h-4" />
                   Automated Schedule
                 </h5>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-neutral-500 mt-1">
                   Send surveys every weekday at a specific time
                 </p>
                 {scheduleEnabled && savedScheduleTime && (
@@ -729,12 +729,12 @@ export function SlackSurveyTabs({
             </div>
 
             {scheduleEnabled && (
-              <div className="space-y-3 mt-4 p-3 bg-gray-50 rounded-md">
+              <div className="space-y-3 mt-4 p-3 bg-neutral-100 rounded-md">
                 <div>
-                  <Label className="text-sm text-gray-700">
+                  <Label className="text-sm text-neutral-700">
                     Delivery Time (Your Local Time)
                   </Label>
-                  <div className="mt-2 flex items-center justify-center gap-2 p-3 bg-white rounded-lg border border-gray-200">
+                  <div className="mt-2 flex items-center justify-center gap-2 p-3 bg-white rounded-lg border border-neutral-200">
                     {/* Hour Scroller */}
                     <div className="flex flex-col items-center">
                       <button
@@ -744,13 +744,13 @@ export function SlackSurveyTabs({
                           setScheduleTime(`${String(newHour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`)
                         }}
                         disabled={savingSchedule}
-                        className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
+                        className="text-neutral-500 hover:text-neutral-700 disabled:opacity-50"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
                         </svg>
                       </button>
-                      <div className="text-2xl font-semibold text-gray-900 my-1 w-12 text-center">
+                      <div className="text-2xl font-semibold text-neutral-900 my-1 w-12 text-center">
                         {(() => {
                           const hour = parseInt(scheduleTime.split(':')[0])
                           const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour
@@ -764,7 +764,7 @@ export function SlackSurveyTabs({
                           setScheduleTime(`${String(newHour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`)
                         }}
                         disabled={savingSchedule}
-                        className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
+                        className="text-neutral-500 hover:text-neutral-700 disabled:opacity-50"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -772,7 +772,7 @@ export function SlackSurveyTabs({
                       </button>
                     </div>
 
-                    <div className="text-2xl font-bold text-gray-400">:</div>
+                    <div className="text-2xl font-bold text-neutral-500">:</div>
 
                     {/* Minute Scroller */}
                     <div className="flex flex-col items-center">
@@ -783,13 +783,13 @@ export function SlackSurveyTabs({
                           setScheduleTime(`${String(hour).padStart(2, '0')}:${String(newMinute).padStart(2, '0')}`)
                         }}
                         disabled={savingSchedule}
-                        className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
+                        className="text-neutral-500 hover:text-neutral-700 disabled:opacity-50"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
                         </svg>
                       </button>
-                      <div className="text-2xl font-semibold text-gray-900 my-1 w-12 text-center">
+                      <div className="text-2xl font-semibold text-neutral-900 my-1 w-12 text-center">
                         {scheduleTime.split(':')[1]}
                       </div>
                       <button
@@ -799,7 +799,7 @@ export function SlackSurveyTabs({
                           setScheduleTime(`${String(hour).padStart(2, '0')}:${String(newMinute).padStart(2, '0')}`)
                         }}
                         disabled={savingSchedule}
-                        className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
+                        className="text-neutral-500 hover:text-neutral-700 disabled:opacity-50"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -815,7 +815,7 @@ export function SlackSurveyTabs({
                         setScheduleTime(`${String(newHour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`)
                       }}
                       disabled={savingSchedule}
-                      className="ml-1 px-2 py-1 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded disabled:opacity-50"
+                      className="ml-1 px-2 py-1 text-xs font-medium text-neutral-700 bg-neutral-200 hover:bg-neutral-300 rounded disabled:opacity-50"
                     >
                       {parseInt(scheduleTime.split(':')[0]) >= 12 ? 'PM' : 'AM'}
                     </button>
@@ -823,12 +823,12 @@ export function SlackSurveyTabs({
                 </div>
 
                 <div>
-                  <Label className="text-sm text-gray-700">Frequency</Label>
+                  <Label className="text-sm text-neutral-700">Frequency</Label>
                   <select
                     value={frequencyType}
                     onChange={(e) => setFrequencyType(e.target.value as 'daily' | 'weekday' | 'weekly')}
                     disabled={savingSchedule}
-                    className="mt-2 w-full px-3 py-2 border border-gray-200 rounded-md text-sm"
+                    className="mt-2 w-full px-3 py-2 border border-neutral-200 rounded-md text-sm"
                   >
                     <option value="daily">Every day</option>
                     <option value="weekday">Weekdays (Mon-Fri)</option>
@@ -838,12 +838,12 @@ export function SlackSurveyTabs({
 
                 {frequencyType === 'weekly' && (
                   <div>
-                    <Label className="text-sm text-gray-700">Day of Week</Label>
+                    <Label className="text-sm text-neutral-700">Day of Week</Label>
                     <select
                       value={dayOfWeek}
                       onChange={(e) => setDayOfWeek(parseInt(e.target.value))}
                       disabled={savingSchedule}
-                      className="mt-2 w-full px-3 py-2 border border-gray-200 rounded-md text-sm"
+                      className="mt-2 w-full px-3 py-2 border border-neutral-200 rounded-md text-sm"
                     >
                       <option value={0}>Monday</option>
                       <option value={1}>Tuesday</option>
@@ -856,7 +856,7 @@ export function SlackSurveyTabs({
                   </div>
                 )}
 
-                <div className="text-xs text-gray-600 bg-blue-50 border border-blue-100 rounded-md p-2">
+                <div className="text-xs text-neutral-700 bg-blue-50 border border-blue-100 rounded-md p-2">
                   <p className="font-medium text-blue-900 mb-1">Schedule Details:</p>
                   <ul className="space-y-1 ml-2">
                     <li>• {frequencyType === 'daily' ? 'Sends every day' : frequencyType === 'weekday' ? 'Sends Monday through Friday' : `Sends every ${['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][dayOfWeek]}`}</li>
@@ -890,7 +890,7 @@ export function SlackSurveyTabs({
               <>
                 Are you sure you want to save this automated schedule?
                 <div className="mt-3 p-3 bg-purple-50 rounded-md border border-purple-100">
-                  <div className="text-sm text-gray-700 space-y-1">
+                  <div className="text-sm text-neutral-700 space-y-1">
                     <div className="font-medium text-purple-900">Schedule Details:</div>
                     <div>• <strong>Time:</strong> {(() => {
                       const [hour, minute] = scheduleTime.split(':').map(Number)
@@ -929,7 +929,7 @@ export function SlackSurveyTabs({
               setShowSaveConfirmation(false)
             }}
             disabled={savingSchedule}
-            className="bg-purple-600 hover:bg-purple-700"
+            className="bg-purple-700 hover:bg-purple-700"
           >
             {savingSchedule ? (
               <>

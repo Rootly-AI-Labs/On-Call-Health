@@ -18,7 +18,7 @@ export function SimpleToastDisplay() {
             max-w-md p-4 rounded-lg shadow-lg border flex items-start justify-between
             ${toast.variant === 'destructive' 
               ? 'bg-red-50 border-red-200 text-red-800' 
-              : 'bg-white border-gray-200 text-gray-800'
+              : 'bg-white border-neutral-200 text-neutral-900'
             }
           `}
         >
@@ -32,7 +32,7 @@ export function SimpleToastDisplay() {
           </div>
           <button
             onClick={() => dismiss(toast.id)}
-            className="ml-2 text-gray-400 hover:text-gray-600"
+            className="ml-2 text-neutral-500 hover:text-neutral-700"
           >
             <X className="w-4 h-4" />
           </button>

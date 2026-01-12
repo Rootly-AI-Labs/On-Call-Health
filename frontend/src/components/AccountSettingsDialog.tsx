@@ -161,7 +161,7 @@ export function AccountSettingsDialog({
           <DialogTitle className="text-2xl font-semibold">
             Account Settings
           </DialogTitle>
-          <DialogDescription className="text-gray-600">
+          <DialogDescription className="text-neutral-700">
             Manage your account preferences and settings
           </DialogDescription>
         </DialogHeader>
@@ -169,24 +169,24 @@ export function AccountSettingsDialog({
         {/* Future sections will go here: Change Password, Notifications, etc. */}
 
         {/* Account Deletion Section */}
-        <div className="mt-8 pt-8 border-t border-gray-200">
+        <div className="mt-8 pt-8 border-t border-neutral-200">
           <div className="flex items-start gap-3 mb-4">
             <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-50 flex items-center justify-center">
               <Trash2 className="w-5 h-5 text-red-600" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-lg font-semibold text-neutral-900">
                 Delete Account
               </h3>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm text-neutral-700 mt-1">
                 Permanently remove your account and all associated data
               </p>
             </div>
           </div>
 
           {!showDeleteConfirmation ? (
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <p className="text-sm text-gray-700 mb-3">
+            <div className="bg-neutral-100 border border-neutral-200 rounded-lg p-4">
+              <p className="text-sm text-neutral-700 mb-3">
                 This action cannot be undone. This will permanently delete your account and remove all data from our servers.
               </p>
               <Button
@@ -225,9 +225,9 @@ export function AccountSettingsDialog({
               </div>
 
               <div>
-                <label htmlFor="email-confirm" className="block text-sm font-medium text-gray-900 mb-2">
+                <label htmlFor="email-confirm" className="block text-sm font-medium text-neutral-900 mb-2">
                   Confirm by typing your email:{" "}
-                  <span className="font-mono text-sm bg-gray-100 px-2 py-0.5 rounded">
+                  <span className="font-mono text-sm bg-neutral-200 px-2 py-0.5 rounded">
                     {userEmail}
                   </span>
                 </label>
@@ -276,8 +276,8 @@ export function AccountSettingsDialog({
                           className="flex items-center justify-between p-3 bg-white rounded border border-blue-200"
                         >
                           <div>
-                            <p className="font-medium text-gray-900">{user.name}</p>
-                            <p className="text-sm text-gray-600">{user.email}</p>
+                            <p className="font-medium text-neutral-900">{user.name}</p>
+                            <p className="text-sm text-neutral-700">{user.email}</p>
                           </div>
                           <Button
                             size="sm"

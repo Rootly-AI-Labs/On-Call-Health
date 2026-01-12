@@ -85,9 +85,9 @@ export const IntegrationCardItem = memo(function IntegrationCardItem({
         {/* Expand/Collapse Icon */}
         <div className="flex-shrink-0 w-6">
           {isExpanded ? (
-            <ChevronUp className="w-4 h-4 text-gray-500" />
+            <ChevronUp className="w-4 h-4 text-neutral-500" />
           ) : (
-            <ChevronDown className="w-4 h-4 text-gray-500" />
+            <ChevronDown className="w-4 h-4 text-neutral-500" />
           )}
         </div>
 
@@ -141,11 +141,11 @@ export const IntegrationCardItem = memo(function IntegrationCardItem({
         {/* Stats in collapsed view - fixed widths for alignment */}
         {!isExpanded && (
           <>
-            <div className="flex items-center gap-1 text-sm text-gray-600 w-16 flex-shrink-0">
+            <div className="flex items-center gap-1 text-sm text-neutral-700 w-16 flex-shrink-0">
               <Users className="w-3 h-3" />
               <span>{integration.total_users}</span>
             </div>
-            <div className="text-sm text-gray-500 w-28 flex-shrink-0">•••{integration.token_suffix}</div>
+            <div className="text-sm text-neutral-500 w-28 flex-shrink-0">•••{integration.token_suffix}</div>
           </>
         )}
 
@@ -161,48 +161,48 @@ export const IntegrationCardItem = memo(function IntegrationCardItem({
         <div className="mt-4 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             <div className="flex items-start space-x-2">
-              <Building className="w-4 h-4 mt-0.5 text-gray-400" />
+              <Building className="w-4 h-4 mt-0.5 text-neutral-500" />
               <div className="flex-1">
-                <div className="font-bold text-gray-900">Organization</div>
-                <div className="text-gray-600">{integration.organization_name}</div>
+                <div className="font-bold text-neutral-900">Organization</div>
+                <div className="text-neutral-700">{integration.organization_name}</div>
               </div>
             </div>
             <div className="flex items-start space-x-2">
-              <Users className="w-4 h-4 mt-0.5 text-gray-400" />
+              <Users className="w-4 h-4 mt-0.5 text-neutral-500" />
               <div>
-                <div className="font-bold text-gray-900">Users</div>
-                <div className="text-gray-600">{integration.total_users}</div>
+                <div className="font-bold text-neutral-900">Users</div>
+                <div className="text-neutral-700">{integration.total_users}</div>
               </div>
             </div>
             {integration.platform === 'pagerduty' && integration.total_services !== undefined && (
               <div className="flex items-start space-x-2">
-                <Zap className="w-4 h-4 mt-0.5 text-gray-400" />
+                <Zap className="w-4 h-4 mt-0.5 text-neutral-500" />
                 <div>
-                  <div className="font-bold text-gray-900">Services</div>
-                  <div className="text-gray-600">{integration.total_services}</div>
+                  <div className="font-bold text-neutral-900">Services</div>
+                  <div className="text-neutral-700">{integration.total_services}</div>
                 </div>
               </div>
             )}
             <div className="flex items-start space-x-2">
-              <Key className="w-4 h-4 mt-0.5 text-gray-400" />
+              <Key className="w-4 h-4 mt-0.5 text-neutral-500" />
               <div>
-                <div className="font-bold text-gray-900">Token</div>
-                <div className="text-gray-600">•••{integration.token_suffix}</div>
+                <div className="font-bold text-neutral-900">Token</div>
+                <div className="text-neutral-700">•••{integration.token_suffix}</div>
               </div>
             </div>
             <div className="flex items-start space-x-2">
-              <Calendar className="w-4 h-4 mt-0.5 text-gray-400" />
+              <Calendar className="w-4 h-4 mt-0.5 text-neutral-500" />
               <div>
-                <div className="font-bold text-gray-900">Added</div>
-                <div className="text-gray-600">{new Date(integration.created_at).toLocaleDateString()}</div>
+                <div className="font-bold text-neutral-900">Added</div>
+                <div className="text-neutral-700">{new Date(integration.created_at).toLocaleDateString()}</div>
               </div>
             </div>
             {integration.last_used_at && (
               <div className="flex items-start space-x-2">
-                <Clock className="w-4 h-4 mt-0.5 text-gray-400" />
+                <Clock className="w-4 h-4 mt-0.5 text-neutral-500" />
                 <div>
-                  <div className="font-bold text-gray-900">Last used</div>
-                  <div className="text-gray-600">{new Date(integration.last_used_at).toLocaleDateString()}</div>
+                  <div className="font-bold text-neutral-900">Last used</div>
+                  <div className="text-neutral-700">{new Date(integration.last_used_at).toLocaleDateString()}</div>
                 </div>
               </div>
             )}
@@ -213,7 +213,7 @@ export const IntegrationCardItem = memo(function IntegrationCardItem({
             <div className="border-t pt-4">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="font-semibold text-sm flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-gray-500" />
+                  <Shield className="w-4 h-4 text-neutral-500" />
                   API Permissions
                 </h4>
                 <Button
@@ -255,7 +255,7 @@ export const IntegrationCardItem = memo(function IntegrationCardItem({
                         <AlertCircle className="w-4 h-4 mt-0.5 text-red-500" />
                       )}
                       <div className="flex-1">
-                        <div className={`font-medium ${hasAccess ? 'text-green-700' : hasError ? 'text-red-700' : 'text-gray-600'}`}>
+                        <div className={`font-medium ${hasAccess ? 'text-green-700' : hasError ? 'text-red-700' : 'text-neutral-700'}`}>
                           {key.charAt(0).toUpperCase() + key.slice(1)}
                         </div>
                         {hasError && (

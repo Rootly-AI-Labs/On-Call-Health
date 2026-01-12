@@ -50,7 +50,7 @@ export function SlackIntegrationCard({ onConnect, isConnecting }: SlackIntegrati
           </button>
           {showInstructions && (
             <div className="mt-4">
-              <Alert className="border-purple-200 bg-purple-50">
+              <Alert className="border-purple-200 bg-purple-200">
                 <AlertDescription>
                   <div className="space-y-4">
                     <div>
@@ -116,7 +116,7 @@ export function SlackIntegrationCard({ onConnect, isConnecting }: SlackIntegrati
                       </div>
                     </div>
 
-                    <div className="bg-purple-100 border border-purple-300 rounded p-3">
+                    <div className="bg-purple-100 border border-purple-500 rounded p-3">
                       <p className="text-sm text-purple-800">
                         <strong>Note:</strong> You'll need both the webhook URL and bot token. The webhook is for sending notifications,
                         and the bot token is for reading messages and user data.
@@ -148,9 +148,9 @@ export function SlackIntegrationCard({ onConnect, isConnecting }: SlackIntegrati
               onClick={() => setShowWebhook(!showWebhook)}
             >
               {showWebhook ? (
-                <EyeOff className="h-4 w-4 text-gray-400" />
+                <EyeOff className="h-4 w-4 text-neutral-500" />
               ) : (
-                <Eye className="h-4 w-4 text-gray-400" />
+                <Eye className="h-4 w-4 text-neutral-500" />
               )}
             </Button>
           </div>
@@ -174,15 +174,15 @@ export function SlackIntegrationCard({ onConnect, isConnecting }: SlackIntegrati
               onClick={() => setShowToken(!showToken)}
             >
               {showToken ? (
-                <EyeOff className="h-4 w-4 text-gray-400" />
+                <EyeOff className="h-4 w-4 text-neutral-500" />
               ) : (
-                <Eye className="h-4 w-4 text-gray-400" />
+                <Eye className="h-4 w-4 text-neutral-500" />
               )}
             </Button>
           </div>
         </div>
         <Button
-          className="bg-purple-600 hover:bg-purple-700 text-white"
+          className="bg-purple-700 hover:bg-purple-800 text-white"
           onClick={() => webhookUrl && botToken && onConnect(webhookUrl, botToken)}
           disabled={!webhookUrl || !botToken || isConnecting}
         >

@@ -90,7 +90,7 @@ export function RootlyIntegrationForm({
           </button>
           {showInstructions && (
             <div className="mt-4">
-              <Alert className="border-purple-200 bg-purple-50">
+              <Alert className="border-purple-200 bg-purple-200">
                 <AlertDescription>
                   <ol className="space-y-2 text-sm">
                     <li><strong>1.</strong> Log in to your Rootly account</li>
@@ -162,7 +162,7 @@ export function RootlyIntegrationForm({
 
             {/* Validating Status */}
             {isTestingConnection && (
-              <Alert className="border-purple-200 bg-purple-50">
+              <Alert className="border-purple-200 bg-purple-200">
                 <Loader2 className="h-4 w-4 text-purple-600 animate-spin" />
                 <AlertDescription className="text-purple-800">
                   Validating token and checking permissions...
@@ -200,7 +200,7 @@ export function RootlyIntegrationForm({
                               <button
                                 type="button"
                                 onClick={() => setEditingInline(true)}
-                                className="text-gray-500 hover:text-gray-700"
+                                className="text-neutral-500 hover:text-neutral-700"
                                 title="Edit integration name"
                               >
                                 <Edit3 className="w-3 h-3" />

@@ -140,7 +140,7 @@ export default function AcceptInvitationPage() {
         <Card className="w-full max-w-md">
           <CardContent className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-            <span className="ml-3 text-gray-600">Loading invitation...</span>
+            <span className="ml-3 text-neutral-700">Loading invitation...</span>
           </CardContent>
         </Card>
       </div>
@@ -158,10 +158,10 @@ export default function AcceptInvitationPage() {
             <CardTitle className="text-2xl text-green-800">Welcome to the team!</CardTitle>
           </CardHeader>
           <CardContent className="text-center space-y-4">
-            <p className="text-gray-600">
+            <p className="text-neutral-700">
               You've successfully joined <strong>{invitation?.organization_name}</strong> as a {invitation?.role}.
             </p>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-neutral-500">
               Redirecting you to integrations in a moment...
             </p>
             <Button
@@ -195,7 +195,7 @@ export default function AcceptInvitationPage() {
           ) : invitation ? (
             <>
               <div className="text-center space-y-3">
-                <h3 className="text-xl font-semibold text-gray-900">
+                <h3 className="text-xl font-semibold text-neutral-900">
                   You're invited to join
                 </h3>
                 <div className="bg-slate-50 rounded-lg p-4">
@@ -217,7 +217,7 @@ export default function AcceptInvitationPage() {
               </div>
 
               {invitation.expires_at && (
-                <div className="text-center text-sm text-gray-500">
+                <div className="text-center text-sm text-neutral-500">
                   <p>This invitation expires on {new Date(invitation.expires_at).toLocaleDateString()}</p>
                 </div>
               )}
@@ -239,7 +239,7 @@ export default function AcceptInvitationPage() {
               </Button>
 
               <div className="text-center">
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-neutral-500">
                   By accepting this invitation, you'll join the organization and gain access to team burnout analytics and integrations.
                 </p>
               </div>

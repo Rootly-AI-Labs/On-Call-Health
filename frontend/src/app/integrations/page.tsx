@@ -2438,7 +2438,7 @@ export default function IntegrationsPage() {
   const hasSlackEnhanced = slackIntegration && slackIntegration.connection_type !== 'oauth'
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+    <div className="min-h-screen bg-purple-100">
       <TopPanel />
 
       {/* Main Content */}
@@ -2451,31 +2451,31 @@ export default function IntegrationsPage() {
         {/* No integrations message - Show right below intro */}
         {integrations.length === 0 && !loadingRootly && !loadingPagerDuty && (
           <div className="text-center mb-6 max-w-2xl mx-auto">
-            <p className="text-lg font-medium text-gray-700">Add a Rootly or PagerDuty integration to get started!</p>
+            <p className="text-lg font-medium text-neutral-700">Add a Rootly or PagerDuty integration to get started!</p>
           </div>
         )}
 
         {/* Ready for Analysis CTA - Always visible when integrations exist */}
         {(loadingRootly || loadingPagerDuty) ? (
-          <div className="bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-6 mb-8 max-w-2xl mx-auto animate-pulse">
+          <div className="bg-neutral-200 border border-neutral-200 rounded-lg p-6 mb-8 max-w-2xl mx-auto animate-pulse">
             <div className="text-center">
-              <div className="w-12 h-12 bg-gray-300 rounded-full mx-auto mb-4"></div>
-              <div className="h-6 bg-gray-300 rounded w-80 mx-auto mb-2"></div>
-              <div className="h-4 bg-gray-300 rounded w-96 mx-auto mb-2"></div>
-              <div className="h-4 bg-gray-300 rounded w-72 mx-auto mb-4"></div>
-              <div className="h-10 bg-gray-300 rounded w-40 mx-auto"></div>
+              <div className="w-12 h-12 bg-neutral-300 rounded-full mx-auto mb-4"></div>
+              <div className="h-6 bg-neutral-300 rounded w-80 mx-auto mb-2"></div>
+              <div className="h-4 bg-neutral-300 rounded w-96 mx-auto mb-2"></div>
+              <div className="h-4 bg-neutral-300 rounded w-72 mx-auto mb-4"></div>
+              <div className="h-10 bg-neutral-300 rounded w-40 mx-auto"></div>
             </div>
           </div>
         ) : integrations.length > 0 && (
-          <div className="bg-gradient-to-r from-purple-50 to-green-50 border border-purple-200 rounded-lg p-6 mb-8 max-w-2xl mx-auto">
+          <div className="bg-white border border-neutral-300 rounded-lg p-6 mb-8 max-w-2xl mx-auto">
             <div className="text-center">
-              <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-12 h-12 bg-purple-700 rounded-full flex items-center justify-center mx-auto mb-4">
                 <CheckCircle className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-xl font-semibold text-slate-900 mb-2">
+              <h3 className="text-xl font-semibold text-neutral-900 mb-2">
                 Ready to analyze your team's risk!
               </h3>
-              <p className="text-slate-600">
+              <p className="text-neutral-700">
                 You have {integrations.length} integration{integrations.length > 1 ? 's' : ''} connected.
                 Run your first analysis to identify overwork patterns across your team.
               </p>
@@ -2486,9 +2486,9 @@ export default function IntegrationsPage() {
         {/* Dashboard Organization Selector */}
         {integrations.length > 0 && (
           <div className="max-w-2xl mx-auto mb-6">
-            <div className="bg-white border-2 border-slate-200 rounded-lg p-4 shadow-sm">
+            <div className="bg-white border-2 border-neutral-300 rounded-lg p-4 shadow-sm">
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 text-slate-700 flex-shrink-0">
+                <div className="flex items-center gap-2 text-neutral-700 flex-shrink-0">
                   <Settings className="w-6 h-6 text-purple-600" />
                   <span className="font-semibold text-lg">Active Organization</span>
                 </div>
@@ -2541,7 +2541,7 @@ export default function IntegrationsPage() {
                     }
                   }}
                 >
-                  <SelectTrigger className="flex-1 h-10 bg-slate-50 border-slate-300 hover:bg-slate-100 transition-colors">
+                  <SelectTrigger className="flex-1 h-10 bg-slate-50 border-neutral-300 hover:bg-slate-100 transition-colors">
                     <SelectValue placeholder="Select organization">
                       {selectedOrganization && (() => {
                         const selected = integrations.find(i => i.id.toString() === selectedOrganization)
@@ -2550,7 +2550,7 @@ export default function IntegrationsPage() {
                             <div className="flex items-center justify-between w-full">
                               <div className="flex items-center gap-2">
                                 <div className={`w-3 h-3 rounded-full ${
-                                  selected.platform === 'rootly' ? 'bg-purple-500' : 'bg-green-500'
+                                  selected.platform === 'rootly' ? 'bg-purple-2000' : 'bg-green-500'
                                 }`}></div>
                                 <span className="font-medium text-base">{selected.name}</span>
                               </div>
@@ -2573,9 +2573,9 @@ export default function IntegrationsPage() {
                           {/* Rootly Organizations */}
                           {rootlyIntegrations.length > 0 && (
                             <>
-                              <div className="px-3 py-2 text-sm font-semibold text-slate-600 bg-slate-50 border-b border-slate-200">
+                              <div className="px-3 py-2 text-sm font-semibold text-neutral-600 bg-slate-50 border-b border-neutral-300">
                                 <div className="flex items-center gap-2">
-                                  <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                                  <div className="w-3 h-3 bg-purple-2000 rounded-full"></div>
                                   Rootly Organizations
                                 </div>
                               </div>
@@ -2587,7 +2587,7 @@ export default function IntegrationsPage() {
                                 >
                                   <div className="flex items-center justify-between w-full gap-2">
                                     <div className="flex items-center gap-2">
-                                      <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                                      <div className="w-3 h-3 bg-purple-2000 rounded-full"></div>
                                       <span className="font-medium text-base">{integration.name}</span>
                                     </div>
                                     {selectedOrganization === integration.id.toString() && (
@@ -2603,9 +2603,9 @@ export default function IntegrationsPage() {
                           {pagerdutyIntegrations.length > 0 && (
                             <>
                               {rootlyIntegrations.length > 0 && (
-                                <div className="my-1 border-t border-slate-200"></div>
+                                <div className="my-1 border-t border-neutral-300"></div>
                               )}
-                              <div className="px-3 py-2 text-sm font-semibold text-slate-600 bg-slate-50 border-b border-slate-200">
+                              <div className="px-3 py-2 text-sm font-semibold text-neutral-600 bg-slate-50 border-b border-neutral-300">
                                 <div className="flex items-center gap-2">
                                   <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                                   PagerDuty Organizations
@@ -2644,16 +2644,16 @@ export default function IntegrationsPage() {
         <div className="grid md:grid-cols-2 gap-4 mb-6 max-w-2xl mx-auto">
           {/* Rootly Card */}
           {loadingRootly ? (
-            <Card className="border-2 border-gray-200 p-4 flex items-center justify-center relative h-20 animate-pulse">
-                <div className="absolute top-2 right-2 w-5 h-5 bg-gray-300 rounded"></div>
-                <div className="h-8 w-32 bg-gray-300 rounded"></div>
+            <Card className="border-2 border-neutral-200 p-4 flex items-center justify-center relative h-20 animate-pulse">
+                <div className="absolute top-2 right-2 w-5 h-5 bg-neutral-300 rounded"></div>
+                <div className="h-8 w-32 bg-neutral-300 rounded"></div>
             </Card>
           ) : (
               <Card
                 className={`border-2 transition-all cursor-pointer hover:shadow-md ${
                   activeTab === 'rootly'
-                    ? 'border-purple-500 shadow-md bg-purple-50'
-                    : 'border-gray-200 hover:border-purple-300'
+                    ? 'border-purple-500 shadow-md bg-white'
+                    : 'border-neutral-200 hover:border-purple-500'
                 } p-4 flex items-center justify-center relative h-20`}
                 onClick={() => {
                   setActiveTab('rootly')
@@ -2696,19 +2696,19 @@ export default function IntegrationsPage() {
 
           {/* PagerDuty Card */}
           {(loadingPagerDuty ? (
-            <Card className="border-2 border-gray-200 p-4 flex items-center justify-center relative h-20 animate-pulse">
-              <div className="absolute top-2 right-2 w-5 h-5 bg-gray-300 rounded"></div>
+            <Card className="border-2 border-neutral-200 p-4 flex items-center justify-center relative h-20 animate-pulse">
+              <div className="absolute top-2 right-2 w-5 h-5 bg-neutral-300 rounded"></div>
               <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-gray-300 rounded"></div>
-                <div className="h-6 w-24 bg-gray-300 rounded"></div>
+                <div className="w-8 h-8 bg-neutral-300 rounded"></div>
+                <div className="h-6 w-24 bg-neutral-300 rounded"></div>
               </div>
             </Card>
           ) : (
             <Card
               className={`border-2 transition-all cursor-pointer hover:shadow-md ${
                 activeTab === 'pagerduty'
-                  ? 'border-green-500 shadow-md bg-green-50'
-                  : 'border-gray-200 hover:border-green-300'
+                  ? 'border-green-500 shadow-md bg-white'
+                  : 'border-neutral-200 hover:border-green-300'
               } p-4 flex items-center justify-center relative h-20`}
               onClick={() => {
                 setActiveTab('pagerduty')
@@ -2741,7 +2741,7 @@ export default function IntegrationsPage() {
                 <div className="w-8 h-8 bg-green-600 rounded flex items-center justify-center">
                   <span className="text-white font-bold text-sm">PD</span>
                 </div>
-                <span className="text-lg font-bold text-slate-900">PagerDuty</span>
+                <span className="text-lg font-bold text-neutral-900">PagerDuty</span>
               </div>
             </Card>
           ))}
@@ -2791,35 +2791,35 @@ export default function IntegrationsPage() {
                 <CardContent className="p-6 space-y-4">
                 {/* Skeleton loading cards */}
                 {[1, 2].map((i) => (
-                  <Card key={i} className="border-gray-200 bg-gray-50 animate-pulse">
+                  <Card key={i} className="border-neutral-200 bg-neutral-100 animate-pulse">
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center space-x-3 mb-4">
-                            <div className="h-6 bg-gray-300 rounded w-32"></div>
-                            <div className="h-5 bg-gray-300 rounded w-20"></div>
-                            <div className="h-5 bg-gray-300 rounded w-16"></div>
+                            <div className="h-6 bg-neutral-300 rounded w-32"></div>
+                            <div className="h-5 bg-neutral-300 rounded w-20"></div>
+                            <div className="h-5 bg-neutral-300 rounded w-16"></div>
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             {[1, 2, 3, 4, 5].map((j) => (
                               <div key={j} className="flex items-start space-x-2">
-                                <div className="w-4 h-4 bg-gray-300 rounded mt-0.5"></div>
+                                <div className="w-4 h-4 bg-neutral-300 rounded mt-0.5"></div>
                                 <div>
-                                  <div className="h-4 bg-gray-300 rounded w-20 mb-1"></div>
-                                  <div className="h-4 bg-gray-300 rounded w-16"></div>
+                                  <div className="h-4 bg-neutral-300 rounded w-20 mb-1"></div>
+                                  <div className="h-4 bg-neutral-300 rounded w-16"></div>
                                 </div>
                               </div>
                             ))}
                           </div>
                         </div>
-                        <div className="h-8 bg-gray-300 rounded w-24"></div>
+                        <div className="h-8 bg-neutral-300 rounded w-24"></div>
                       </div>
                     </CardContent>
                   </Card>
                 ))}
                   <div className="text-center py-4">
-                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-slate-400" />
-                    <p className="text-sm text-gray-500 mt-2">Loading integrations...</p>
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-neutral-400" />
+                    <p className="text-sm text-neutral-500 mt-2">Loading integrations...</p>
                   </div>
                 </CardContent>
               </Card>
@@ -2854,9 +2854,9 @@ export default function IntegrationsPage() {
                         {/* Expand/Collapse Icon */}
                         <div className="flex-shrink-0 w-6">
                           {isExpanded ? (
-                            <ChevronUp className="w-4 h-4 text-gray-500" />
+                            <ChevronUp className="w-4 h-4 text-neutral-500" />
                           ) : (
-                            <ChevronDown className="w-4 h-4 text-gray-500" />
+                            <ChevronDown className="w-4 h-4 text-neutral-500" />
                           )}
                         </div>
 
@@ -2896,11 +2896,11 @@ export default function IntegrationsPage() {
                         {/* Stats in collapsed view - fixed widths for alignment */}
                         {!isExpanded && (
                           <>
-                            <div className="flex items-center gap-1 text-sm text-gray-600 w-16 flex-shrink-0">
+                            <div className="flex items-center gap-1 text-sm text-neutral-700 w-16 flex-shrink-0">
                               <Users className="w-3 h-3" />
                               <span>{integration.total_users}</span>
                             </div>
-                            <div className="text-sm text-gray-500 w-28 flex-shrink-0">•••{integration.token_suffix}</div>
+                            <div className="text-sm text-neutral-500 w-28 flex-shrink-0">•••{integration.token_suffix}</div>
                           </>
                         )}
 
@@ -2916,9 +2916,9 @@ export default function IntegrationsPage() {
                         <div className="mt-4 space-y-4">
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                             <div className="flex items-start space-x-2">
-                              <Building className="w-4 h-4 mt-0.5 text-gray-400" />
+                              <Building className="w-4 h-4 mt-0.5 text-neutral-500" />
                               <div className="flex-1">
-                                <div className="font-bold text-gray-900 flex items-center gap-2">
+                                <div className="font-bold text-neutral-900 flex items-center gap-2">
                                   Organization
                                   {editingIntegration !== integration.id && (
                                     <Button
@@ -2936,45 +2936,45 @@ export default function IntegrationsPage() {
                                     </Button>
                                   )}
                                 </div>
-                                <div className="text-gray-600">{integration.organization_name}</div>
+                                <div className="text-neutral-700">{integration.organization_name}</div>
                               </div>
                             </div>
                             <div className="flex items-start space-x-2">
-                              <Users className="w-4 h-4 mt-0.5 text-gray-400" />
+                              <Users className="w-4 h-4 mt-0.5 text-neutral-500" />
                               <div>
-                                <div className="font-bold text-gray-900">Users</div>
-                                <div className="text-gray-600">{integration.total_users}</div>
+                                <div className="font-bold text-neutral-900">Users</div>
+                                <div className="text-neutral-700">{integration.total_users}</div>
                               </div>
                             </div>
                             {integration.platform === 'pagerduty' && integration.total_services !== undefined && (
                               <div className="flex items-start space-x-2">
-                                <Zap className="w-4 h-4 mt-0.5 text-gray-400" />
+                                <Zap className="w-4 h-4 mt-0.5 text-neutral-500" />
                                 <div>
-                                  <div className="font-bold text-gray-900">Services</div>
-                                  <div className="text-gray-600">{integration.total_services}</div>
+                                  <div className="font-bold text-neutral-900">Services</div>
+                                  <div className="text-neutral-700">{integration.total_services}</div>
                                 </div>
                               </div>
                             )}
                             <div className="flex items-start space-x-2">
-                              <Key className="w-4 h-4 mt-0.5 text-gray-400" />
+                              <Key className="w-4 h-4 mt-0.5 text-neutral-500" />
                               <div>
-                                <div className="font-bold text-gray-900">Token</div>
-                                <div className="text-gray-600">•••{integration.token_suffix}</div>
+                                <div className="font-bold text-neutral-900">Token</div>
+                                <div className="text-neutral-700">•••{integration.token_suffix}</div>
                               </div>
                             </div>
                             <div className="flex items-start space-x-2">
-                              <Calendar className="w-4 h-4 mt-0.5 text-gray-400" />
+                              <Calendar className="w-4 h-4 mt-0.5 text-neutral-500" />
                               <div>
-                                <div className="font-bold text-gray-900">Added</div>
-                                <div className="text-gray-600">{new Date(integration.created_at).toLocaleDateString()}</div>
+                                <div className="font-bold text-neutral-900">Added</div>
+                                <div className="text-neutral-700">{new Date(integration.created_at).toLocaleDateString()}</div>
                               </div>
                             </div>
                             {integration.last_used_at && (
                               <div className="flex items-start space-x-2">
-                                <Clock className="w-4 h-4 mt-0.5 text-gray-400" />
+                                <Clock className="w-4 h-4 mt-0.5 text-neutral-500" />
                                 <div>
-                                  <div className="font-bold text-gray-900">Last used</div>
-                                  <div className="text-gray-600">{new Date(integration.last_used_at).toLocaleDateString()}</div>
+                                  <div className="font-bold text-neutral-900">Last used</div>
+                                  <div className="text-neutral-700">{new Date(integration.last_used_at).toLocaleDateString()}</div>
                                 </div>
                               </div>
                             )}
@@ -2985,12 +2985,12 @@ export default function IntegrationsPage() {
                             <>
                               <div className="mt-3 flex items-center justify-between text-sm">
                                 <div className="flex items-center space-x-4">
-                                  <span className="text-gray-500">Read permissions:</span>
+                                  <span className="text-neutral-500">Read permissions:</span>
                                   {/* Show loader when permissions are being checked */}
                                   {(integration.permissions?.users?.access === null && integration.permissions?.incidents?.access === null) || refreshingPermissions === integration.id ? (
                                     <div className="flex items-center space-x-2">
-                                      <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
-                                      <span className="text-gray-500">Checking permissions...</span>
+                                      <Loader2 className="w-4 h-4 animate-spin text-neutral-500" />
+                                      <span className="text-neutral-500">Checking permissions...</span>
                                     </div>
                                   ) : (
                                     <>
@@ -3027,7 +3027,7 @@ export default function IntegrationsPage() {
                                   variant="ghost"
                                   onClick={() => refreshIntegrationPermissions(integration.id)}
                                   disabled={refreshingPermissions === integration.id}
-                                  className="h-7 px-2 text-gray-500 hover:text-gray-700"
+                                  className="h-7 px-2 text-neutral-500 hover:text-neutral-700"
                                 >
                                   <RefreshCw className={`w-3 h-3 ${refreshingPermissions === integration.id ? 'animate-spin' : ''}`} />
                                 </Button>
@@ -3049,7 +3049,7 @@ export default function IntegrationsPage() {
                           )}
 
                           {/* Delete Button in Expanded View */}
-                          <div className="pt-3 border-t border-gray-200 flex justify-end">
+                          <div className="pt-3 border-t border-neutral-200 flex justify-end">
                             <Button
                               size="sm"
                               variant="ghost"
@@ -3071,43 +3071,43 @@ export default function IntegrationsPage() {
 
                   {/* Skeleton card while reloading integrations */}
                   {reloadingIntegrations && (
-                    <div className="p-6 rounded-lg border border-gray-200 bg-gray-50 animate-pulse">
+                    <div className="p-6 rounded-lg border border-neutral-200 bg-neutral-100 animate-pulse">
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center space-x-3">
-                          <div className="w-6 h-6 bg-gray-300 rounded"></div>
-                          <div className="h-5 w-32 bg-gray-300 rounded"></div>
+                          <div className="w-6 h-6 bg-neutral-300 rounded"></div>
+                          <div className="h-5 w-32 bg-neutral-300 rounded"></div>
                         </div>
-                        <div className="w-16 h-6 bg-gray-300 rounded"></div>
+                        <div className="w-16 h-6 bg-neutral-300 rounded"></div>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
                         <div className="flex items-start space-x-2">
-                          <div className="w-4 h-4 mt-0.5 bg-gray-300 rounded"></div>
+                          <div className="w-4 h-4 mt-0.5 bg-neutral-300 rounded"></div>
                           <div>
-                            <div className="h-4 w-20 bg-gray-300 rounded mb-2"></div>
-                            <div className="h-4 w-24 bg-gray-300 rounded"></div>
+                            <div className="h-4 w-20 bg-neutral-300 rounded mb-2"></div>
+                            <div className="h-4 w-24 bg-neutral-300 rounded"></div>
                           </div>
                         </div>
                         <div className="flex items-start space-x-2">
-                          <div className="w-4 h-4 mt-0.5 bg-gray-300 rounded"></div>
+                          <div className="w-4 h-4 mt-0.5 bg-neutral-300 rounded"></div>
                           <div>
-                            <div className="h-4 w-16 bg-gray-300 rounded mb-2"></div>
-                            <div className="h-4 w-8 bg-gray-300 rounded"></div>
+                            <div className="h-4 w-16 bg-neutral-300 rounded mb-2"></div>
+                            <div className="h-4 w-8 bg-neutral-300 rounded"></div>
                           </div>
                         </div>
                         <div className="flex items-start space-x-2">
-                          <div className="w-4 h-4 mt-0.5 bg-gray-300 rounded"></div>
+                          <div className="w-4 h-4 mt-0.5 bg-neutral-300 rounded"></div>
                           <div>
-                            <div className="h-4 w-12 bg-gray-300 rounded mb-2"></div>
-                            <div className="h-4 w-16 bg-gray-300 rounded"></div>
+                            <div className="h-4 w-12 bg-neutral-300 rounded mb-2"></div>
+                            <div className="h-4 w-16 bg-neutral-300 rounded"></div>
                           </div>
                         </div>
                       </div>
 
                       {/* Loading indicator */}
-                      <div className="flex items-center justify-center mt-4 pt-4 border-t border-gray-300">
-                        <Loader2 className="w-4 h-4 animate-spin mr-2 text-gray-400" />
-                        <span className="text-sm text-gray-500">Adding integration...</span>
+                      <div className="flex items-center justify-center mt-4 pt-4 border-t border-neutral-300">
+                        <Loader2 className="w-4 h-4 animate-spin mr-2 text-neutral-500" />
+                        <span className="text-sm text-neutral-500">Adding integration...</span>
                       </div>
                     </div>
                   )}
@@ -3119,26 +3119,26 @@ export default function IntegrationsPage() {
         {/* Team Management Section */}
         <div className="mt-16 space-y-8">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-slate-900 mb-3">Team Management</h2>
-            <p className="text-lg text-slate-600 mb-2">
+            <h2 className="text-2xl font-bold text-neutral-900 mb-3">Team Management</h2>
+            <p className="text-lg text-neutral-600 mb-2">
               Sync and manage your team members for an analysis
             </p>
           </div>
 
           {/* Team Members Card */}
           <div className="max-w-2xl mx-auto">
-            <Card className={`border-2 ${selectedOrganization ? 'border-purple-200 bg-purple-50' : 'border-gray-200 bg-gray-50'}`}>
+            <Card className={`border-2 ${selectedOrganization ? 'border-purple-300 bg-white' : 'border-neutral-300 bg-white'}`}>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
-                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${selectedOrganization ? 'bg-purple-600' : 'bg-gray-300'}`}>
-                      <Users className={`w-6 h-6 ${selectedOrganization ? 'text-white' : 'text-gray-500'}`} />
+                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${selectedOrganization ? 'bg-purple-700' : 'bg-neutral-300'}`}>
+                      <Users className={`w-6 h-6 ${selectedOrganization ? 'text-white' : 'text-neutral-500'}`} />
                     </div>
                     <div>
-                      <h3 className={`text-lg font-semibold ${selectedOrganization ? 'text-slate-900' : 'text-gray-900'}`}>
+                      <h3 className={`text-lg font-semibold ${selectedOrganization ? 'text-neutral-900' : 'text-neutral-900'}`}>
                         Team Member Sync
                       </h3>
-                      <p className={`text-sm ${selectedOrganization ? 'text-slate-600' : 'text-gray-600'}`}>
+                      <p className={`text-sm ${selectedOrganization ? 'text-neutral-600' : 'text-neutral-700'}`}>
                         {selectedOrganization ? (
                           <>Sync team members from connected integrations {syncedUsers.length > 0 && `(${syncedUsers.length} synced)`}</>
                         ) : (
@@ -3179,7 +3179,7 @@ export default function IntegrationsPage() {
                       }
                     }}
                     disabled={!selectedOrganization}
-                    className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                    className="bg-purple-700 hover:bg-purple-800 disabled:bg-neutral-300 disabled:cursor-not-allowed"
                     title={!selectedOrganization ? 'Please select an organization first' : ''}
                   >
                     <Users className="w-4 h-4 mr-2" />
@@ -3194,8 +3194,8 @@ export default function IntegrationsPage() {
         {/* Enhanced Integrations Section */}
         <div className="mt-16 space-y-8">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-slate-900 mb-3">Enhanced Integrations</h2>
-            <p className="text-lg text-slate-600 mb-2">
+            <h2 className="text-2xl font-bold text-neutral-900 mb-3">Enhanced Integrations</h2>
+            <p className="text-lg text-neutral-600 mb-2">
               Connect additional services for deeper insights
             </p>
           </div>
@@ -3203,19 +3203,19 @@ export default function IntegrationsPage() {
           <div className="grid md:grid-cols-2 gap-4 mb-6 max-w-2xl mx-auto">
             {/* GitHub Card */}
             {loadingGitHub ? (
-              <Card className="border-2 border-gray-200 p-4 flex items-center justify-center relative h-20 animate-pulse">
-                <div className="absolute top-2 right-2 w-16 h-5 bg-gray-300 rounded"></div>
+              <Card className="border-2 border-neutral-200 p-4 flex items-center justify-center relative h-20 animate-pulse">
+                <div className="absolute top-2 right-2 w-16 h-5 bg-neutral-300 rounded"></div>
                 <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-gray-300 rounded"></div>
-                  <div className="h-6 w-20 bg-gray-300 rounded"></div>
+                  <div className="w-8 h-8 bg-neutral-300 rounded"></div>
+                  <div className="h-6 w-20 bg-neutral-300 rounded"></div>
                 </div>
               </Card>
             ) : (
                 <Card
                   className={`border-2 transition-all cursor-pointer hover:shadow-md ${
                     activeEnhancementTab === 'github'
-                      ? 'border-gray-500 shadow-md bg-gray-50'
-                      : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-neutral-500 shadow-md bg-neutral-100'
+                      : 'border-neutral-200 hover:border-neutral-300'
                   } p-4 flex items-center justify-center relative h-20`}
                   onClick={() => {
                     setActiveEnhancementTab(activeEnhancementTab === 'github' ? null : 'github')
@@ -3231,7 +3231,7 @@ export default function IntegrationsPage() {
                   ) : null}
                   {activeEnhancementTab === 'github' && (
                     <div className="absolute top-2 left-2">
-                      <CheckCircle className="w-5 h-5 text-gray-600" />
+                      <CheckCircle className="w-5 h-5 text-neutral-700" />
                     </div>
                   )}
                   <div className="flex items-center space-x-2">
@@ -3244,26 +3244,26 @@ export default function IntegrationsPage() {
                         className="h-8 w-8 object-contain"
                       />
                     </div>
-                    <span className="text-lg font-bold text-slate-900">GitHub</span>
+                    <span className="text-lg font-bold text-neutral-900">GitHub</span>
                   </div>
                 </Card>
             )}
 
             {/* Slack Card */}
             {loadingSlack ? (
-              <Card className="border-2 border-gray-200 p-4 flex items-center justify-center relative h-20 animate-pulse">
-                <div className="absolute top-2 right-2 w-16 h-5 bg-gray-300 rounded"></div>
+              <Card className="border-2 border-neutral-200 p-4 flex items-center justify-center relative h-20 animate-pulse">
+                <div className="absolute top-2 right-2 w-16 h-5 bg-neutral-300 rounded"></div>
                 <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-gray-300 rounded"></div>
-                  <div className="h-6 w-16 bg-gray-300 rounded"></div>
+                  <div className="w-8 h-8 bg-neutral-300 rounded"></div>
+                  <div className="h-6 w-16 bg-neutral-300 rounded"></div>
                 </div>
               </Card>
             ) : (
               <Card
                 className={`border-2 transition-all cursor-pointer hover:shadow-md ${
                   activeEnhancementTab === 'slack'
-                    ? 'border-purple-500 shadow-md bg-purple-50'
-                    : 'border-gray-200 hover:border-purple-300'
+                    ? 'border-purple-500 shadow-md bg-purple-200'
+                    : 'border-neutral-200 hover:border-purple-500'
                 } p-4 flex items-center justify-center relative h-20`}
                 onClick={() => {
                   setActiveEnhancementTab(activeEnhancementTab === 'slack' ? null : 'slack')
@@ -3289,7 +3289,7 @@ export default function IntegrationsPage() {
                         className="h-8 w-8 object-contain"
                       />
                     </div>
-                    <span className="text-lg font-bold text-slate-900">Slack</span>
+                    <span className="text-lg font-bold text-neutral-900">Slack</span>
                   </div>
                 </Card>
             )}
@@ -3297,11 +3297,11 @@ export default function IntegrationsPage() {
 
             {/* Jira Card */}
             {loadingJira ? (
-              <Card className="border-2 border-gray-200 p-4 flex items-center justify-center relative h-20 animate-pulse">
-                <div className="absolute top-2 right-2 w-16 h-5 bg-gray-300 rounded"></div>
+              <Card className="border-2 border-neutral-200 p-4 flex items-center justify-center relative h-20 animate-pulse">
+                <div className="absolute top-2 right-2 w-16 h-5 bg-neutral-300 rounded"></div>
                 <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-gray-300 rounded"></div>
-                  <div className="h-6 w-20 bg-gray-300 rounded"></div>
+                  <div className="w-8 h-8 bg-neutral-300 rounded"></div>
+                  <div className="h-6 w-20 bg-neutral-300 rounded"></div>
                 </div>
               </Card>
             ) : (
@@ -3309,7 +3309,7 @@ export default function IntegrationsPage() {
                 className={`border-2 transition-all cursor-pointer hover:shadow-md ${
                   activeEnhancementTab === 'jira'
                     ? 'border-blue-500 shadow-md bg-blue-50'
-                    : 'border-gray-200 hover:border-blue-300'
+                    : 'border-neutral-200 hover:border-blue-300'
                 } p-4 flex items-center justify-center relative h-20`}
                 onClick={() => {
                   setActiveEnhancementTab(activeEnhancementTab === 'jira' ? null : 'jira')
@@ -3325,7 +3325,7 @@ export default function IntegrationsPage() {
                 ) : null}
                 {activeEnhancementTab === 'jira' && (
                   <div className="absolute top-2 left-2">
-                    <CheckCircle className="w-5 h-5 text-gray-600" />
+                    <CheckCircle className="w-5 h-5 text-neutral-700" />
                   </div>
                 )}
                 <div className="flex items-center space-x-2">
@@ -3338,26 +3338,26 @@ export default function IntegrationsPage() {
                       <path d="M11.571 11.513H0a5.218 5.218 0 0 0 5.232 5.215h2.13v2.057A5.215 5.215 0 0 0 12.575 24V12.518a1.005 1.005 0 0 0-1.005-1.005zm5.723-5.756H5.736a5.215 5.215 0 0 0 5.215 5.214h2.129v2.058a5.218 5.218 0 0 0 5.215 5.232V6.758a1.001 1.001 0 0 0-1.001-1.001zM23.013 0H11.455a5.215 5.215 0 0 0 5.215 5.215h2.129v2.057A5.215 5.215 0 0 0 24 12.483V1.005A1.001 1.001 0 0 0 23.013 0Z"/>
                     </svg>
                   </div>
-                  <span className="text-xl font-semibold text-slate-900">Jira</span>
+                  <span className="text-xl font-semibold text-neutral-900">Jira</span>
                 </div>
               </Card>
             )}
 
             {/* Linear Card */}
             {loadingLinear ? (
-              <Card className="border-2 border-gray-200 p-4 flex items-center justify-center relative h-20 animate-pulse">
-                <div className="absolute top-2 right-2 w-16 h-5 bg-gray-300 rounded"></div>
+              <Card className="border-2 border-neutral-200 p-4 flex items-center justify-center relative h-20 animate-pulse">
+                <div className="absolute top-2 right-2 w-16 h-5 bg-neutral-300 rounded"></div>
                 <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-gray-300 rounded"></div>
-                  <div className="h-6 w-20 bg-gray-300 rounded"></div>
+                  <div className="w-8 h-8 bg-neutral-300 rounded"></div>
+                  <div className="h-6 w-20 bg-neutral-300 rounded"></div>
                 </div>
               </Card>
             ) : (
               <Card
                 className={`border-2 transition-all cursor-pointer hover:shadow-md ${
                   activeEnhancementTab === 'linear'
-                    ? 'border-gray-800 shadow-md bg-gray-50'
-                    : 'border-gray-200 hover:border-gray-400'
+                    ? 'border-neutral-800 shadow-md bg-neutral-100'
+                    : 'border-neutral-200 hover:border-neutral-400'
                 } p-4 flex items-center justify-center relative h-20`}
                 onClick={() => {
                   setActiveEnhancementTab(activeEnhancementTab === 'linear' ? null : 'linear')
@@ -3373,12 +3373,12 @@ export default function IntegrationsPage() {
                 ) : null}
                 {activeEnhancementTab === 'linear' && (
                   <div className="absolute top-2 left-2">
-                    <CheckCircle className="w-5 h-5 text-gray-800" />
+                    <CheckCircle className="w-5 h-5 text-neutral-900" />
                   </div>
                 )}
                 <div className="flex items-center space-x-2">
                   <Image src="/images/linear-logo.png" alt="Linear" width={28} height={28} />
-                  <span className="text-xl font-semibold text-slate-900">Linear</span>
+                  <span className="text-xl font-semibold text-neutral-900">Linear</span>
                 </div>
               </Card>
             )}
@@ -3495,11 +3495,11 @@ export default function IntegrationsPage() {
         {false && (
           <div className="mt-16 space-y-8">
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-slate-900 mb-3">AI Insights Included</h2>
-              <p className="text-lg text-slate-600 mb-2">
+              <h2 className="text-2xl font-bold text-neutral-900 mb-3">AI Insights Included</h2>
+              <p className="text-lg text-neutral-600 mb-2">
                 Enable AI-powered analysis with natural language reasoning
               </p>
-              <p className="text-slate-500">
+              <p className="text-neutral-500">
                 Get intelligent insights and recommendations automatically with every analysis
               </p>
             </div>
@@ -3544,7 +3544,7 @@ export default function IntegrationsPage() {
                   ) : (
                     <>
                       <div className="space-y-2">
-                        <label className="text-sm font-medium text-slate-700">
+                        <label className="text-sm font-medium text-neutral-700">
                           Provider
                         </label>
                         <select 
@@ -3554,7 +3554,7 @@ export default function IntegrationsPage() {
                             setLlmModel(e.target.value === 'openai' ? 'gpt-4o-mini' : 'claude-3-haiku')
                             if (tokenError) setTokenError(null) // Clear error when changing provider
                           }}
-                          className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full p-2 border border-neutral-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
                           <option value="openai">OpenAI (GPT-4o-mini)</option>
                           <option value="anthropic">Anthropic (Claude 3 Haiku)</option>
@@ -3562,7 +3562,7 @@ export default function IntegrationsPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <label className="text-sm font-medium text-slate-700">
+                        <label className="text-sm font-medium text-neutral-700">
                           API Token
                         </label>
                         <div className="relative">
@@ -3592,7 +3592,7 @@ export default function IntegrationsPage() {
                             <span>{tokenError}</span>
                           </p>
                         ) : (
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-neutral-500">
                             {llmProvider === 'openai' 
                               ? 'Token should start with "sk-" and have 51+ characters'
                               : 'Token should start with "sk-ant-api" and have 100+ characters'
@@ -3693,8 +3693,8 @@ export default function IntegrationsPage() {
             <div className="relative space-y-6">
               {/* Loading overlay when refreshing */}
               {loadingMappingData && (
-                <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-10 rounded-lg">
-                  <div className="flex items-center space-x-2 text-gray-600">
+                <div className="absolute inset-0 bg-white flex items-center justify-center z-10 rounded-lg">
+                  <div className="flex items-center space-x-2 text-neutral-700">
                     <RefreshCw className="w-4 h-4 animate-spin" />
                     <span className="text-sm">Refreshing mapping data...</span>
                   </div>
@@ -3708,7 +3708,7 @@ export default function IntegrationsPage() {
                     <Users2 className="w-4 h-4 text-green-600" />
                     <div>
                       <div className="text-2xl font-bold">{(mappingStats as any).mapped_members || mappingStats.total_attempts}</div>
-                      <div className="text-sm text-gray-600">Mapped Members</div>
+                      <div className="text-sm text-neutral-700">Mapped Members</div>
                     </div>
                   </div>
                 </Card>
@@ -3719,7 +3719,7 @@ export default function IntegrationsPage() {
                       <div className="text-2xl font-bold text-green-600">
                         {mappingStats.overall_success_rate}%
                       </div>
-                      <div className="text-sm text-gray-600">Success Rate</div>
+                      <div className="text-sm text-neutral-700">Success Rate</div>
                     </div>
                   </div>
                 </Card>
@@ -3730,7 +3730,7 @@ export default function IntegrationsPage() {
                       <div className="text-2xl font-bold">
                         {(mappingStats as any).members_with_data || mappingData.filter(m => m.data_collected && m.mapping_successful).length}
                       </div>
-                      <div className="text-sm text-gray-600">With Data</div>
+                      <div className="text-sm text-neutral-700">With Data</div>
                     </div>
                   </div>
                 </Card>
@@ -3745,17 +3745,17 @@ export default function IntegrationsPage() {
                       type="checkbox"
                       checked={showOnlyFailed}
                       onChange={(e) => setShowOnlyFailed(e.target.checked)}
-                      className="rounded border-gray-300"
+                      className="rounded border-neutral-300"
                     />
                     Show only failed mappings
                   </label>
                 </div>
                 <div className="border rounded-lg overflow-hidden">
-                  <div className="bg-gray-50 px-4 py-3 border-b">
-                    <div className="grid grid-cols-4 gap-4 text-sm font-medium text-gray-600">
+                  <div className="bg-neutral-100 px-4 py-3 border-b">
+                    <div className="grid grid-cols-4 gap-4 text-sm font-medium text-neutral-700">
                       <button
                         onClick={() => handleSort('email')}
-                        className="flex items-center gap-1 hover:text-gray-900 text-left"
+                        className="flex items-center gap-1 hover:text-neutral-900 text-left"
                       >
                         Team Member
                         {sortField === 'email' ? (
@@ -3766,7 +3766,7 @@ export default function IntegrationsPage() {
                       </button>
                       <button
                         onClick={() => handleSort('status')}
-                        className="flex items-center gap-1 hover:text-gray-900 text-left"
+                        className="flex items-center gap-1 hover:text-neutral-900 text-left"
                       >
                         Status
                         {sortField === 'status' ? (
@@ -3776,11 +3776,11 @@ export default function IntegrationsPage() {
                         )}
                       </button>
                       <div>{selectedMappingPlatform === 'github' ? 'GitHub User' : 'Slack User'} 
-                        <span className="text-xs text-gray-500 block">Click + to add missing</span>
+                        <span className="text-xs text-neutral-500 block">Click + to add missing</span>
                       </div>
                       <button
                         onClick={() => handleSort('method')}
-                        className="flex items-center gap-1 hover:text-gray-900 text-left"
+                        className="flex items-center gap-1 hover:text-neutral-900 text-left"
                       >
                         Method
                         {sortField === 'method' ? (
@@ -3801,7 +3801,7 @@ export default function IntegrationsPage() {
                               {mapping.source_name ? (
                                 <>
                                   <span className="font-semibold">{mapping.source_name}</span>
-                                  <div className="text-xs text-gray-500 truncate">{mapping.source_identifier}</div>
+                                  <div className="text-xs text-neutral-500 truncate">{mapping.source_identifier}</div>
                                 </>
                               ) : (
                                 mapping.source_identifier
@@ -3820,7 +3820,7 @@ export default function IntegrationsPage() {
                                 Failed
                               </Badge>
                             )}
-                            <div className="text-xs text-gray-500">
+                            <div className="text-xs text-neutral-500">
                               {mapping.data_points_count ? (
                                 <span>{mapping.data_points_count} data points</span>
                               ) : (
@@ -3848,7 +3848,7 @@ export default function IntegrationsPage() {
                                             ? 'border-red-300 focus:ring-red-500' 
                                             : githubValidation?.valid === true
                                             ? 'border-green-300 focus:ring-green-500'
-                                            : 'border-gray-300 focus:ring-blue-500'
+                                            : 'border-neutral-300 focus:ring-blue-500'
                                         }`}
                                         autoFocus
                                         onKeyDown={(e) => {
@@ -3872,7 +3872,7 @@ export default function IntegrationsPage() {
                                         disabled={savingInlineMapping || validatingGithub}
                                         className={`p-1 hover:opacity-80 disabled:opacity-50 ${
                                           selectedMappingPlatform === 'github' && githubValidation?.valid !== true
-                                            ? 'text-gray-400 cursor-not-allowed'
+                                            ? 'text-neutral-500 cursor-not-allowed'
                                             : 'text-green-600 hover:text-green-700'
                                         }`}
                                         title="Save changes"
@@ -3882,7 +3882,7 @@ export default function IntegrationsPage() {
                                       <button
                                         onClick={cancelInlineEdit}
                                         disabled={savingInlineMapping}
-                                        className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-50"
+                                        className="p-1 text-neutral-500 hover:text-neutral-700 disabled:opacity-50"
                                         title="Cancel"
                                       >
                                         <X className="w-4 h-4" />
@@ -3894,7 +3894,7 @@ export default function IntegrationsPage() {
                                         {validatingGithub ? (
                                           <>
                                             <Loader2 className="w-3 h-3 animate-spin" />
-                                            <span className="text-gray-500">Validating...</span>
+                                            <span className="text-neutral-500">Validating...</span>
                                           </>
                                         ) : githubValidation?.valid ? (
                                           <>
@@ -3923,7 +3923,7 @@ export default function IntegrationsPage() {
                                     )}
                                     <button
                                       onClick={() => startEditExisting(mapping.id, mapping.target_identifier)}
-                                      className="ml-1 p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                                      className="ml-1 p-1 text-neutral-500 hover:text-blue-600 transition-colors"
                                       title="Edit mapping"
                                     >
                                       <Edit3 className="w-3 h-3" />
@@ -3944,7 +3944,7 @@ export default function IntegrationsPage() {
                                         ? 'border-red-300 focus:ring-red-500' 
                                         : githubValidation?.valid === true
                                         ? 'border-green-300 focus:ring-green-500'
-                                        : 'border-gray-300 focus:ring-blue-500'
+                                        : 'border-neutral-300 focus:ring-blue-500'
                                     }`}
                                     autoFocus
                                   onKeyDown={(e) => {
@@ -3968,7 +3968,7 @@ export default function IntegrationsPage() {
                                   disabled={savingInlineMapping || validatingGithub}
                                   className={`p-1 hover:opacity-80 disabled:opacity-50 ${
                                     selectedMappingPlatform === 'github' && githubValidation?.valid !== true
-                                      ? 'text-gray-400 cursor-not-allowed'
+                                      ? 'text-neutral-500 cursor-not-allowed'
                                       : 'text-green-600 hover:text-green-700'
                                   }`}
                                   title={
@@ -3982,7 +3982,7 @@ export default function IntegrationsPage() {
                                 <button
                                   onClick={cancelInlineEdit}
                                   disabled={savingInlineMapping}
-                                  className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-50"
+                                  className="p-1 text-neutral-500 hover:text-neutral-700 disabled:opacity-50"
                                   title="Cancel"
                                 >
                                   <X className="w-4 h-4" />
@@ -3994,7 +3994,7 @@ export default function IntegrationsPage() {
                                     {validatingGithub ? (
                                       <>
                                         <Loader2 className="w-3 h-3 animate-spin" />
-                                        <span className="text-gray-500">Validating...</span>
+                                        <span className="text-neutral-500">Validating...</span>
                                       </>
                                     ) : githubValidation?.valid ? (
                                       <>
@@ -4014,7 +4014,7 @@ export default function IntegrationsPage() {
                               // Show clickable "Add username" area
                               <button
                                 onClick={() => startInlineEdit(mapping.id)}
-                                className="w-full text-left px-2 py-1 text-xs text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded border border-dashed border-gray-300 hover:border-blue-300 transition-colors flex items-center gap-2"
+                                className="w-full text-left px-2 py-1 text-xs text-neutral-500 hover:text-blue-600 hover:bg-blue-50 rounded border border-dashed border-neutral-300 hover:border-blue-300 transition-colors flex items-center gap-2"
                                 title={`Click to add ${selectedMappingPlatform === 'github' ? 'GitHub' : 'Slack'} username`}
                               >
                                 <Plus className="w-3 h-3 flex-shrink-0" />
@@ -4023,7 +4023,7 @@ export default function IntegrationsPage() {
                             )
                             })()}
                           </div>
-                          <div className="text-gray-600">
+                          <div className="text-neutral-700">
                             {mapping.is_manual ? (
                               <div className="flex items-center gap-1">
                                 <Tooltip content="Manual mapping - will show data collection status after running an analysis">
@@ -4041,7 +4041,7 @@ export default function IntegrationsPage() {
                       </div>
                       )
                     }) : (
-                      <div className="px-4 py-8 text-center text-gray-500">
+                      <div className="px-4 py-8 text-center text-neutral-500">
                         No mapping data available yet. Run an analysis to see mapping results.
                       </div>
                     )}
@@ -4088,7 +4088,7 @@ export default function IntegrationsPage() {
                     <Database className="w-4 h-4 text-blue-600" />
                     <div>
                       <div className="text-2xl font-bold">{manualMappingStats.total_mappings}</div>
-                      <div className="text-sm text-gray-600">Total Mappings</div>
+                      <div className="text-sm text-neutral-700">Total Mappings</div>
                     </div>
                   </div>
                 </Card>
@@ -4099,7 +4099,7 @@ export default function IntegrationsPage() {
                       <div className="text-2xl font-bold text-green-600">
                         {manualMappingStats.manual_mappings}
                       </div>
-                      <div className="text-sm text-gray-600">Manual</div>
+                      <div className="text-sm text-neutral-700">Manual</div>
                     </div>
                   </div>
                 </Card>
@@ -4110,7 +4110,7 @@ export default function IntegrationsPage() {
                       <div className="text-2xl font-bold text-purple-600">
                         {manualMappingStats.auto_detected_mappings}
                       </div>
-                      <div className="text-sm text-gray-600">Auto-Detected</div>
+                      <div className="text-sm text-neutral-700">Auto-Detected</div>
                     </div>
                   </div>
                 </Card>
@@ -4121,7 +4121,7 @@ export default function IntegrationsPage() {
                       <div className="text-2xl font-bold text-green-600">
                         {Math.round(manualMappingStats.verification_rate * 100)}%
                       </div>
-                      <div className="text-sm text-gray-600">Verified</div>
+                      <div className="text-sm text-neutral-700">Verified</div>
                     </div>
                   </div>
                 </Card>
@@ -4164,8 +4164,8 @@ export default function IntegrationsPage() {
                 <h3 className="text-lg font-semibold">Current Mappings</h3>
                 {manualMappings.length > 0 ? (
                   <div className="border rounded-lg overflow-hidden">
-                    <div className="bg-gray-50 px-4 py-3 border-b">
-                      <div className="grid grid-cols-6 gap-4 text-sm font-medium text-gray-600">
+                    <div className="bg-neutral-100 px-4 py-3 border-b">
+                      <div className="grid grid-cols-6 gap-4 text-sm font-medium text-neutral-700">
                         <div>Source Platform</div>
                         <div>Source Identifier</div>
                         <div>Target Identifier</div>
@@ -4231,7 +4231,7 @@ export default function IntegrationsPage() {
                                     size="sm"
                                     variant="ghost"
                                     onClick={() => setEditingMapping(null)}
-                                    className="h-8 w-8 p-0 text-gray-600 hover:text-gray-700"
+                                    className="h-8 w-8 p-0 text-neutral-700 hover:text-neutral-700"
                                   >
                                     <ArrowLeft className="w-4 h-4" />
                                   </Button>
@@ -4263,8 +4263,8 @@ export default function IntegrationsPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="border rounded-lg p-8 text-center text-gray-500">
-                    <Users2 className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                  <div className="border rounded-lg p-8 text-center text-neutral-500">
+                    <Users2 className="w-12 h-12 mx-auto mb-4 text-neutral-500" />
                     <h3 className="text-lg font-medium mb-2">No manual mappings yet</h3>
                     <p className="text-sm">Create your first manual mapping to get started.</p>
                   </div>
@@ -4350,31 +4350,31 @@ export default function IntegrationsPage() {
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm font-medium text-gray-700">Workspace</p>
-                <p className="text-sm text-gray-900 mt-1">{slackIntegration?.workspace_name || 'Unknown'}</p>
+                <p className="text-sm font-medium text-neutral-700">Workspace</p>
+                <p className="text-sm text-neutral-900 mt-1">{slackIntegration?.workspace_name || 'Unknown'}</p>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-700">Connection</p>
-                <p className="text-sm text-gray-900 mt-1 capitalize">
+                <p className="text-sm font-medium text-neutral-700">Connection</p>
+                <p className="text-sm text-neutral-900 mt-1 capitalize">
                   {slackIntegration?.connection_type === 'oauth' ? 'OAuth' : 'Token'}
                 </p>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-700">Connected</p>
-                <p className="text-sm text-gray-900 mt-1">
+                <p className="text-sm font-medium text-neutral-700">Connected</p>
+                <p className="text-sm text-neutral-900 mt-1">
                   {slackIntegration?.connected_at ? new Date(slackIntegration.connected_at).toLocaleDateString() : 'N/A'}
                 </p>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-700">Workspace ID</p>
-                <p className="text-sm text-gray-900 mt-1 font-mono text-xs">
+                <p className="text-sm font-medium text-neutral-700">Workspace ID</p>
+                <p className="text-sm text-neutral-900 mt-1 font-mono text-xs">
                   {slackIntegration?.workspace_id || 'N/A'}
                 </p>
               </div>
             </div>
-            <div className="pt-3 border-t border-gray-200">
-              <p className="text-xs text-gray-600">
-                💡 The <code className="bg-gray-100 px-1 rounded">/oncall-health</code> command will only show analyses for your organization
+            <div className="pt-3 border-t border-neutral-200">
+              <p className="text-xs text-neutral-700">
+                💡 The <code className="bg-neutral-200 px-1 rounded">/oncall-health</code> command will only show analyses for your organization
               </p>
             </div>
           </div>
@@ -4423,7 +4423,7 @@ export default function IntegrationsPage() {
                 <li>Remove access to survey features for all team members</li>
               </ul>
             </div>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-neutral-700">
               You will need to reconnect to re-enable these features.
             </p>
           </div>
@@ -4541,14 +4541,14 @@ export default function IntegrationsPage() {
       />
 
       {/* Powered by Rootly AI Footer */}
-      <div className="mt-12 pt-8 border-t border-gray-200 text-center">
+      <div className="mt-12 pt-8 border-t border-neutral-200 text-center">
         <a
           href="https://rootly.com"
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex flex-col items-center space-y-1 hover:opacity-80 transition-opacity"
         >
-          <span className="text-lg text-gray-600">powered by</span>
+          <span className="text-lg text-neutral-700">powered by</span>
           <Image
             src="/images/rootly-ai-logo.png"
             alt="Rootly AI"
@@ -4592,7 +4592,7 @@ export default function IntegrationsPage() {
                     setShowSyncConfirmModal(true)
                   }}
                   disabled={loadingTeamMembers || loadingSyncedUsers}
-                  className="bg-purple-600 hover:bg-purple-700 text-white"
+                  className="bg-purple-700 hover:bg-purple-800 text-white"
                   size="default"
                 >
                   {loadingTeamMembers ? (
@@ -4621,7 +4621,7 @@ export default function IntegrationsPage() {
             {loadingSyncedUsers ? (
               <div className="flex flex-col items-center justify-center py-12 space-y-4">
                 <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
-                <p className="text-sm text-gray-600">Loading team members...</p>
+                <p className="text-sm text-neutral-700">Loading team members...</p>
               </div>
             ) : syncedUsers.length > 0 ? (
               <div>
@@ -4648,8 +4648,8 @@ export default function IntegrationsPage() {
                     </div>
 
                     {/* Quick filter buttons */}
-                    <div className="flex items-center gap-2 mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                      <span className="text-xs font-medium text-gray-600">Quick Actions:</span>
+                    <div className="flex items-center gap-2 mb-4 p-3 bg-neutral-100 rounded-lg border border-neutral-200">
+                      <span className="text-xs font-medium text-neutral-700">Quick Actions:</span>
                       <Button
                         size="sm"
                         variant="outline"
@@ -4689,8 +4689,8 @@ export default function IntegrationsPage() {
                     </div>
                   </>
                 ) : (
-                  <div className="mb-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                    <p className="text-xs text-gray-600 font-medium">
+                  <div className="mb-3 p-3 bg-neutral-100 border border-neutral-200 rounded-lg">
+                    <p className="text-xs text-neutral-700 font-medium">
                       ℹ️ Survey delivery is disabled. These users are synced and available for analysis only.
                     </p>
                   </div>
@@ -4718,10 +4718,10 @@ export default function IntegrationsPage() {
                           surveyEnabled ? 'cursor-pointer' : ''
                         } ${
                           surveyEnabled && isSelected
-                            ? 'border-purple-400 bg-purple-50'
-                            : 'border-gray-200'
+                            ? 'border-purple-400 bg-purple-200'
+                            : 'border-neutral-200'
                         } ${
-                          surveyEnabled && !isSelected ? 'hover:border-purple-300' : ''
+                          surveyEnabled && !isSelected ? 'hover:border-purple-500' : ''
                         }`}
                       >
                         <div className="flex items-center justify-between mb-2">
@@ -4733,7 +4733,7 @@ export default function IntegrationsPage() {
                                   type="checkbox"
                                   checked={isSelected}
                                   onChange={() => {}} // Handled by parent div onClick
-                                  className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
+                                  className="w-4 h-4 rounded border-neutral-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
                                 />
                               </div>
                             )}
@@ -4755,7 +4755,7 @@ export default function IntegrationsPage() {
 
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-gray-900">
+                                <span className="text-sm font-medium text-neutral-900">
                                   {user.name || 'Unknown'}
                                 </span>
                                 {/* GitHub, Slack, Jira, and Linear logos */}
@@ -4795,7 +4795,7 @@ export default function IntegrationsPage() {
                                   </Badge>
                                 )}
                               </div>
-                              <div className="text-xs text-gray-600">
+                              <div className="text-xs text-neutral-700">
                                 {user.email}
                               </div>
                             </div>
@@ -4814,7 +4814,7 @@ export default function IntegrationsPage() {
                                     variant="secondary"
                                     className={`text-xs ${
                                       isPagerDuty ? 'bg-green-100 text-green-700 border-green-300' :
-                                      isRootly ? 'bg-purple-100 text-purple-700 border-purple-300' :
+                                      isRootly ? 'bg-purple-100 text-purple-700 border-purple-500' :
                                       ''
                                     }`}
                                   >
@@ -4841,7 +4841,7 @@ export default function IntegrationsPage() {
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="__clear__">
-                                  <span className="text-gray-400 italic">Clear mapping</span>
+                                  <span className="text-neutral-500 italic">Clear mapping</span>
                                 </SelectItem>
                                 {githubOrgMembers.length > 0 ? (
                                   githubOrgMembers.map(username => (
@@ -4850,7 +4850,7 @@ export default function IntegrationsPage() {
                                     </SelectItem>
                                   ))
                                 ) : (
-                                  <div className="text-xs text-gray-400 p-2">
+                                  <div className="text-xs text-neutral-500 p-2">
                                     {loadingOrgMembers ? 'Loading...' : 'No GitHub members found'}
                                   </div>
                                 )}
@@ -4887,11 +4887,11 @@ export default function IntegrationsPage() {
                         ) : (
                           // Display mode
                           <div className="flex items-center justify-between text-xs">
-                            <div className="text-gray-500 flex items-center gap-2">
+                            <div className="text-neutral-500 flex items-center gap-2">
                               <span>GitHub: {user.github_username ? (
-                                <span className="font-mono text-gray-700">{user.github_username}</span>
+                                <span className="font-mono text-neutral-700">{user.github_username}</span>
                               ) : (
-                                <span className="text-gray-400 italic">Not mapped</span>
+                                <span className="text-neutral-500 italic">Not mapped</span>
                               )}</span>
                               {user.github_is_manual && user.github_username && (
                                 <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
@@ -4907,7 +4907,7 @@ export default function IntegrationsPage() {
                                   e.stopPropagation()
                                   startEditingGitHubUsername(user.id, user.github_username)
                                 }}
-                                className="h-6 px-2 text-gray-400 hover:text-gray-700"
+                                className="h-6 px-2 text-neutral-500 hover:text-neutral-700"
                               >
                                 <Edit3 className="w-3 h-3" />
                               </Button>
@@ -4931,21 +4931,21 @@ export default function IntegrationsPage() {
                                   </SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value="__clear__">
-                                      <span className="text-gray-400 italic">Clear mapping</span>
+                                      <span className="text-neutral-500 italic">Clear mapping</span>
                                     </SelectItem>
                                     {jiraUsers.length > 0 ? (
                                       jiraUsers.map((jiraUser) => (
                                         <SelectItem key={jiraUser.account_id} value={jiraUser.account_id}>
                                           <div className="space-y-0.5">
                                             <div className="font-medium">{jiraUser.display_name}</div>
-                                            <div className="text-xs text-gray-500">
+                                            <div className="text-xs text-neutral-500">
                                               {jiraUser.email ? jiraUser.email : '<no-email>'}
                                             </div>
                                           </div>
                                         </SelectItem>
                                       ))
                                     ) : (
-                                      <div className="text-xs text-gray-400 p-2">
+                                      <div className="text-xs text-neutral-500 p-2">
                                         {loadingJiraUsers ? 'Loading...' : 'No Jira users found'}
                                       </div>
                                     )}
@@ -4982,21 +4982,21 @@ export default function IntegrationsPage() {
                             ) : (
                               // Jira Display mode
                               <div className="flex items-center justify-between text-xs">
-                                <div className="text-gray-500">
+                                <div className="text-neutral-500">
                                   Jira: {user.jira_account_id ? (
                                     <div className="space-y-0.5">
-                                      <div className="font-mono text-gray-700">
+                                      <div className="font-mono text-neutral-700">
                                         {jiraUsers.find(u => u.account_id === user.jira_account_id)?.display_name ||
                                          user.jira_account_id.substring(0, 8) + '...'}
                                       </div>
                                       {user.jira_email ? (
-                                        <div className="text-xs text-gray-500">{user.jira_email}</div>
+                                        <div className="text-xs text-neutral-500">{user.jira_email}</div>
                                       ) : (
-                                        <div className="text-xs text-gray-400">&lt;no-email&gt;</div>
+                                        <div className="text-xs text-neutral-500">&lt;no-email&gt;</div>
                                       )}
                                     </div>
                                   ) : (
-                                    <span className="text-gray-400 italic">Not mapped</span>
+                                    <span className="text-neutral-500 italic">Not mapped</span>
                                   )}
                                 </div>
                                 <Button
@@ -5006,7 +5006,7 @@ export default function IntegrationsPage() {
                                     e.stopPropagation()
                                     startEditingJiraMapping(user.id, user.jira_account_id)
                                   }}
-                                  className="h-6 px-2 text-gray-400 hover:text-gray-700"
+                                  className="h-6 px-2 text-neutral-500 hover:text-neutral-700"
                                 >
                                   <Edit3 className="w-3 h-3" />
                                 </Button>
@@ -5031,7 +5031,7 @@ export default function IntegrationsPage() {
                                   </SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value="__clear__">
-                                      <span className="text-gray-400 italic">Clear mapping</span>
+                                      <span className="text-neutral-500 italic">Clear mapping</span>
                                     </SelectItem>
                                     {linearUsers.length > 0 ? (
                                       linearUsers
@@ -5040,14 +5040,14 @@ export default function IntegrationsPage() {
                                           <SelectItem key={linearUser.id} value={linearUser.id}>
                                             <div className="space-y-0.5">
                                               <div className="font-medium">{linearUser.name}</div>
-                                              <div className="text-xs text-gray-500">
+                                              <div className="text-xs text-neutral-500">
                                                 {linearUser.email || '<no-email>'}
                                               </div>
                                             </div>
                                           </SelectItem>
                                         ))
                                     ) : (
-                                      <div className="text-xs text-gray-400 p-2">
+                                      <div className="text-xs text-neutral-500 p-2">
                                         {loadingLinearUsers ? 'Loading...' : 'No Linear users found'}
                                       </div>
                                     )}
@@ -5084,21 +5084,21 @@ export default function IntegrationsPage() {
                             ) : (
                               // Linear Display mode
                               <div className="flex items-center justify-between text-xs">
-                                <div className="text-gray-500">
+                                <div className="text-neutral-500">
                                   Linear: {user.linear_user_id ? (
                                     <div className="space-y-0.5">
-                                      <div className="font-mono text-gray-700">
+                                      <div className="font-mono text-neutral-700">
                                         {linearUsers.find(u => u.id === user.linear_user_id)?.name ||
                                          user.linear_user_id.substring(0, 8) + '...'}
                                       </div>
                                       {user.linear_email ? (
-                                        <div className="text-xs text-gray-500">{user.linear_email}</div>
+                                        <div className="text-xs text-neutral-500">{user.linear_email}</div>
                                       ) : (
-                                        <div className="text-xs text-gray-400">&lt;no-email&gt;</div>
+                                        <div className="text-xs text-neutral-500">&lt;no-email&gt;</div>
                                       )}
                                     </div>
                                   ) : (
-                                    <span className="text-gray-400 italic">Not mapped</span>
+                                    <span className="text-neutral-500 italic">Not mapped</span>
                                   )}
                                 </div>
                                 <Button
@@ -5108,7 +5108,7 @@ export default function IntegrationsPage() {
                                     e.stopPropagation()
                                     startEditingLinearMapping(user.id, user.linear_user_id)
                                   }}
-                                  className="h-6 px-2 text-gray-400 hover:text-gray-700"
+                                  className="h-6 px-2 text-neutral-500 hover:text-neutral-700"
                                 >
                                   <Edit3 className="w-3 h-3" />
                                 </Button>
@@ -5130,7 +5130,7 @@ export default function IntegrationsPage() {
 
                   return totalPages > 1 ? (
                     <div className="flex items-center justify-between mt-3 pt-3 border-t">
-                      <div className="text-sm text-gray-600">
+                      <div className="text-sm text-neutral-700">
                         Showing {startIndex}-{endIndex} of {syncedUsers.length} members
                       </div>
                       <div className="flex items-center gap-2">
@@ -5139,7 +5139,7 @@ export default function IntegrationsPage() {
                           size="sm"
                           onClick={() => setTeamMembersPage(teamMembersPage - 1)}
                           disabled={teamMembersPage === 1}
-                          className="bg-black text-white hover:bg-gray-800 disabled:bg-gray-300 disabled:text-gray-500"
+                          className="bg-black text-white hover:bg-neutral-800 disabled:bg-neutral-300 disabled:text-neutral-500"
                         >
                           <ChevronLeft className="w-4 h-4 mr-1" />
                           Previous
@@ -5152,7 +5152,7 @@ export default function IntegrationsPage() {
                           size="sm"
                           onClick={() => setTeamMembersPage(teamMembersPage + 1)}
                           disabled={teamMembersPage === totalPages}
-                          className="bg-black text-white hover:bg-gray-800 disabled:bg-gray-300 disabled:text-gray-500"
+                          className="bg-black text-white hover:bg-neutral-800 disabled:bg-neutral-300 disabled:text-neutral-500"
                         >
                           Next
                           <ChevronRight className="w-4 h-4 ml-1" />
@@ -5163,7 +5163,7 @@ export default function IntegrationsPage() {
                 })()}
               </div>
             ) : (
-              <div className="text-center py-12 text-gray-500">
+              <div className="text-center py-12 text-neutral-500">
                 <Users className="w-12 h-12 mx-auto mb-4 opacity-40" />
                 <p className="text-sm font-medium mb-2">No team members synced yet</p>
                 <p className="text-xs">Close this drawer and click "Sync Members" to add team members who can submit surveys</p>
@@ -5194,7 +5194,7 @@ export default function IntegrationsPage() {
                     disabled={savingRecipients}
                     variant="default"
                     size="default"
-                    className="bg-purple-600 hover:bg-purple-700"
+                    className="bg-purple-700 hover:bg-purple-800"
                   >
                     {savingRecipients ? (
                       <>
@@ -5247,34 +5247,34 @@ export default function IntegrationsPage() {
                     <div className="flex items-center gap-3">
                       <CheckCircle className="w-6 h-6 text-green-600" />
                       <div className="flex-1">
-                        <div className="text-lg font-semibold text-gray-900">{syncProgress.stage}</div>
-                        <div className="text-sm text-gray-600">{syncProgress.details}</div>
+                        <div className="text-lg font-semibold text-neutral-900">{syncProgress.stage}</div>
+                        <div className="text-sm text-neutral-700">{syncProgress.details}</div>
                       </div>
                     </div>
 
-                    <div className="bg-gray-50 border border-gray-200 rounded-md p-4 space-y-3">
-                      <div className="font-semibold text-gray-900 text-base">Sync Results</div>
+                    <div className="bg-neutral-100 border border-neutral-200 rounded-md p-4 space-y-3">
+                      <div className="font-semibold text-neutral-900 text-base">Sync Results</div>
 
                       <div className="space-y-2">
-                        <div className="flex items-center justify-between py-2 border-b border-gray-200">
-                          <span className="text-sm text-gray-700">New users synced</span>
-                          <span className="font-semibold text-gray-900">{syncProgress.results.created}</span>
+                        <div className="flex items-center justify-between py-2 border-b border-neutral-200">
+                          <span className="text-sm text-neutral-700">New users synced</span>
+                          <span className="font-semibold text-neutral-900">{syncProgress.results.created}</span>
                         </div>
-                        <div className="flex items-center justify-between py-2 border-b border-gray-200">
-                          <span className="text-sm text-gray-700">Existing users updated</span>
-                          <span className="font-semibold text-gray-900">{syncProgress.results.updated}</span>
+                        <div className="flex items-center justify-between py-2 border-b border-neutral-200">
+                          <span className="text-sm text-neutral-700">Existing users updated</span>
+                          <span className="font-semibold text-neutral-900">{syncProgress.results.updated}</span>
                         </div>
                         {syncProgress.results.github_matched !== undefined && (
-                          <div className="flex items-center justify-between py-2 border-b border-gray-200">
-                            <span className="text-sm text-gray-700">
+                          <div className="flex items-center justify-between py-2 border-b border-neutral-200">
+                            <span className="text-sm text-neutral-700">
                               GitHub accounts matched
                               {syncProgress.results.github_total !== undefined && (
-                                <span className="text-xs text-gray-500 ml-1">
+                                <span className="text-xs text-neutral-500 ml-1">
                                   ({syncProgress.results.github_matched} new, {syncProgress.results.github_total} total)
                                 </span>
                               )}
                             </span>
-                            <span className="font-semibold text-gray-900">
+                            <span className="font-semibold text-neutral-900">
                               {syncProgress.results.github_total !== undefined
                                 ? syncProgress.results.github_total
                                 : syncProgress.results.github_matched}
@@ -5282,21 +5282,21 @@ export default function IntegrationsPage() {
                           </div>
                         )}
                         {syncProgress.results.slack_synced !== undefined && (
-                          <div className="flex items-center justify-between py-2 border-b border-gray-200">
-                            <span className="text-sm text-gray-700">Slack accounts matched</span>
-                            <span className="font-semibold text-gray-900">{syncProgress.results.slack_synced}</span>
+                          <div className="flex items-center justify-between py-2 border-b border-neutral-200">
+                            <span className="text-sm text-neutral-700">Slack accounts matched</span>
+                            <span className="font-semibold text-neutral-900">{syncProgress.results.slack_synced}</span>
                           </div>
                         )}
                         {syncProgress.results.jira_matched !== undefined && (
-                          <div className="flex items-center justify-between py-2 border-b border-gray-200">
-                            <span className="text-sm text-gray-700">Jira accounts matched</span>
-                            <span className="font-semibold text-gray-900">{syncProgress.results.jira_matched}</span>
+                          <div className="flex items-center justify-between py-2 border-b border-neutral-200">
+                            <span className="text-sm text-neutral-700">Jira accounts matched</span>
+                            <span className="font-semibold text-neutral-900">{syncProgress.results.jira_matched}</span>
                           </div>
                         )}
                         {syncProgress.results.linear_matched !== undefined && (
-                          <div className="flex items-center justify-between py-2 border-b border-gray-200">
-                            <span className="text-sm text-gray-700">Linear accounts matched</span>
-                            <span className="font-semibold text-gray-900">{syncProgress.results.linear_matched}</span>
+                          <div className="flex items-center justify-between py-2 border-b border-neutral-200">
+                            <span className="text-sm text-neutral-700">Linear accounts matched</span>
+                            <span className="font-semibold text-neutral-900">{syncProgress.results.linear_matched}</span>
                           </div>
                         )}
                       </div>
@@ -5308,7 +5308,7 @@ export default function IntegrationsPage() {
                           setShowSyncConfirmModal(false)
                           setSyncProgress(null)
                         }}
-                        className="bg-purple-600 hover:bg-purple-700"
+                        className="bg-purple-700 hover:bg-purple-800"
                       >
                         Done
                       </Button>
@@ -5319,12 +5319,12 @@ export default function IntegrationsPage() {
                     <div className="flex items-center gap-3">
                       <Loader2 className="w-5 h-5 animate-spin text-purple-600" />
                       <div className="flex-1">
-                        <div className="font-medium text-gray-900">{syncProgress.stage}</div>
-                        <div className="text-sm text-gray-600">{syncProgress.details}</div>
+                        <div className="font-medium text-neutral-900">{syncProgress.stage}</div>
+                        <div className="text-sm text-neutral-700">{syncProgress.details}</div>
                       </div>
                     </div>
 
-                    <div className="bg-purple-50 border border-purple-200 rounded-md p-3">
+                    <div className="bg-purple-200 border border-purple-200 rounded-md p-3">
                       <span className="text-sm text-purple-800">Please wait while we sync your team members. This may take a few moments...</span>
                     </div>
                   </div>
@@ -5347,7 +5347,7 @@ export default function IntegrationsPage() {
                       </ul>
                     </div>
 
-                    <span className="text-sm text-gray-600 block">
+                    <span className="text-sm text-neutral-700 block">
                       {syncedUsers.length > 0
                         ? `This will replace your current ${syncedUsers.length} synced users.`
                         : 'This is your first sync for this integration.'}
@@ -5365,7 +5365,7 @@ export default function IntegrationsPage() {
                 </Button>
                 <Button
                   onClick={performTeamSync}
-                  className="bg-purple-600 hover:bg-purple-700"
+                  className="bg-purple-700 hover:bg-purple-800"
                 >
                   Sync Now
                 </Button>

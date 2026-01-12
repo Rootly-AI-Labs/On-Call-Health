@@ -175,8 +175,8 @@ export default function ManualSurveyDeliveryModal({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">
+        <div className="flex items-center justify-between p-6 border-b border-neutral-200">
+          <h2 className="text-xl font-semibold text-neutral-900">
             {step === 'preview' && 'Send Survey Now'}
             {step === 'confirm' && 'Confirm Survey Delivery'}
             {step === 'success' && 'Survey Sent Successfully'}
@@ -184,7 +184,7 @@ export default function ManualSurveyDeliveryModal({
           </h2>
           <button
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-neutral-500 hover:text-neutral-700 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -198,12 +198,12 @@ export default function ManualSurveyDeliveryModal({
               <div className="flex items-start space-x-3 p-4 bg-blue-50 rounded-lg">
                 <Users className="w-5 h-5 text-blue-600 mt-0.5" />
                 <div>
-                  <p className="text-sm text-gray-700">
+                  <p className="text-sm text-neutral-700">
                     This will immediately send check-in surveys to all opted-in team members via Slack DM.
                   </p>
                 </div>
               </div>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-neutral-700">
                 Click "Preview Recipients" to see who will receive the survey before sending.
               </p>
             </div>
@@ -215,10 +215,10 @@ export default function ManualSurveyDeliveryModal({
               <div className="flex items-start space-x-3 p-4 bg-yellow-50 rounded-lg">
                 <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5" />
                 <div>
-                  <p className="font-medium text-gray-900">
+                  <p className="font-medium text-neutral-900">
                     This will send surveys to {selectedRecipients.size} team member{selectedRecipients.size !== 1 ? 's' : ''} via Slack DM.
                   </p>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-sm text-neutral-700 mt-1">
                     This action cannot be undone.
                   </p>
                 </div>
@@ -226,7 +226,7 @@ export default function ManualSurveyDeliveryModal({
 
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-medium text-gray-900">
+                  <h3 className="font-medium text-neutral-900">
                     Recipients ({selectedRecipients.size})
                   </h3>
                   <div className="flex items-center space-x-2">
@@ -236,7 +236,7 @@ export default function ManualSurveyDeliveryModal({
                     >
                       Select All
                     </button>
-                    <span className="text-gray-400">|</span>
+                    <span className="text-neutral-500">|</span>
                     <button
                       onClick={deselectAll}
                       className="text-sm text-purple-600 hover:text-purple-700 font-medium"
@@ -245,7 +245,7 @@ export default function ManualSurveyDeliveryModal({
                     </button>
                   </div>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-4 max-h-64 overflow-y-auto">
+                <div className="bg-neutral-100 rounded-lg p-4 max-h-64 overflow-y-auto">
                   <ul className="space-y-2">
                     {previewData.recipients.map((recipient, index) => (
                       <li key={index} className="flex items-center space-x-3 text-sm">
@@ -253,14 +253,14 @@ export default function ManualSurveyDeliveryModal({
                           type="checkbox"
                           checked={selectedRecipients.has(recipient.email)}
                           onChange={() => toggleRecipient(recipient.email)}
-                          className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                          className="w-4 h-4 text-purple-600 border-neutral-300 rounded focus:ring-purple-500"
                         />
                         <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium">
                           {recipient.name.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-medium text-gray-900">{recipient.name}</p>
-                          <p className="text-gray-500">{recipient.email}</p>
+                          <p className="font-medium text-neutral-900">{recipient.name}</p>
+                          <p className="text-neutral-500">{recipient.email}</p>
                         </div>
                       </li>
                     ))}
@@ -278,10 +278,10 @@ export default function ManualSurveyDeliveryModal({
                   <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Send className="w-8 h-8 text-green-600" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  <h3 className="text-lg font-semibold text-neutral-900 mb-2">
                     Survey Delivery Complete
                   </h3>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-neutral-700">
                     {successData.message}
                   </p>
 
@@ -312,8 +312,8 @@ export default function ManualSurveyDeliveryModal({
               <div className="flex items-start space-x-3 p-4 bg-red-50 rounded-lg">
                 <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5" />
                 <div>
-                  <p className="font-medium text-gray-900">Failed to send surveys</p>
-                  <p className="text-sm text-gray-600 mt-1">{error}</p>
+                  <p className="font-medium text-neutral-900">Failed to send surveys</p>
+                  <p className="text-sm text-neutral-700 mt-1">{error}</p>
                 </div>
               </div>
             </div>
@@ -321,12 +321,12 @@ export default function ManualSurveyDeliveryModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
+        <div className="flex items-center justify-end space-x-3 p-6 border-t border-neutral-200 bg-neutral-100">
           {step === 'preview' && (
             <>
               <button
                 onClick={handleClose}
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-neutral-700 hover:text-neutral-900 transition-colors"
               >
                 Cancel
               </button>
@@ -344,7 +344,7 @@ export default function ManualSurveyDeliveryModal({
             <>
               <button
                 onClick={handleClose}
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-neutral-700 hover:text-neutral-900 transition-colors"
               >
                 Cancel
               </button>

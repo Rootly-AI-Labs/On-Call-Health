@@ -35,12 +35,12 @@ export function TeamHealthOverview({
   return (
     <>
       {/* OCH Risk Level Tooltip Portal */}
-      <div className="fixed z-[99999] invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gray-900 text-white text-xs rounded-lg p-3 w-72 shadow-lg pointer-events-none"
+      <div className="fixed z-[99999] invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-neutral-900 text-white text-xs rounded-lg p-3 w-72 shadow-lg pointer-events-none"
         id="ocb-score-tooltip"
         style={{ top: '-200px', left: '-200px' }}>
         <div className="space-y-2">
           <div className="text-purple-300 font-semibold mb-2">On-Call Health Risk Level</div>
-          <div className="text-gray-300 text-sm">
+          <div className="text-neutral-500 text-sm">
             On-Call Health risk levels range from <strong>0 to 100</strong>, where higher scores indicate a higher risk of overwork.
           </div>
         </div>
@@ -48,7 +48,7 @@ export function TeamHealthOverview({
       </div>
 
       {/* Info Icon Rubric Tooltip Portal */}
-      <div className="fixed z-[99999] invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gray-900 text-white text-xs rounded-lg p-4 w-80 shadow-lg pointer-events-none"
+      <div className="fixed z-[99999] invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-neutral-900 text-white text-xs rounded-lg p-4 w-80 shadow-lg pointer-events-none"
         id="health-rubric-tooltip"
         style={{ top: '-200px', left: '-200px' }}>
         <div className="space-y-3">
@@ -61,9 +61,9 @@ export function TeamHealthOverview({
                   <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                   <span className="text-green-300 font-medium">Healthy</span>
                 </div>
-                <span className="text-gray-300">0-24</span>
+                <span className="text-neutral-500">0-24</span>
               </div>
-              <div className="text-gray-400 text-xs pl-5">No significant signs of overwork</div>
+              <div className="text-neutral-500 text-xs pl-5">No significant signs of overwork</div>
             </div>
 
             <div>
@@ -72,9 +72,9 @@ export function TeamHealthOverview({
                   <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
                   <span className="text-yellow-300 font-medium">Fair</span>
                 </div>
-                <span className="text-gray-300">25-49</span>
+                <span className="text-neutral-500">25-49</span>
               </div>
-              <div className="text-gray-400 text-xs pl-5">Mild signs of overwork, monitor trends</div>
+              <div className="text-neutral-500 text-xs pl-5">Mild signs of overwork, monitor trends</div>
             </div>
 
             <div>
@@ -83,9 +83,9 @@ export function TeamHealthOverview({
                   <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
                   <span className="text-orange-300 font-medium">Poor</span>
                 </div>
-                <span className="text-gray-300">50-74</span>
+                <span className="text-neutral-500">50-74</span>
               </div>
-              <div className="text-gray-400 text-xs pl-5">Moderate signs of overwork, intervention recommended</div>
+              <div className="text-neutral-500 text-xs pl-5">Moderate signs of overwork, intervention recommended</div>
             </div>
 
             <div>
@@ -94,9 +94,9 @@ export function TeamHealthOverview({
                   <div className="w-3 h-3 bg-red-500 rounded-full"></div>
                   <span className="text-red-300 font-medium">Critical</span>
                 </div>
-                <span className="text-gray-300">75-100</span>
+                <span className="text-neutral-500">75-100</span>
               </div>
-              <div className="text-gray-400 text-xs pl-5">Severe signs of overwork, immediate action needed</div>
+              <div className="text-neutral-500 text-xs pl-5">Severe signs of overwork, immediate action needed</div>
             </div>
           </div>
 
@@ -106,7 +106,7 @@ export function TeamHealthOverview({
 
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6 overflow-visible">
-        <Card className="border-2 border-purple-200 bg-white/70 backdrop-blur-sm shadow-lg overflow-visible min-h-[200px]">
+        <Card className="border border-neutral-300 bg-white shadow-lg overflow-visible min-h-[200px]">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-medium text-purple-700 flex items-center space-x-2">
               <Heart className="w-4 h-4" />
@@ -118,7 +118,7 @@ export function TeamHealthOverview({
               <div>
                 <div className="flex items-start space-x-3">
                   <div>
-                    <div className="text-2xl font-bold text-gray-900">{(() => {
+                    <div className="text-2xl font-bold text-neutral-900">{(() => {
                       // Helper function to calculate OCH risk level from team data - FORCE FRONTEND CALCULATION
                       const calculateOCBFromTeam = () => {
                         const teamAnalysis = currentAnalysis?.analysis_data?.team_analysis;
@@ -147,7 +147,7 @@ export function TeamHealthOverview({
                           <>
                             <span>{teamOcbScore}</span>
                             <span
-                              className="text-xs text-gray-500 cursor-help ml-1"
+                              className="text-xs text-neutral-500 cursor-help ml-1"
                               onMouseEnter={(e) => {
                                 const tooltip = document.getElementById('ocb-score-tooltip')
                                 if (tooltip) {
@@ -194,7 +194,7 @@ export function TeamHealthOverview({
                       // NO FALLBACK DATA - show actual system state
                       return "No data";
                     })()}</div>
-                    <div className="text-xs text-gray-500">/100</div>
+                    <div className="text-xs text-neutral-500">/100</div>
                   </div>
                   {(() => {
                     // Show average if we have either historical data OR OCH risk levels (since we can compute meaningful averages from OCB)
@@ -208,7 +208,7 @@ export function TeamHealthOverview({
                     return false;
                   })() && (
                       <div className="hidden">
-                        <div className="text-2xl font-bold text-gray-900 flex items-baseline space-x-1">{(() => {
+                        <div className="text-2xl font-bold text-neutral-900 flex items-baseline space-x-1">{(() => {
                           // PRIORITY 1: Use OCH risk levels for meaningful 30-day average (same as current calculation)
                           const teamAnalysis = currentAnalysis?.analysis_data?.team_analysis;
                           const members = Array.isArray(teamAnalysis) ? teamAnalysis : teamAnalysis?.members;
@@ -229,7 +229,7 @@ export function TeamHealthOverview({
                                 <>
                                   <span>{roundedScore}</span>
                                   <span
-                                    className="text-xs text-gray-500 cursor-help ml-1"
+                                    className="text-xs text-neutral-500 cursor-help ml-1"
                                     onMouseEnter={(e) => {
                                       const tooltip = document.getElementById('ocb-score-tooltip')
                                       if (tooltip) {
@@ -280,7 +280,7 @@ export function TeamHealthOverview({
                           }
                           return "No data";
                         })()}</div>
-                        <div className="text-xs text-gray-500">{currentAnalysis?.time_range || 30}-day avg</div>
+                        <div className="text-xs text-neutral-500">{currentAnalysis?.time_range || 30}-day avg</div>
                       </div>
                     )}
                 </div>
@@ -351,7 +351,7 @@ export function TeamHealthOverview({
                       }
                     }} />
                 </div>
-                <p className="text-xs text-gray-600 mt-1">
+                <p className="text-xs text-neutral-700 mt-1">
                   {(() => {
                     // Use the same health calculation logic for consistency 
                     const getCurrentHealthPercentage = () => {
@@ -402,14 +402,14 @@ export function TeamHealthOverview({
                 </p>
               </div>
             ) : (
-              <div className="text-gray-500">
+              <div className="text-neutral-500">
                 {currentAnalysis?.status === 'failed' ? 'Analysis failed' : 'Analysis in progress...'}
               </div>
             )}
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-purple-200 bg-white/70 backdrop-blur-sm shadow-lg min-h-[200px]">
+        <Card className="border border-neutral-300 bg-white shadow-lg min-h-[200px]">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-medium text-purple-700 flex items-center space-x-2">
               <Shield className="w-4 h-4" />
@@ -447,26 +447,26 @@ export function TeamHealthOverview({
                           {riskCounts.critical > 0 && (
                             <div className="flex items-center space-x-2">
                               <div className="text-2xl font-bold text-red-800">{riskCounts.critical}</div>
-                              <span className="text-sm text-gray-600">Critical (risk level 75-100)</span>
+                              <span className="text-sm text-neutral-700">Critical (risk level 75-100)</span>
                             </div>
                           )}
                           {riskCounts.high > 0 && (
                             <div className="flex items-center space-x-2">
                               <div className="text-2xl font-bold text-red-600">{riskCounts.high}</div>
-                              <span className="text-sm text-gray-600">High (risk level 50-74)</span>
+                              <span className="text-sm text-neutral-700">High (risk level 50-74)</span>
                             </div>
                           )}
                           {riskCounts.medium > 0 && (
                             <div className="flex items-center space-x-2">
                               <div className="text-2xl font-bold text-orange-600">{riskCounts.medium}</div>
-                              <span className="text-sm text-gray-600">Medium (risk level 25-49)</span>
+                              <span className="text-sm text-neutral-700">Medium (risk level 25-49)</span>
                             </div>
                           )}
                           {/* Only show low risk count if it's the majority or no other risks */}
                           {(riskCounts.low > 0 && (riskCounts.critical + riskCounts.high + riskCounts.medium === 0)) && (
                             <div className="flex items-center space-x-2">
                               <div className="text-2xl font-bold text-green-600">{riskCounts.low}</div>
-                              <span className="text-sm text-gray-600">Low (risk level 0-24)</span>
+                              <span className="text-sm text-neutral-700">Low (risk level 0-24)</span>
                             </div>
                           )}
                           {/* Show "Everyone healthy" message if all low risk */}
@@ -486,34 +486,34 @@ export function TeamHealthOverview({
                         {(currentAnalysis.analysis_data.team_health?.risk_distribution?.critical > 0 || currentAnalysis.analysis_data.team_summary?.risk_distribution?.critical > 0) && (
                           <div className="flex items-center space-x-2">
                             <div className="text-2xl font-bold text-red-800">{currentAnalysis.analysis_data.team_health?.risk_distribution?.critical || currentAnalysis.analysis_data.team_summary?.risk_distribution?.critical || 0}</div>
-                            <span className="text-sm text-gray-600">Critical risk</span>
+                            <span className="text-sm text-neutral-700">Critical risk</span>
                           </div>
                         )}
                         <div className="flex items-center space-x-2">
                           <div className="text-2xl font-bold text-red-600">{currentAnalysis.analysis_data.team_health?.risk_distribution?.high || currentAnalysis.analysis_data.team_summary?.risk_distribution?.high || 0}</div>
-                          <span className="text-sm text-gray-600">High risk</span>
+                          <span className="text-sm text-neutral-700">High risk</span>
                         </div>
                         <div className="flex items-center space-x-2">
                           <div className="text-2xl font-bold text-orange-600">{currentAnalysis.analysis_data.team_health?.risk_distribution?.medium || currentAnalysis.analysis_data.team_summary?.risk_distribution?.medium || 0}</div>
-                          <span className="text-sm text-gray-600">Medium risk</span>
+                          <span className="text-sm text-neutral-700">Medium risk</span>
                         </div>
                       </>
                     );
                   })()}
                 </div>
-                <p className="text-xs text-gray-600 mt-2">
+                <p className="text-xs text-neutral-700 mt-2">
                   Out of {Array.isArray(currentAnalysis.analysis_data.team_analysis) ? currentAnalysis.analysis_data.team_analysis.length : (currentAnalysis.analysis_data.team_analysis?.members?.length || 0)} members
                 </p>
               </div>
             ) : (
-              <div className="text-gray-500">
+              <div className="text-neutral-500">
                 {currentAnalysis?.status === 'failed' ? 'Analysis failed' : 'Analysis in progress...'}
               </div>
             )}
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-purple-200 bg-white/70 backdrop-blur-sm shadow-lg min-h-[200px]">
+        <Card className="border border-neutral-300 bg-white shadow-lg min-h-[200px]">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-medium text-purple-700 flex items-center space-x-2">
               <BarChart3 className="w-4 h-4" />
@@ -521,14 +521,14 @@ export function TeamHealthOverview({
             </CardTitle>
           </CardHeader>
           <CardContent className="pb-0">
-            <div className="text-2xl font-bold text-gray-900">
+            <div className="text-2xl font-bold text-neutral-900">
               {(currentAnalysis.analysis_data as any)?.metadata?.total_incidents !== undefined
                 ? (currentAnalysis.analysis_data as any).metadata.total_incidents
                 : (currentAnalysis.analysis_data as any)?.team_analysis?.total_incidents !== undefined
                   ? (currentAnalysis.analysis_data as any).team_analysis.total_incidents
                   : currentAnalysis.analysis_data?.partial_data?.incidents?.length || 0}
             </div>
-            <p className="text-xs text-gray-600 mt-1">
+            <p className="text-xs text-neutral-700 mt-1">
               In the last {currentAnalysis.time_range || 30} days
             </p>
             {(() => {
@@ -601,32 +601,32 @@ export function TeamHealthOverview({
                   <div className={`mt-4 grid ${severityBreakdown.sev0_count > 0 ? 'grid-cols-5' : 'grid-cols-4'} gap-2`}>
                     {severityBreakdown.sev0_count > 0 && (
                       <div className="bg-purple-50 rounded-lg p-2 text-center">
-                        <div className="text-xs font-semibold text-purple-700">SEV0</div>
+                        <div className="text-xs font-semibold text-purple-600">SEV0</div>
                         <div className="text-lg font-bold text-purple-600">
                           {severityBreakdown.sev0_count}
                         </div>
                       </div>
                     )}
                     <div className="bg-red-50 rounded-lg p-2 text-center">
-                      <div className="text-xs font-semibold text-red-700">SEV1</div>
+                      <div className="text-xs font-semibold text-red-600">SEV1</div>
                       <div className="text-lg font-bold text-red-600">
                         {severityBreakdown.sev1_count}
                       </div>
                     </div>
                     <div className="bg-orange-50 rounded-lg p-2 text-center">
-                      <div className="text-xs font-semibold text-orange-700">SEV2</div>
+                      <div className="text-xs font-semibold text-orange-600">SEV2</div>
                       <div className="text-lg font-bold text-orange-600">
                         {severityBreakdown.sev2_count}
                       </div>
                     </div>
                     <div className="bg-yellow-50 rounded-lg p-2 text-center">
-                      <div className="text-xs font-semibold text-yellow-700">SEV3</div>
+                      <div className="text-xs font-semibold text-yellow-600">SEV3</div>
                       <div className="text-lg font-bold text-yellow-600">
                         {severityBreakdown.sev3_count}
                       </div>
                     </div>
                     <div className="bg-green-50 rounded-lg p-2 text-center">
-                      <div className="text-xs font-semibold text-green-700">SEV4</div>
+                      <div className="text-xs font-semibold text-green-600">SEV4</div>
                       <div className="text-lg font-bold text-green-600">
                         {severityBreakdown.sev4_count}
                       </div>
@@ -636,7 +636,7 @@ export function TeamHealthOverview({
               );
             })()}
             {currentAnalysis.analysis_data?.session_hours !== undefined && (
-              <p className="text-xs text-gray-600 mt-1">
+              <p className="text-xs text-neutral-700 mt-1">
                 {currentAnalysis.analysis_data.session_hours?.toFixed(1) || '0.0'} total hours
               </p>
             )}
@@ -645,7 +645,7 @@ export function TeamHealthOverview({
 
         {/* Data Sources Card - COMMENTED OUT */}
         {false && (
-        <Card className="border-2 border-blue-200 bg-white/70 backdrop-blur-sm shadow-lg">
+        <Card className="border border-neutral-300 bg-white shadow-lg">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-blue-700 flex items-center space-x-2">
               <Database className="w-4 h-4" />
@@ -657,19 +657,19 @@ export function TeamHealthOverview({
               {/* Incident Data */}
               <div className="space-y-2">
                 <div
-                  className="flex items-center cursor-pointer hover:bg-gray-50 rounded px-1 py-0.5 transition-colors"
+                  className="flex items-center cursor-pointer hover:bg-neutral-100 rounded px-1 py-0.5 transition-colors"
                   onClick={() => setExpandedDataSources(prev => ({ ...prev, incident: !prev.incident }))}
                 >
                   {expandedDataSources.incident ?
-                    <ChevronDown className="w-3 h-3 mr-1 text-gray-500" /> :
-                    <ChevronRight className="w-3 h-3 mr-1 text-gray-500" />
+                    <ChevronDown className="w-3 h-3 mr-1 text-neutral-500" /> :
+                    <ChevronRight className="w-3 h-3 mr-1 text-neutral-500" />
                   }
                   <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
                   <span className="text-xs font-medium text-slate-700 flex-1">Incident Management</span>
                   <CheckCircle className="w-3 h-3 text-green-600 ml-2" />
                 </div>
                 {expandedDataSources.incident && (
-                  <div className="ml-7 text-xs text-gray-600 space-y-1">
+                  <div className="ml-7 text-xs text-neutral-700 space-y-1">
                     <div>• {(currentAnalysis?.analysis_data as any)?.metadata?.total_incidents || 0} incidents</div>
                     <div>• {(currentAnalysis?.analysis_data as any)?.team_analysis?.members?.length || 0} users</div>
                   </div>
@@ -679,23 +679,23 @@ export function TeamHealthOverview({
               {/* GitHub Data */}
               <div className="space-y-2">
                 <div
-                  className="flex items-center cursor-pointer hover:bg-gray-50 rounded px-1 py-0.5 transition-colors"
+                  className="flex items-center cursor-pointer hover:bg-neutral-100 rounded px-1 py-0.5 transition-colors"
                   onClick={() => setExpandedDataSources(prev => ({ ...prev, github: !prev.github }))}
                 >
                   {expandedDataSources.github ?
-                    <ChevronDown className="w-3 h-3 mr-1 text-gray-500" /> :
-                    <ChevronRight className="w-3 h-3 mr-1 text-gray-500" />
+                    <ChevronDown className="w-3 h-3 mr-1 text-neutral-500" /> :
+                    <ChevronRight className="w-3 h-3 mr-1 text-neutral-500" />
                   }
-                  <div className="w-2 h-2 bg-gray-900 rounded-full mr-2"></div>
+                  <div className="w-2 h-2 bg-neutral-900 rounded-full mr-2"></div>
                   <span className="text-xs font-medium text-slate-700 flex-1">GitHub Activity</span>
                   {currentAnalysis?.analysis_data?.data_sources?.github_data ? (
                     <CheckCircle className="w-3 h-3 text-green-600 ml-2" />
                   ) : (
-                    <Minus className="w-3 h-3 text-gray-400 ml-2" />
+                    <Minus className="w-3 h-3 text-neutral-500 ml-2" />
                   )}
                 </div>
                 {expandedDataSources.github && currentAnalysis?.analysis_data?.data_sources?.github_data && (
-                  <div className="ml-7 text-xs text-gray-600 space-y-1">
+                  <div className="ml-7 text-xs text-neutral-700 space-y-1">
                     <div>• {currentAnalysis?.analysis_data?.github_insights?.total_commits?.toLocaleString() || '0'} commits</div>
                     <div>• {currentAnalysis?.analysis_data?.github_insights?.total_pull_requests?.toLocaleString() || '0'} PRs</div>
                   </div>
@@ -705,23 +705,23 @@ export function TeamHealthOverview({
               {/* Slack Data */}
               <div className="space-y-2">
                 <div
-                  className="flex items-center cursor-pointer hover:bg-gray-50 rounded px-1 py-0.5 transition-colors"
+                  className="flex items-center cursor-pointer hover:bg-neutral-100 rounded px-1 py-0.5 transition-colors"
                   onClick={() => setExpandedDataSources(prev => ({ ...prev, slack: !prev.slack }))}
                 >
                   {expandedDataSources.slack ?
-                    <ChevronDown className="w-3 h-3 mr-1 text-gray-500" /> :
-                    <ChevronRight className="w-3 h-3 mr-1 text-gray-500" />
+                    <ChevronDown className="w-3 h-3 mr-1 text-neutral-500" /> :
+                    <ChevronRight className="w-3 h-3 mr-1 text-neutral-500" />
                   }
                   <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
                   <span className="text-xs font-medium text-slate-700 flex-1">Slack Communications</span>
                   {currentAnalysis?.analysis_data?.data_sources?.slack_data ? (
                     <CheckCircle className="w-3 h-3 text-green-600 ml-2" />
                   ) : (
-                    <Minus className="w-3 h-3 text-gray-400 ml-2" />
+                    <Minus className="w-3 h-3 text-neutral-500 ml-2" />
                   )}
                 </div>
                 {expandedDataSources.slack && currentAnalysis?.analysis_data?.data_sources?.slack_data && (
-                  <div className="ml-7 text-xs text-gray-600 space-y-1">
+                  <div className="ml-7 text-xs text-neutral-700 space-y-1">
                     <div>• {currentAnalysis?.analysis_data?.slack_insights?.total_messages?.toLocaleString() || '0'} messages</div>
                     <div>• {currentAnalysis?.analysis_data?.slack_insights?.active_channels?.toLocaleString() || '0'} channels</div>
                   </div>
@@ -731,23 +731,23 @@ export function TeamHealthOverview({
               {/* Jira Data */}
               <div className="space-y-2">
                 <div
-                  className="flex items-center cursor-pointer hover:bg-gray-50 rounded px-1 py-0.5 transition-colors"
+                  className="flex items-center cursor-pointer hover:bg-neutral-100 rounded px-1 py-0.5 transition-colors"
                   onClick={() => setExpandedDataSources(prev => ({ ...prev, jira: !prev.jira }))}
                 >
                   {expandedDataSources.jira ?
-                    <ChevronDown className="w-3 h-3 mr-1 text-gray-500" /> :
-                    <ChevronRight className="w-3 h-3 mr-1 text-gray-500" />
+                    <ChevronDown className="w-3 h-3 mr-1 text-neutral-500" /> :
+                    <ChevronRight className="w-3 h-3 mr-1 text-neutral-500" />
                   }
                   <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
                   <span className="text-xs font-medium text-slate-700 flex-1">Jira Issues</span>
                   {currentAnalysis?.analysis_data?.data_sources?.jira_data ? (
                     <CheckCircle className="w-3 h-3 text-green-600 ml-2" />
                   ) : (
-                    <Minus className="w-3 h-3 text-gray-400 ml-2" />
+                    <Minus className="w-3 h-3 text-neutral-500 ml-2" />
                   )}
                 </div>
                 {expandedDataSources.jira && currentAnalysis?.analysis_data?.data_sources?.jira_data && (
-                  <div className="ml-7 text-xs text-gray-600 space-y-1">
+                  <div className="ml-7 text-xs text-neutral-700 space-y-1">
                     <div>• {currentAnalysis?.analysis_data?.jira_insights?.total_issues?.toLocaleString() || '0'} issues</div>
                     <div>• {currentAnalysis?.analysis_data?.jira_insights?.active_projects?.toLocaleString() || '0'} projects</div>
                   </div>

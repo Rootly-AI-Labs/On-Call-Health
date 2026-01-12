@@ -53,7 +53,7 @@ export function IntegrationsCards({
               <span className="text-lg">{getPlatformIcon(integration.platform)}</span>
               <div>
                 <CardTitle className="text-lg">{integration.name}</CardTitle>
-                <p className="text-sm text-gray-500 capitalize">{integration.platform}</p>
+                <p className="text-sm text-neutral-500 capitalize">{integration.platform}</p>
               </div>
             </div>
             <Badge variant="secondary" className={statusBadge.color}>
@@ -63,7 +63,7 @@ export function IntegrationsCards({
         </CardHeader>
         <CardContent className="pt-0">
           <div className="space-y-4">
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-neutral-700">
               <div className="flex justify-between">
                 <span>Created:</span>
                 <span>{formatDate(integration.created_at)}</span>
@@ -122,20 +122,20 @@ export function IntegrationsCards({
     <Card className="animate-pulse">
       <CardHeader>
         <div className="flex items-center space-x-2">
-          <div className="w-6 h-6 bg-gray-300 rounded"></div>
+          <div className="w-6 h-6 bg-neutral-300 rounded"></div>
           <div>
-            <div className="w-32 h-5 bg-gray-300 rounded mb-1"></div>
-            <div className="w-20 h-4 bg-gray-300 rounded"></div>
+            <div className="w-32 h-5 bg-neutral-300 rounded mb-1"></div>
+            <div className="w-20 h-4 bg-neutral-300 rounded"></div>
           </div>
         </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
-          <div className="w-full h-4 bg-gray-300 rounded"></div>
-          <div className="w-3/4 h-4 bg-gray-300 rounded"></div>
+          <div className="w-full h-4 bg-neutral-300 rounded"></div>
+          <div className="w-3/4 h-4 bg-neutral-300 rounded"></div>
           <div className="flex space-x-2 mt-4">
-            <div className="w-20 h-8 bg-gray-300 rounded"></div>
-            <div className="w-16 h-8 bg-gray-300 rounded"></div>
+            <div className="w-20 h-8 bg-neutral-300 rounded"></div>
+            <div className="w-16 h-8 bg-neutral-300 rounded"></div>
           </div>
         </div>
       </CardContent>
@@ -146,10 +146,10 @@ export function IntegrationsCards({
     <Card className="border-dashed">
       <CardContent className="flex flex-col items-center justify-center py-12">
         <div className="text-4xl mb-4">{getPlatformIcon(platform)}</div>
-        <h3 className="text-lg font-medium text-gray-900 mb-2">
+        <h3 className="text-lg font-medium text-neutral-900 mb-2">
           No {platform} integrations
         </h3>
-        <p className="text-gray-500 text-center mb-6">
+        <p className="text-neutral-500 text-center mb-6">
           Connect your {platform} account to start tracking incidents and team health
         </p>
         <Button
@@ -169,11 +169,11 @@ export function IntegrationsCards({
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 flex items-center space-x-2">
+            <h2 className="text-xl font-semibold text-neutral-900 flex items-center space-x-2">
               <span>🔥</span>
               <span>Rootly Integrations</span>
             </h2>
-            <p className="text-gray-500">Incident management and response tracking</p>
+            <p className="text-neutral-500">Incident management and response tracking</p>
           </div>
           {rootlyIntegrations.length > 0 && (
             <Button
@@ -209,11 +209,11 @@ export function IntegrationsCards({
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 flex items-center space-x-2">
+            <h2 className="text-xl font-semibold text-neutral-900 flex items-center space-x-2">
               <span>📟</span>
               <span>PagerDuty Integrations</span>
             </h2>
-            <p className="text-gray-500">Incident response and alert management</p>
+            <p className="text-neutral-500">Incident response and alert management</p>
           </div>
           {pagerdutyIntegrations.length > 0 && (
             <Button

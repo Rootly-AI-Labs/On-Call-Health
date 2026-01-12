@@ -63,7 +63,7 @@ function IntroGuide({ isOpen, currentStep, onNext, onPrev, onClose }: IntroGuide
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/40 z-40" onClick={onClose} />
 
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -220,7 +220,7 @@ function IntroGuide({ isOpen, currentStep, onNext, onPrev, onClose }: IntroGuide
               <div
                 key={index}
                 className={`h-2 rounded-full transition-all ${
-                  index === currentStep ? "w-6 bg-purple-600 dark:bg-purple-500" : "w-2 bg-slate-300 dark:bg-slate-600"
+                  index === currentStep ? "w-6 bg-purple-700 dark:bg-purple-500" : "w-2 bg-slate-300 dark:bg-slate-600"
                 }`}
               />
             ))}
@@ -242,7 +242,7 @@ function IntroGuide({ isOpen, currentStep, onNext, onPrev, onClose }: IntroGuide
               </Button>
               <Button
                 onClick={onNext}
-                className="gap-2 bg-purple-600 hover:bg-purple-700 dark:bg-purple-600 dark:hover:bg-purple-700"
+                className="gap-2 bg-purple-700 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-700"
               >
                 {currentStep === steps.length - 1 ? "Finish" : "Next"}
                 {currentStep < steps.length - 1 && <ChevronRight className="w-4 h-4" />}

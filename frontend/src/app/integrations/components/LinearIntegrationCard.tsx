@@ -10,7 +10,7 @@ interface LinearIntegrationCardProps {
 
 export function LinearIntegrationCard({ onConnect, isConnecting }: LinearIntegrationCardProps) {
   return (
-    <Card className="border-2 border-gray-200 max-w-2xl mx-auto">
+    <Card className="border-2 border-neutral-200 max-w-2xl mx-auto">
       <CardContent className="pt-6 space-y-4">
         <div className="space-y-2">
           <h3 className="text-lg font-semibold text-slate-900">Connect Your Linear Account</h3>
@@ -20,7 +20,7 @@ export function LinearIntegrationCard({ onConnect, isConnecting }: LinearIntegra
           <Button
             onClick={onConnect}
             disabled={isConnecting}
-            className="w-full bg-black hover:bg-gray-800 text-white"
+            className="w-full bg-black hover:bg-neutral-800 text-white"
           >
             {isConnecting ? (
               <>
@@ -40,9 +40,9 @@ export function LinearIntegrationCard({ onConnect, isConnecting }: LinearIntegra
           </p>
         </div>
 
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-          <h4 className="text-sm font-semibold text-gray-900 mb-2">What we'll collect:</h4>
-          <ul className="text-xs text-gray-700 space-y-1">
+        <div className="bg-neutral-100 border border-neutral-200 rounded-lg p-4">
+          <h4 className="text-sm font-semibold text-neutral-900 mb-2">What we'll collect:</h4>
+          <ul className="text-xs text-neutral-700 space-y-1">
             <li>• Issue assignments and priorities</li>
             <li>• Team membership and projects</li>
             <li>• Due dates and completion status</li>

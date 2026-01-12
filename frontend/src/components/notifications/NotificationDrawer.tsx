@@ -82,15 +82,15 @@ export function NotificationDrawer() {
       </SheetTrigger>
 
       <SheetContent side="right" className="w-[400px] sm:w-[600px] p-0 flex flex-col h-full">
-        <SheetHeader className="border-b border-gray-200 px-6 py-4 flex-shrink-0">
+        <SheetHeader className="border-b border-neutral-200 px-6 py-4 flex-shrink-0">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gray-100">
-                <Bell className="h-5 w-5 text-gray-700" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-neutral-200">
+                <Bell className="h-5 w-5 text-neutral-700" />
               </div>
               <div>
                 <SheetTitle className="text-xl font-bold">Notifications</SheetTitle>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-neutral-500">
                   {unreadCount} {unreadCount === 1 ? "unread notification" : "unread notifications"}
                 </p>
               </div>
@@ -101,7 +101,7 @@ export function NotificationDrawer() {
                   variant="ghost"
                   size="sm"
                   onClick={markAllAsRead}
-                  className="text-sm text-gray-500 hover:text-gray-700"
+                  className="text-sm text-neutral-500 hover:text-neutral-700"
                 >
                   Mark all read
                 </Button>
@@ -125,18 +125,18 @@ export function NotificationDrawer() {
           <div className="divide-y divide-gray-200">
             {isLoading && notifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
-                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-gray-200">
-                  <Bell className="h-8 w-8 text-gray-500" />
+                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-neutral-300">
+                  <Bell className="h-8 w-8 text-neutral-500" />
                 </div>
                 <p className="text-sm font-medium">Loading notifications...</p>
               </div>
             ) : notifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
-                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-gray-200">
-                  <Bell className="h-8 w-8 text-gray-500" />
+                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-neutral-300">
+                  <Bell className="h-8 w-8 text-neutral-500" />
                 </div>
                 <p className="text-sm font-medium">No notifications</p>
-                <p className="text-sm text-gray-600">You're all caught up!</p>
+                <p className="text-sm text-neutral-700">You're all caught up!</p>
               </div>
             ) : (
               <>
@@ -152,14 +152,14 @@ export function NotificationDrawer() {
                 {/* Loading indicator for infinite scroll */}
                 {isLoading && (
                   <div className="flex justify-center items-center py-4">
-                    <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-                    <span className="ml-2 text-sm text-gray-500">Loading more...</span>
+                    <Loader2 className="h-6 w-6 animate-spin text-neutral-500" />
+                    <span className="ml-2 text-sm text-neutral-500">Loading more...</span>
                   </div>
                 )}
                 {/* End of list indicator */}
                 {!hasMore && notifications.length > 0 && (
-                  <div className="border-t border-gray-200 px-6 py-4 text-center">
-                    <p className="text-sm text-gray-500">No more notifications</p>
+                  <div className="border-t border-neutral-200 px-6 py-4 text-center">
+                    <p className="text-sm text-neutral-500">No more notifications</p>
                   </div>
                 )}
               </>

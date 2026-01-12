@@ -246,28 +246,28 @@ export function UnifiedSlackCard({
 
   if (loadingSlack) {
     return (
-      <Card className="border-2 border-purple-200 bg-purple-50/30">
+      <Card className="border-2 border-purple-200 bg-purple-200/30">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between animate-pulse">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gray-200 rounded-lg"></div>
+              <div className="w-10 h-10 bg-neutral-300 rounded-lg"></div>
               <div className="space-y-2">
-                <div className="w-32 h-5 bg-gray-200 rounded"></div>
-                <div className="w-64 h-4 bg-gray-200 rounded"></div>
+                <div className="w-32 h-5 bg-neutral-300 rounded"></div>
+                <div className="w-64 h-4 bg-neutral-300 rounded"></div>
               </div>
             </div>
-            <div className="w-24 h-9 bg-gray-200 rounded-lg"></div>
+            <div className="w-24 h-9 bg-neutral-300 rounded-lg"></div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="h-40 bg-gray-100 rounded animate-pulse"></div>
+          <div className="h-40 bg-neutral-200 rounded animate-pulse"></div>
         </CardContent>
       </Card>
     )
   }
 
   return (
-    <Card className="border-2 border-purple-200 bg-purple-50/30">
+    <Card className="border-2 border-purple-200 bg-purple-200/30">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -275,13 +275,13 @@ export function UnifiedSlackCard({
               <SlackIcon />
             </div>
             <div>
-              <CardTitle className="text-lg text-gray-900">Slack</CardTitle>
+              <CardTitle className="text-lg text-neutral-900">Slack</CardTitle>
               {isConnected && (
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-neutral-900">
                     {slackIntegration.workspace_name || 'Connected to workspace'}
                   </p>
-                  <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-500">
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-neutral-500">
                     {slackIntegration.owner_name && (
                       <span>Connected by {slackIntegration.owner_name}</span>
                     )}
@@ -379,7 +379,7 @@ export function UnifiedSlackCard({
                       handleSlackConnect()
                     }}
                     disabled={isConnectingSlackOAuth}
-                    className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2.5 text-base"
+                    className="bg-purple-700 hover:bg-purple-800 text-white px-6 py-2.5 text-base"
                     size="lg"
                   >
                     {isConnectingSlackOAuth ? (
@@ -397,14 +397,14 @@ export function UnifiedSlackCard({
                 </div>
               ) : (
                 <div className="text-center py-4">
-                  <div className="inline-flex items-center space-x-2 bg-gray-100 text-gray-500 px-4 py-2 rounded-lg text-sm font-medium">
+                  <div className="inline-flex items-center space-x-2 bg-neutral-200 text-neutral-500 px-4 py-2 rounded-lg text-sm font-medium">
                     <SlackIcon />
                     <span>Slack App Not Configured</span>
                   </div>
                 </div>
               )}
 
-              <div className="text-xs text-gray-500 text-center">
+              <div className="text-xs text-neutral-500 text-center">
                 <p>Both features will be enabled by default. You can toggle them on/off after connecting.</p>
               </div>
             </div>
@@ -417,10 +417,10 @@ export function UnifiedSlackCard({
                 {/* Survey Delivery Toggle */}
                 <div className="p-4 flex items-center justify-between">
                   <div className="flex-1">
-                    <Label htmlFor="survey-toggle" className="text-base font-medium text-gray-900 cursor-pointer">
+                    <Label htmlFor="survey-toggle" className="text-base font-medium text-neutral-900 cursor-pointer">
                       Slack Surveys
                     </Label>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-neutral-700 mt-1">
                       Enable burnout surveys via Slack command and automated DMs
                     </p>
                   </div>
@@ -433,7 +433,7 @@ export function UnifiedSlackCard({
                 </div>
               </div>
 
-              <div className="text-xs text-gray-500 bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center justify-between">
+              <div className="text-xs text-neutral-500 bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center justify-between">
                 <div>
                   <strong>Note:</strong> Toggling features on/off does not require reconnecting. Your permissions remain the same.
                 </div>
@@ -488,7 +488,7 @@ export function UnifiedSlackCard({
             <div className="space-y-3 pt-2 text-sm text-muted-foreground">
               <p>This will disable all Slack survey features, including:</p>
               <ul className="list-disc list-inside space-y-1 text-sm">
-                <li>The <code className="bg-gray-100 px-1 rounded">/oncall-health</code> command</li>
+                <li>The <code className="bg-neutral-200 px-1 rounded">/oncall-health</code> command</li>
                 <li>Automated survey delivery (scheduled surveys will stop)</li>
                 <li>Manual survey sending</li>
               </ul>

@@ -140,16 +140,16 @@ export function GitHubIntegrationCard({
   if (integration) {
     // Connected state
     return (
-      <Card className="border-2 border-gray-200 bg-gray-50">
+      <Card className="border-2 border-neutral-200 bg-neutral-100">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-neutral-900 rounded-lg flex items-center justify-center">
                 <Github className="w-6 h-6 text-white" />
               </div>
               <div>
                 <CardTitle className="text-lg">GitHub</CardTitle>
-                <p className="text-sm text-gray-600">Code activity and development patterns</p>
+                <p className="text-sm text-neutral-700">Code activity and development patterns</p>
               </div>
             </div>
             <div className="flex items-center space-x-2">
@@ -167,31 +167,31 @@ export function GitHubIntegrationCard({
           {/* Integration Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div className="flex items-center space-x-2">
-              <Github className="w-4 h-4 text-gray-400" />
+              <Github className="w-4 h-4 text-neutral-500" />
               <div>
                 <div className="font-medium">Username</div>
-                <div className="text-gray-600">{integration.github_username}</div>
+                <div className="text-neutral-700">{integration.github_username}</div>
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              <Building className="w-4 h-4 text-gray-400" />
+              <Building className="w-4 h-4 text-neutral-500" />
               <div>
                 <div className="font-medium">Organizations</div>
-                <div className="text-gray-600">{integration.organizations.length || "None"}</div>
+                <div className="text-neutral-700">{integration.organizations.length || "None"}</div>
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              <Calendar className="w-4 h-4 text-gray-400" />
+              <Calendar className="w-4 h-4 text-neutral-500" />
               <div>
                 <div className="font-medium">Connected</div>
-                <div className="text-gray-600">{new Date(integration.connected_at).toLocaleDateString()}</div>
+                <div className="text-neutral-700">{new Date(integration.connected_at).toLocaleDateString()}</div>
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              <Key className="w-4 h-4 text-gray-400" />
+              <Key className="w-4 h-4 text-neutral-500" />
               <div>
                 <div className="font-medium">Token Source</div>
-                <div className="text-gray-600 flex items-center space-x-1">
+                <div className="text-neutral-700 flex items-center space-x-1">
                   <span>{integration.token_source === "oauth" ? "OAuth" : "Personal Access Token"}</span>
                   {integration.supports_refresh && (
                     <Tooltip content="This token can be automatically refreshed">
@@ -220,7 +220,7 @@ export function GitHubIntegrationCard({
           {/* Token Permissions */}
           <div>
             <div className="text-sm font-medium mb-2 flex items-center space-x-2">
-              <Key className="w-4 h-4 text-gray-400" />
+              <Key className="w-4 h-4 text-neutral-500" />
               <span>Token Permissions ({permissions.length} found)</span>
               {loadingPermissions && <Loader2 className="w-3 h-3 animate-spin" />}
             </div>
@@ -251,8 +251,8 @@ export function GitHubIntegrationCard({
                 </Badge>
               )}
             </div>
-            <div className="mt-1 text-xs text-gray-500">
-              Required for auto-mapping: <code className="bg-gray-100 px-1 rounded">read:user</code>, <code className="bg-gray-100 px-1 rounded">read:org</code>, <code className="bg-gray-100 px-1 rounded">repo</code>
+            <div className="mt-1 text-xs text-neutral-500">
+              Required for auto-mapping: <code className="bg-neutral-200 px-1 rounded">read:user</code>, <code className="bg-neutral-200 px-1 rounded">read:org</code>, <code className="bg-neutral-200 px-1 rounded">repo</code>
             </div>
           </div>
 
@@ -296,15 +296,15 @@ export function GitHubIntegrationCard({
 
   // Disconnected state
   return (
-    <Card className="border-2 border-gray-200 hover:border-gray-300 transition-colors">
+    <Card className="border-2 border-neutral-200 hover:border-neutral-300 transition-colors">
       <CardHeader>
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
+          <div className="w-10 h-10 bg-neutral-900 rounded-lg flex items-center justify-center">
             <Github className="w-6 h-6 text-white" />
           </div>
           <div>
             <CardTitle className="text-lg">GitHub</CardTitle>
-            <p className="text-sm text-gray-600">Code activity and development patterns</p>
+            <p className="text-sm text-neutral-700">Code activity and development patterns</p>
           </div>
         </div>
       </CardHeader>
@@ -316,7 +316,7 @@ export function GitHubIntegrationCard({
             <Button 
               onClick={handleOAuthConnect}
               disabled={isSubmitting}
-              className="w-full bg-gray-900 hover:bg-gray-800"
+              className="w-full bg-neutral-900 hover:bg-neutral-800"
             >
               {isSubmitting ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -332,7 +332,7 @@ export function GitHubIntegrationCard({
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-gray-500">or</span>
+                <span className="bg-white px-2 text-neutral-500">or</span>
               </div>
             </div>
             
@@ -372,7 +372,7 @@ export function GitHubIntegrationCard({
                   )}
                 </Button>
               </div>
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-neutral-500">
                 <button
                   type="button"
                   onClick={() => setShowInstructions(true)}
@@ -432,7 +432,7 @@ export function GitHubIntegrationCard({
           <div className="space-y-4">
             <div className="space-y-2">
               <h4 className="font-medium">Step 1: Go to GitHub Settings</h4>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-neutral-700">
                 Navigate to{" "}
                 <a 
                   href="https://github.com/settings/tokens" 
@@ -447,10 +447,10 @@ export function GitHubIntegrationCard({
             </div>
             <div className="space-y-2">
               <h4 className="font-medium">Step 2: Generate New Token</h4>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-neutral-700">
                 Click "Generate new token" and select these scopes:
               </p>
-              <ul className="text-sm text-gray-600 ml-4 space-y-1">
+              <ul className="text-sm text-neutral-700 ml-4 space-y-1">
                 <li>• <code>repo</code> - Full repository access</li>
                 <li>• <code>read:user</code> - Read user profile</li>
                 <li>• <code>read:org</code> - Read organization membership</li>
@@ -458,7 +458,7 @@ export function GitHubIntegrationCard({
             </div>
             <div className="space-y-2">
               <h4 className="font-medium">Step 3: Copy and Paste</h4>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-neutral-700">
                 Copy the generated token and paste it in the field above. The token will be encrypted and stored securely.
               </p>
             </div>

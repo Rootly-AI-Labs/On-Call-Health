@@ -8,7 +8,7 @@ export function ChartModeToggle() {
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-sm text-gray-600">Chart Mode:</span>
+      <span className="text-sm text-neutral-700">Chart Mode:</span>
       <div className="flex gap-2">
         <Button
           variant={chartMode === 'normal' ? 'default' : 'outline'}

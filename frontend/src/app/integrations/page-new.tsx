@@ -9,10 +9,10 @@ const IntegrationsLayout = dynamic(
   () => import('@/components/integrations/integrations-layout'),
   {
     loading: () => (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-neutral-100 flex items-center justify-center">
         <div className="flex flex-col items-center space-y-4">
           <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-          <p className="text-gray-600">Loading integrations...</p>
+          <p className="text-neutral-700">Loading integrations...</p>
         </div>
       </div>
     ),
@@ -23,10 +23,10 @@ const IntegrationsLayout = dynamic(
 export default function IntegrationsPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-neutral-100 flex items-center justify-center">
         <div className="flex flex-col items-center space-y-4">
           <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-          <p className="text-gray-600">Initializing...</p>
+          <p className="text-neutral-700">Initializing...</p>
         </div>
       </div>
     }>

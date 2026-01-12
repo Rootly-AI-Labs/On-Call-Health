@@ -80,7 +80,7 @@ export function TeamMembersList({
             </Avatar>
             <div>
               <h3 className="font-medium">{member.user_name}</h3>
-              <p className="text-sm text-gray-500">{member.user_email}</p>
+              <p className="text-sm text-neutral-500">{member.user_email}</p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
@@ -112,8 +112,8 @@ export function TeamMembersList({
         <div className="flex flex-wrap gap-2 mb-3">
           {/* GitHub - show if user has GitHub mapping */}
           {member.github_username && (
-            <div className="flex items-center justify-center w-6 h-6 bg-gray-100 rounded-full border border-gray-200" title="GitHub">
-              <svg className="w-3.5 h-3.5 text-gray-700" fill="currentColor" viewBox="0 0 24 24">
+            <div className="flex items-center justify-center w-6 h-6 bg-neutral-200 rounded-full border border-neutral-200" title="GitHub">
+              <svg className="w-3.5 h-3.5 text-neutral-700" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
               </svg>
             </div>
@@ -121,7 +121,7 @@ export function TeamMembersList({
 
           {/* Slack - show if user has Slack mapping */}
           {member.slack_user_id && (
-            <div className="flex items-center justify-center w-6 h-6 bg-white rounded-full border border-gray-200" title="Slack">
+            <div className="flex items-center justify-center w-6 h-6 bg-white rounded-full border border-neutral-200" title="Slack">
               <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
                 {/* Official Slack logo pattern */}
                 <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52z" fill="#E01E5A"/>
@@ -175,7 +175,7 @@ export function TeamMembersList({
               <span>No Risk Level Available</span>
             </div>
           )}
-          <div className="relative h-2 w-full overflow-hidden rounded-full bg-gray-200">
+          <div className="relative h-2 w-full overflow-hidden rounded-full bg-neutral-300">
             <div 
               className="h-full transition-all"
               style={{ 
@@ -186,7 +186,7 @@ export function TeamMembersList({
               }}
             />
           </div>
-          <div className="flex justify-between text-xs text-gray-500">
+          <div className="flex justify-between text-xs text-neutral-500">
             <span>{member.incident_count} incidents</span>
             <span>
               {member.github_activity?.commits_count ? (
@@ -219,7 +219,7 @@ export function TeamMembersList({
             
             if (!allMembers || allMembers.length === 0) {
               return (
-                <div className="text-center text-gray-500 py-8">
+                <div className="text-center text-neutral-500 py-8">
                   No organization member data available yet
                 </div>
               )
@@ -262,7 +262,7 @@ export function TeamMembersList({
                     <Button
                       variant="outline" 
                       onClick={() => setShowMembersWithoutIncidents(!showMembersWithoutIncidents)}
-                      className="w-full mb-4 text-gray-600 border-gray-300 hover:bg-gray-50"
+                      className="w-full mb-4 text-neutral-700 border-neutral-300 hover:bg-neutral-100"
                       disabled={isLoading}
                     >
                       <div className="flex items-center justify-center space-x-2">
@@ -278,7 +278,7 @@ export function TeamMembersList({
                           ) : (
                             <>
                               {showMembersWithoutIncidents ? 'Hide' : 'Show'} team members with no activity
-                              <span className="ml-1 text-xs bg-gray-200 px-2 py-1 rounded">
+                              <span className="ml-1 text-xs bg-neutral-300 px-2 py-1 rounded">
                                 {membersWithoutIncidents.length}
                               </span>
                             </>
@@ -297,7 +297,7 @@ export function TeamMembersList({
 
                 {/* No members case */}
                 {membersWithIncidents.length === 0 && membersWithoutIncidents.length === 0 && (
-                  <div className="text-center text-gray-500 py-8">
+                  <div className="text-center text-neutral-500 py-8">
                     No team members with valid burnout data found
                   </div>
                 )}
