@@ -78,7 +78,7 @@ export function GitHubCommitsTimeline({ analysisId, totalCommits, weekendPercent
 
   if (loading) {
     return (
-      <div className="bg-neutral-100 border border-neutral-200 rounded-lg p-3">
+      <div className="bg-white border border-neutral-200 rounded-lg p-3">
         <h4 className="text-sm font-semibold text-neutral-800 mb-3">Commit Activity Timeline</h4>
         <div className="h-32 flex items-center justify-center">
           <RefreshCw className="h-6 w-6 animate-spin text-neutral-500" />
@@ -89,7 +89,7 @@ export function GitHubCommitsTimeline({ analysisId, totalCommits, weekendPercent
 
   if (error || !timelineData || timelineData.length === 0) {
     return (
-      <div className="bg-neutral-100 border border-neutral-200 rounded-lg p-3">
+      <div className="bg-white border border-neutral-200 rounded-lg p-3">
         <h4 className="text-sm font-semibold text-neutral-800 mb-3">Commit Activity Timeline</h4>
         <div className="h-32 flex items-center justify-center">
           <div className="text-center">
@@ -121,7 +121,7 @@ export function GitHubCommitsTimeline({ analysisId, totalCommits, weekendPercent
   }))
 
   return (
-    <div className="bg-neutral-100 border border-neutral-200 rounded-lg p-3">
+    <div className="bg-white border border-neutral-200 rounded-lg p-3">
       <h4 className="text-sm font-semibold text-neutral-800 mb-3">Commit Activity Timeline</h4>
       <div className="h-32">
         <ResponsiveContainer width="100%" height="100%">

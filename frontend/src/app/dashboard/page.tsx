@@ -264,20 +264,10 @@ function DashboardContent() {
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
         <div
-          className={`${sidebarCollapsed ? "w-16" : "w-60"} bg-neutral-900 text-white transition-all duration-300 flex flex-col`}
+          onMouseEnter={() => setSidebarCollapsed(false)}
+          onMouseLeave={() => setSidebarCollapsed(true)}
+          className={`${sidebarCollapsed ? "w-16" : "w-60"} bg-neutral-900 text-white transition-all duration-300 flex flex-col overflow-hidden`}
         >
-        {/* Header */}
-        <div className="relative h-12">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className={`text-neutral-500 hover:text-white hover:bg-neutral-800 absolute top-2 ${sidebarCollapsed ? 'left-2' : 'right-2'}`}
-          >
-            {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-          </Button>
-        </div>
-
         {/* Navigation */}
         <div className={`flex-1 flex flex-col ${sidebarCollapsed ? 'p-2' : 'p-4'} space-y-2`}>
           {!sidebarCollapsed ? (
@@ -285,17 +275,17 @@ function DashboardContent() {
               <Button
                 onClick={startAnalysis}
                 disabled={analysisRunning}
-                className="w-full justify-start bg-purple-700 hover:bg-purple-800 text-white text-base"
+                className="w-full justify-start bg-purple-700 hover:bg-purple-800 text-white text-base mt-2"
               >
                 <Play className="w-5 h-5 mr-2" />
                 New Analysis
               </Button>
 
-            <div className="space-y-1">
+            <div className="space-y-1 flex-1 flex flex-col">
               {!sidebarCollapsed && previousAnalyses.length > 0 && (
                 <p className="text-sm text-neutral-500 uppercase tracking-wide px-2 py-1 mt-4">Recent</p>
               )}
-              <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800 relative">
+              <div className="flex-1 overflow-y-auto relative">
                 {loadingAnalyses && previousAnalyses.length === 0 ? (
                   // Show loading state for analyses
                   <div className="flex items-center justify-center py-8">
@@ -1271,7 +1261,7 @@ function DashboardContent() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                   {/* GitHub Metrics Card */}
                   {currentAnalysis?.analysis_data?.github_insights && (
-                    <Card className="border-2 border-neutral-200 bg-white shadow-lg">
+                    <Card className="border border-neutral-300 bg-white">
                       <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">
                           <CardTitle className="flex items-center space-x-2">

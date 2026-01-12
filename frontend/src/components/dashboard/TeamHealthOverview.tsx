@@ -106,7 +106,7 @@ export function TeamHealthOverview({
 
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6 overflow-visible">
-        <Card className="border border-neutral-300 bg-white shadow-lg overflow-visible min-h-[200px]">
+        <Card className="border border-neutral-300 overflow-visible min-h-[200px]">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-medium text-purple-700 flex items-center space-x-2">
               <Heart className="w-4 h-4" />
@@ -409,7 +409,7 @@ export function TeamHealthOverview({
           </CardContent>
         </Card>
 
-        <Card className="border border-neutral-300 bg-white shadow-lg min-h-[200px]">
+        <Card className="border border-neutral-300 min-h-[200px]">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-medium text-purple-700 flex items-center space-x-2">
               <Shield className="w-4 h-4" />
@@ -513,7 +513,7 @@ export function TeamHealthOverview({
           </CardContent>
         </Card>
 
-        <Card className="border border-neutral-300 bg-white shadow-lg min-h-[200px]">
+        <Card className="border border-neutral-300 min-h-[200px]">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-medium text-purple-700 flex items-center space-x-2">
               <BarChart3 className="w-4 h-4" />
@@ -645,7 +645,7 @@ export function TeamHealthOverview({
 
         {/* Data Sources Card - COMMENTED OUT */}
         {false && (
-        <Card className="border border-neutral-300 bg-white shadow-lg">
+        <Card className="border border-neutral-300">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-blue-700 flex items-center space-x-2">
               <Database className="w-4 h-4" />

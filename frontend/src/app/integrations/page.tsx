@@ -2438,7 +2438,7 @@ export default function IntegrationsPage() {
   const hasSlackEnhanced = slackIntegration && slackIntegration.connection_type !== 'oauth'
 
   return (
-    <div className="min-h-screen bg-purple-100">
+    <div className="min-h-screen bg-neutral-100">
       <TopPanel />
 
       {/* Main Content */}

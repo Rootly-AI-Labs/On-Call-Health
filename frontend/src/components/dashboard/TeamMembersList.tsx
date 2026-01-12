@@ -85,7 +85,7 @@ export function TeamMembersList({
           </div>
           <div className="flex items-center space-x-2">
             {member.is_oncall && (
-              <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-300">
+              <Badge className="bg-purple-50 text-purple-700">
                 ON-CALL
               </Badge>
             )}

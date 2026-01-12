@@ -42,7 +42,7 @@ export function AIInsightsCard({ currentAnalysis }: AIInsightsCardProps) {
 
   return (
     <>
-      <Card className="border border-neutral-300 bg-white shadow-lg flex flex-col h-full min-h-[200px]">
+      <Card className="border border-neutral-300 flex flex-col h-full min-h-[200px]">
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-medium text-blue-700 flex items-center space-x-2">
             <Sparkles className="w-4 h-4" />
