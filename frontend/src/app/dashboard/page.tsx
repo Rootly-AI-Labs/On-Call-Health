@@ -250,7 +250,7 @@ function DashboardContent() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    <div className="flex flex-col h-screen bg-neutral-100">
       <TopPanel />
       {!onboarding.hasSeenOnboarding && (
         <IntroGuide
@@ -264,20 +264,10 @@ function DashboardContent() {
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
         <div
-          className={`${sidebarCollapsed ? "w-16" : "w-60"} bg-gray-900 text-white transition-all duration-300 flex flex-col`}
+          onMouseEnter={() => setSidebarCollapsed(false)}
+          onMouseLeave={() => setSidebarCollapsed(true)}
+          className={`${sidebarCollapsed ? "w-16" : "w-60"} bg-neutral-900 text-white transition-all duration-300 flex flex-col overflow-hidden`}
         >
-        {/* Header */}
-        <div className="relative h-12">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className={`text-gray-400 hover:text-white hover:bg-gray-800 absolute top-2 ${sidebarCollapsed ? 'left-2' : 'right-2'}`}
-          >
-            {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-          </Button>
-        </div>
-
         {/* Navigation */}
         <div className={`flex-1 flex flex-col ${sidebarCollapsed ? 'p-2' : 'p-4'} space-y-2`}>
           {!sidebarCollapsed ? (
@@ -285,31 +275,31 @@ function DashboardContent() {
               <Button
                 onClick={startAnalysis}
                 disabled={analysisRunning}
-                className="w-full justify-start bg-purple-600 hover:bg-purple-700 text-white text-base"
+                className="w-full justify-start bg-purple-700 hover:bg-purple-800 text-white text-base mt-2"
               >
                 <Play className="w-5 h-5 mr-2" />
                 New Analysis
               </Button>
 
-            <div className="space-y-1">
+            <div className="space-y-1 flex-1 flex flex-col">
               {!sidebarCollapsed && previousAnalyses.length > 0 && (
-                <p className="text-sm text-gray-400 uppercase tracking-wide px-2 py-1 mt-4">Recent</p>
+                <p className="text-sm text-neutral-500 uppercase tracking-wide px-2 py-1 mt-4">Recent</p>
               )}
-              <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800 relative">
+              <div className="flex-1 overflow-y-auto relative">
                 {loadingAnalyses && previousAnalyses.length === 0 ? (
                   // Show loading state for analyses
                   <div className="flex items-center justify-center py-8">
                     <div className="flex items-center space-x-2">
-                      <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                      <div className="w-4 h-4 border-2 border-neutral-400 border-t-transparent rounded-full animate-spin"></div>
                       {!sidebarCollapsed && (
-                        <span className="text-sm text-gray-400">Loading analyses...</span>
+                        <span className="text-sm text-neutral-500">Loading analyses...</span>
                       )}
                     </div>
                   </div>
                 ) : previousAnalyses.length === 0 ? (
                   // Show empty state
                   !sidebarCollapsed && (
-                    <div className="text-center py-8 text-gray-400">
+                    <div className="text-center py-8 text-neutral-500">
                       <p className="text-sm">No analyses yet</p>
                       <p className="text-sm mt-1">Start your first analysis above</p>
                     </div>
@@ -336,18 +326,18 @@ function DashboardContent() {
                 const isSelected = currentAnalysis?.id === analysis.id
                 
                 // Use stored platform data for colors
-                let platformColor = 'bg-gray-500' // default for unknown
+                let platformColor = 'bg-neutral-1000' // default for unknown
                 if (analysisPlatform === 'rootly') {
                   platformColor = 'bg-purple-500'  // Rootly = Purple
                 } else if (analysisPlatform === 'pagerduty') {
                   platformColor = 'bg-green-500'   // PagerDuty = Green
                 }
                 return (
-                  <div key={analysis.id} className={`relative group ${isSelected ? 'bg-gray-800' : ''} rounded`}>
+                  <div key={analysis.id} className={`relative group ${isSelected ? 'bg-neutral-800' : ''} rounded`}>
                     <Button
                       variant="ghost"
                       disabled={analysisRunning}
-                      className={`w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800 py-2 h-auto ${isSelected ? 'bg-gray-800 text-white' : ''} ${analysisRunning ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`w-full justify-start text-neutral-500 hover:text-white hover:bg-neutral-800 py-2 h-auto ${isSelected ? 'bg-neutral-800 text-white' : ''} ${analysisRunning ? 'opacity-50 cursor-not-allowed' : ''}`}
                       onClick={async () => {
                         const analysisKey = analysis.uuid || analysis.id.toString()
 
@@ -411,14 +401,14 @@ function DashboardContent() {
                           <div className="flex justify-between items-center w-full mb-1 gap-2">
                             <div className="flex items-center space-x-2 min-w-0">
                               {/* Always show platform dot if we have a color */}
-                              {platformColor !== 'bg-gray-500' && (
+                              {platformColor !== 'bg-neutral-1000' && (
                                 <div className={`w-2.5 h-2.5 rounded-full ${platformColor} flex-shrink-0`}></div>
                               )}
                               <span className="font-medium truncate">{organizationName}</span>
                             </div>
-                            <span className="text-gray-500 flex-shrink-0">{analysis.time_range || 30}d</span>
+                            <span className="text-neutral-500 flex-shrink-0">{analysis.time_range || 30}d</span>
                           </div>
-                          <div className="flex justify-between items-center w-full text-gray-400">
+                          <div className="flex justify-between items-center w-full text-neutral-500">
                             <span>{dateStr}</span>
                             <span>{timeStr}</span>
                           </div>
@@ -429,7 +419,7 @@ function DashboardContent() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-1 h-6 w-6 text-gray-400 hover:text-red-400 hover:bg-red-900/20"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-1 h-6 w-6 text-neutral-500 hover:text-red-400 hover:bg-red-900/20"
                         onClick={(e) => openDeleteDialog(analysis, e)}
                         title="Delete analysis"
                       >
@@ -449,11 +439,11 @@ function DashboardContent() {
                       size="sm"
                       onClick={() => loadPreviousAnalyses(true)}
                       disabled={loadingMoreAnalyses || analysisRunning}
-                      className="w-full border-gray-500 bg-gray-800 text-gray-200 hover:bg-gray-700 hover:text-white hover:border-gray-400 text-sm"
+                      className="w-full border-neutral-500 bg-neutral-800 text-neutral-200 hover:bg-neutral-700 hover:text-white hover:border-neutral-400 text-sm"
                     >
                       {(loadingMoreAnalyses || (loadingAnalyses && previousAnalyses.length === 0)) ? (
                         <>
-                          <div className="w-3 h-3 border border-gray-300 border-t-transparent rounded-full animate-spin mr-2" />
+                          <div className="w-3 h-3 border border-neutral-300 border-t-transparent rounded-full animate-spin mr-2" />
                           Loading...
                         </>
                       ) : (
@@ -471,7 +461,7 @@ function DashboardContent() {
               <Button
                 onClick={startAnalysis}
                 disabled={analysisRunning}
-                className="w-full bg-purple-600 hover:bg-purple-700 text-white p-2"
+                className="w-full bg-purple-700 hover:bg-purple-800 text-white p-2"
                 title="New Analysis"
               >
                 <Play className="w-5 h-5" />
@@ -482,7 +472,7 @@ function DashboardContent() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto bg-gray-100">
+      <div className="flex-1 overflow-auto bg-neutral-200">
         <div className="p-6">
 
           {/* Debug Section - Only show in development */}
@@ -507,8 +497,8 @@ function DashboardContent() {
                 {debugSectionOpen && (
                   <div className="space-y-3">
                     <div className="text-xs bg-white p-3 rounded border border-yellow-200">
-                      <div className="font-medium text-gray-700 mb-2">Analysis Overview:</div>
-                      <div className="space-y-1 text-gray-600">
+                      <div className="font-medium text-neutral-700 mb-2">Analysis Overview:</div>
+                      <div className="space-y-1 text-neutral-700">
                         <div>ID: {currentAnalysis.id}</div>
                         <div>Status: {currentAnalysis.status}</div>
                         <div>Created: {new Date(currentAnalysis.created_at).toLocaleString([], {
@@ -522,15 +512,15 @@ function DashboardContent() {
                     
                     {currentAnalysis.analysis_data && (
                       <div className="text-xs bg-white p-3 rounded border border-yellow-200">
-                        <div className="font-medium text-gray-700 mb-2">Analysis Data Structure:</div>
-                        <div className="space-y-1 text-gray-600">
+                        <div className="font-medium text-neutral-700 mb-2">Analysis Data Structure:</div>
+                        <div className="space-y-1 text-neutral-700">
                           <div>Has team_health: {currentAnalysis.analysis_data.team_health ? 'Yes' : 'No'}</div>
                           <div>Has team_analysis: {currentAnalysis.analysis_data.team_analysis ? 'Yes' : 'No'}</div>
                           <div>Has partial_data: {currentAnalysis.analysis_data.partial_data ? 'Yes' : 'No'}</div>
                           
                           {currentAnalysis.analysis_data.team_analysis && (
                             <div className="ml-4 space-y-1 mt-2">
-                              <div className="font-medium text-gray-700">Team Analysis:</div>
+                              <div className="font-medium text-neutral-700">Team Analysis:</div>
                               <div>Members count: {Array.isArray(currentAnalysis.analysis_data.team_analysis) ? (currentAnalysis.analysis_data.team_analysis as any[]).length : ((currentAnalysis.analysis_data.team_analysis as any)?.members?.length || 0)}</div>
                               <div>Has organization_health: {(currentAnalysis.analysis_data.team_analysis as any).organization_health ? 'Yes' : 'No'}</div>
                               <div>Has insights: {(currentAnalysis.analysis_data.team_analysis as any).insights ? 'Yes' : 'No'}</div>
@@ -543,7 +533,7 @@ function DashboardContent() {
                             return members && members.length > 0
                           })() && (
                             <div className="ml-4 space-y-1 mt-2">
-                              <div className="font-medium text-gray-700">Sample Member Data Sources:</div>
+                              <div className="font-medium text-neutral-700">Sample Member Data Sources:</div>
                               {(() => {
                                 const teamAnalysis = currentAnalysis.analysis_data.team_analysis
                                 const members = Array.isArray(teamAnalysis) ? teamAnalysis : (teamAnalysis as any)?.members
@@ -565,8 +555,8 @@ function DashboardContent() {
                     )}
                     
                     <div className="text-xs bg-white p-3 rounded border border-yellow-200">
-                      <div className="font-medium text-gray-700 mb-2">Raw Analysis Data (JSON):</div>
-                      <pre className="text-xs text-gray-600 bg-gray-50 p-2 rounded border max-h-60 overflow-y-auto">
+                      <div className="font-medium text-neutral-700 mb-2">Raw Analysis Data (JSON):</div>
+                      <pre className="text-xs text-neutral-700 bg-neutral-100 p-2 rounded border max-h-60 overflow-y-auto">
                         {JSON.stringify(currentAnalysis.analysis_data, null, 2)}
                       </pre>
                     </div>
@@ -783,7 +773,7 @@ function DashboardContent() {
                             </ResponsiveContainer>
                           </div>
                         ) : (
-                          <div className="h-[350px] flex items-center justify-center text-gray-500">
+                          <div className="h-[350px] flex items-center justify-center text-neutral-500">
                             <div className="text-center">
                               <p className="text-lg font-medium">No incident data available</p>
                               <p className="text-sm mt-2">Members with zero incidents are not displayed in this chart</p>
@@ -850,8 +840,8 @@ function DashboardContent() {
                       {loadingTrends ? (
                         <div className="flex items-center justify-center h-32">
                           <div className="text-center">
-                            <div className="animate-spin w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full mx-auto mb-2"></div>
-                            <p className="text-sm text-gray-500">Loading journey...</p>
+                            <div className="animate-spin w-6 h-6 border-2 border-purple-700 border-t-transparent rounded-full mx-auto mb-2"></div>
+                            <p className="text-sm text-neutral-500">Loading journey...</p>
                           </div>
                         </div>
                       ) : (
@@ -981,7 +971,7 @@ function DashboardContent() {
                                     event.eventType === 'decline' ? 'bg-orange-500' :
                                     event.eventType === 'high-volume' ? 'bg-purple-500' :
                                     event.eventType === 'critical' ? 'bg-red-600' :
-                                    'bg-gray-500',
+                                    'bg-neutral-1000',
                               impact: event.eventType === 'peak' || event.eventType === 'recovery' ? 'positive' :
                                      event.eventType === 'valley' || event.eventType === 'decline' || event.eventType === 'critical' ? 'negative' :
                                      'neutral',
@@ -1014,7 +1004,7 @@ function DashboardContent() {
                         return (
                           <div className="relative max-h-80 overflow-y-auto pr-2">
                             {/* Timeline line */}
-                            <div className="absolute left-4 top-0 bottom-0 w-px bg-gray-200"></div>
+                            <div className="absolute left-4 top-0 bottom-0 w-px bg-neutral-300"></div>
 
                             {journeyEvents.map((event, index) => (
                               <div key={index} className="relative flex items-start space-x-4 pb-6">
@@ -1026,7 +1016,7 @@ function DashboardContent() {
                                   if (event.status === 'improvement') return 'bg-blue-500';
                                   if (event.status === 'risk-eliminated') return 'bg-green-500';
                                   if (event.status === 'risk-decrease') return 'bg-green-400';
-                                  return event.color || 'bg-gray-500';
+                                  return event.color || 'bg-neutral-1000';
                                 })()} shadow-sm ring-4 ring-white`}>
                                   {(() => {
                                     // Use more vibrant colors for success icons
@@ -1060,10 +1050,10 @@ function DashboardContent() {
                                 {/* Event content */}
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center justify-between">
-                                    <p className="text-sm font-medium text-gray-900">{event.title}</p>
-                                    <time className="text-xs text-gray-500">{event.date}</time>
+                                    <p className="text-sm font-medium text-neutral-900">{event.title}</p>
+                                    <time className="text-xs text-neutral-500">{event.date}</time>
                                   </div>
-                                  <p className="text-sm text-gray-600 mt-1">{event.description}</p>
+                                  <p className="text-sm text-neutral-700 mt-1">{event.description}</p>
                                 </div>
                               </div>
                             ))}
@@ -1129,8 +1119,8 @@ function DashboardContent() {
                           />
                           <PolarRadiusAxis
                             domain={[0, 100]}
-                            tick={{ fontSize: 11, fill: '#6B7280' }}
-                            tickCount={6}
+                            tick={false}
+                            tickCount={5}
                             angle={90}
                           />
                           <Radar 
@@ -1146,10 +1136,10 @@ function DashboardContent() {
                               if (payload && payload.length > 0) {
                                 const data = payload[0].payload
                                 return (
-                                  <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
-                                    <p className="font-semibold text-gray-900">{label}</p>
-                                    <p className="text-purple-600">Score: {Math.round(data.value)}/100</p>
-                                    <p className="text-xs text-gray-500 mt-1">
+                                  <div className="bg-white p-3 border border-neutral-200 rounded-lg shadow-lg">
+                                    <p className="font-semibold text-neutral-900">{label}</p>
+                                    <p className="text-purple-700">Score: {Math.round(data.value)}/100</p>
+                                    <p className="text-xs text-neutral-500 mt-1">
                                       {data.value < 30 ? 'Good' : 
                                        data.value < 50 ? 'Fair' : 
                                        data.value < 70 ? 'Poor' : 'Critical'}
@@ -1197,8 +1187,8 @@ function DashboardContent() {
                         </button>
                       </div>
                     </CardHeader>
-                    
-                      <CardContent className="pb-0">
+
+                      <CardContent className="pb-12">
                       {(() => {
                         // One source of truth for risk colors (severity preferred; fallback to value thresholds)
                         const getRiskHex = (severity?: string, value?: number) => {
@@ -1216,13 +1206,13 @@ function DashboardContent() {
                         }
 
                         return (
-                          <div className="space-y-4 -mb-4">
+                          <div className="space-y-2">
                             {sortedBurnoutFactors.map((factor) => {
                               const color = getRiskHex(factor.severity, factor.value)
                               return (
-                                <div key={factor.factor} className="relative border border-gray-200 rounded-lg p-4 bg-white">
+                                <div key={factor.factor} className="relative rounded-lg p-4 bg-white">
                                   <div className="flex items-center justify-between mb-2">
-                                    <span className="font-medium text-gray-900">{factor.factor}</span>
+                                    <span className="font-medium text-neutral-900">{factor.factor}</span>
                                     <span
                                       className={`px-2 py-1 rounded-full text-xs font-medium ${
                                         factor.severity === 'Critical'
@@ -1238,7 +1228,7 @@ function DashboardContent() {
                                     </span>
                                   </div>
 
-                                  <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                                  <div className="w-full bg-neutral-300 rounded-full h-2 mb-2">
                                     {/* Unified bar color */}
                                     <div
                                       className="h-2 rounded-full transition-all duration-500"
@@ -1249,7 +1239,7 @@ function DashboardContent() {
                                     />
                                   </div>
 
-                                  <div className="text-sm text-gray-600">
+                                  <div className="text-sm text-neutral-700">
                                     <div>{factor.metrics}</div>
                                   </div>
                                 </div>
@@ -1271,16 +1261,16 @@ function DashboardContent() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                   {/* GitHub Metrics Card */}
                   {currentAnalysis?.analysis_data?.github_insights && (
-                    <Card className="border-2 border-gray-200 bg-white/70 backdrop-blur-sm shadow-lg">
+                    <Card className="border border-neutral-300 bg-white">
                       <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">
                           <CardTitle className="flex items-center space-x-2">
-                            <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center">
+                            <div className="w-8 h-8 bg-neutral-900 rounded-lg flex items-center justify-center">
                               <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z" clipRule="evenodd" />
                               </svg>
                             </div>
-                            <span className="text-gray-900">GitHub Activity</span>
+                            <span className="text-neutral-900">GitHub Activity</span>
                           </CardTitle>
                           <button
                             onClick={() => setShowAllMetricsPopup(true)}
@@ -1305,13 +1295,13 @@ function DashboardContent() {
                           if (!hasGitHubData) {
                             return (
                               <div className="text-center py-8">
-                                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                  <svg className="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                <div className="w-16 h-16 bg-neutral-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                                  <svg className="w-8 h-8 text-neutral-500" fill="currentColor" viewBox="0 0 20 20">
                                     <path fillRule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z" clipRule="evenodd" />
                                   </svg>
                                 </div>
-                                <h3 className="text-lg font-medium text-gray-900 mb-2">No GitHub Data Available</h3>
-                                <p className="text-sm text-gray-500">
+                                <h3 className="text-lg font-medium text-neutral-900 mb-2">No GitHub Data Available</h3>
+                                <p className="text-sm text-neutral-500">
                                   {currentAnalysis?.analysis_data?.data_sources?.github_data
                                     ? "No GitHub activity found for team members in this analysis period"
                                     : "GitHub integration not connected or no team members mapped to GitHub accounts"
@@ -1335,50 +1325,50 @@ function DashboardContent() {
 
                               {/* GitHub Metrics Grid */}
                               <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-gray-50 rounded-lg p-3">
-                                  <p className="text-xs text-gray-600 font-medium">Total Commits</p>
+                                <div className="bg-white rounded-lg p-3">
+                                  <p className="text-xs text-neutral-700 font-medium">Total Commits</p>
                                   {github.total_commits ? (
-                                    <p className="text-lg font-bold text-gray-900">{github.total_commits.toLocaleString()}</p>
+                                    <p className="text-lg font-bold text-neutral-900">{github.total_commits.toLocaleString()}</p>
                                   ) : (
-                                    <p className="text-lg font-bold text-gray-400 italic">No data</p>
+                                    <p className="text-lg font-bold text-neutral-500 italic">No data</p>
                                   )}
                                 </div>
-                                <div className="bg-gray-50 rounded-lg p-3">
-                                  <p className="text-xs text-gray-600 font-medium">Pull Requests</p>
+                                <div className="bg-white rounded-lg p-3">
+                                  <p className="text-xs text-neutral-700 font-medium">Pull Requests</p>
                                   {github.total_pull_requests ? (
-                                    <p className="text-lg font-bold text-gray-900">{github.total_pull_requests.toLocaleString()}</p>
+                                    <p className="text-lg font-bold text-neutral-900">{github.total_pull_requests.toLocaleString()}</p>
                                   ) : (
-                                    <p className="text-lg font-bold text-gray-400 italic">No data</p>
+                                    <p className="text-lg font-bold text-neutral-500 italic">No data</p>
                                   )}
                                 </div>
-                                <div className="bg-gray-50 rounded-lg p-3">
-                                  <p className="text-xs text-gray-600 font-medium">Code Reviews</p>
+                                <div className="bg-white rounded-lg p-3">
+                                  <p className="text-xs text-neutral-700 font-medium">Code Reviews</p>
                                   {github.total_reviews ? (
-                                    <p className="text-lg font-bold text-gray-900">{github.total_reviews.toLocaleString()}</p>
+                                    <p className="text-lg font-bold text-neutral-900">{github.total_reviews.toLocaleString()}</p>
                                   ) : (
-                                    <p className="text-lg font-bold text-gray-400 italic">No data</p>
+                                    <p className="text-lg font-bold text-neutral-500 italic">No data</p>
                                   )}
                                 </div>
-                                <div className="bg-gray-50 rounded-lg p-3">
-                                  <p className="text-xs text-gray-600 font-medium">After Hours</p>
+                                <div className="bg-white rounded-lg p-3">
+                                  <p className="text-xs text-neutral-700 font-medium">After Hours</p>
                                   {github.after_hours_activity_percentage !== undefined && github.after_hours_activity_percentage !== null ? (
-                                    <p className="text-lg font-bold text-gray-900">{github.after_hours_activity_percentage.toFixed(1)}%</p>
+                                    <p className="text-lg font-bold text-neutral-900">{github.after_hours_activity_percentage.toFixed(1)}%</p>
                                   ) : (
-                                    <p className="text-lg font-bold text-gray-400 italic">No data</p>
+                                    <p className="text-lg font-bold text-neutral-500 italic">No data</p>
                                   )}
                                 </div>
-                                <div className="bg-gray-50 rounded-lg p-3">
-                                  <p className="text-xs text-gray-600 font-medium">Weekend Commits</p>
+                                <div className="bg-white rounded-lg p-3">
+                                  <p className="text-xs text-neutral-700 font-medium">Weekend Commits</p>
                                   {(github.weekend_activity_percentage !== undefined && github.weekend_activity_percentage !== null) ||
                                    (github.weekend_commit_percentage !== undefined && github.weekend_commit_percentage !== null) ? (
                                     <div>
-                                      <p className="text-lg font-bold text-gray-900">{(github.weekend_activity_percentage || github.weekend_commit_percentage || 0).toFixed(1)}%</p>
+                                      <p className="text-lg font-bold text-neutral-900">{(github.weekend_activity_percentage || github.weekend_commit_percentage || 0).toFixed(1)}%</p>
                                       {github.activity_data?.weekend_commits !== undefined && (
-                                        <p className="text-xs text-gray-500">{github.activity_data.weekend_commits} commits</p>
+                                        <p className="text-xs text-neutral-500">{github.activity_data.weekend_commits} commits</p>
                                       )}
                                     </div>
                                   ) : (
-                                    <p className="text-lg font-bold text-gray-400 italic">No data</p>
+                                    <p className="text-lg font-bold text-neutral-500 italic">No data</p>
                                   )}
                                 </div>
                               </div>
@@ -1414,7 +1404,7 @@ function DashboardContent() {
 
                   {/* Slack Metrics Card */}
                   {currentAnalysis?.analysis_data?.slack_insights && (
-                    <Card className="border-2 border-purple-200 bg-white/70 backdrop-blur-sm shadow-lg">
+                    <Card className="border border-neutral-300 bg-white shadow-lg">
                       <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">
                           <CardTitle className="flex items-center space-x-2">
@@ -1430,7 +1420,7 @@ function DashboardContent() {
                                 <path d="M78.0996 89.7003C71.5996 89.7003 66.4996 84.6003 66.4996 78.1003C66.4996 71.6003 71.5996 66.5003 78.0996 66.5003H109.1C115.6 66.5003 120.7 71.6003 120.7 78.1003C120.7 84.6003 115.6 89.7003 109.1 89.7003H78.0996Z" fill="#ECB22E"/>
                               </svg>
                             </div>
-                            <span className="text-gray-900">Slack Communications</span>
+                            <span className="text-neutral-900">Slack Communications</span>
                           </CardTitle>
                         </div>
                       </CardHeader>
@@ -1454,8 +1444,8 @@ function DashboardContent() {
                           if (!hasRealSlackData && !hasRateLimitErrors && !hasOtherErrors) {
                             return (
                               <div className="text-center py-8">
-                                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                  <svg className="w-8 h-8 text-gray-400" viewBox="0 0 124 124" fill="currentColor">
+                                <div className="w-16 h-16 bg-neutral-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                                  <svg className="w-8 h-8 text-neutral-500" viewBox="0 0 124 124" fill="currentColor">
                                     <path d="M26.3996 78.2003C26.3996 84.7003 21.2996 89.8003 14.7996 89.8003C8.29961 89.8003 3.19961 84.7003 3.19961 78.2003C3.19961 71.7003 8.29961 66.6003 14.7996 66.6003H26.3996V78.2003Z" />
                                     <path d="M32.2996 78.2003C32.2996 71.7003 37.3996 66.6003 43.8996 66.6003C50.3996 66.6003 55.4996 71.7003 55.4996 78.2003V109.2C55.4996 115.7 50.3996 120.8 43.8996 120.8C37.3996 120.8 32.2996 115.7 32.2996 109.2V78.2003Z" />
                                     <path d="M43.8996 26.4003C37.3996 26.4003 32.2996 21.3003 32.2996 14.8003C32.2996 8.30026 37.3996 3.20026 43.8996 3.20026C50.3996 3.20026 55.4996 8.30026 55.4996 14.8003V26.4003H43.8996Z" />
@@ -1466,8 +1456,8 @@ function DashboardContent() {
                                     <path d="M80.0996 91.8003C73.5996 91.8003 68.4996 86.7003 68.4996 80.2003C68.4996 73.7003 73.5996 68.6003 80.0996 68.6003H111.1C117.6 68.6003 122.7 73.7003 122.7 80.2003C122.7 86.7003 117.6 91.8003 111.1 91.8003H80.0996Z" />
                                   </svg>
                                 </div>
-                                <h3 className="text-lg font-medium text-gray-900 mb-2">No Slack Data Available</h3>
-                                <p className="text-sm text-gray-500">
+                                <h3 className="text-lg font-medium text-neutral-900 mb-2">No Slack Data Available</h3>
+                                <p className="text-sm text-neutral-500">
                                   {currentAnalysis?.analysis_data?.data_sources?.slack_data
                                     ? "No Slack communication activity found for team members in this analysis period"
                                     : "Slack integration not connected or no team members mapped to Slack accounts"
@@ -1521,52 +1511,52 @@ function DashboardContent() {
                                   {/* Slack Metrics Grid */}
                                   <div className="grid grid-cols-2 gap-4">
                                     <div className="bg-purple-50 rounded-lg p-3">
-                                      <p className="text-xs text-purple-600 font-medium">Total Messages</p>
+                                      <p className="text-xs text-purple-700 font-medium">Total Messages</p>
                                       {slack?.total_messages ? (
                                         <p className="text-lg font-bold text-purple-900">{slack.total_messages.toLocaleString()}</p>
                                       ) : (
-                                        <p className="text-lg font-bold text-gray-400">No data</p>
+                                        <p className="text-lg font-bold text-neutral-500">No data</p>
                                       )}
                                     </div>
                                     <div className="bg-purple-50 rounded-lg p-3">
-                                      <p className="text-xs text-purple-600 font-medium">Active Channels</p>
+                                      <p className="text-xs text-purple-700 font-medium">Active Channels</p>
                                       {slack?.active_channels ? (
                                         <p className="text-lg font-bold text-purple-900">{slack.active_channels}</p>
                                       ) : (
-                                        <p className="text-lg font-bold text-gray-400">No data</p>
+                                        <p className="text-lg font-bold text-neutral-500">No data</p>
                                       )}
                                     </div>
                                     <div className="bg-purple-50 rounded-lg p-3">
-                                      <p className="text-xs text-purple-600 font-medium">After Hours</p>
+                                      <p className="text-xs text-purple-700 font-medium">After Hours</p>
                                       {slack?.after_hours_activity_percentage !== undefined && slack.after_hours_activity_percentage !== null ? (
                                         <p className="text-lg font-bold text-purple-900">{slack.after_hours_activity_percentage.toFixed(1)}%</p>
                                       ) : (
-                                        <p className="text-lg font-bold text-gray-400">No data</p>
+                                        <p className="text-lg font-bold text-neutral-500">No data</p>
                                       )}
                                     </div>
                                     <div className="bg-purple-50 rounded-lg p-3">
-                                      <p className="text-xs text-purple-600 font-medium">Weekend Messages</p>
+                                      <p className="text-xs text-purple-700 font-medium">Weekend Messages</p>
                                       {(slack?.weekend_activity_percentage !== undefined && slack.weekend_activity_percentage !== null) || 
                                        (slack?.weekend_percentage !== undefined && slack.weekend_percentage !== null) ? (
                                         <p className="text-lg font-bold text-purple-900">{(slack.weekend_activity_percentage || slack.weekend_percentage || 0).toFixed(1)}%</p>
                                       ) : (
-                                        <p className="text-lg font-bold text-gray-400">No data</p>
+                                        <p className="text-lg font-bold text-neutral-500">No data</p>
                                       )}
                                     </div>
                                     <div className="bg-purple-50 rounded-lg p-3">
-                                      <p className="text-xs text-purple-600 font-medium">Avg Response Time</p>
+                                      <p className="text-xs text-purple-700 font-medium">Avg Response Time</p>
                                       {slack?.avg_response_time_minutes ? (
                                         <p className="text-lg font-bold text-purple-900">{slack.avg_response_time_minutes.toFixed(0)}m</p>
                                       ) : (
-                                        <p className="text-lg font-bold text-gray-400">No data</p>
+                                        <p className="text-lg font-bold text-neutral-500">No data</p>
                                       )}
                                     </div>
                                     <div className="bg-purple-50 rounded-lg p-3">
-                                      <p className="text-xs text-purple-600 font-medium">Sentiment Score</p>
+                                      <p className="text-xs text-purple-700 font-medium">Sentiment Score</p>
                                       {slack?.sentiment_analysis?.avg_sentiment !== undefined && slack.sentiment_analysis.avg_sentiment !== null ? (
                                         <p className="text-lg font-bold text-purple-900">{slack.sentiment_analysis.avg_sentiment.toFixed(2)}</p>
                                       ) : (
-                                        <p className="text-lg font-bold text-gray-400">No data</p>
+                                        <p className="text-lg font-bold text-neutral-500">No data</p>
                                       )}
                                     </div>
                                   </div>
@@ -1692,11 +1682,11 @@ function DashboardContent() {
               {/* Show loading state while analyses are loading OR if we have analyses but currentAnalysis isn't set */}
               {loadingAnalyses || (previousAnalyses.length > 0 && !currentAnalysis) ? (
                 <Card className="text-center p-8">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <div className="w-8 h-8 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-16 h-16 bg-neutral-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div className="w-8 h-8 border-2 border-neutral-400 border-t-transparent rounded-full animate-spin"></div>
                   </div>
                   <h3 className="text-lg font-semibold mb-2">Loading Your Analyses</h3>
-                  <p className="text-gray-600 mb-4">
+                  <p className="text-neutral-700 mb-4">
                     We're checking for your previous analyses...
                   </p>
                 </Card>
@@ -1709,7 +1699,7 @@ function DashboardContent() {
                     <Settings className="w-8 h-8 text-blue-600" />
                   </div>
                   <h3 className="text-lg font-semibold mb-2">Setup Required</h3>
-                  <p className="text-gray-600 mb-4">
+                  <p className="text-neutral-700 mb-4">
                     Connect your first integration to start analyzing burnout metrics. Both Rootly and PagerDuty are supported.
                   </p>
                   <Button onClick={() => router.push('/integrations')} className="bg-blue-600 hover:bg-blue-700">
@@ -1728,7 +1718,7 @@ function DashboardContent() {
                         <div className="space-y-4 mb-6">
                           {!hasRootly && (
                             <Alert className="border-purple-200 bg-purple-50">
-                              <Info className="w-4 h-4 text-purple-600" />
+                              <Info className="w-4 h-4 text-purple-700" />
                               <AlertDescription className="text-purple-800">
                                 <div className="flex items-center justify-between">
                                   <div>
@@ -1740,7 +1730,7 @@ function DashboardContent() {
                                   <Button 
                                     size="sm" 
                                     onClick={() => router.push('/integrations')} 
-                                    className="bg-purple-600 hover:bg-purple-700 ml-4"
+                                    className="bg-purple-700 hover:bg-purple-800 ml-4"
                                   >
                                     Setup Rootly
                                   </Button>
@@ -1757,13 +1747,13 @@ function DashboardContent() {
                   {/* Standard empty state */}
                   <Card className="text-center p-8">
                     <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Activity className="w-8 h-8 text-purple-600" />
+                      <Activity className="w-8 h-8 text-purple-700" />
                     </div>
                     <h3 className="text-lg font-semibold mb-2">No Analysis Yet</h3>
-                    <p className="text-gray-600 mb-4">
+                    <p className="text-neutral-700 mb-4">
                       Click "New Analysis" to start analyzing your organization's burnout metrics
                     </p>
-                    <Button onClick={startAnalysis} className="bg-purple-600 hover:bg-purple-700">
+                    <Button onClick={startAnalysis} className="bg-purple-700 hover:bg-purple-800">
                       <Play className="w-4 h-4 mr-2" />
                       New Analysis
                     </Button>
@@ -1782,7 +1772,7 @@ function DashboardContent() {
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
-                    className="flex items-center space-x-2 border-gray-300 hover:bg-gray-50"
+                    className="flex items-center space-x-2 border-neutral-300 hover:bg-neutral-100"
                     title="Export analysis data"
                   >
                     <Download className="w-5 h-5" />
@@ -1794,14 +1784,14 @@ function DashboardContent() {
                     <Download className="w-5 h-5" />
                     <div className="flex flex-col">
                       <span className="font-medium text-base">Export as JSON</span>
-                      <span className="text-sm text-gray-500">Complete analysis data</span>
+                      <span className="text-sm text-neutral-500">Complete analysis data</span>
                     </div>
                   </DropdownMenuItem>
                   <DropdownMenuItem disabled className="flex items-center space-x-2 opacity-50">
                     <Download className="w-5 h-5" />
                     <div className="flex flex-col">
                       <span className="font-medium text-base">Export as CSV</span>
-                      <span className="text-sm text-gray-500">Organization member scores</span>
+                      <span className="text-sm text-neutral-500">Organization member scores</span>
                     </div>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -1809,7 +1799,7 @@ function DashboardContent() {
                     <FileText className="w-5 h-5" />
                     <div className="flex flex-col">
                       <span className="font-medium text-base">Generate PDF Report</span>
-                      <span className="text-sm text-gray-500">Executive summary</span>
+                      <span className="text-sm text-neutral-500">Executive summary</span>
                     </div>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -1818,14 +1808,14 @@ function DashboardContent() {
           )}
 
           {/* Powered by Rootly AI Footer */}
-          <div className="mt-12 pt-8 border-t border-gray-200 text-center">
+          <div className="mt-12 pt-8 border-t border-neutral-200 text-center">
             <a
               href="https://rootly.com"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex flex-col items-center space-y-1 hover:opacity-80 transition-opacity"
             >
-              <span className="text-lg text-gray-600">powered by</span>
+              <span className="text-lg text-neutral-700">powered by</span>
               <Image
                 src="/images/rootly-ai-logo.png"
                 alt="Rootly AI"
@@ -1867,7 +1857,7 @@ function DashboardContent() {
                   setNoIntegrationsFound(false)
                   router.push('/integrations')
                 }}
-                className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors"
+                className="w-full px-4 py-2 bg-purple-700 text-white rounded-lg font-medium hover:bg-purple-800 transition-colors"
               >
                 Go to Integrations
               </button>
@@ -1875,10 +1865,10 @@ function DashboardContent() {
           ) : (
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">
+              <label className="text-sm font-medium text-neutral-700 mb-2 block">
                 Organization
               </label>
-              <div className="p-3 bg-gray-50 rounded-md border border-gray-200">
+              <div className="p-3 bg-neutral-100 rounded-md border border-neutral-200">
                 {(() => {
                   const selected = integrations.find(i => i.id.toString() === dialogSelectedIntegration)
                   if (selected) {
@@ -1886,7 +1876,7 @@ function DashboardContent() {
                     const organizationName = selected.name
                     
                     // Use platform field from backend (not inferred from name)
-                    let platformColor = 'bg-gray-500' // default
+                    let platformColor = 'bg-neutral-1000' // default
                     if (selected.platform === 'rootly') {
                       platformColor = 'bg-purple-500'  // Rootly = Purple
                     } else if (selected.platform === 'pagerduty') {
@@ -1920,7 +1910,7 @@ function DashboardContent() {
                       </div>
                     )
                   }
-                  return <span className="text-gray-500">No organization selected</span>
+                  return <span className="text-neutral-500">No organization selected</span>
                 })()}
               </div>
             </div>
@@ -1954,11 +1944,11 @@ function DashboardContent() {
               }
 
               return (
-                <div className="p-3 bg-gray-50 rounded-md border border-gray-200">
+                <div className="p-3 bg-neutral-100 rounded-md border border-neutral-200">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <Users className="w-4 h-4 text-gray-500" />
-                      <span className="text-sm font-medium text-gray-700">
+                      <Users className="w-4 h-4 text-neutral-500" />
+                      <span className="text-sm font-medium text-neutral-700">
                         {syncedCount} team {syncedCount === 1 ? 'member' : 'members'} synced
                       </span>
                     </div>
@@ -1972,7 +1962,7 @@ function DashboardContent() {
                       Manage team
                     </button>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-neutral-500 mt-1">
                     Sync team members if there are changes to your organization
                   </p>
                 </div>
@@ -2031,25 +2021,25 @@ function DashboardContent() {
             {/* Data Sources */}
             {true && (
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                <label className="text-sm font-medium text-neutral-700 mb-2 block">
                   Additional Data Sources
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   {/* GitHub Toggle Card */}
                   {true && (
-                    <div className={`border rounded-lg p-3 transition-all ${includeGithub && githubIntegration ? 'border-gray-900 bg-gray-50' : 'border-gray-200 bg-white'}`}>
+                    <div className={`border rounded-lg p-3 transition-all ${includeGithub && githubIntegration ? 'border-neutral-900 bg-neutral-100' : 'border-neutral-200 bg-white'}`}>
                       {/* Always show GitHub content immediately, no skeleton loader */}
                       {(
                         <>
                           <div className="flex items-start justify-between mb-2">
                             <div className="flex items-center space-x-2">
-                              <div className="w-6 h-6 bg-gray-900 rounded flex items-center justify-center">
+                              <div className="w-6 h-6 bg-neutral-900 rounded flex items-center justify-center">
                                 <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                                   <path fillRule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z" clipRule="evenodd" />
                                 </svg>
                               </div>
                               <div>
-                                <h3 className="text-sm font-medium text-gray-900">GitHub</h3>
+                                <h3 className="text-sm font-medium text-neutral-900">GitHub</h3>
                               </div>
                             </div>
                             <Switch
@@ -2068,8 +2058,8 @@ function DashboardContent() {
                               disabled={false}
                             />
                           </div>
-                          <p className="text-xs text-gray-600 mb-1">Code patterns & activity</p>
-                          <p className="text-xs text-gray-500">{githubIntegration?.github_username || 'Not connected'}</p>
+                          <p className="text-xs text-neutral-700 mb-1">Code patterns & activity</p>
+                          <p className="text-xs text-neutral-500">{githubIntegration?.github_username || 'Not connected'}</p>
                         </>
                       )}
                     </div>
@@ -2077,7 +2067,7 @@ function DashboardContent() {
 
                   {/* Slack Toggle Card */}
                   {true && (
-                    <div className={`border rounded-lg p-3 transition-all ${includeSlack && slackIntegration ? 'border-purple-500 bg-purple-50' : 'border-gray-200 bg-white'}`}>
+                    <div className={`border rounded-lg p-3 transition-all ${includeSlack && slackIntegration ? 'border-purple-500 bg-purple-50' : 'border-neutral-200 bg-white'}`}>
                       {/* Always show Slack content immediately, no skeleton loader */}
                       {(
                         <>
@@ -2096,7 +2086,7 @@ function DashboardContent() {
                                 </svg>
                               </div>
                               <div>
-                                <h3 className="text-sm font-medium text-gray-900">Slack</h3>
+                                <h3 className="text-sm font-medium text-neutral-900">Slack</h3>
                               </div>
                             </div>
                             <Switch
@@ -2115,7 +2105,7 @@ function DashboardContent() {
                               disabled={!slackIntegration}
                             />
                           </div>
-                          <p className="text-xs text-gray-600 mb-1">Communication patterns</p>
+                          <p className="text-xs text-neutral-700 mb-1">Communication patterns</p>
                         </>
                       )}
                     </div>
@@ -2123,7 +2113,7 @@ function DashboardContent() {
 
                   {/* Jira Toggle Card */}
                   {true && (
-                    <div className={`border rounded-lg p-3 transition-all ${includeJira && jiraIntegration ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white'}`}>
+                    <div className={`border rounded-lg p-3 transition-all ${includeJira && jiraIntegration ? 'border-blue-500 bg-blue-50' : 'border-neutral-200 bg-white'}`}>
                       {/* Always show Jira content immediately, no skeleton loader */}
                       {(
                         <>
@@ -2139,7 +2129,7 @@ function DashboardContent() {
                                 </svg>
                               </div>
                               <div>
-                                <h3 className="text-sm font-medium text-gray-900">Jira</h3>
+                                <h3 className="text-sm font-medium text-neutral-900">Jira</h3>
                               </div>
                             </div>
                             <Switch
@@ -2158,7 +2148,7 @@ function DashboardContent() {
                               disabled={false}
                             />
                           </div>
-                          <p className="text-xs text-gray-600 mb-1">Issue tracking</p>
+                          <p className="text-xs text-neutral-700 mb-1">Issue tracking</p>
                         </>
                       )}
                     </div>
@@ -2166,14 +2156,14 @@ function DashboardContent() {
 
                   {/* Linear Toggle Card */}
                   {true && (
-                    <div className={`border rounded-lg p-3 transition-all ${includeLinear && linearIntegration ? 'border-purple-500 bg-purple-50' : 'border-gray-200 bg-white'}`}>
+                    <div className={`border rounded-lg p-3 transition-all ${includeLinear && linearIntegration ? 'border-purple-500 bg-purple-50' : 'border-neutral-200 bg-white'}`}>
                       {(
                         <>
                           <div className="flex items-start justify-between mb-2">
                             <div className="flex items-center space-x-2">
                               <Image src="/images/linear-logo.png" alt="Linear" width={24} height={24} className="rounded" />
                               <div>
-                                <h3 className="text-sm font-medium text-gray-900">Linear</h3>
+                                <h3 className="text-sm font-medium text-neutral-900">Linear</h3>
                               </div>
                             </div>
                             <Switch
@@ -2188,7 +2178,7 @@ function DashboardContent() {
                               disabled={false}
                             />
                           </div>
-                          <p className="text-xs text-gray-600 mb-1">Issue tracking</p>
+                          <p className="text-xs text-neutral-700 mb-1">Issue tracking</p>
                         </>
                       )}
                     </div>
@@ -2199,18 +2189,18 @@ function DashboardContent() {
 
             {/* AI Insights Toggle */}
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">
+              <label className="text-sm font-medium text-neutral-700 mb-2 block">
                 AI Insights
               </label>
-              <div className={`border rounded-lg p-4 transition-all ${enableAI ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white'}`}>
+              <div className={`border rounded-lg p-4 transition-all ${enableAI ? 'border-blue-500 bg-blue-50' : 'border-neutral-200 bg-white'}`}>
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
                       <div className="w-5 h-5 text-blue-600">🤖</div>
                     </div>
                     <div>
-                      <h3 className="text-sm font-medium text-gray-900">Executive Summary</h3>
-                      <p className="text-xs text-gray-600">Analyze the data and generates a report</p>
+                      <h3 className="text-sm font-medium text-neutral-900">Executive Summary</h3>
+                      <p className="text-xs text-neutral-700">Analyze the data and generates a report</p>
                     </div>
                   </div>
                   <Switch
@@ -2231,7 +2221,7 @@ function DashboardContent() {
             </div>
             
             <div className="space-y-3">
-              <label className="text-sm font-medium text-gray-700 mb-2 block">
+              <label className="text-sm font-medium text-neutral-700 mb-2 block">
                 Analysis Time Range
               </label>
 
@@ -2313,7 +2303,7 @@ function DashboardContent() {
                     return (
                       <div className="text-sm">
                         {validation.valid ? (
-                          <p className="text-gray-600 flex items-center gap-2">
+                          <p className="text-neutral-700 flex items-center gap-2">
                             <Info className="h-4 w-4" />
                             Analyzing {validation.days} days (from {format(customStartDate, "MMM d, yyyy")} to today)
                           </p>
@@ -2335,7 +2325,7 @@ function DashboardContent() {
               </Button>
               <Button
                 onClick={runAnalysisWithTimeRange}
-                className="bg-purple-600 hover:bg-purple-700"
+                className="bg-purple-700 hover:bg-purple-800"
                 disabled={
                   !dialogSelectedIntegration ||
                   (isCustomRange && !validateCustomDate(customStartDate).valid) ||
@@ -2410,8 +2400,8 @@ export default function Dashboard() {
     <Suspense fallback={
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-900 mx-auto"></div>
+          <p className="mt-4 text-neutral-700">Loading dashboard...</p>
         </div>
       </div>
     }>

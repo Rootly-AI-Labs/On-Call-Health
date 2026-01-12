@@ -42,7 +42,7 @@ export function AIInsightsCard({ currentAnalysis }: AIInsightsCardProps) {
 
   return (
     <>
-      <Card className="border-2 border-blue-200 bg-white/70 backdrop-blur-sm shadow-lg flex flex-col h-full min-h-[200px]">
+      <Card className="border border-neutral-300 flex flex-col h-full min-h-[200px]">
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-medium text-blue-700 flex items-center space-x-2">
             <Sparkles className="w-4 h-4" />
@@ -53,9 +53,9 @@ export function AIInsightsCard({ currentAnalysis }: AIInsightsCardProps) {
           {(() => {
             if (!aiEnhanced && !hasAIData) {
               return (
-                <div className="text-center py-4 text-gray-500">
+                <div className="text-center py-4 text-neutral-500">
                   <Sparkles className="h-8 w-8 mx-auto mb-3 opacity-30" />
-                  <p className="text-sm font-medium text-gray-700 mb-1">AI Insights Not Enabled</p>
+                  <p className="text-sm font-medium text-neutral-700 mb-1">AI Insights Not Enabled</p>
                   <p className="text-xs">Enable AI in analysis settings to generate insights</p>
                 </div>
               )
@@ -68,7 +68,7 @@ export function AIInsightsCard({ currentAnalysis }: AIInsightsCardProps) {
               return (
                 <div className="flex flex-col h-full pt-1 pb-0 -mb-1">
                   <div className="mb-2 overflow-hidden">
-                    <p className="text-sm text-gray-700 leading-relaxed line-clamp-6">
+                    <p className="text-sm text-neutral-700 leading-relaxed line-clamp-6">
                       {summaryText}
                     </p>
                   </div>
@@ -90,17 +90,17 @@ export function AIInsightsCard({ currentAnalysis }: AIInsightsCardProps) {
 
             if (isAnalysisRunning) {
               return (
-                <div className="text-center py-4 text-gray-500">
+                <div className="text-center py-4 text-neutral-500">
                   <Sparkles className="h-8 w-8 mx-auto mb-3 opacity-40 animate-pulse" />
-                  <p className="text-sm font-medium text-gray-700 mb-1">Generating AI Insights</p>
+                  <p className="text-sm font-medium text-neutral-700 mb-1">Generating AI Insights</p>
                   <p className="text-xs">AI analysis is being generated...</p>
                 </div>
               )
             } else {
               return (
-                <div className="text-center py-4 text-gray-500">
+                <div className="text-center py-4 text-neutral-500">
                   <Sparkles className="h-8 w-8 mx-auto mb-3 opacity-40" />
-                  <p className="text-sm font-medium text-gray-700 mb-1">No AI Insights</p>
+                  <p className="text-sm font-medium text-neutral-700 mb-1">No AI Insights</p>
                   <p className="text-xs">Run a new analysis to generate insights</p>
                 </div>
               )

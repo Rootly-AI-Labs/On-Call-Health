@@ -87,7 +87,7 @@ export function AIInsightsModal({ isOpen, onClose, currentAnalysis }: AIInsights
               return (
                 <div className="prose prose-sm max-w-none">
                   <div
-                    className="leading-relaxed text-gray-800 [&>*:last-child]:mb-0"
+                    className="leading-relaxed text-neutral-900 [&>*:last-child]:mb-0"
                     dangerouslySetInnerHTML={{
                       __html: aiInsights.llm_team_analysis
                         .replace(/^### (.*?)$/gm, '<h3 class="text-lg font-semibold mt-6 mb-3">$1</h3>')
@@ -108,17 +108,17 @@ export function AIInsightsModal({ isOpen, onClose, currentAnalysis }: AIInsights
 
             if (isAnalysisRunning) {
               return (
-                <div className="text-center py-12 text-gray-500">
+                <div className="text-center py-12 text-neutral-500">
                   <Sparkles className="h-10 w-10 mx-auto mb-4 opacity-40 animate-pulse" />
-                  <h4 className="font-medium text-gray-700 mb-2">Generating AI Insights</h4>
+                  <h4 className="font-medium text-neutral-700 mb-2">Generating AI Insights</h4>
                   <p className="text-sm">AI analysis is being generated...</p>
                 </div>
               )
             } else {
               return (
-                <div className="text-center py-12 text-gray-500">
+                <div className="text-center py-12 text-neutral-500">
                   <Sparkles className="h-10 w-10 mx-auto mb-4 opacity-40" />
-                  <h4 className="font-medium text-gray-700 mb-2">No AI Insights Generated</h4>
+                  <h4 className="font-medium text-neutral-700 mb-2">No AI Insights Generated</h4>
                   <p className="text-sm">Run a new analysis to generate AI insights</p>
                 </div>
               )

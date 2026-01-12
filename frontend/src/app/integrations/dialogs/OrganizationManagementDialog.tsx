@@ -74,15 +74,15 @@ export function OrganizationManagementDialog({
         </DialogHeader>
 
         {/* Role descriptions - at the top of modal */}
-        <div className="mt-4 px-4 py-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg">
+        <div className="mt-4 px-4 py-3 bg-purple-100 rounded-lg">
           <div className="space-y-1.5 text-xs">
             <div className="flex items-baseline space-x-2">
-              <span className="font-semibold text-gray-900 min-w-[80px]">Admin</span>
-              <span className="text-gray-700">Full access: manage members, integrations, run analyses, send surveys, and configure settings</span>
+              <span className="font-semibold text-neutral-900 min-w-[80px]">Admin</span>
+              <span className="text-neutral-700">Full access: manage members, integrations, run analyses, send surveys, and configure settings</span>
             </div>
             <div className="flex items-baseline space-x-2">
-              <span className="font-semibold text-gray-900 min-w-[80px]">Member</span>
-              <span className="text-gray-700">Can view team burnout data, run analyses, and send surveys</span>
+              <span className="font-semibold text-neutral-900 min-w-[80px]">Member</span>
+              <span className="text-neutral-700">Can view team burnout data, run analyses, and send surveys</span>
             </div>
           </div>
         </div>
@@ -90,20 +90,20 @@ export function OrganizationManagementDialog({
         <div className="space-y-6">
           {/* Invite New Member Section - Only visible to admins */}
           {(userInfo?.role === 'admin') && (
-            <div className="p-6 border rounded-lg bg-gradient-to-br from-purple-50 to-white">
+            <div className="p-6 border rounded-lg bg-white">
               <div className="flex items-start space-x-4">
                 <div className="flex-shrink-0 w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
                   <Mail className="w-5 h-5 text-purple-600" />
                 </div>
                 <div className="flex-1 space-y-4">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Invite Team Member</h3>
-                    <p className="text-sm text-gray-500 mt-1">Send an invitation to join your organization</p>
+                    <h3 className="text-lg font-semibold text-neutral-900">Invite Team Member</h3>
+                    <p className="text-sm text-neutral-500 mt-1">Send an invitation to join your organization</p>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label htmlFor="invite-email" className="block text-sm font-medium text-gray-700 mb-1.5">
+                      <label htmlFor="invite-email" className="block text-sm font-medium text-neutral-700 mb-1.5">
                         Email Address
                       </label>
                       <Input
@@ -116,14 +116,14 @@ export function OrganizationManagementDialog({
                       />
                     </div>
                     <div>
-                      <label htmlFor="invite-role" className="block text-sm font-medium text-gray-700 mb-1.5">
+                      <label htmlFor="invite-role" className="block text-sm font-medium text-neutral-700 mb-1.5">
                         Role
                       </label>
                       <select
                         id="invite-role"
                         value={inviteRole}
                         onChange={(e) => onInviteRoleChange(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+                        className="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
                       >
                         <option value="member">Member</option>
                         <option value="admin">Admin</option>
@@ -134,7 +134,7 @@ export function OrganizationManagementDialog({
                   <Button
                     onClick={onInvite}
                     disabled={isInviting || !inviteEmail.trim()}
-                    className="w-full md:w-auto bg-purple-600 hover:bg-purple-700"
+                    className="w-full md:w-auto bg-purple-700 hover:bg-purple-800"
                   >
                     {isInviting ? (
                       <>
@@ -156,8 +156,8 @@ export function OrganizationManagementDialog({
           {/* Current Members & Pending Invitations */}
           {loadingOrgData ? (
             <div className="text-center py-8">
-              <Loader2 className="w-8 h-8 mx-auto mb-4 animate-spin text-gray-400" />
-              <p className="text-gray-500">Loading organization data...</p>
+              <Loader2 className="w-8 h-8 mx-auto mb-4 animate-spin text-neutral-500" />
+              <p className="text-neutral-500">Loading organization data...</p>
             </div>
           ) : (
             <div className="space-y-6">
@@ -169,8 +169,8 @@ export function OrganizationManagementDialog({
                     <span>Organization Members ({orgMembers.length})</span>
                   </h3>
                   <div className="border rounded-lg overflow-hidden">
-                    <div className="bg-gray-50 px-4 py-2 border-b">
-                      <div className="grid grid-cols-4 gap-4 text-sm font-medium text-gray-700">
+                    <div className="bg-neutral-100 px-4 py-2 border-b">
+                      <div className="grid grid-cols-4 gap-4 text-sm font-medium text-neutral-700">
                         <div>Name</div>
                         <div>Email</div>
                         <div>Status</div>
@@ -179,15 +179,15 @@ export function OrganizationManagementDialog({
                     </div>
                     <div className="max-h-60 overflow-y-auto">
                       {orgMembers.map((member) => (
-                        <div key={member.id} className={`px-4 py-3 border-b last:border-b-0 hover:bg-gray-50 ${member.status === 'pending' ? 'bg-yellow-50' : 'bg-white'}`}>
+                        <div key={member.id} className={`px-4 py-3 border-b last:border-b-0 hover:bg-neutral-100 ${member.status === 'pending' ? 'bg-yellow-50' : 'bg-white'}`}>
                           <div className="grid grid-cols-4 gap-4 text-sm items-center">
-                            <div className="font-medium text-gray-900">
+                            <div className="font-medium text-neutral-900">
                               {member.name}
                               {member.is_current_user && (
                                 <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">You</span>
                               )}
                             </div>
-                            <div className="text-gray-600">{member.email}</div>
+                            <div className="text-neutral-700">{member.email}</div>
                             <div>
                               {member.status === 'pending' ? (
                                 <span className="inline-block px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">
@@ -201,7 +201,7 @@ export function OrganizationManagementDialog({
                             </div>
                             <div>
                               {member.status === 'pending' ? (
-                                <span className="text-xs text-gray-500 capitalize">
+                                <span className="text-xs text-neutral-500 capitalize">
                                   {member.role?.replace('_', ' ') || 'member'}
                                 </span>
                               ) : member.is_current_user ? (
@@ -213,14 +213,14 @@ export function OrganizationManagementDialog({
                                   <select
                                     value={member.role || 'member'}
                                     onChange={(e) => onRoleChange(member.id as number, e.target.value)}
-                                    className="text-xs px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white disabled:opacity-60 disabled:cursor-not-allowed"
+                                    className="text-xs px-2 py-1 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white disabled:opacity-60 disabled:cursor-not-allowed"
                                     disabled={userInfo?.role !== 'admin'}
                                   >
                                     <option value="member">Member</option>
                                     <option value="admin">Admin</option>
                                   </select>
                                   {userInfo?.role !== 'admin' && (
-                                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-neutral-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
                                       Only admins can change roles
                                     </div>
                                   )}
@@ -243,8 +243,8 @@ export function OrganizationManagementDialog({
                     <span>Pending Invitations ({pendingInvitations.length})</span>
                   </h3>
                   <div className="border rounded-lg overflow-hidden">
-                    <div className="bg-gray-50 px-4 py-2 border-b">
-                      <div className="grid grid-cols-5 gap-4 text-sm font-medium text-gray-700">
+                    <div className="bg-neutral-100 px-4 py-2 border-b">
+                      <div className="grid grid-cols-5 gap-4 text-sm font-medium text-neutral-700">
                         <div>Email</div>
                         <div>Role</div>
                         <div>Invited By</div>
@@ -256,17 +256,17 @@ export function OrganizationManagementDialog({
                       {pendingInvitations.map((invitation) => (
                         <div key={invitation.id} className="px-4 py-3 border-b last:border-b-0 bg-yellow-50">
                           <div className="grid grid-cols-5 gap-4 text-sm">
-                            <div className="font-medium text-gray-900">{invitation.email}</div>
+                            <div className="font-medium text-neutral-900">{invitation.email}</div>
                             <div>
                               <span className="inline-block px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800 capitalize">
                                 {invitation.role?.replace('_', ' ') || 'member'}
                               </span>
                             </div>
-                            <div className="text-gray-600">{invitation.invited_by?.name || 'Unknown'}</div>
-                            <div className="text-gray-500 text-xs">
+                            <div className="text-neutral-700">{invitation.invited_by?.name || 'Unknown'}</div>
+                            <div className="text-neutral-500 text-xs">
                               {new Date(invitation.created_at).toLocaleDateString()}
                             </div>
-                            <div className="text-gray-500 text-xs">
+                            <div className="text-neutral-500 text-xs">
                               {invitation.is_expired ? (
                                 <span className="text-red-600">Expired</span>
                               ) : (
@@ -283,7 +283,7 @@ export function OrganizationManagementDialog({
 
               {/* Empty State */}
               {!loadingOrgData && orgMembers.length === 0 && pendingInvitations.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-neutral-500">
                   <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
                   <p>No organization members or pending invitations found</p>
                   <p className="text-sm mt-1">Start by inviting team members above</p>

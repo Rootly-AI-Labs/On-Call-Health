@@ -84,7 +84,7 @@ export function NewMappingDialog({
               value={form.source_identifier}
               onChange={(e) => onFormChange({...form, source_identifier: e.target.value})}
             />
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-neutral-500">
               The email or name as it appears in {form.source_platform} incidents
             </p>
           </div>
@@ -100,7 +100,7 @@ export function NewMappingDialog({
               value={form.target_identifier}
               onChange={(e) => onFormChange({...form, target_identifier: e.target.value})}
             />
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-neutral-500">
               The {form.target_platform === 'github' ? 'GitHub username' : 'Slack user ID or @username'}
             </p>
           </div>

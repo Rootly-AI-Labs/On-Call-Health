@@ -78,10 +78,10 @@ export function GitHubCommitsTimeline({ analysisId, totalCommits, weekendPercent
 
   if (loading) {
     return (
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-        <h4 className="text-sm font-semibold text-gray-800 mb-3">Commit Activity Timeline</h4>
+      <div className="bg-white border border-neutral-200 rounded-lg p-3">
+        <h4 className="text-sm font-semibold text-neutral-800 mb-3">Commit Activity Timeline</h4>
         <div className="h-32 flex items-center justify-center">
-          <RefreshCw className="h-6 w-6 animate-spin text-gray-400" />
+          <RefreshCw className="h-6 w-6 animate-spin text-neutral-500" />
         </div>
       </div>
     )
@@ -89,19 +89,19 @@ export function GitHubCommitsTimeline({ analysisId, totalCommits, weekendPercent
 
   if (error || !timelineData || timelineData.length === 0) {
     return (
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-        <h4 className="text-sm font-semibold text-gray-800 mb-3">Commit Activity Timeline</h4>
+      <div className="bg-white border border-neutral-200 rounded-lg p-3">
+        <h4 className="text-sm font-semibold text-neutral-800 mb-3">Commit Activity Timeline</h4>
         <div className="h-32 flex items-center justify-center">
           <div className="text-center">
-            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-2">
-              <BarChart3 className="w-6 h-6 text-gray-400" />
+            <div className="w-12 h-12 bg-neutral-200 rounded-full flex items-center justify-center mx-auto mb-2">
+              <BarChart3 className="w-6 h-6 text-neutral-500" />
             </div>
-            <p className="text-xs text-gray-500 font-medium">
+            <p className="text-xs text-neutral-500 font-medium">
               {error || 'No timeline data available'}
             </p>
           </div>
         </div>
-        <div className="mt-2 flex items-center justify-between text-xs text-gray-600">
+        <div className="mt-2 flex items-center justify-between text-xs text-neutral-700">
           <span>
             Total: <strong>{totalCommits.toLocaleString()}</strong> commits
           </span>
@@ -121,8 +121,8 @@ export function GitHubCommitsTimeline({ analysisId, totalCommits, weekendPercent
   }))
 
   return (
-    <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-      <h4 className="text-sm font-semibold text-gray-800 mb-3">Commit Activity Timeline</h4>
+    <div className="bg-white border border-neutral-200 rounded-lg p-3">
+      <h4 className="text-sm font-semibold text-neutral-800 mb-3">Commit Activity Timeline</h4>
       <div className="h-32">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
@@ -149,13 +149,13 @@ export function GitHubCommitsTimeline({ analysisId, totalCommits, weekendPercent
                 if (payload && payload.length > 0) {
                   const data = payload[0].payload;
                   return (
-                    <div className="bg-white p-2 border border-gray-200 rounded shadow-sm">
+                    <div className="bg-white p-2 border border-neutral-200 rounded shadow-sm">
                       <p className="text-xs font-semibold">{label}</p>
                       <p className="text-xs text-green-600">
                         {data.commits} commits
                       </p>
                       {data.contributors > 0 && (
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-neutral-500">
                           {data.contributors} contributors
                         </p>
                       )}
@@ -175,7 +175,7 @@ export function GitHubCommitsTimeline({ analysisId, totalCommits, weekendPercent
           </AreaChart>
         </ResponsiveContainer>
       </div>
-      <div className="mt-2 flex items-center justify-between text-xs text-gray-600">
+      <div className="mt-2 flex items-center justify-between text-xs text-neutral-700">
         <span>
           Total: <strong>{totalCommits.toLocaleString()}</strong> commits
         </span>

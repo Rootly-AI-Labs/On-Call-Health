@@ -62,11 +62,11 @@ export default function RiskFactorsAllPopup({
             return (
               <div key={factor.factorType} className="space-y-2">
                 {/* Factor Section Header */}
-                <div className="border-b border-gray-200 pb-2">
-                  <h3 className="text-base font-semibold text-gray-900">
+                <div className="border-b border-neutral-200 pb-2">
+                  <h3 className="text-base font-semibold text-neutral-900">
                     {factor.label}
                   </h3>
-                  <p className="text-xs text-gray-500 mt-0.5">
+                  <p className="text-xs text-neutral-500 mt-0.5">
                     {isEmpty
                       ? `All team members are below the threshold for ${factor.label}`
                       : `${factor.members.length} member${factor.members.length !== 1 ? 's' : ''} at risk`}
@@ -76,7 +76,7 @@ export default function RiskFactorsAllPopup({
                 {/* Member Cards or Empty State */}
                 {isEmpty ? (
                   <div className="text-center py-4">
-                    <p className="text-xs text-gray-500 italic">
+                    <p className="text-xs text-neutral-500 italic">
                       No team members currently at risk for this metric
                     </p>
                   </div>
@@ -92,7 +92,7 @@ export default function RiskFactorsAllPopup({
                       return (
                         <div
                           key={member.user_id}
-                          className="flex items-start space-x-3 p-3 border border-gray-100 rounded-md hover:bg-gray-50 hover:border-gray-200 cursor-pointer transition-colors"
+                          className="flex items-start space-x-3 p-3 border border-neutral-100 rounded-md hover:bg-neutral-100 hover:border-neutral-200 cursor-pointer transition-colors"
                           onClick={() => handleMemberClick(member)}
                         >
                           {/* Avatar */}
@@ -109,10 +109,10 @@ export default function RiskFactorsAllPopup({
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-2">
                               <div>
-                                <h4 className="font-semibold text-gray-900 truncate text-sm">
+                                <h4 className="font-semibold text-neutral-900 truncate text-sm">
                                   {member.user_name}
                                 </h4>
-                                <p className="text-xs text-gray-500 truncate">
+                                <p className="text-xs text-neutral-500 truncate">
                                   {member.user_email}
                                 </p>
                               </div>
@@ -138,7 +138,7 @@ export default function RiskFactorsAllPopup({
                                   </span>
                                 ))}
                                 {remainingTags > 0 && (
-                                  <span className="inline-flex items-center text-xs px-2 py-0.5 rounded-full border bg-gray-100 text-gray-700 border-gray-300">
+                                  <span className="inline-flex items-center text-xs px-2 py-0.5 rounded-full border bg-neutral-200 text-neutral-700 border-neutral-300">
                                     +{remainingTags} more
                                   </span>
                                 )}

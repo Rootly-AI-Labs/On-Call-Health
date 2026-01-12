@@ -17,9 +17,35 @@ module.exports = {
     },
     extend: {
       colors: {
+        /* Rootly Brand - Purple (STRUCTURAL) */
         purple: {
+          900: '#3F357A',  // Dark surfaces, nav bars
+          800: '#5B4DB0',  // Headers, selected states
+          700: '#7C63D6',  // ⭐ MAIN - CTAs, links, active UI
+          500: '#9C84E8',  // Secondary buttons, hover
+          300: '#DCD4FA',  // Card backgrounds
+          200: '#ECE7FF',  // Section backgrounds
+          100: '#F6F3FF',  // Page background
           25: '#fefcff',
         },
+
+        /* Rootly Brand - Orange (ACCENT ONLY) */
+        orange: {
+          900: '#F0883E',  // Destructive, critical alerts
+          700: '#FFA857',  // Secondary emphasis, badges
+          500: '#FFC387',  // Soft highlights
+        },
+
+        /* Neutral System - Readability */
+        neutral: {
+          900: '#1E1E26',  // Primary text
+          700: '#4A4A57',  // Secondary text
+          500: '#A0A0A8',  // Muted text
+          300: '#D6D6DB',  // Borders/dividers
+          200: '#EFEFF2',  // Subtle surfaces
+          100: '#F7F7F9',  // Default background
+        },
+
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

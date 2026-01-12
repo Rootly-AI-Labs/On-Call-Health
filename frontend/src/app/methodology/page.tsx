@@ -13,7 +13,7 @@ export default function MethodologyPage() {
   const router = useRouter()
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-neutral-100">
       <TopPanel />
       <div className="max-w-4xl mx-auto p-8">
         {/* Header */}
@@ -21,7 +21,7 @@ export default function MethodologyPage() {
           <h1 className="text-4xl font-bold text-black mb-2">
             Enhanced Burnout Methodology
           </h1>
-          <p className="text-lg text-gray-600">
+          <p className="text-lg text-neutral-700">
             Research-enhanced Copenhagen Burnout Inventory with compound trauma, time impact, and recovery analysis
           </p>
         </div>
@@ -36,7 +36,7 @@ export default function MethodologyPage() {
           </CardHeader>
 
           <CardContent>
-            <p className="text-base text-gray-700 mb-4">
+            <p className="text-base text-neutral-700 mb-4">
               Our burnout detection system uses the <strong>On-Call Burnout (OCB) Score</strong>, a model designed specifically for
               engineering on-call work and incident response environments. The OCB framework is
               inspired by the Copenhagen Burnout Inventory (CBI), a scientifically validated tool for measuring personal and
@@ -58,9 +58,9 @@ export default function MethodologyPage() {
 
         {/* Burnout Factors */}
         <div className="space-y-6 mb-8">
-          <h2 className="text-3xl font-semibold text-gray-900">The Five Key Burnout Factors</h2>
+          <h2 className="text-3xl font-semibold text-neutral-900">The Five Key Burnout Factors</h2>
 
-          <p className="text-base text-gray-700 mb-6">
+          <p className="text-base text-neutral-700 mb-6">
             We analyze five specific factors that contribute to burnout in incident response teams. Each factor is measured
             on a scale of 0-10, with higher scores indicating greater burnout risk. These factors are then combined using
             the three-dimensional Copenhagen Burnout Inventory framework to produce an overall burnout score.
@@ -75,13 +75,13 @@ export default function MethodologyPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-base text-gray-700 mb-3">
+              <p className="text-base text-neutral-700 mb-3">
                 Measures the frequency and volume of incidents handled by each team member over time.
                 This is one of the strongest predictors of burnout, as high incident volumes can lead to
                 chronic stress and exhaustion.
               </p>
-              <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-sm text-gray-600">
+              <div className="bg-neutral-100 rounded-lg p-3">
+                <p className="text-sm text-neutral-700">
                   <strong>Scoring:</strong> 0-2 incidents/week = Low (0-3 points) • 2-5 incidents/week = Moderate (3-7 points) •
                   5-8 incidents/week = High (7-10 points) • 8+ incidents/week = Critical (10 points)
                 </p>
@@ -98,13 +98,13 @@ export default function MethodologyPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-base text-gray-700 mb-3">
+              <p className="text-base text-neutral-700 mb-3">
                 Tracks work performed outside normal business hours, including incident responses, code commits,
                 and team communications. Excessive after-hours work disrupts work-life balance and contributes
                 to emotional exhaustion.
               </p>
-              <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-sm text-gray-600">
+              <div className="bg-neutral-100 rounded-lg p-3">
+                <p className="text-sm text-neutral-700">
                   <strong>Data Sources:</strong> Incident timestamps from PagerDuty/Rootly, GitHub commit times,
                   and Slack message activity (when connected)
                 </p>
@@ -121,13 +121,13 @@ export default function MethodologyPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-base text-gray-700 mb-3">
+              <p className="text-base text-neutral-700 mb-3">
                 Measures weekend activity that disrupts personal time and recovery periods. Regular weekend work
                 prevents proper rest and contributes to chronic stress accumulation, leading to depersonalization
                 and cynicism toward work.
               </p>
-              <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-sm text-gray-600">
+              <div className="bg-neutral-100 rounded-lg p-3">
+                <p className="text-sm text-neutral-700">
                   <strong>Boundary Health:</strong> Healthy teams typically have &lt;10% weekend activity.
                   Scores above 25% indicate significant work-life boundary violations.
                 </p>
@@ -144,13 +144,13 @@ export default function MethodologyPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-base text-gray-700 mb-3">
+              <p className="text-base text-neutral-700 mb-3">
                 Measures the time pressure to respond quickly to incidents. While fast response times are important
                 for business continuity, excessive pressure to respond immediately can create chronic stress and
                 contribute to feelings of being overwhelmed and losing control.
               </p>
-              <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-sm text-gray-600">
+              <div className="bg-neutral-100 rounded-lg p-3">
+                <p className="text-sm text-neutral-700">
                   <strong>Pressure Points:</strong> Average response time under 5 minutes indicates high pressure.
                   Sustained pressure can lead to anxiety and reduced job satisfaction.
                 </p>
@@ -167,13 +167,13 @@ export default function MethodologyPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-base text-gray-700 mb-3">
+              <p className="text-base text-neutral-700 mb-3">
                 Goes beyond simple incident count to measure the actual psychological burden of different incident
                 severities. Critical incidents (SEV0/SEV1) cause significantly more stress than minor issues,
                 so this factor weights incidents by their business impact and stress level.
               </p>
-              <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-sm text-gray-600">
+              <div className="bg-neutral-100 rounded-lg p-3">
+                <p className="text-sm text-neutral-700">
                   <strong>Research-Based Severity Weighting:</strong> SEV0/Critical = 15x weight • SEV1/High = 12x weight •
                   Medium = 6x weight • Low = 3x weight. These weights reflect the psychological impact of
                   critical incidents based on first responder PTSD research.
@@ -185,9 +185,9 @@ export default function MethodologyPage() {
 
         {/* Research-Based Enhancements */}
         <div className="space-y-6 mb-8">
-          <h2 className="text-3xl font-semibold text-gray-900">Research-Based Scoring Enhancements</h2>
+          <h2 className="text-3xl font-semibold text-neutral-900">Research-Based Scoring Enhancements</h2>
 
-          <p className="text-base text-gray-700 mb-6">
+          <p className="text-base text-neutral-700 mb-6">
             Based on 2024 research from ACM studies on cybersecurity incident burnout, first responder PTSD research,
             and critical incident stress psychology, we've enhanced our scoring with three key improvements that capture
             the true psychological impact of incident response work.
@@ -202,7 +202,7 @@ export default function MethodologyPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-base text-gray-700 mb-3">
+              <p className="text-base text-neutral-700 mb-3">
                 Research shows that multiple critical incidents create exponential psychological impact, not just additive impact.
                 When a team member handles 5+ SEV0/SEV1 incidents, the psychological burden compounds significantly beyond
                 simple addition.
@@ -213,8 +213,8 @@ export default function MethodologyPage() {
                   Multiple critical incidents cause compound trauma, not linear stress accumulation.
                 </p>
               </div>
-              <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-sm text-gray-600">
+              <div className="bg-neutral-100 rounded-lg p-3">
+                <p className="text-sm text-neutral-700">
                   <strong>Scoring:</strong> 5-10 critical incidents: 1.10-1.20x multiplier • 10+ critical incidents:
                   1.15x per additional incident (capped at 2.0x total)
                 </p>
@@ -231,7 +231,7 @@ export default function MethodologyPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-base text-gray-700 mb-3">
+              <p className="text-base text-neutral-700 mb-3">
                 Research demonstrates that incident timing dramatically affects psychological impact. After-hours, weekend,
                 and overnight incidents cause significantly higher stress due to circadian disruption, family time interference,
                 and sleep disturbance.
@@ -243,25 +243,25 @@ export default function MethodologyPage() {
                 </p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-sm text-gray-600">
+                <div className="bg-neutral-100 rounded-lg p-3">
+                  <p className="text-sm text-neutral-700">
                     <strong>After-Hours:</strong><br/>
                     1.4x psychological impact<br/>
-                    <span className="text-gray-500">(Before 8am / After 6pm)</span>
+                    <span className="text-neutral-500">(Before 8am / After 6pm)</span>
                   </p>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-sm text-gray-600">
+                <div className="bg-neutral-100 rounded-lg p-3">
+                  <p className="text-sm text-neutral-700">
                     <strong>Weekend:</strong><br/>
                     1.6x psychological impact<br/>
-                    <span className="text-gray-500">(Family time disruption)</span>
+                    <span className="text-neutral-500">(Family time disruption)</span>
                   </p>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-sm text-gray-600">
+                <div className="bg-neutral-100 rounded-lg p-3">
+                  <p className="text-sm text-neutral-700">
                     <strong>Overnight:</strong><br/>
                     1.8x psychological impact<br/>
-                    <span className="text-gray-500">(Sleep disruption: 11pm-6am)</span>
+                    <span className="text-neutral-500">(Sleep disruption: 11pm-6am)</span>
                   </p>
                 </div>
               </div>
@@ -277,7 +277,7 @@ export default function MethodologyPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-base text-gray-700 mb-3">
+              <p className="text-base text-neutral-700 mb-3">
                 Psychological recovery research shows that insufficient time between stressful incidents prevents proper
                 mental restoration. Recovery periods under 48 hours significantly impair the brain's ability to process
                 and recover from traumatic stress.
@@ -288,8 +288,8 @@ export default function MethodologyPage() {
                   prevent psychological restoration, leading to stress accumulation and increased burnout risk.
                 </p>
               </div>
-              <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-sm text-gray-600">
+              <div className="bg-neutral-100 rounded-lg p-3">
+                <p className="text-sm text-neutral-700">
                   <strong>Scoring:</strong> Recovery Score 0-100 (higher = better) • Perfect recovery: 168+ hours between incidents •
                   Each violation (&lt;48 hours) reduces recovery adequacy • Sustained violations indicate chronic stress
                 </p>
@@ -309,11 +309,11 @@ export default function MethodologyPage() {
           <CardContent>
             <div className="space-y-6">
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2 flex items-center">
+                <h4 className="font-semibold text-neutral-900 mb-2 flex items-center">
                   <div className="w-4 h-4 bg-red-500 rounded mr-2"></div>
                   Emotional Exhaustion (40% weight)
                 </h4>
-                <p className="text-sm text-gray-700 mb-3">
+                <p className="text-sm text-neutral-700 mb-3">
                   Physical and psychological fatigue from work demands. This dimension measures the core stress
                   experience and depletion of emotional resources that characterizes burnout.
                 </p>
@@ -325,11 +325,11 @@ export default function MethodologyPage() {
               </div>
 
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2 flex items-center">
+                <h4 className="font-semibold text-neutral-900 mb-2 flex items-center">
                   <div className="w-4 h-4 bg-yellow-500 rounded mr-2"></div>
                   Depersonalization/Cynicism (30% weight)
                 </h4>
-                <p className="text-sm text-gray-700 mb-3">
+                <p className="text-sm text-neutral-700 mb-3">
                   Detached, callous attitudes toward work and colleagues. This reflects the psychological
                   distancing and defensive coping mechanisms that develop under chronic stress.
                 </p>
@@ -341,11 +341,11 @@ export default function MethodologyPage() {
               </div>
 
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2 flex items-center">
+                <h4 className="font-semibold text-neutral-900 mb-2 flex items-center">
                   <div className="w-4 h-4 bg-blue-500 rounded mr-2"></div>
                   Reduced Personal Accomplishment (30% weight)
                 </h4>
-                <p className="text-sm text-gray-700 mb-3">
+                <p className="text-sm text-neutral-700 mb-3">
                   Feelings of ineffectiveness and lack of achievement at work. This dimension captures
                   the erosion of professional self-efficacy and satisfaction with one's contributions.
                 </p>
@@ -357,8 +357,8 @@ export default function MethodologyPage() {
                 </div>
               </div>
 
-              <div className="mt-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <p className="text-sm text-gray-700">
+              <div className="mt-6 bg-neutral-100 border border-neutral-200 rounded-lg p-4">
+                <p className="text-sm text-neutral-700">
                   <strong>Final Score:</strong> The three dimensions are weighted and combined to produce a final
                   burnout score from 0-100, with higher scores indicating greater burnout risk. The weighting
                   reflects the relative importance of each dimension based on burnout research.
@@ -377,7 +377,7 @@ export default function MethodologyPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-gray-700 mb-4">
+            <p className="text-neutral-700 mb-4">
               Beyond traditional burnout factors, users now see detailed research-based insights that explain
               the specific stress patterns affecting their team members. These insights help identify root causes
               and provide actionable intervention points.
@@ -411,8 +411,8 @@ export default function MethodologyPage() {
               </div>
             </div>
 
-            <div className="mt-4 bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <p className="text-sm text-gray-700">
+            <div className="mt-4 bg-neutral-100 border border-neutral-200 rounded-lg p-4">
+              <p className="text-sm text-neutral-700">
                 <strong>Actionable Intelligence:</strong> These insights help managers understand not just
                 <em>that</em> someone is at burnout risk, but <em>why</em> and <em>what specific factors</em>
                 are driving the risk. This enables targeted interventions rather than generic wellness approaches.
@@ -437,7 +437,7 @@ export default function MethodologyPage() {
                   <Progress value={20} className="h-3 flex-1" />
                   <span className="text-sm font-medium">0-24 points</span>
                 </div>
-                <p className="text-sm text-gray-600 ml-28">
+                <p className="text-sm text-neutral-700 ml-28">
                   Sustainable workload and healthy work-life balance. Team members are functioning well
                   with minimal stress indicators. Continue current practices and monitor for changes.
                 </p>
@@ -449,7 +449,7 @@ export default function MethodologyPage() {
                   <Progress value={37} className="h-3 flex-1" />
                   <span className="text-sm font-medium">25-49 points</span>
                 </div>
-                <p className="text-sm text-gray-600 ml-28">
+                <p className="text-sm text-neutral-700 ml-28">
                   Some stress indicators present but manageable. Consider workload distribution,
                   schedule adjustments, or additional support. Monitor closely for escalation.
                 </p>
@@ -461,7 +461,7 @@ export default function MethodologyPage() {
                   <Progress value={62} className="h-3 flex-1" />
                   <span className="text-sm font-medium">50-74 points</span>
                 </div>
-                <p className="text-sm text-gray-600 ml-28">
+                <p className="text-sm text-neutral-700 ml-28">
                   Significant burnout indicators requiring intervention. Recommend workload reduction,
                   schedule changes, additional team support, or temporary assignment adjustments.
                 </p>
@@ -473,7 +473,7 @@ export default function MethodologyPage() {
                   <Progress value={87} className="h-3 flex-1" />
                   <span className="text-sm font-medium">75-100 points</span>
                 </div>
-                <p className="text-sm text-gray-600 ml-28">
+                <p className="text-sm text-neutral-700 ml-28">
                   Severe burnout risk requiring immediate action. Consider temporary on-call rotation
                   removal, significant workload reduction, or professional support resources.
                 </p>
@@ -483,14 +483,14 @@ export default function MethodologyPage() {
         </Card>
 
         {/* Powered by Rootly AI Footer */}
-        <div className="mt-12 pt-8 border-t border-gray-200 text-center">
+        <div className="mt-12 pt-8 border-t border-neutral-200 text-center">
           <a
             href="https://rootly.com"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex flex-col items-center space-y-1 hover:opacity-80 transition-opacity"
           >
-            <span className="text-lg text-gray-600">powered by</span>
+            <span className="text-lg text-neutral-700">powered by</span>
             <Image
               src="/images/rootly-ai-logo.png"
               alt="Rootly AI"

@@ -40,7 +40,7 @@ export function EnhancementCards({
       case 'active':
         return { color: 'bg-green-100 text-green-800', text: 'Connected' }
       case 'inactive':
-        return { color: 'bg-gray-100 text-gray-800', text: 'Inactive' }
+        return { color: 'bg-neutral-200 text-neutral-900', text: 'Inactive' }
       case 'error':
         return { color: 'bg-red-100 text-red-800', text: 'Error' }
     }
@@ -49,17 +49,17 @@ export function EnhancementCards({
   const GitHubCard = () => {
     if (loading.github) {
       return (
-        <Card className="border-gray-200 bg-gray-50">
+        <Card className="border-neutral-200 bg-neutral-100">
           <CardHeader>
             <div className="flex items-center space-x-2">
-              <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+              <Loader2 className="w-5 h-5 animate-spin text-neutral-500" />
               <CardTitle>GitHub Integration</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
             <div className="animate-pulse space-y-2">
-              <div className="w-full h-4 bg-gray-300 rounded"></div>
-              <div className="w-3/4 h-4 bg-gray-300 rounded"></div>
+              <div className="w-full h-4 bg-neutral-300 rounded"></div>
+              <div className="w-3/4 h-4 bg-neutral-300 rounded"></div>
             </div>
           </CardContent>
         </Card>
@@ -68,13 +68,13 @@ export function EnhancementCards({
 
     if (!githubIntegration) {
       return (
-        <Card className="border-dashed border-gray-300">
+        <Card className="border-dashed border-neutral-300">
           <CardContent className="flex flex-col items-center justify-center py-12">
             <div className="text-4xl mb-4">🐙</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <h3 className="text-lg font-medium text-neutral-900 mb-2">
               Connect GitHub
             </h3>
-            <p className="text-gray-500 text-center mb-6">
+            <p className="text-neutral-500 text-center mb-6">
               Track code activity, commits, and development patterns to identify burnout signals
             </p>
             <Button
@@ -91,14 +91,14 @@ export function EnhancementCards({
     const statusBadge = getStatusBadge(githubIntegration.status)
 
     return (
-      <Card className="border-gray-200 bg-gray-50 hover:shadow-md transition-shadow">
+      <Card className="border-neutral-200 bg-neutral-100 hover:shadow-md transition-shadow">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <span className="text-lg">🐙</span>
               <div>
                 <CardTitle className="text-lg">GitHub Connected</CardTitle>
-                <p className="text-sm text-gray-500">@{githubIntegration.github_username}</p>
+                <p className="text-sm text-neutral-500">@{githubIntegration.github_username}</p>
               </div>
             </div>
             <Badge variant="secondary" className={statusBadge.color}>
@@ -108,7 +108,7 @@ export function EnhancementCards({
         </CardHeader>
         <CardContent className="pt-0">
           <div className="space-y-4">
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-neutral-700">
               <div className="flex justify-between">
                 <span>Organization:</span>
                 <span>{githubIntegration.github_organization || 'Personal'}</span>
@@ -162,7 +162,7 @@ export function EnhancementCards({
   const SlackCard = () => {
     if (loading.slack) {
       return (
-        <Card className="border-purple-200 bg-purple-50">
+        <Card className="border-purple-200 bg-purple-200">
           <CardHeader>
             <div className="flex items-center space-x-2">
               <Loader2 className="w-5 h-5 animate-spin text-purple-400" />
@@ -181,18 +181,18 @@ export function EnhancementCards({
 
     if (!slackIntegration) {
       return (
-        <Card className="border-dashed border-purple-300">
+        <Card className="border-dashed border-purple-500">
           <CardContent className="flex flex-col items-center justify-center py-12">
             <div className="text-4xl mb-4">💬</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <h3 className="text-lg font-medium text-neutral-900 mb-2">
               Connect Slack
             </h3>
-            <p className="text-gray-500 text-center mb-6">
+            <p className="text-neutral-500 text-center mb-6">
               Analyze communication patterns and team interactions to detect burnout signals
             </p>
             <Button
               onClick={() => onConnect('slack')}
-              className="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700"
+              className="flex items-center space-x-2 bg-purple-700 hover:bg-purple-800"
             >
               <span>Connect Slack</span>
             </Button>
@@ -204,14 +204,14 @@ export function EnhancementCards({
     const statusBadge = getStatusBadge(slackIntegration.status)
 
     return (
-      <Card className="border-purple-200 bg-purple-50 hover:shadow-md transition-shadow">
+      <Card className="border-purple-200 bg-purple-200 hover:shadow-md transition-shadow">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <span className="text-lg">💬</span>
               <div>
                 <CardTitle className="text-lg">Slack Connected</CardTitle>
-                <p className="text-sm text-gray-500">{slackIntegration.team_name}</p>
+                <p className="text-sm text-neutral-500">{slackIntegration.team_name}</p>
               </div>
             </div>
             <Badge variant="secondary" className={statusBadge.color}>
@@ -221,7 +221,7 @@ export function EnhancementCards({
         </CardHeader>
         <CardContent className="pt-0">
           <div className="space-y-4">
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-neutral-700">
               <div className="flex justify-between">
                 <span>Team ID:</span>
                 <span className="font-mono">{slackIntegration.team_id}</span>
@@ -281,10 +281,10 @@ export function EnhancementCards({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">
+        <h2 className="text-xl font-semibold text-neutral-900 mb-2">
           Team Enhancement Integrations
         </h2>
-        <p className="text-gray-500">
+        <p className="text-neutral-500">
           Connect additional tools to get deeper insights into team health and burnout patterns
         </p>
       </div>

@@ -201,7 +201,7 @@ export function AIInsightsCard({
   const isConnected = llmConfig?.has_token
 
   return (
-    <Card className="max-w-2xl mx-auto border-purple-200 bg-purple-50/30">
+    <Card className="max-w-2xl mx-auto border-neutral-300 bg-white">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex-1">
@@ -209,7 +209,7 @@ export function AIInsightsCard({
               AI Insights
               {isConnected && <CheckCircle2 className="w-5 h-5 text-green-600" />}
             </CardTitle>
-            <CardDescription className="text-slate-600">
+            <CardDescription className="text-neutral-700">
               AI-powered insights that highlight patterns and key concerns
             </CardDescription>
           </div>
@@ -220,7 +220,7 @@ export function AIInsightsCard({
         {/* Show current connection status if connected with system token */}
         {isConnected && !useCustomToken && (
           <div className="space-y-3">
-            <div className="p-5 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl">
+            <div className="p-5 bg-green-100 border border-green-300 rounded-xl">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
@@ -251,13 +251,13 @@ export function AIInsightsCard({
             </div>
 
             {/* Want more control section */}
-            <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+            <div className="p-4 bg-neutral-50 border border-neutral-200 rounded-lg">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
-                  <div className="text-sm font-medium text-slate-900 mb-1">
+                  <div className="text-sm font-medium text-neutral-900 mb-1">
                     Want more control?
                   </div>
-                  <div className="text-xs text-slate-600">
+                  <div className="text-xs text-neutral-600">
                     Use your own OpenAI or Anthropic API key
                   </div>
                 </div>
@@ -265,7 +265,7 @@ export function AIInsightsCard({
                   size="sm"
                   variant="outline"
                   onClick={() => handleTokenSourceChange('custom')}
-                  className="shrink-0 border-purple-300 text-purple-700 hover:bg-purple-50"
+                  className="shrink-0 border-purple-500 text-purple-700 hover:bg-purple-200"
                 >
                   Use Your Own Key →
                 </Button>
@@ -277,7 +277,7 @@ export function AIInsightsCard({
         {/* Show custom token connected state */}
         {isConnected && llmConfig.token_source === 'custom' && (
           <div className="space-y-3">
-            <div className="p-5 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl">
+            <div className="p-5 bg-green-100 border border-green-300 rounded-xl">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
@@ -369,11 +369,11 @@ export function AIInsightsCard({
 
         {/* Show inactive state when not connected */}
         {!isConnected && !useCustomToken && (
-          <div className="p-5 bg-gradient-to-br from-slate-50 to-slate-100 border-2 border-slate-200 rounded-xl">
+          <div className="p-5 bg-white border border-neutral-300 rounded-xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-slate-400" />
-                <span className="font-semibold text-slate-500 text-lg">AI Insights Inactive</span>
+                <Sparkles className="w-5 h-5 text-neutral-500" />
+                <span className="font-semibold text-neutral-700 text-lg">AI Insights Inactive</span>
               </div>
               <Button
                 size="sm"
@@ -381,7 +381,7 @@ export function AIInsightsCard({
                   await onConnect('', 'anthropic', true)
                 }}
                 disabled={isConnecting}
-                className="bg-purple-600 hover:bg-purple-700 text-white text-xs"
+                className="bg-purple-700 hover:bg-purple-800 text-white text-xs"
               >
                 {isConnecting ? 'Enabling...' : 'Enable'}
               </Button>
@@ -409,11 +409,11 @@ export function AIInsightsCard({
               </div>
             )}
 
-            <div className="p-5 bg-white border-2 border-slate-200 rounded-xl space-y-4">
-              <div className="pb-3 border-b border-slate-200 flex items-start justify-between">
+            <div className="p-5 bg-white border-2 border-neutral-200 rounded-xl space-y-4">
+              <div className="pb-3 border-b border-neutral-200 flex items-start justify-between">
                 <div>
-                  <h4 className="font-semibold text-slate-900 mb-1">Custom Token</h4>
-                  <p className="text-xs text-slate-500">
+                  <h4 className="font-semibold text-neutral-900 mb-1">Custom Token</h4>
+                  <p className="text-xs text-neutral-500">
                     Use your own API key
                   </p>
                 </div>
@@ -422,7 +422,7 @@ export function AIInsightsCard({
                   variant="ghost"
                   onClick={() => handleTokenSourceChange('system')}
                   disabled={isSwitching}
-                  className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 shrink-0 -mt-1 p-1 h-auto"
+                  className="text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 shrink-0 -mt-1 p-1 h-auto"
                 >
                   <X className="w-5 h-5" />
                 </Button>
@@ -434,8 +434,8 @@ export function AIInsightsCard({
                   onClick={() => setProvider('anthropic')}
                   className={`px-4 py-2 rounded-md border transition-all text-center ${
                     provider === 'anthropic'
-                      ? 'bg-slate-900 text-white border-slate-900'
-                      : 'bg-white text-slate-900 border-slate-300 hover:border-slate-400'
+                      ? 'bg-neutral-900 text-white border-neutral-900'
+                      : 'bg-white text-neutral-900 border-neutral-300 hover:border-neutral-400'
                   }`}
                 >
                   <div className="font-medium text-sm">Anthropic</div>
@@ -446,8 +446,8 @@ export function AIInsightsCard({
                   onClick={() => setProvider('openai')}
                   className={`px-4 py-2 rounded-md border transition-all text-center ${
                     provider === 'openai'
-                      ? 'bg-slate-900 text-white border-slate-900'
-                      : 'bg-white text-slate-900 border-slate-300 hover:border-slate-400'
+                      ? 'bg-neutral-900 text-white border-neutral-900'
+                      : 'bg-white text-neutral-900 border-neutral-300 hover:border-neutral-400'
                   }`}
                 >
                   <div className="font-medium text-sm">OpenAI</div>
@@ -457,7 +457,7 @@ export function AIInsightsCard({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="api-token" className="text-sm font-semibold text-slate-700">
+              <Label htmlFor="api-token" className="text-sm font-semibold text-neutral-700">
                 API Token
               </Label>
               <Input
@@ -466,9 +466,9 @@ export function AIInsightsCard({
                 placeholder={provider === 'anthropic' ? 'sk-ant-api03-...' : 'sk-proj-...'}
                 value={customToken}
                 onChange={(e) => setCustomToken(e.target.value)}
-                className="font-mono text-sm h-11 border-slate-300"
+                className="font-mono text-sm h-11 border-neutral-300"
               />
-              <div className="flex items-center gap-1.5 text-xs text-slate-600">
+              <div className="flex items-center gap-1.5 text-xs text-neutral-600">
                 <span>
                   {provider === 'anthropic'
                     ? 'Get your API key from console.anthropic.com'
@@ -493,7 +493,7 @@ export function AIInsightsCard({
           <Button
             onClick={handleConnect}
             disabled={isConnecting || isSwitching || !customToken.trim()}
-            className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-md h-11 text-base font-semibold"
+            className="w-full bg-purple-700 hover:bg-purple-800 text-white shadow-md h-11 text-base font-semibold"
           >
             {isConnecting || isSwitching ? (
               <>

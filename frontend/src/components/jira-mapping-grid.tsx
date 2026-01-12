@@ -226,8 +226,8 @@ export function JiraMapppingGrid({
   if (loadingData) {
     return (
       <div className="flex justify-center items-center py-12">
-        <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
-        <span className="ml-2 text-gray-600">Loading mapping data...</span>
+        <Loader2 className="w-6 h-6 animate-spin text-neutral-500" />
+        <span className="ml-2 text-neutral-700">Loading mapping data...</span>
       </div>
     )
   }
@@ -253,25 +253,25 @@ export function JiraMapppingGrid({
       <div className="overflow-x-auto border rounded-lg">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b bg-gray-50">
-              <th className="px-4 py-3 text-left font-semibold text-gray-700">
+            <tr className="border-b bg-neutral-100">
+              <th className="px-4 py-3 text-left font-semibold text-neutral-700">
                 Team Member
               </th>
-              <th className="px-4 py-3 text-left font-semibold text-gray-700">
+              <th className="px-4 py-3 text-left font-semibold text-neutral-700">
                 Status
               </th>
-              <th className="px-4 py-3 text-left font-semibold text-gray-700">
+              <th className="px-4 py-3 text-left font-semibold text-neutral-700">
                 Mapped Jira User
               </th>
             </tr>
           </thead>
           <tbody>
             {teamMembers.map((member) => (
-              <tr key={member.email} className="border-b hover:bg-gray-50">
+              <tr key={member.email} className="border-b hover:bg-neutral-100">
                 {/* Column 1: Team Member */}
                 <td className="px-4 py-3">
-                  <div className="font-medium text-gray-900">{member.name}</div>
-                  <div className="text-xs text-gray-500">{member.email}</div>
+                  <div className="font-medium text-neutral-900">{member.name}</div>
+                  <div className="text-xs text-neutral-500">{member.email}</div>
                 </td>
 
                 {/* Column 2: Status */}
@@ -295,10 +295,10 @@ export function JiraMapppingGrid({
                     // Show mapped user with remove button
                     <div className="flex items-center justify-between group">
                       <div>
-                        <div className="font-medium text-gray-900">
+                        <div className="font-medium text-neutral-900">
                           {member.jira_display_name}
                         </div>
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-neutral-500">
                           {member.jira_account_id}
                         </div>
                       </div>
@@ -339,7 +339,7 @@ export function JiraMapppingGrid({
                                   {jiraUser.display_name}
                                 </div>
                                 {jiraUser.email && (
-                                  <div className="text-xs text-gray-500">
+                                  <div className="text-xs text-neutral-500">
                                     {jiraUser.email}
                                   </div>
                                 )}

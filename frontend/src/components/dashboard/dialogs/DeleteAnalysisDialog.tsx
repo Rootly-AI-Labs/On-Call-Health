@@ -47,16 +47,16 @@ export function DeleteAnalysisDialog({
             </div>
             <span>Delete Analysis</span>
           </DialogTitle>
-          <DialogDescription className="text-gray-600 mt-2">
+          <DialogDescription className="text-neutral-700 mt-2">
             Are you sure you want to delete this analysis? This action cannot be undone and will permanently remove all data associated with this analysis.
           </DialogDescription>
         </DialogHeader>
 
         {analysisToDelete && (
-          <div className="my-4 p-3 bg-gray-50 rounded-lg border">
+          <div className="my-4 p-3 bg-neutral-100 rounded-lg border">
             <div className="flex items-center justify-between text-sm">
               <div className="flex flex-col">
-                <span className="font-medium text-gray-900">
+                <span className="font-medium text-neutral-900">
                   {(() => {
                     // Find the integration for this analysis
                     const integration = integrations.find(i => i.id === Number(analysisToDelete.integration_id)) ||
@@ -69,7 +69,7 @@ export function DeleteAnalysisDialog({
                            'Organization';
                   })()}
                 </span>
-                <span className="text-gray-500">
+                <span className="text-neutral-500">
                   {new Date(analysisToDelete.created_at).toLocaleString([], {
                     month: 'short',
                     day: 'numeric',
@@ -81,7 +81,7 @@ export function DeleteAnalysisDialog({
                   })}
                 </span>
               </div>
-              <span className="text-gray-400 text-xs">
+              <span className="text-neutral-500 text-xs">
                 {analysisToDelete.time_range || 30} days
               </span>
             </div>

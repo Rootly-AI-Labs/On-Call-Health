@@ -92,7 +92,7 @@ function LinearCallbackContent() {
   }, [searchParams])
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
+    <div className="flex min-h-screen items-center justify-center bg-white">
       <div className="text-center space-y-4">
         <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
         <h1 className="text-xl font-semibold">Connecting Linear...</h1>
@@ -107,7 +107,7 @@ function LinearCallbackContent() {
 export default function LinearCallbackPage() {
   return (
     <Suspense fallback={
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex min-h-screen items-center justify-center bg-white">
         <div className="text-center space-y-4">
           <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
           <h1 className="text-xl font-semibold">Loading...</h1>

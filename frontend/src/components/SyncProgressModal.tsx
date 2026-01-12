@@ -76,20 +76,20 @@ export function SyncProgressModal({ isOpen, onClose, onStartSync }: SyncProgress
 
         {/* Console Output */}
         <div className="flex-1 overflow-hidden flex flex-col">
-          <div className="text-xs font-semibold text-gray-600 mb-2">Console Output:</div>
+          <div className="text-xs font-semibold text-neutral-700 mb-2">Console Output:</div>
           <div
             ref={consoleRef}
-            className="flex-1 bg-gray-900 text-green-400 font-mono text-xs p-4 rounded-lg overflow-y-auto"
+            className="flex-1 bg-neutral-900 text-green-400 font-mono text-xs p-4 rounded-lg overflow-y-auto"
           >
             {logs.map((log, i) => (
               <div key={i} className="mb-1">
-                <span className="text-gray-500">[{new Date().toLocaleTimeString()}]</span> {log}
+                <span className="text-neutral-500">[{new Date().toLocaleTimeString()}]</span> {log}
               </div>
             ))}
             {!isComplete && !error && (
               <div className="flex items-center gap-2 mt-2">
                 <Loader2 className="w-3 h-3 animate-spin" />
-                <span className="text-gray-400">Working...</span>
+                <span className="text-neutral-500">Working...</span>
               </div>
             )}
           </div>
@@ -100,18 +100,18 @@ export function SyncProgressModal({ isOpen, onClose, onStartSync }: SyncProgress
           <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
             <div className="font-semibold text-green-900 mb-2">✅ Sync Summary</div>
             <div className="grid grid-cols-2 gap-2 text-sm">
-              <div className="text-gray-700">
+              <div className="text-neutral-700">
                 <span className="font-medium">New users:</span> {stats.created || 0}
               </div>
-              <div className="text-gray-700">
+              <div className="text-neutral-700">
                 <span className="font-medium">Updated users:</span> {stats.updated || 0}
               </div>
               {stats.github_matched !== undefined && (
                 <>
-                  <div className="text-gray-700">
+                  <div className="text-neutral-700">
                     <span className="font-medium">GitHub matched:</span> {stats.github_matched}
                   </div>
-                  <div className="text-gray-700">
+                  <div className="text-neutral-700">
                     <span className="font-medium">GitHub skipped:</span> {stats.github_skipped || 0}
                   </div>
                 </>

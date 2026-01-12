@@ -17,7 +17,7 @@ export function IntegrationsHeader({
   onRefresh 
 }: IntegrationsHeaderProps) {
   return (
-    <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+    <div className="bg-white border-b border-neutral-200 sticky top-0 z-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Left side - Title */}
@@ -26,10 +26,10 @@ export function IntegrationsHeader({
               <Users className="w-4 h-4 text-blue-600" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold text-gray-900">
+              <h1 className="text-xl font-semibold text-neutral-900">
                 Manage Integrations
               </h1>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-neutral-500">
                 Connect your tools to track team burnout
               </p>
             </div>
@@ -73,8 +73,8 @@ export function IntegrationsHeader({
                   </AvatarFallback>
                 </Avatar>
                 <div className="hidden sm:block">
-                  <p className="text-sm font-medium text-gray-900">{userInfo.name}</p>
-                  <p className="text-xs text-gray-500">{userInfo.email}</p>
+                  <p className="text-sm font-medium text-neutral-900">{userInfo.name}</p>
+                  <p className="text-xs text-neutral-500">{userInfo.email}</p>
                 </div>
               </div>
             )}

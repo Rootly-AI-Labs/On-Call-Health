@@ -39,15 +39,15 @@ const getScoreColor = (score: number) => {
 
 const getScoreBadgeColor = (score: number) => {
   if (score >= 4) return 'bg-green-100 text-green-800'
-  if (score >= 3) return 'bg-yellow-100 text-yellow-800'
-  if (score >= 2) return 'bg-orange-100 text-orange-800'
-  return 'bg-red-100 text-red-800'
+  if (score >= 3) return 'bg-orange-500 text-white'
+  if (score >= 2) return 'bg-orange-700 text-white'
+  return 'bg-orange-900 text-white'
 }
 
 const getTrendIcon = (trend: string) => {
   if (trend === 'improving') return <TrendingUp className="w-4 h-4 text-green-500" />
   if (trend === 'declining') return <TrendingDown className="w-4 h-4 text-red-500" />
-  return <Minus className="w-4 h-4 text-gray-400" />
+  return <Minus className="w-4 h-4 text-neutral-500" />
 }
 
 const getFeelingText = (score: number) => {
@@ -92,7 +92,7 @@ export function SurveyResultsCard({ surveyData, userEmail }: SurveyResultsCardPr
           <CardTitle className="text-sm">Health Check-ins</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-gray-500">No survey responses in this analysis period</p>
+          <p className="text-sm text-neutral-500">No survey responses in this analysis period</p>
         </CardContent>
       </Card>
     )
@@ -112,7 +112,7 @@ export function SurveyResultsCard({ surveyData, userEmail }: SurveyResultsCardPr
             <CardTitle className="text-sm">Latest Check-in</CardTitle>
             <div className="flex items-center gap-2">
               {getTrendIcon(surveyData.trend)}
-              <span className="text-xs text-gray-500 capitalize">{surveyData.trend}</span>
+              <span className="text-xs text-neutral-500 capitalize">{surveyData.trend}</span>
             </div>
           </div>
           <CardDescription>
@@ -124,7 +124,7 @@ export function SurveyResultsCard({ surveyData, userEmail }: SurveyResultsCardPr
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
-              <span className="text-xs text-gray-500">How they're feeling</span>
+              <span className="text-xs text-neutral-500">How they're feeling</span>
               <div className="flex items-center gap-2">
                 <Badge className={getScoreBadgeColor(latestResponse.feeling_score)}>
                   {latestResponse.feeling_score}/5
@@ -134,7 +134,7 @@ export function SurveyResultsCard({ surveyData, userEmail }: SurveyResultsCardPr
             </div>
 
             <div className="space-y-1">
-              <span className="text-xs text-gray-500">Workload</span>
+              <span className="text-xs text-neutral-500">Workload</span>
               <div className="flex items-center gap-2">
                 <Badge className={getScoreBadgeColor(latestResponse.workload_score)}>
                   {latestResponse.workload_score}/5
@@ -148,7 +148,7 @@ export function SurveyResultsCard({ surveyData, userEmail }: SurveyResultsCardPr
             <>
               <Separator />
               <div>
-                <div className="text-xs font-medium text-gray-700 mb-2">Stress Sources</div>
+                <div className="text-xs font-medium text-neutral-700 mb-2">Stress Sources</div>
                 <div className="flex flex-wrap gap-1">
                   {latestResponse.stress_factors.map((factor, index) => (
                     <Badge key={index} variant="outline" className="text-xs">
@@ -164,8 +164,8 @@ export function SurveyResultsCard({ surveyData, userEmail }: SurveyResultsCardPr
             <>
               <Separator />
               <div>
-                <div className="text-xs font-medium text-gray-700 mb-1">Personal Circumstances Impact</div>
-                <p className="text-sm text-gray-600">{latestResponse.personal_circumstances}</p>
+                <div className="text-xs font-medium text-neutral-700 mb-1">Personal Circumstances Impact</div>
+                <p className="text-sm text-neutral-700">{latestResponse.personal_circumstances}</p>
               </div>
             </>
           )}
@@ -174,11 +174,11 @@ export function SurveyResultsCard({ surveyData, userEmail }: SurveyResultsCardPr
             <>
               <Separator />
               <div>
-                <div className="flex items-center gap-1 text-xs font-medium text-gray-700 mb-1">
+                <div className="flex items-center gap-1 text-xs font-medium text-neutral-700 mb-1">
                   <MessageSquare className="w-3 h-3" />
                   <span>Comments</span>
                 </div>
-                <p className="text-sm text-gray-600">{latestResponse.additional_comments}</p>
+                <p className="text-sm text-neutral-700">{latestResponse.additional_comments}</p>
               </div>
             </>
           )}
@@ -196,7 +196,7 @@ export function SurveyResultsCard({ surveyData, userEmail }: SurveyResultsCardPr
             <div className="space-y-2">
               {surveyData.survey_responses.slice().reverse().slice(1, 6).map((response, index) => (
                 <div key={index} className="flex items-center justify-between text-sm py-2 border-b last:border-0">
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-neutral-500">
                     {new Date(response.submitted_at).toLocaleDateString()}
                   </span>
                   <div className="flex gap-4 text-xs">

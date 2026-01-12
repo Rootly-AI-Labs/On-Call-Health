@@ -33,19 +33,19 @@ export function AnalysisProgressSection({
     <>
       {/* Analysis Running State */}
       {analysisRunning && (
-        <Card className="mb-6 bg-gradient-to-b from-purple-50 to-white border-purple-200 shadow-lg">
+        <Card className="mb-6 bg-purple-100 border-neutral-300 shadow-lg">
           <CardContent className="p-8 text-center">
-            <div className="w-20 h-20 bg-gradient-to-r from-purple-100 to-purple-200 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse shadow-md">
-              <Activity className="w-10 h-10 text-purple-600 animate-spin" />
+            <div className="w-20 h-20 bg-purple-200 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse shadow-md">
+              <Activity className="w-10 h-10 text-purple-700 animate-spin" />
             </div>
             {(() => {
               const currentStage = getAnalysisStages().find((s) => s.key === analysisStage)
               return (
                 <>
-                  <h3 className="text-xl font-bold mb-2 text-purple-900">
+                  <h3 className="text-xl font-bold mb-2 text-neutral-900">
                     {currentStage?.label}
                   </h3>
-                  <p className="text-sm text-purple-600 mb-6 font-medium">
+                  <p className="text-sm text-neutral-700 mb-6 font-medium">
                     {currentStage?.detail}
                   </p>
                 </>
@@ -55,13 +55,11 @@ export function AnalysisProgressSection({
             {/* Enhanced Progress Bar */}
             <div className="w-full max-w-md mx-auto mb-6">
               <div className="relative">
-                <div className="w-full h-4 bg-purple-100 rounded-full border border-purple-200 overflow-hidden">
-                  <div 
-                    className="h-full bg-gradient-to-r from-purple-400 via-purple-500 to-purple-600 rounded-full transition-all duration-1000 ease-out relative"
+                <div className="w-full h-4 bg-neutral-200 rounded-full border border-neutral-300 overflow-hidden">
+                  <div
+                    className="h-full bg-purple-700 rounded-full transition-all duration-1000 ease-out relative"
                     style={{ width: `${analysisProgress}%` }}
                   >
-                    <div className="absolute inset-0 bg-white opacity-30 animate-pulse rounded-full"></div>
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-20 animate-ping rounded-full"></div>
                   </div>
                 </div>
               </div>
@@ -69,11 +67,11 @@ export function AnalysisProgressSection({
             
             <div className="flex items-center justify-center space-x-4 mb-6">
               <div className="flex items-center space-x-1">
-                <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                <div className="w-2 h-2 bg-purple-300 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                <div className="w-2 h-2 bg-purple-700 rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-purple-700 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                <div className="w-2 h-2 bg-purple-700 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
               </div>
-              <p className="text-lg font-semibold text-purple-800">
+              <p className="text-lg font-semibold text-neutral-900">
                 {Math.round(analysisProgress)}% complete
               </p>
             </div>

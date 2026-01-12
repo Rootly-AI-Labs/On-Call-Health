@@ -129,16 +129,16 @@ export function SlackIntegrationCard({
   if (integration) {
     // Connected state
     return (
-      <Card className="border-2 border-gray-200 bg-gray-50">
+      <Card className="border-2 border-neutral-200 bg-neutral-100">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-purple-700 rounded-lg flex items-center justify-center">
                 <MessageSquare className="w-6 h-6 text-white" />
               </div>
               <div>
                 <CardTitle className="text-lg">Slack</CardTitle>
-                <p className="text-sm text-gray-600">Communication patterns and sentiment</p>
+                <p className="text-sm text-neutral-700">Communication patterns and sentiment</p>
               </div>
             </div>
             <div className="flex items-center space-x-2">
@@ -156,31 +156,31 @@ export function SlackIntegrationCard({
           {/* Integration Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div className="flex items-center space-x-2">
-              <Users className="w-4 h-4 text-gray-400" />
+              <Users className="w-4 h-4 text-neutral-500" />
               <div>
                 <div className="font-medium">User ID</div>
-                <div className="text-gray-600 font-mono text-xs">{integration.slack_user_id}</div>
+                <div className="text-neutral-700 font-mono text-xs">{integration.slack_user_id}</div>
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              <Building className="w-4 h-4 text-gray-400" />
+              <Building className="w-4 h-4 text-neutral-500" />
               <div>
                 <div className="font-medium">Workspace</div>
-                <div className="text-gray-600 font-mono text-xs">{integration.workspace_id}</div>
+                <div className="text-neutral-700 font-mono text-xs">{integration.workspace_id}</div>
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              <Calendar className="w-4 h-4 text-gray-400" />
+              <Calendar className="w-4 h-4 text-neutral-500" />
               <div>
                 <div className="font-medium">Connected</div>
-                <div className="text-gray-600">{new Date(integration.connected_at).toLocaleDateString()}</div>
+                <div className="text-neutral-700">{new Date(integration.connected_at).toLocaleDateString()}</div>
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              <Key className="w-4 h-4 text-gray-400" />
+              <Key className="w-4 h-4 text-neutral-500" />
               <div>
                 <div className="font-medium">Token Source</div>
-                <div className="text-gray-600 flex items-center space-x-1">
+                <div className="text-neutral-700 flex items-center space-x-1">
                   <span>{integration.token_source === "oauth" ? "OAuth" : "Bot Token"}</span>
                   {integration.supports_refresh && (
                     <Tooltip content="This token can be automatically refreshed">
@@ -232,15 +232,15 @@ export function SlackIntegrationCard({
 
   // Disconnected state
   return (
-    <Card className="border-2 border-gray-200 hover:border-gray-300 transition-colors">
+    <Card className="border-2 border-neutral-200 hover:border-neutral-300 transition-colors">
       <CardHeader>
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center">
+          <div className="w-10 h-10 bg-purple-700 rounded-lg flex items-center justify-center">
             <MessageSquare className="w-6 h-6 text-white" />
           </div>
           <div>
             <CardTitle className="text-lg">Slack</CardTitle>
-            <p className="text-sm text-gray-600">Communication patterns and sentiment</p>
+            <p className="text-sm text-neutral-700">Communication patterns and sentiment</p>
           </div>
         </div>
       </CardHeader>
@@ -252,7 +252,7 @@ export function SlackIntegrationCard({
             <Button 
               onClick={handleOAuthConnect}
               disabled={isSubmitting}
-              className="w-full bg-purple-600 hover:bg-purple-700"
+              className="w-full bg-purple-700 hover:bg-purple-800"
             >
               {isSubmitting ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -268,7 +268,7 @@ export function SlackIntegrationCard({
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-gray-500">or</span>
+                <span className="bg-white px-2 text-neutral-500">or</span>
               </div>
             </div>
             
@@ -308,7 +308,7 @@ export function SlackIntegrationCard({
                   )}
                 </Button>
               </div>
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-neutral-500">
                 <button
                   type="button"
                   onClick={() => setShowInstructions(true)}
@@ -368,7 +368,7 @@ export function SlackIntegrationCard({
           <div className="space-y-4">
             <div className="space-y-2">
               <h4 className="font-medium">Step 1: Create a Slack App</h4>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-neutral-700">
                 Go to{" "}
                 <a 
                   href="https://api.slack.com/apps" 
@@ -383,10 +383,10 @@ export function SlackIntegrationCard({
             </div>
             <div className="space-y-2">
               <h4 className="font-medium">Step 2: Add Bot Token Scopes</h4>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-neutral-700">
                 Go to "OAuth & Permissions" and add these Bot Token Scopes:
               </p>
-              <ul className="text-sm text-gray-600 ml-4 space-y-1">
+              <ul className="text-sm text-neutral-700 ml-4 space-y-1">
                 <li>• <code>channels:history</code> - Read channel messages</li>
                 <li>• <code>groups:history</code> - Read private channel messages</li>
                 <li>• <code>users:read</code> - Read user information</li>
@@ -394,13 +394,13 @@ export function SlackIntegrationCard({
             </div>
             <div className="space-y-2">
               <h4 className="font-medium">Step 3: Install App</h4>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-neutral-700">
                 Install the app to your workspace and copy the "Bot User OAuth Token" (starts with xoxb-).
               </p>
             </div>
             <div className="space-y-2">
               <h4 className="font-medium">Step 4: Copy and Paste</h4>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-neutral-700">
                 Copy the bot token and paste it in the field above. The token will be encrypted and stored securely.
               </p>
             </div>

@@ -131,7 +131,7 @@ export default function LandingPage() {
               <Button
                 size="lg"
                 variant="outline"
-                className="w-full rounded-full sm:w-auto border-slate-300 px-8 py-4 text-lg hover:bg-slate-50 bg-transparent"
+                className="w-full rounded-full sm:w-auto border-white text-white px-8 py-4 text-lg hover:bg-white/10 bg-transparent"
                 onClick={handleGoogleLogin}
                 disabled={isLoading === 'google'}
               >

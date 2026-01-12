@@ -179,8 +179,8 @@ export function InvitationAcceptanceModal({
 
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-            <span className="ml-3 text-gray-600">Loading invitation...</span>
+            <Loader2 className="h-8 w-8 animate-spin text-neutral-500" />
+            <span className="ml-3 text-neutral-700">Loading invitation...</span>
           </div>
         ) : error ? (
           <Alert variant="destructive">
@@ -190,7 +190,7 @@ export function InvitationAcceptanceModal({
         ) : invitation ? (
           <div className="space-y-6">
             <div className="text-center space-y-3">
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-lg font-semibold text-neutral-900">
                 You're invited to join
               </h3>
               <div className="bg-slate-50 rounded-lg p-4">
@@ -212,7 +212,7 @@ export function InvitationAcceptanceModal({
             </div>
 
             {invitation.expires_at && (
-              <div className="text-center text-sm text-gray-500">
+              <div className="text-center text-sm text-neutral-500">
                 <p>This invitation expires on {new Date(invitation.expires_at).toLocaleDateString()}</p>
               </div>
             )}
@@ -253,7 +253,7 @@ export function InvitationAcceptanceModal({
             </div>
 
             <div className="text-center">
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-neutral-500">
                 By accepting this invitation, you'll join the organization and gain access to team burnout analytics and integrations.
               </p>
             </div>

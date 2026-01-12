@@ -53,16 +53,16 @@ export function TopPanel() {
   const isAdmin = userInfo?.role === 'admin'
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200/60">
+    <header className="sticky top-0 z-50 bg-white border-b border-neutral-300">
       <div className="px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Left: brand + nav */}
           <div className="flex items-center gap-10">
             {/* On-Call Health powered by Rootly AI */}
             <div className="flex flex-col items-start gap-1">
-              <span className="text-sm font-extrabold text-gray-700">On-Call Health</span>
+              <span className="text-sm font-extrabold text-neutral-900">On-Call Health</span>
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px] uppercase tracking-wide leading-none text-gray-400 font-medium">powered by</span>
+                <span className="text-[10px] uppercase tracking-wide leading-none text-neutral-500 font-medium">powered by</span>
                 <Image
                   src="/images/rootly-ai-logo.png"
                   alt="Rootly AI"
@@ -79,8 +79,8 @@ export function TopPanel() {
                 href="/dashboard"
                 className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 ${
                   isActive("/dashboard")
-                    ? "text-purple-700 bg-purple-50 shadow-sm"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                    ? "bg-purple-700 text-white shadow-sm"
+                    : "text-neutral-700 hover:text-white hover:bg-purple-600"
                 }`}
               >
                 Dashboard
@@ -89,8 +89,8 @@ export function TopPanel() {
                 href="/integrations"
                 className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 ${
                   isActive("/integrations")
-                    ? "text-purple-700 bg-purple-50 shadow-sm"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                    ? "bg-purple-700 text-white shadow-sm"
+                    : "text-neutral-700 hover:text-white hover:bg-purple-600"
                 }`}
               >
                 Integrations
@@ -110,10 +110,10 @@ export function TopPanel() {
                 }
               }}>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-3 px-2.5 py-1.5 rounded-full border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 shadow-sm hover:shadow">
+                  <button className="flex items-center gap-3 px-2.5 py-1.5 rounded-full border border-neutral-200 bg-white hover:bg-purple-100 hover:border-neutral-300 transition-all duration-200 shadow-sm hover:shadow">
                     <Avatar className="h-8 w-8 ring-2 ring-white">
                       <AvatarImage src={userInfo.avatar} alt={userInfo.name} />
-                      <AvatarFallback className="bg-gradient-to-br from-purple-600 to-purple-700 text-white text-sm font-semibold">
+                      <AvatarFallback className="bg-purple-700 text-white text-sm font-semibold">
                         {userInfo.name
                           .split(" ")
                           .map((n) => n[0])
@@ -122,15 +122,15 @@ export function TopPanel() {
                           .toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="hidden sm:block text-sm font-semibold text-gray-700 pr-1">
+                    <span className="hidden sm:block text-sm font-semibold text-neutral-900 pr-1">
                       {userInfo.name.split(" ")[0]}
                     </span>
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 shadow-lg">
                   <div className="px-3 py-2.5">
-                    <p className="text-sm font-semibold text-gray-900">{userInfo.name}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{userInfo.email}</p>
+                    <p className="text-sm font-semibold text-neutral-900">{userInfo.name}</p>
+                    <p className="text-xs text-neutral-500 mt-0.5">{userInfo.email}</p>
                   </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
@@ -138,14 +138,14 @@ export function TopPanel() {
                       openGettingStarted()
                       setIsDropdownOpen(false)
                     }}
-                    className="cursor-pointer"
+                    className="cursor-pointer focus:bg-purple-100 focus:text-purple-900"
                   >
                     <HelpCircle className="w-4 h-4 mr-2" />
                     Getting Started
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => router.push("/methodology")}
-                    className="cursor-pointer"
+                    className="cursor-pointer focus:bg-purple-200 focus:text-purple-900"
                   >
                     <BookOpen className="w-4 h-4 mr-2" />
                     Methodology
@@ -155,7 +155,7 @@ export function TopPanel() {
                       setShowAccountSettings(true)
                       setIsDropdownOpen(false)
                     }}
-                    className="cursor-pointer"
+                    className="cursor-pointer focus:bg-purple-100 focus:text-purple-900"
                   >
                     <Settings className="w-4 h-4 mr-2" />
                     Account Settings
@@ -166,12 +166,12 @@ export function TopPanel() {
                       setShowTeamManagement(true)
                       setIsDropdownOpen(false)
                     }}
-                    className="cursor-pointer"
+                    className="cursor-pointer focus:bg-purple-100 focus:text-purple-900"
                   >
                     <Users className="w-4 h-4 mr-2" />
                     <span className="flex-1">Organization</span>
                     {userInfo.role && (
-                      <span className="ml-2 px-1.5 py-0.5 text-[10px] font-medium rounded bg-purple-100 text-purple-700 capitalize">
+                      <span className="ml-2 px-1.5 py-0.5 text-[10px] font-medium rounded bg-purple-200 text-purple-900 capitalize">
                         {userInfo.role.replace('_', ' ')}
                       </span>
                     )}

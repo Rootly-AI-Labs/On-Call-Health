@@ -37,7 +37,7 @@ class ErrorBoundary extends React.Component<
               <pre className="mt-2 text-xs text-slate-500">{this.state.error?.stack}</pre>
             </details>
             <button 
-              className="mt-4 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+              className="mt-4 px-4 py-2 bg-purple-700 text-white rounded hover:bg-purple-700"
               onClick={() => window.location.reload()}
             >
               Reload page

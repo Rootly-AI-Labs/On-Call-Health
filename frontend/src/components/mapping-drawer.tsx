@@ -789,7 +789,7 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
               {mappingStats && (
                 <div className="mb-8">
                   <div className="mb-6 flex items-center justify-between">
-                    <h3 className="font-semibold text-gray-900">Mapping Statistics</h3>
+                    <h3 className="font-semibold text-neutral-900">Mapping Statistics</h3>
                     {(platform === 'github' || platform === 'jira') && (
                       <div className="flex space-x-2">
                         <Button
@@ -863,7 +863,7 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
                         <Users2 className="w-4 h-4 text-blue-600" />
                         <div>
                           <div className="text-2xl font-bold">{mappingStats.total_attempts || 0}</div>
-                          <div className="text-sm text-gray-600">Total Team</div>
+                          <div className="text-sm text-neutral-700">Total Team</div>
                         </div>
                       </div>
                     </Card>
@@ -872,7 +872,7 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
                         <CheckCircle className="w-4 h-4 text-green-600" />
                         <div>
                           <div className="text-2xl font-bold text-green-600">{mappingStats.mapped_members || 0}</div>
-                          <div className="text-sm text-gray-600">Mapped</div>
+                          <div className="text-sm text-neutral-700">Mapped</div>
                         </div>
                       </div>
                     </Card>
@@ -881,7 +881,7 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
                         <AlertCircle className="w-4 h-4 text-orange-600" />
                         <div>
                           <div className="text-2xl font-bold text-orange-600">{mappingStats.unmapped_members || 0}</div>
-                          <div className="text-sm text-gray-600">Unmapped</div>
+                          <div className="text-sm text-neutral-700">Unmapped</div>
                         </div>
                       </div>
                     </Card>
@@ -890,21 +890,21 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
                         <Database className="w-4 h-4 text-purple-600" />
                         <div>
                           <div className="text-2xl font-bold">{mappingStats.members_with_data || 0}</div>
-                          <div className="text-sm text-gray-600">With Data</div>
+                          <div className="text-sm text-neutral-700">With Data</div>
                         </div>
                       </div>
                     </Card>
                   </div>
                   
                   {/* Success Rate Summary */}
-                  <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                  <div className="mt-4 p-3 bg-neutral-100 rounded-lg">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
                         <CheckCircle className="w-5 h-5 text-green-600" />
-                        <span className="font-medium text-gray-900">
+                        <span className="font-medium text-neutral-900">
                           Success Rate: <span className="text-green-600">{mappingStats.overall_success_rate}%</span>
                         </span>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm text-neutral-500">
                           ({mappingStats.mapped_members || 0} of {mappingStats.total_attempts || 0} team members)
                         </span>
                       </div>
@@ -959,7 +959,7 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
               {cleanupResults && cleanupResults.total_to_remove > 0 && (
                 <div className="mb-6">
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-medium text-gray-900">
+                    <h4 className="font-medium text-neutral-900">
                       {cleanupResults.dry_run ? 'Duplicate Cleanup Preview' : 'Cleanup Results'}
                     </h4>
                     <Button
@@ -1009,7 +1009,7 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
               {showMappingResults && mappingResults.length > 0 && (
                 <div className="mb-6">
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-medium text-gray-900">Auto-Mapping Results</h4>
+                    <h4 className="font-medium text-neutral-900">Auto-Mapping Results</h4>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -1028,7 +1028,7 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
                           </span>
                           {result.status === 'mapped' && result.github_username && (
                             <>
-                              <span className="text-gray-500">→</span>
+                              <span className="text-neutral-500">→</span>
                               <span className="text-blue-600">{platform === 'github' ? '@' : ''}{result.github_username}</span>
                             </>
                           )}
@@ -1038,7 +1038,7 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
                             <Badge variant="secondary" className="bg-green-100 text-green-700 border-0">Mapped</Badge>
                           )}
                           {result.status === 'not_found' && (
-                            <Badge variant="secondary" className="bg-gray-100 text-gray-700 border-0">Not Found</Badge>
+                            <Badge variant="secondary" className="bg-neutral-200 text-neutral-700 border-0">Not Found</Badge>
                           )}
                           {result.status === 'error' && (
                             <Badge variant="destructive" className="bg-red-100 text-red-700 border-0" title={result.error}>Error</Badge>
@@ -1053,16 +1053,16 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
               {/* Mapping Results */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-gray-900">Mapping Results</h3>
+                  <h3 className="font-semibold text-neutral-900">Mapping Results</h3>
                 </div>
 
                 {/* Header Row */}
-                <div className="bg-gray-100 px-4 py-2 rounded-t-lg">
-                  <div className="grid grid-cols-4 gap-4 text-xs font-medium text-gray-700 uppercase tracking-wide">
+                <div className="bg-neutral-200 px-4 py-2 rounded-t-lg">
+                  <div className="grid grid-cols-4 gap-4 text-xs font-medium text-neutral-700 uppercase tracking-wide">
                     <div className="flex items-center space-x-1">
                       <button 
                         onClick={() => handleSort('source_identifier')}
-                        className="flex items-center space-x-1 hover:text-gray-900"
+                        className="flex items-center space-x-1 hover:text-neutral-900"
                       >
                         <span>Team Member</span>
                         {sortField === 'source_identifier' ? (
@@ -1075,7 +1075,7 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
                     <div className="flex items-center space-x-1">
                       <button 
                         onClick={() => handleSort('status')}
-                        className="flex items-center space-x-1 hover:text-gray-900"
+                        className="flex items-center space-x-1 hover:text-neutral-900"
                       >
                         <span>Status</span>
                         {sortField === 'status' ? (
@@ -1087,12 +1087,12 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
                     </div>
                     <div>
                       <span>{platformTitle} User</span>
-                      <div className="text-[10px] text-gray-500 normal-case">Click + to add missing</div>
+                      <div className="text-[10px] text-neutral-500 normal-case">Click + to add missing</div>
                     </div>
                     <div className="flex items-center space-x-1">
                       <button 
                         onClick={() => handleSort('method')}
-                        className="flex items-center space-x-1 hover:text-gray-900"
+                        className="flex items-center space-x-1 hover:text-neutral-900"
                       >
                         <span>Method</span>
                         {sortField === 'method' ? (
@@ -1115,7 +1115,7 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
                             {mapping.source_name ? (
                               <>
                                 <span className="font-semibold">{mapping.source_name}</span>
-                                <div className="text-xs text-gray-500 truncate">{mapping.source_identifier}</div>
+                                <div className="text-xs text-neutral-500 truncate">{mapping.source_identifier}</div>
                               </>
                             ) : (
                               mapping.source_identifier
@@ -1148,7 +1148,7 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
                               );
                             }
                           })()}
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-neutral-500">
                             {mapping.data_points_count ? (
                               <span>{mapping.data_points_count} data points</span>
                             ) : (
@@ -1178,7 +1178,7 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
                                     ? 'border-red-300 focus:ring-red-500' 
                                     : githubValidation?.valid === true
                                     ? 'border-green-300 focus:ring-green-500'
-                                    : 'border-gray-300 focus:ring-blue-500'
+                                    : 'border-neutral-300 focus:ring-blue-500'
                                 }`}
                                 autoFocus
                                 onKeyDown={(e) => {
@@ -1200,7 +1200,7 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
                                 disabled={savingInlineMapping || validatingGithub}
                                 className={`p-1 hover:opacity-80 disabled:opacity-50 ${
                                   platform === 'github' && githubValidation?.valid !== true
-                                    ? 'text-gray-400 cursor-not-allowed'
+                                    ? 'text-neutral-500 cursor-not-allowed'
                                     : 'text-green-600 hover:text-green-700'
                                 }`}
                                 title="Save changes"
@@ -1210,7 +1210,7 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
                               <button
                                 onClick={cancelInlineEdit}
                                 disabled={savingInlineMapping}
-                                className="p-1 text-gray-400 hover:text-red-600 disabled:opacity-50"
+                                className="p-1 text-neutral-500 hover:text-red-600 disabled:opacity-50"
                                 title="Cancel"
                               >
                                 <X className="w-4 h-4" />
@@ -1236,7 +1236,7 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
                                   )}
                                   <button 
                                     onClick={() => startInlineEdit(mapping.id, mapping.target_identifier || '')}
-                                    className="text-gray-400 hover:text-gray-600"
+                                    className="text-neutral-500 hover:text-neutral-700"
                                     title="Edit mapping"
                                   >
                                     <Edit2 className="w-3 h-3" />
@@ -1246,8 +1246,8 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
                                     disabled={removingMappingId === mapping.id}
                                     className={`${
                                       removingMappingId === mapping.id 
-                                        ? 'text-gray-300 cursor-not-allowed' 
-                                        : 'text-gray-400 hover:text-red-600'
+                                        ? 'text-neutral-500 cursor-not-allowed' 
+                                        : 'text-neutral-500 hover:text-red-600'
                                     }`}
                                     title={removingMappingId === mapping.id 
                                       ? 'Removing...' 
@@ -1269,7 +1269,7 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
                               return (
                                 <button
                                   onClick={() => startInlineEdit(mapping.id)}
-                                  className="flex items-center space-x-1 px-3 py-1 text-xs text-gray-500 border border-dashed border-gray-300 rounded hover:bg-gray-50 hover:border-gray-400 hover:text-gray-700 transition-colors"
+                                  className="flex items-center space-x-1 px-3 py-1 text-xs text-neutral-500 border border-dashed border-neutral-300 rounded hover:bg-neutral-100 hover:border-neutral-400 hover:text-neutral-700 transition-colors"
                                 >
                                   <span>+ Click to add {platform === 'github' ? 'GitHub username' : 'Slack user ID'}</span>
                                 </button>
@@ -1292,13 +1292,13 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
                               Manual
                             </Badge>
                           ) : (
-                            <span className="text-gray-600">{mapping.mapping_method || 'Unknown'}</span>
+                            <span className="text-neutral-700">{mapping.mapping_method || 'Unknown'}</span>
                           )}
                         </div>
                       </div>
                     </div>
                   )) : (
-                    <div className="px-4 py-8 text-center text-gray-500">
+                    <div className="px-4 py-8 text-center text-neutral-500">
                       No mapping data available
                     </div>
                   )}
