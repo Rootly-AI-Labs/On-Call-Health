@@ -27,8 +27,8 @@ on:
 jobs:
   e2e-tests:
     name: E2E Tests (${{ matrix.browser }})
-    # Skip for Dependabot PRs - they don't have access to secrets for security
-    if: github.actor != 'dependabot[bot]' && github.actor != 'renovate[bot]'
+    # Skip bots and fork PRs - they do not have access to the required secrets or write permissions
+    if: github.actor != 'dependabot[bot]' && github.actor != 'renovate[bot]' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -114,7 +114,7 @@ jobs:
           retention-days: 7
 
       - name: Comment PR with results
-        if: github.event_name == 'pull_request' && failure()
+        if: github.event_name == 'pull_request' && failure() && github.event.pull_request.head.repo.full_name == github.repository
         uses: actions/github-script@v8
         with:
           script: |
