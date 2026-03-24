@@ -25,6 +25,7 @@ jobs:
         uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ github.token }}
           model: claude-sonnet-4-20250514
           timeout_minutes: 30
           allowed_bots: '*'
@@ -47,6 +48,7 @@ jobs:
         uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ github.token }}
           model: claude-sonnet-4-20250514
           allowed_bots: '*'
           direct_prompt: |
