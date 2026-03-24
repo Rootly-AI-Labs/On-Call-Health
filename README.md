@@ -90,6 +90,32 @@ cp backend/.env.example backend/.env
 4. **Restart backend:**
 </details>
 
+<details>
+<summary><b>Okta SSO (optional, self-hosted / enterprise only)</b></summary>
+
+Okta SSO is disabled by default. To enable it for a self-hosted or dedicated enterprise deployment:
+
+1. **Enable Okta auth in the backend**
+   Add the following to `backend/.env`:
+   ```env
+   OKTA_AUTH_ENABLED=true
+   OKTA_CLIENT_ID=<your Okta client id>
+   OKTA_CLIENT_SECRET=<your Okta client secret>
+   OKTA_ISSUER=https://your-org.okta.com/oauth2/default
+   OKTA_REDIRECT_URI=http://localhost:8000/auth/okta/callback
+   ```
+2. **Show the Okta button in the frontend**
+   Add the following to your frontend environment before starting local development or rebuilding your deployed frontend:
+   ```env
+   NEXT_PUBLIC_ENABLE_OKTA_SSO=true
+   ```
+3. **Create an Okta OIDC web app**
+   Configure the sign-in redirect URI to match your backend callback, for example:
+   `http://localhost:8000/auth/okta/callback`
+
+After restarting the backend and restarting or rebuilding the frontend, the landing page will show an `Okta SSO` button in the header.
+</details>
+
 ### 2) Docker Setup
 Use our Docker Compose file.
 ```

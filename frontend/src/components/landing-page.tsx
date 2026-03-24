@@ -1,12 +1,15 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useState, useEffect, useRef } from "react"
 import localFont from "next/font/local"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Link2, Brain, Target, Flame, Linkedin } from "lucide-react";
+import { Link2, Brain, Target, Github, Chrome, Loader2, Flame, Linkedin } from "lucide-react";
 import { siX } from "simple-icons"
 import Image from "next/image"
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+const OKTA_SSO_ENABLED = process.env.NEXT_PUBLIC_ENABLE_OKTA_SSO === 'true'
 
 const ppMori = localFont({
   src: [
@@ -46,6 +49,7 @@ const ppMori = localFont({
 // TODO: set the meta title and description - what's the right way of doing it?
 
 export default function LandingPage() {
+  const [isLoading, setIsLoading] = useState<'google' | 'github' | 'okta' | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
 
   // Preload background images and autoplay video on mount
@@ -66,6 +70,108 @@ export default function LandingPage() {
     }
   }, [])
 
+  const handleGoogleLogin = async () => {
+    try {
+      setIsLoading('google')
+      // Pass the current origin to the backend
+      const currentOrigin = window.location.origin
+      const response = await fetch(`${API_BASE}/auth/google?redirect_origin=${encodeURIComponent(currentOrigin)}`)
+      
+      // Check if response is ok before parsing JSON
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Google auth API error:', response.status, errorText)
+        throw new Error(`Authentication failed: ${response.status}`)
+      }
+      
+      // Check content type to ensure it's JSON
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        const responseText = await response.text()
+        console.error('Expected JSON but got:', contentType, responseText)
+        throw new Error('Invalid response format from authentication server')
+      }
+      
+      const data = await response.json()
+      if (data.authorization_url) {
+        window.location.href = data.authorization_url
+      } else {
+        console.error('No authorization URL in response:', data)
+        throw new Error('Invalid authentication response')
+      }
+    } catch (error) {
+      console.error('Google login error:', error)
+      setIsLoading(null) // Reset loading state on error
+    }
+  }
+
+  const handleGitHubLogin = async () => {
+    try {
+      setIsLoading('github')
+      // Pass the current origin to the backend
+      const currentOrigin = window.location.origin
+      const response = await fetch(`${API_BASE}/auth/github?redirect_origin=${encodeURIComponent(currentOrigin)}`)
+
+      // Check if response is ok before parsing JSON
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('GitHub auth API error:', response.status, errorText)
+        throw new Error(`Authentication failed: ${response.status}`)
+      }
+
+      // Check content type to ensure it's JSON
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        const responseText = await response.text()
+        console.error('Expected JSON but got:', contentType, responseText)
+        throw new Error('Invalid response format from authentication server')
+      }
+
+      const data = await response.json()
+      if (data.authorization_url) {
+        window.location.href = data.authorization_url
+      } else {
+        console.error('No authorization URL in response:', data)
+        throw new Error('Invalid authentication response')
+      }
+    } catch (error) {
+      console.error('GitHub login error:', error)
+      setIsLoading(null) // Reset loading state on error
+    }
+  }
+
+  const handleOktaLogin = async () => {
+    try {
+      setIsLoading('okta')
+      const currentOrigin = window.location.origin
+      const response = await fetch(`${API_BASE}/auth/okta?redirect_origin=${encodeURIComponent(currentOrigin)}`)
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Okta auth API error:', response.status, errorText)
+        throw new Error(`Authentication failed: ${response.status}`)
+      }
+
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        const responseText = await response.text()
+        console.error('Expected JSON but got:', contentType, responseText)
+        throw new Error('Invalid response format from authentication server')
+      }
+
+      const data = await response.json()
+      if (data.authorization_url) {
+        window.location.href = data.authorization_url
+      } else {
+        console.error('No authorization URL in response:', data)
+        throw new Error('Invalid authentication response')
+      }
+    } catch (error) {
+      console.error('Okta login error:', error)
+      setIsLoading(null)
+    }
+  }
+
   return (
     <div className={`${ppMori.className} min-h-screen bg-white overflow-x-hidden`}>
 
@@ -73,7 +179,7 @@ export default function LandingPage() {
       <section className="bg-[url(/images/landing/rootly-bg-hq.webp)] bg-cover bg-[position:50%_15%] lg:bg-[size:210%] lg:bg-[position:-1200px_-300px] relative lg:pb-[120px]" id="get-started">
         {/* Header */}
         <div className="px-4 pt-6 pb-2 lg:px-16 lg:pt-8">
-	          <div className="flex items-start justify-between w-full gap-4">
+          <div className="flex items-start justify-between w-full gap-4">
             <div className="flex flex-col items-start -space-y-0.5">
               <div className="flex items-center gap-1.5">
                 <div className="text-xl leading-[1rem] lg:text-3xl font-normal text-black">On-Call Health</div>
@@ -98,40 +204,106 @@ export default function LandingPage() {
                 </a>
               </div>
             </div>
-	            <div className="flex items-center gap-3 self-start">
-	              <Button
-	                size="lg"
-	                className="h-11 rounded-full border border-white/20 bg-white/12 px-5 text-[15px] font-display font-semibold text-white shadow-[0_12px_34px_rgba(10,8,20,0.14)] backdrop-blur-xl transition-all hover:border-white/28 hover:bg-white/20 hover:shadow-[0_14px_38px_rgba(10,8,20,0.18)]"
-	                onClick={() => {
-	                  window.location.href = "/auth/login"
-	                }}
-	              >
-	                Log in
-	              </Button>
-	              <a
-	                href="https://github.com/Rootly-AI-Labs/On-Call-Health"
-	                target="_blank"
-	                rel="noreferrer"
-	                className="flex h-11 items-center gap-2 rounded-full border border-[#16131f]/45 bg-[#16131f]/82 px-5 text-sm font-semibold font-display text-white shadow-[0_12px_30px_rgba(8,7,12,0.22)] backdrop-blur-md transition-colors hover:bg-[#16131f]"
-	              >
-	                <Image src="/images/github-logo.png" alt="GitHub" width={20} height={20} className="h-4 w-4 lg:h-5 lg:w-5" />
-	                <span className="relative top-[2px]">View on GitHub</span>
-	              </a>
-	            </div>
-	          </div>
-	        </div>
+            <div className="flex items-center gap-3 self-start">
+              {OKTA_SSO_ENABLED && (
+                <Button
+                  size="lg"
+                  className="h-10 rounded-2xl border border-[#0f2f7c]/30 bg-[#00297A] px-4 text-sm font-semibold font-display text-white hover:bg-[#001f5c] flex items-center gap-2"
+                  onClick={handleOktaLogin}
+                  disabled={isLoading === "okta"}
+                  title="For self-hosted or dedicated enterprise deployments"
+                >
+                  <span className="flex items-center gap-2">
+                    {isLoading === "okta" ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span className="relative top-[1px]">Connecting...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Image src="/images/okta-icon.png" alt="Okta" width={16} height={16} className="h-4 w-4" />
+                        <span className="relative top-[1px]">Okta SSO</span>
+                      </>
+                    )}
+                  </span>
+                </Button>
+              )}
+              <a
+                href="https://github.com/Rootly-AI-Labs/On-Call-Health"
+                target="_blank"
+                rel="noreferrer"
+                className="h-10 rounded-2xl bg-[#7b6db1] px-5 text-sm font-semibold font-display text-[color:var(--text-text-primary,_#100F12)] hover:bg-[#6f62a5] flex items-center gap-2"
+              >
+                <Image src="/images/github-logo.png" alt="GitHub" width={20} height={20} className="h-4 w-4 lg:h-5 lg:w-5" />
+                <span className="relative top-[2px]">View on GitHub</span>
+              </a>
+            </div>
+          </div>
+        </div>
         <div className="container flex flex-col lg:flex-row flex-grow mx-auto px-4">
-          <main className="w-full max-w-[44rem] flex-grow px-4 sm:px-5 lg:w-[58%] lg:max-w-[46rem] lg:pr-10 text-white relative lg:top-14">
+          <main className="w-full flex-grow px-5 lg:pr-10 lg:w-[60%] text-white relative lg:top-14 lg:-ml-8">
             <div className="inline-flex items-center rounded-full border-[0.25px] border-white/50 px-2.5 py-1 text-[9px] tracking-[0.3em] uppercase font-bold text-white/80 mb-2 mt-4 lg:mb-6 translate-x-1 translate-y-1 lg:text-[10px] lg:tracking-[0.35em]">
               <span className="relative top-[1px]">OPEN SOURCE - APACHE LICENSE 2.0</span>
             </div>
-            <h1 className="max-w-[11ch] sm:max-w-[12ch] lg:max-w-[12.5ch] text-4xl lg:text-6xl tracking-tight mb-6 leading-tight pt-2 lg:pt-10 lg:pb-1 leading-[0.96] relative lg:-top-8 text-balance">
-              Catch exhaustion before it burns out your engineers.
+            <h1 className="text-4xl lg:text-6xl tracking-tight mb-6 leading-tight pt-2 lg:pt-10 lg:pb-1 leading-snug relative lg:-top-8">
+              Catch exhaustion
+              <br />
+              before it burns out
+              <br />
+              your engineers.
             </h1>
 
-            <p className="max-w-[28rem] sm:max-w-[32rem] text-lg lg:text-xl lg:pr-10 mb-4 relative lg:-top-3 text-balance">
-              An open source tool that looks for signs of overload in your on-call engineers.
+            <p className="text-lg lg:text-xl lg:pr-10 mb-4 relative lg:-top-3">
+              An open source tool that looks for signs of overload in
+              <br />
+              your on-call engineers.
             </p>
+
+            {/* OAuth Login Buttons */}
+            <div id="login" className="mt-6 flex flex-col sm:flex-row gap-4 items-center mb-6">
+            <Button
+              size="lg"
+              className="w-full rounded-3xl sm:w-auto bg-[#E4E5EB] hover:bg-[#d7d8de] text-[color:var(--color-blue-15,_#1E1A33)] px-6 py-5 text-base font-display font-bold flex items-center justify-center lg:px-8 lg:py-7 lg:text-lg"
+              onClick={handleGoogleLogin}
+              disabled={isLoading === "google"}
+            >
+              <span className="flex items-center justify-center gap-3 translate-y-[1.5px]">
+                {isLoading === "google" ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Connecting to Google...
+                  </>
+                ) : (
+                  <>
+                    <Chrome className="h-6 w-6 -translate-y-0.5" aria-hidden="true" />
+                    Sign in with Google
+                  </>
+                )}
+              </span>
+            </Button>
+
+            <Button
+              size="lg"
+              className="w-full rounded-3xl sm:w-auto bg-[#100F12] hover:bg-[#1b1a1e] text-[color:var(--text-text-contrast,_#FFFFFF)] px-6 py-5 text-base font-display font-bold flex items-center justify-center lg:px-8 lg:py-7 lg:text-lg"
+              onClick={handleGitHubLogin}
+              disabled={isLoading === "github"}
+            >
+              <span className="flex items-center justify-center gap-3 translate-y-[1.5px]">
+                {isLoading === "github" ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Connecting to GitHub...
+                  </>
+                ) : (
+                  <>
+                    <Github className="h-6 w-6 -translate-y-0.5" aria-hidden="true" />
+                    Sign in with GitHub
+                  </>
+                )}
+              </span>
+            </Button>
+
+            </div>
           </main>
           <aside className="w-full mt-10 lg:mt-0 lg:w-[40%] lg:pl-20">
             <div className="mx-auto lg:ml-auto max-w-2xl lg:max-w-none lg:-translate-x-48 lg:translate-y-28 lg:w-[135%] overflow-visible">

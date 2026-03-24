@@ -44,6 +44,7 @@ class Settings:
     GITHUB_REDIRECT_URI: str = os.getenv("GITHUB_REDIRECT_URI", "http://localhost:8000/auth/github/callback")
     
     # OAuth - Okta (OIDC)
+    OKTA_AUTH_ENABLED: bool = os.getenv("OKTA_AUTH_ENABLED", "false").lower() == "true"
     OKTA_CLIENT_ID: Optional[str] = os.getenv("OKTA_CLIENT_ID")
     OKTA_CLIENT_SECRET: Optional[str] = os.getenv("OKTA_CLIENT_SECRET")
     OKTA_ISSUER: Optional[str] = os.getenv("OKTA_ISSUER")
@@ -97,5 +98,16 @@ class Settings:
     # Token Refresh Distributed Lock Configuration
     TOKEN_REFRESH_LOCK_TTL: int = int(os.getenv("TOKEN_REFRESH_LOCK_TTL", "30"))  # seconds
     TOKEN_REFRESH_LOCK_TIMEOUT: float = float(os.getenv("TOKEN_REFRESH_LOCK_TIMEOUT", "10"))  # seconds
+
+    @property
+    def okta_auth_available(self) -> bool:
+        """Return True only when Okta auth is explicitly enabled and fully configured."""
+        return bool(
+            self.OKTA_AUTH_ENABLED
+            and self.OKTA_CLIENT_ID
+            and self.OKTA_CLIENT_SECRET
+            and self.OKTA_ISSUER
+            and self.OKTA_REDIRECT_URI
+        )
 
 settings = Settings()
