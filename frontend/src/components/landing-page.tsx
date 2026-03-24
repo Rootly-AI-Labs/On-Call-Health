@@ -9,7 +9,9 @@ import { siX } from "simple-icons"
 import Image from "next/image"
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-const OKTA_SSO_ENABLED = process.env.NEXT_PUBLIC_ENABLE_OKTA_SSO === 'true'
+const OKTA_SSO_ENABLED =
+  process.env.NEXT_PUBLIC_ENABLE_OKTA_SSO === 'true' ||
+  API_BASE.includes('rootly-burnout-detector-web-staging')
 
 const ppMori = localFont({
   src: [
