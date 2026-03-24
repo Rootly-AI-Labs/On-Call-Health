@@ -4,11 +4,12 @@ import { useState, useEffect, useRef } from "react"
 import localFont from "next/font/local"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Link2, Brain, Target, Github, Chrome, Loader2, Flame, Linkedin, ShieldCheck } from "lucide-react";
+import { Link2, Brain, Target, Github, Chrome, Loader2, Flame, Linkedin } from "lucide-react";
 import { siX } from "simple-icons"
 import Image from "next/image"
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+const OKTA_SSO_ENABLED = process.env.NEXT_PUBLIC_ENABLE_OKTA_SSO === 'true'
 
 const ppMori = localFont({
   src: [
@@ -178,7 +179,7 @@ export default function LandingPage() {
       <section className="bg-[url(/images/landing/rootly-bg-hq.webp)] bg-cover bg-[position:50%_15%] lg:bg-[size:210%] lg:bg-[position:-1200px_-300px] relative lg:pb-[120px]" id="get-started">
         {/* Header */}
         <div className="px-4 pt-6 pb-2 lg:px-16 lg:pt-8">
-          <div className="flex items-start justify-between w-full">
+          <div className="flex items-start justify-between w-full gap-4">
             <div className="flex flex-col items-start -space-y-0.5">
               <div className="flex items-center gap-1.5">
                 <div className="text-xl leading-[1rem] lg:text-3xl font-normal text-black">On-Call Health</div>
@@ -203,15 +204,40 @@ export default function LandingPage() {
                 </a>
               </div>
             </div>
-            <a
-              href="https://github.com/Rootly-AI-Labs/On-Call-Health"
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-2xl bg-[#7b6db1] px-5 py-2 text-sm font-semibold font-display text-[color:var(--text-text-primary,_#100F12)] hover:bg-[#6f62a5] flex items-center gap-2"
-            >
-              <Image src="/images/github-logo.png" alt="GitHub" width={20} height={20} className="h-4 w-4 lg:h-5 lg:w-5" />
-              <span className="relative top-[2px]">View on GitHub</span>
-            </a>
+            <div className="flex items-center gap-3 self-start">
+              {OKTA_SSO_ENABLED && (
+                <Button
+                  size="lg"
+                  className="h-10 rounded-2xl border border-[#0f2f7c]/30 bg-[#00297A] px-4 text-sm font-semibold font-display text-white hover:bg-[#001f5c] flex items-center gap-2"
+                  onClick={handleOktaLogin}
+                  disabled={isLoading === "okta"}
+                  title="For self-hosted or dedicated enterprise deployments"
+                >
+                  <span className="flex items-center gap-2">
+                    {isLoading === "okta" ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span className="relative top-[1px]">Connecting...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Image src="/images/okta-icon.png" alt="Okta" width={16} height={16} className="h-4 w-4" />
+                        <span className="relative top-[1px]">Okta SSO</span>
+                      </>
+                    )}
+                  </span>
+                </Button>
+              )}
+              <a
+                href="https://github.com/Rootly-AI-Labs/On-Call-Health"
+                target="_blank"
+                rel="noreferrer"
+                className="h-10 rounded-2xl bg-[#7b6db1] px-5 text-sm font-semibold font-display text-[color:var(--text-text-primary,_#100F12)] hover:bg-[#6f62a5] flex items-center gap-2"
+              >
+                <Image src="/images/github-logo.png" alt="GitHub" width={20} height={20} className="h-4 w-4 lg:h-5 lg:w-5" />
+                <span className="relative top-[2px]">View on GitHub</span>
+              </a>
+            </div>
           </div>
         </div>
         <div className="container flex flex-col lg:flex-row flex-grow mx-auto px-4">
@@ -272,27 +298,6 @@ export default function LandingPage() {
                   <>
                     <Github className="h-6 w-6 -translate-y-0.5" aria-hidden="true" />
                     Sign in with GitHub
-                  </>
-                )}
-              </span>
-            </Button>
-
-            <Button
-              size="lg"
-              className="w-full rounded-3xl sm:w-auto bg-[#00297A] hover:bg-[#001f5c] text-white px-6 py-5 text-base font-display font-bold flex items-center justify-center lg:px-8 lg:py-7 lg:text-lg"
-              onClick={handleOktaLogin}
-              disabled={isLoading === "okta"}
-            >
-              <span className="flex items-center justify-center gap-3 translate-y-[1.5px]">
-                {isLoading === "okta" ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Connecting to Okta...
-                  </>
-                ) : (
-                  <>
-                    <ShieldCheck className="h-6 w-6 -translate-y-0.5" aria-hidden="true" />
-                    Sign in with Okta
                   </>
                 )}
               </span>
