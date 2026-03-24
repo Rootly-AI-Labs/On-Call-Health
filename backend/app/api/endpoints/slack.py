@@ -1,7 +1,7 @@
 """
 Slack integration API endpoints for OAuth and data collection.
 """
-from fastapi import APIRouter, Depends, HTTPException, status, Form
+from fastapi import APIRouter, Depends, HTTPException, status, Form, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import func, or_
 from typing import Dict, Any
@@ -10,6 +10,9 @@ import json
 import logging
 import os
 import urllib.parse
+import hmac
+import hashlib
+import time
 from cryptography.fernet import Fernet
 import base64
 from datetime import datetime, timezone
@@ -39,6 +42,8 @@ router = APIRouter(prefix="/slack", tags=["slack-integration"])
 # User lists change infrequently, so 5 minutes provides good UX without hitting rate limits
 _slack_users_cache: Dict[str, tuple[datetime, list]] = {}
 CACHE_TTL_SECONDS = 300  # 5 minutes - configurable via environment if needed
+SLACK_SIGNATURE_VERSION = "v0"
+SLACK_REQUEST_TTL_SECONDS = 60 * 5
 
 # Helper function to get the user isolation key (organization_id or user_id for beta)
 def get_user_isolation_key(user: User) -> tuple:
@@ -89,6 +94,66 @@ def decrypt_token(encrypted_token: str) -> str:
     """Decrypt a token from storage."""
     fernet = Fernet(get_encryption_key())
     return fernet.decrypt(encrypted_token.encode()).decode()
+
+
+def is_valid_slack_request_signature(
+    signing_secret: str,
+    timestamp: str,
+    signature: str,
+    body: bytes,
+    *,
+    now: int | None = None,
+) -> bool:
+    """Validate Slack request signature and replay window."""
+    if not signing_secret or not timestamp or not signature:
+        return False
+
+    try:
+        request_timestamp = int(timestamp)
+    except (TypeError, ValueError):
+        return False
+
+    current_time = now if now is not None else int(time.time())
+    if abs(current_time - request_timestamp) > SLACK_REQUEST_TTL_SECONDS:
+        return False
+
+    try:
+        body_text = body.decode("utf-8")
+    except UnicodeDecodeError:
+        return False
+
+    basestring = f"{SLACK_SIGNATURE_VERSION}:{timestamp}:{body_text}"
+    expected_signature = (
+        f"{SLACK_SIGNATURE_VERSION}="
+        f"{hmac.new(signing_secret.encode(), basestring.encode(), hashlib.sha256).hexdigest()}"
+    )
+    return hmac.compare_digest(expected_signature, signature)
+
+
+async def verify_slack_request_signature(request: Request) -> None:
+    """Reject unsigned or forged Slack requests before processing payloads."""
+    if not settings.SLACK_SIGNING_SECRET:
+        logger.error("Slack request received but SLACK_SIGNING_SECRET is not configured")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Slack signing secret not configured"
+        )
+
+    timestamp = request.headers.get("X-Slack-Request-Timestamp")
+    signature = request.headers.get("X-Slack-Signature")
+    raw_body = await request.body()
+
+    if not is_valid_slack_request_signature(
+        settings.SLACK_SIGNING_SECRET,
+        timestamp or "",
+        signature or "",
+        raw_body,
+    ):
+        logger.warning("Rejected Slack request with invalid signature")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Slack request signature"
+        )
 
 @router.post("/connect")
 async def connect_slack(
@@ -1233,17 +1298,7 @@ async def get_slack_user_info(
 
 @router.post("/commands/oncall-health")
 async def handle_oncall_health_command(
-    token: str = Form(...),
-    team_id: str = Form(...),
-    team_domain: str = Form(...),
-    channel_id: str = Form(...),
-    channel_name: str = Form(...),
-    user_id: str = Form(...),
-    user_name: str = Form(...),
-    command: str = Form(...),
-    text: str = Form(""),
-    response_url: str = Form(...),
-    trigger_id: str = Form(...),
+    request: Request,
     db: Session = Depends(get_db)
 ):
     """
@@ -1251,6 +1306,20 @@ async def handle_oncall_health_command(
     Opens a modal with the 3-question burnout survey.
     """
     try:
+        await verify_slack_request_signature(request)
+        form = await request.form()
+        token = str(form.get("token", ""))
+        team_id = str(form.get("team_id", ""))
+        team_domain = str(form.get("team_domain", ""))
+        channel_id = str(form.get("channel_id", ""))
+        channel_name = str(form.get("channel_name", ""))
+        user_id = str(form.get("user_id", ""))
+        user_name = str(form.get("user_name", ""))
+        command = str(form.get("command", ""))
+        text = str(form.get("text", ""))
+        response_url = str(form.get("response_url", ""))
+        trigger_id = str(form.get("trigger_id", ""))
+
         # Log incoming slash command for debugging
         logger.info(f"🎯 Slash command received: /oncall-health from user {user_id} in workspace {team_id}")
         logger.debug(f"Command details - trigger_id: {trigger_id}, channel: {channel_id}, text: '{text}'")
@@ -1447,7 +1516,7 @@ async def handle_oncall_health_command(
 
 @router.post("/interactions")
 async def handle_slack_interactions(
-    payload: str = Form(...),
+    request: Request,
     db: Session = Depends(get_db)
 ):
     """
@@ -1455,6 +1524,15 @@ async def handle_slack_interactions(
     This is called when user submits the burnout survey modal.
     """
     try:
+        await verify_slack_request_signature(request)
+        form = await request.form()
+        payload = str(form.get("payload", ""))
+        if not payload:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Missing Slack interaction payload"
+            )
+
         import json
         logging.info(f"Received Slack interaction payload: {payload[:500]}...")  # Log first 500 chars
         data = json.loads(payload)
