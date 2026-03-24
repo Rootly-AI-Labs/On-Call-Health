@@ -1305,21 +1305,21 @@ async def handle_oncall_health_command(
     Handle /oncall-health slash command from Slack.
     Opens a modal with the 3-question burnout survey.
     """
-    try:
-        await verify_slack_request_signature(request)
-        form = await request.form()
-        token = str(form.get("token", ""))
-        team_id = str(form.get("team_id", ""))
-        team_domain = str(form.get("team_domain", ""))
-        channel_id = str(form.get("channel_id", ""))
-        channel_name = str(form.get("channel_name", ""))
-        user_id = str(form.get("user_id", ""))
-        user_name = str(form.get("user_name", ""))
-        command = str(form.get("command", ""))
-        text = str(form.get("text", ""))
-        response_url = str(form.get("response_url", ""))
-        trigger_id = str(form.get("trigger_id", ""))
+    await verify_slack_request_signature(request)
+    form = await request.form()
+    token = str(form.get("token", ""))
+    team_id = str(form.get("team_id", ""))
+    team_domain = str(form.get("team_domain", ""))
+    channel_id = str(form.get("channel_id", ""))
+    channel_name = str(form.get("channel_name", ""))
+    user_id = str(form.get("user_id", ""))
+    user_name = str(form.get("user_name", ""))
+    command = str(form.get("command", ""))
+    text = str(form.get("text", ""))
+    response_url = str(form.get("response_url", ""))
+    trigger_id = str(form.get("trigger_id", ""))
 
+    try:
         # Log incoming slash command for debugging
         logger.info(f"🎯 Slash command received: /oncall-health from user {user_id} in workspace {team_id}")
         logger.debug(f"Command details - trigger_id: {trigger_id}, channel: {channel_id}, text: '{text}'")
@@ -1506,6 +1506,8 @@ async def handle_oncall_health_command(
         from fastapi.responses import Response
         return Response(status_code=200)
 
+    except HTTPException:
+        raise
     except Exception as e:
         logging.error(f"Error handling burnout survey command: {str(e)}")
         return {
@@ -1523,16 +1525,16 @@ async def handle_slack_interactions(
     Handle Slack interactive component submissions (modals, buttons, etc).
     This is called when user submits the burnout survey modal.
     """
-    try:
-        await verify_slack_request_signature(request)
-        form = await request.form()
-        payload = str(form.get("payload", ""))
-        if not payload:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Missing Slack interaction payload"
-            )
+    await verify_slack_request_signature(request)
+    form = await request.form()
+    payload = str(form.get("payload", ""))
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Missing Slack interaction payload"
+        )
 
+    try:
         import json
         logging.info(f"Received Slack interaction payload: {payload[:500]}...")  # Log first 500 chars
         data = json.loads(payload)
@@ -1839,6 +1841,8 @@ async def handle_slack_interactions(
         # For other interaction types, just acknowledge
         return {}
 
+    except HTTPException:
+        raise
     except Exception as e:
         logging.error(f"Error handling Slack interaction: {str(e)}")
         import traceback
@@ -1846,7 +1850,7 @@ async def handle_slack_interactions(
         return {
             "response_action": "errors",
             "errors": {
-                "comments_block": f"Error: {str(e)}"
+                "comments_block": "Error submitting survey. Please try again."
             }
         }
 
