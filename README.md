@@ -171,3 +171,7 @@ On-call Health also offers [an API](https://api.oncallhealth.ai/docs) that can e
 On-call Health is built with ❤️ by the [Rootly AI Labs](https://rootly.com/ai-labs) for engineering teams everywhere. The Rootly AI Labs is a fellow-led community designed to redefine reliability engineering. We develop innovative prototypes, create open-source tools, and produce research that's shared to advance operational excellence standards. We want to thank Anthropic, Google Cloud, and Google DeepMind for their support.
 
 This project is licensed under the Apache License 2.0.
+
+<p align="center">
+  <img src="frontend/public/images/rootly-ai-logo.png" alt="Rootly AI Labs" width="180" />
+</p>
