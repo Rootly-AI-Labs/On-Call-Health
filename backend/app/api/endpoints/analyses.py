@@ -85,6 +85,8 @@ def extract_analysis_summary(full_results: dict) -> dict:
         health = full_results["team_health"]
         summary["team_health"] = {
             "overall_score": health.get("overall_score", 0),
+            "risk_score_100": health.get("risk_score_100", 0),
+            "health_score_100": health.get("health_score_100", 0),
             "members_at_risk": health.get("members_at_risk", 0)
         }
 
@@ -134,6 +136,9 @@ class AnalysisListResponse(BaseModel):
 class DailyTrendPoint(BaseModel):
     date: str
     overall_score: float
+    overall_score_semantics: Optional[str] = None
+    risk_score_100: Optional[float] = None
+    health_score_100: Optional[float] = None
     average_health_score: float
     members_at_risk: int
     total_members: int
@@ -1195,6 +1200,9 @@ async def regenerate_analysis_trends(
             daily_trends.append({
                 "date": current_date.strftime("%Y-%m-%d"),
                 "overall_score": round(daily_score, 2),
+                "overall_score_semantics": "health_10_compat",
+                "risk_score_100": round(max(0.0, min(100.0, 100.0 - (daily_score * 10))), 1),
+                "health_score_100": round(max(0.0, min(100.0, daily_score * 10)), 1),
                 "average_health_score": 0.0,  # Legacy analyses don't have this data
                 "incident_count": incidents_for_day,
                 "members_at_risk": members_at_risk,
@@ -1576,6 +1584,11 @@ async def get_historical_trends(
         
         # Get health status based on score
         overall_score = trend_data.get("overall_score", 0.0)
+        risk_score_100 = trend_data.get("risk_score_100")
+        health_score_100 = trend_data.get("health_score_100")
+        if risk_score_100 is None or health_score_100 is None:
+            health_score_100 = max(0.0, min(100.0, float(overall_score) * 10))
+            risk_score_100 = max(0.0, min(100.0, 100.0 - health_score_100))
         if overall_score <= 4.0:
             health_status = "critical"
         elif overall_score <= 6.5:
@@ -1588,6 +1601,9 @@ async def get_historical_trends(
         daily_trends.append(DailyTrendPoint(
             date=trend_date,
             overall_score=float(overall_score),
+            overall_score_semantics=trend_data.get("overall_score_semantics", "health_10_compat"),
+            risk_score_100=float(risk_score_100),
+            health_score_100=float(health_score_100),
             average_health_score=float(trend_data.get("average_health_score", 0.0)),  # Actual average from team health
             members_at_risk=int(members_at_risk),
             total_members=max(int(total_members), 1),  # Use actual total_members from analysis

@@ -123,44 +123,12 @@ def calculate_personal_burnout(metrics: Dict[str, float], config: OCHConfig = No
     if config is None:
         config = OCHConfig()
 
-    factors = config.PERSONAL_BURNOUT_FACTORS
-    component_scores = {}
-    weighted_sum = 0.0
-    total_weight = 0.0
-
-    for factor_name, factor_config in factors.items():
-        if factor_name in metrics:
-            raw_value = max(0.0, metrics[factor_name])  # Ensure non-negative
-
-            # Calculate score with reasonable cap (allow 150% for extreme cases)
-            normalized_score = min(150.0, (raw_value / factor_config['scale_max']) * 100.0)
-
-            # Apply weight
-            weighted_score = normalized_score * factor_config['weight']
-            component_scores[factor_name] = {
-                'raw_value': raw_value,
-                'normalized_score': round(normalized_score, 2),
-                'weighted_score': round(weighted_score, 2),
-                'weight': factor_config['weight'],
-                'description': factor_config['description']
-            }
-
-            weighted_sum += weighted_score
-            total_weight += factor_config['weight']
-
-    # Calculate final score
-    if total_weight > 0:
-        final_score = weighted_sum / total_weight
-    else:
-        final_score = 0.0
-
-    return {
-        'score': round(final_score, 2),
-        'components': component_scores,
-        'dimension': OCHDimension.PERSONAL.value,
-        'interpretation': get_och_interpretation(final_score, config),
-        'data_completeness': total_weight
-    }
+    return _calculate_dimension_score(
+        metrics=metrics,
+        factors=config.PERSONAL_BURNOUT_FACTORS,
+        dimension=OCHDimension.PERSONAL,
+        config=config,
+    )
 
 
 def calculate_work_related_burnout(metrics: Dict[str, float], config: OCHConfig = None) -> Dict[str, Any]:
@@ -177,41 +145,50 @@ def calculate_work_related_burnout(metrics: Dict[str, float], config: OCHConfig 
     if config is None:
         config = OCHConfig()
 
-    factors = config.WORK_RELATED_BURNOUT_FACTORS
+    return _calculate_dimension_score(
+        metrics=metrics,
+        factors=config.WORK_RELATED_BURNOUT_FACTORS,
+        dimension=OCHDimension.WORK_RELATED,
+        config=config,
+    )
+
+
+def _calculate_dimension_score(
+    metrics: Dict[str, float],
+    factors: Dict[str, Dict[str, Any]],
+    dimension: OCHDimension,
+    config: OCHConfig,
+) -> Dict[str, Any]:
+    """Shared scorer for personal and work-related OCH dimensions."""
     component_scores = {}
     weighted_sum = 0.0
     total_weight = 0.0
 
     for factor_name, factor_config in factors.items():
-        if factor_name in metrics:
-            raw_value = max(0.0, metrics[factor_name])  # Ensure non-negative
+        if factor_name not in metrics:
+            continue
 
-            # Calculate score with reasonable cap (allow 150% for extreme cases)
-            normalized_score = min(150.0, (raw_value / factor_config['scale_max']) * 100.0)
+        raw_value = max(0.0, metrics[factor_name])
+        normalized_score = min(150.0, (raw_value / factor_config['scale_max']) * 100.0)
+        weighted_score = normalized_score * factor_config['weight']
 
-            # Apply weight
-            weighted_score = normalized_score * factor_config['weight']
-            component_scores[factor_name] = {
-                'raw_value': raw_value,
-                'normalized_score': round(normalized_score, 2),
-                'weighted_score': round(weighted_score, 2),
-                'weight': factor_config['weight'],
-                'description': factor_config['description']
-            }
+        component_scores[factor_name] = {
+            'raw_value': raw_value,
+            'normalized_score': round(normalized_score, 2),
+            'weighted_score': round(weighted_score, 2),
+            'weight': factor_config['weight'],
+            'description': factor_config['description']
+        }
 
-            weighted_sum += weighted_score
-            total_weight += factor_config['weight']
+        weighted_sum += weighted_score
+        total_weight += factor_config['weight']
 
-    # Calculate final score
-    if total_weight > 0:
-        final_score = weighted_sum / total_weight
-    else:
-        final_score = 0.0
+    final_score = (weighted_sum / total_weight) if total_weight > 0 else 0.0
 
     return {
         'score': round(final_score, 2),
         'components': component_scores,
-        'dimension': OCHDimension.WORK_RELATED.value,
+        'dimension': dimension.value,
         'interpretation': get_och_interpretation(final_score, config),
         'data_completeness': total_weight
     }
@@ -498,36 +475,11 @@ def generate_och_score_reasoning(
                     else:
                         work_factors.append(f"On-call responsibility load ({display_score:.1f} points)")
 
-                elif factor_name == 'deployment_frequency':
-                    # Include severity breakdown in critical production incident frequency
-                    if severity_dist:
-                        severity_breakdown = []
-                        total_incidents = sum(severity_dist.values())
-                        for severity, count in severity_dist.items():
-                            if count > 0:
-                                severity_breakdown.append(f"{count} {severity}")
-                        if severity_breakdown:
-                            severity_text = ", ".join(severity_breakdown)
-                            work_factors.append(f"Critical production incident frequency: {severity_text} ({display_score:.1f} points total for {total_incidents} incidents)")
-                        else:
-                            work_factors.append(f"Critical production incident frequency ({display_score:.1f} points)")
-                    else:
-                        work_factors.append(f"Critical production incident frequency ({display_score:.1f} points)")
-
-                elif factor_name == 'pr_frequency':
-                    work_factors.append(f"Incident severity-weighted workload ({display_score:.1f} points)")
-
                 elif factor_name == 'sprint_completion':
                     work_factors.append(f"Consecutive days with incidents ({display_score:.1f} points)")
 
                 elif factor_name == 'alert_health':
                     work_factors.append(f"Alert health score - night-time, escalations, retriggered issues ({display_score:.1f} points)")
-
-                elif factor_name == 'meeting_load':
-                    work_factors.append(f"Incident response meeting load ({display_score:.1f} points)")
-
-                elif factor_name == 'code_review_speed':
-                    work_factors.append(f"Code review speed pressure ({display_score:.1f} points)")
 
 
     # Output organized factors with clear headers
@@ -575,11 +527,7 @@ def get_structured_och_factors(
         'after_hours_activity': 'After-hours activity',
         'oncall_burden': 'On-call load',
         'alert_health': 'Alert health & burden',
-        'deployment_frequency': 'Incident frequency',
-        'pr_frequency': 'Severity-weighted workload',
         'sprint_completion': 'Consecutive incident days',
-        'meeting_load': 'Meeting load',
-        'code_review_speed': 'Review speed pressure'
     }
 
     def extract_factors(result: Dict[str, Any], dimension: str) -> List[Dict[str, Any]]:
@@ -587,6 +535,12 @@ def get_structured_och_factors(
         factors = []
         components = result.get('components', {})
         total_weight = result.get('data_completeness', 0)
+        config = OCHConfig()
+        dimension_weight = (
+            config.DIMENSION_WEIGHTS[OCHDimension.PERSONAL]
+            if dimension == 'personal'
+            else config.DIMENSION_WEIGHTS[OCHDimension.WORK_RELATED]
+        )
 
         if total_weight == 0:
             total_weight = sum(c.get('weight', 0) for c in components.values())
@@ -597,10 +551,11 @@ def get_structured_och_factors(
                 # Calculate contribution to the dimension score
                 contribution = weighted_score / total_weight if total_weight > 0 else 0
 
-                # Calculate percentage of total OCH score
-                # Composite score is average of personal and work scores (50/50 weight)
-                # So each dimension contributes 50% to the total
-                percentage = (contribution / composite_score * 100 * 0.5) if composite_score > 0 else 0
+                percentage = (
+                    (contribution * dimension_weight) / composite_score * 100
+                    if composite_score > 0
+                    else 0
+                )
 
                 factors.append({
                     'key': factor_name,
@@ -655,8 +610,8 @@ def validate_factor_consistency(personal_result: Dict, work_result: Dict, raw_me
 
     incident_related_work = sum([
         work_components.get('oncall_burden', {}).get('weighted_score', 0),
-        work_components.get('pr_frequency', {}).get('weighted_score', 0),
-        work_components.get('deployment_frequency', {}).get('weighted_score', 0)
+        work_components.get('sprint_completion', {}).get('weighted_score', 0),
+        work_components.get('alert_health', {}).get('weighted_score', 0)
     ])
 
     total_incident_attribution = incident_related_personal + incident_related_work

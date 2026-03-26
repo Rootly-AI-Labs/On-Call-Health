@@ -357,23 +357,18 @@ class TestOCHMetricMapping(unittest.TestCase):
         """Test that OCH metric names are correct."""
         och_metrics = {
             'work_hours_trend': 0,
-            'weekend_work': 0,
             'after_hours_activity': 0,
             'sleep_quality_proxy': 0,
             'sprint_completion': 0,
-            'code_review_speed': 0,
-            'pr_frequency': 0,
-            'deployment_frequency': 0,
-            'meeting_load': 0,
+            'alert_health': 0,
             'oncall_burden': 0
         }
 
         # Verify all expected OCH metrics are present
         expected_metrics = [
-            'work_hours_trend', 'weekend_work', 'after_hours_activity',
+            'work_hours_trend', 'after_hours_activity',
             'sleep_quality_proxy', 'sprint_completion',
-            'code_review_speed', 'pr_frequency', 'deployment_frequency',
-            'meeting_load', 'oncall_burden'
+            'alert_health', 'oncall_burden'
         ]
 
         for metric in expected_metrics:
@@ -382,8 +377,7 @@ class TestOCHMetricMapping(unittest.TestCase):
     def test_och_personal_burnout_factors(self):
         """Test OCH personal burnout factor mapping."""
         # Personal burnout factors derived from incidents:
-        # - work_hours_trend: incidents_per_week
-        # - weekend_work: after_hours_percentage
+        # - work_hours_trend: task load proxy
         # - after_hours_activity: after_hours_percentage
         # - sleep_quality_proxy: severity_weighted_per_week
 
@@ -394,42 +388,31 @@ class TestOCHMetricMapping(unittest.TestCase):
         # Simplified calculation (actual uses tiered scaling)
         personal_factors = {
             'work_hours_trend': incidents_per_week,
-            'weekend_work': after_hours_pct * 100,  # Convert to percentage
             'after_hours_activity': after_hours_pct * 100,
             'sleep_quality_proxy': severity_weighted_per_week
         }
 
         self.assertGreater(personal_factors['work_hours_trend'], 0)
-        self.assertGreater(personal_factors['weekend_work'], 0)
         self.assertGreater(personal_factors['after_hours_activity'], 0)
 
     def test_och_work_related_factors(self):
         """Test OCH work-related burnout factor mapping."""
         # Work-related factors derived from incidents:
-        # - sprint_completion: avg_response_time_minutes
-        # - code_review_speed: avg_response_time_minutes
-        # - pr_frequency: incidents_per_week
-        # - deployment_frequency: critical_incidents
-        # - meeting_load: incidents_per_week
+        # - sprint_completion: consecutive incident days / sustained load proxy
         # - oncall_burden: severity_weighted_per_week
+        # - alert_health: alert burden and quality proxy
 
-        incidents_per_week = 5.0
-        avg_response_minutes = 30.0
-        critical_incidents = 2
         severity_weighted_per_week = 10.0
 
         work_factors = {
-            'sprint_completion': avg_response_minutes,
-            'code_review_speed': avg_response_minutes,
-            'pr_frequency': incidents_per_week,
-            'deployment_frequency': critical_incidents,
-            'meeting_load': incidents_per_week,
-            'oncall_burden': severity_weighted_per_week
+            'sprint_completion': 3.0,
+            'oncall_burden': severity_weighted_per_week,
+            'alert_health': 45.0,
         }
 
         self.assertGreater(work_factors['sprint_completion'], 0)
-        self.assertGreater(work_factors['pr_frequency'], 0)
-        self.assertGreater(work_factors['deployment_frequency'], 0)
+        self.assertGreater(work_factors['oncall_burden'], 0)
+        self.assertGreater(work_factors['alert_health'], 0)
 
 
 class TestTimezoneConversion(unittest.TestCase):

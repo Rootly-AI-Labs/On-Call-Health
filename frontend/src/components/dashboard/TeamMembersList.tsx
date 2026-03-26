@@ -7,6 +7,11 @@ import { Button } from "@/components/ui/button"
 import { ChevronDown, ChevronRight, Users, Loader2, TrendingUp, TrendingDown, Minus, ChevronsUp, ChevronsDown, Info } from "lucide-react"
 import { useState } from "react"
 import Image from "next/image"
+import {
+  getRiskScore100FromDailyHealth,
+  getRiskScore100FromMember,
+  hasMemberRiskScore,
+} from "@/lib/scoring"
 
 // User trend categories (5 levels)
 type UserTrend = 'significantly_worsening' | 'worsening' | 'stable' | 'improving' | 'significantly_improving'
@@ -36,7 +41,7 @@ function aggregateToWeekly(dailyData: Record<string, any>): { weekStart: string;
 
   for (const date of dates) {
     const dayData = dailyData[date]
-    const dayScore = dayData.health_score || 0
+    const dayScore = getRiskScore100FromDailyHealth(dayData)
     const weekKey = getWeekStartDate(new Date(date))
 
     const bucket = weeklyBuckets.get(weekKey) || []
@@ -158,16 +163,12 @@ function getTrendConfig(trend: UserTrend) {
 interface TeamMembersListProps {
   currentAnalysis: any
   setSelectedMember: (member: any) => void
-  getRiskColor: (riskLevel: string) => string
-  getProgressColor: (riskLevel: string) => string
   connectedIntegrations?: Set<string>
 }
 
 export function TeamMembersList({
   currentAnalysis,
   setSelectedMember,
-  getRiskColor,
-  getProgressColor,
   connectedIntegrations = new Set()
 }: TeamMembersListProps) {
   const [showMembersWithoutIncidents, setShowMembersWithoutIncidents] = useState(false);
@@ -223,12 +224,14 @@ export function TeamMembersList({
   }
 
   const handleMemberClick = (member: any, trendInfo: any) => {
+    const memberRiskScore = getRiskScore100FromMember(member)
+
     setSelectedMember({
       id: member.user_id || '',
       name: member.user_name || 'Unknown',
       email: member.user_email || '',
       avatar_url: member.avatar_url || null,
-      healthScore: member.och_score || 0,
+      healthScore: memberRiskScore,
       riskLevel: (member.risk_level || 'low') as 'high' | 'medium' | 'low',
       trend: trendInfo.trend,
       trendPercentage: trendInfo.percentage,
@@ -248,6 +251,8 @@ export function TeamMembersList({
   const renderMemberRow = (member: any, index: number) => {
     const trendInfo = calculateUserTrend(member.user_email, individualDailyData)
     const trendConfig = getTrendConfig(trendInfo.trend)
+    const memberRiskScore = getRiskScore100FromMember(member)
+    const hasRiskScore = hasMemberRiskScore(member)
 
     return (
       <tr
@@ -274,7 +279,7 @@ export function TeamMembersList({
 
         {/* Risk Level + Trend (stacked on mobile) */}
         <td className="py-2 px-2 sm:py-3 sm:px-4 md:py-3 md:px-4">
-          {member?.och_score !== undefined ? (
+          {hasRiskScore ? (
             <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
               {/* Trend badge (mobile only) */}
               <div className="relative group md:hidden">
@@ -298,12 +303,12 @@ export function TeamMembersList({
                   <div
                     className="h-full rounded-full transition-all"
                     style={{
-                      width: `${member.och_score}%`,
-                      backgroundColor: getOCHProgressColor(member.och_score)
+                      width: `${memberRiskScore}%`,
+                      backgroundColor: getOCHProgressColor(memberRiskScore)
                     }}
                   />
                 </div>
-                <span className="text-sm font-medium text-neutral-700 tabular-nums">{Math.round(member.och_score)}</span>
+                <span className="text-sm font-medium text-neutral-700 tabular-nums">{Math.round(memberRiskScore)}</span>
               </div>
             </div>
           ) : (
@@ -518,25 +523,23 @@ export function TeamMembersList({
             }
             
             // Filter members with valid scores
-            const validMembers = allMembers.filter((member) => {
-              return member.och_score !== undefined && member.och_score !== null
-            })
+            const validMembers = allMembers.filter((member) => hasMemberRiskScore(member))
             
             // Separate members with incidents/health risk and those with neither
             // Include members with incidents OR OCH risk level (e.g., from Jira) in main section
             const membersWithIncidents = validMembers.filter(member =>
-              (member.incident_count || 0) > 0 || (member.och_score || 0) > 0
+              (member.incident_count || 0) > 0 || getRiskScore100FromMember(member) > 0
             )
             // Only hide members with BOTH zero incidents AND zero OCH risk level
             const membersWithoutIncidents = validMembers.filter(member =>
-              (member.incident_count || 0) === 0 && (member.och_score || 0) === 0
+              (member.incident_count || 0) === 0 && getRiskScore100FromMember(member) === 0
             )
 
             // Sort members by selected criteria
             const sortMembers = (members: any[]) => {
               if (sortBy === 'risk') {
                 // Sort by OCH risk level (higher score = higher risk)
-                return [...members].sort((a, b) => (b.och_score || 0) - (a.och_score || 0));
+                return [...members].sort((a, b) => getRiskScore100FromMember(b) - getRiskScore100FromMember(a));
               }
 
               if (sortBy === 'incidents') {
@@ -560,7 +563,7 @@ export function TeamMembersList({
                 const trendComparison = (trendOrder[trendA.trend] ?? 2) - (trendOrder[trendB.trend] ?? 2);
                 // If same trend level, sort by risk level (higher risk first)
                 if (trendComparison === 0) {
-                  return (b.och_score || 0) - (a.och_score || 0);
+                  return getRiskScore100FromMember(b) - getRiskScore100FromMember(a);
                 }
                 return trendComparison;
               });

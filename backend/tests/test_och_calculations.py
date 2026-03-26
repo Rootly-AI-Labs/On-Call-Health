@@ -73,11 +73,12 @@ class TestOCHConfig(unittest.TestCase):
         self.assertIn('sleep_quality_proxy', self.config.PERSONAL_BURNOUT_FACTORS)
         self.assertIn('work_hours_trend', self.config.PERSONAL_BURNOUT_FACTORS)
 
-    def test_work_related_burnout_has_two_factors(self):
-        """Test that work-related burnout has exactly 2 factors."""
-        self.assertEqual(len(self.config.WORK_RELATED_BURNOUT_FACTORS), 2)
+    def test_work_related_burnout_has_three_factors(self):
+        """Test that work-related burnout has exactly 3 factors."""
+        self.assertEqual(len(self.config.WORK_RELATED_BURNOUT_FACTORS), 3)
         self.assertIn('oncall_burden', self.config.WORK_RELATED_BURNOUT_FACTORS)
         self.assertIn('sprint_completion', self.config.WORK_RELATED_BURNOUT_FACTORS)
+        self.assertIn('alert_health', self.config.WORK_RELATED_BURNOUT_FACTORS)
 
 
 class TestPersonalBurnoutCalculation(unittest.TestCase):
@@ -173,7 +174,8 @@ class TestWorkRelatedBurnoutCalculation(unittest.TestCase):
         # Use metrics that match current OCH config factors
         metrics = {
             'oncall_burden': 50.0,       # on-call load (scale_max=100)
-            'sprint_completion': 5.0     # consecutive incident days (scale_max=7)
+            'sprint_completion': 5.0,    # consecutive incident days (scale_max=7)
+            'alert_health': 40.0         # alert burden and quality (scale_max=100)
         }
 
         result = calculate_work_related_burnout(metrics, self.config)
@@ -187,8 +189,8 @@ class TestWorkRelatedBurnoutCalculation(unittest.TestCase):
         self.assertGreaterEqual(result['score'], 0)
         self.assertLessEqual(result['score'], 150)
 
-        # Should have all 2 components
-        self.assertEqual(len(result['components']), 2)
+        # Should have all 3 components
+        self.assertEqual(len(result['components']), 3)
 
         # Dimension should be correct
         self.assertEqual(result['dimension'], OCHDimension.WORK_RELATED.value)
@@ -197,7 +199,8 @@ class TestWorkRelatedBurnoutCalculation(unittest.TestCase):
         """Test work-related burnout calculation with high stress indicators."""
         metrics = {
             'oncall_burden': 120.0,      # Exceeds scale_max of 100
-            'sprint_completion': 10.0    # Exceeds scale_max of 7
+            'sprint_completion': 10.0,   # Exceeds scale_max of 7
+            'alert_health': 130.0        # Exceeds scale_max of 100
         }
 
         result = calculate_work_related_burnout(metrics, self.config)

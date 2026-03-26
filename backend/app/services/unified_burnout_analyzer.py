@@ -935,7 +935,9 @@ class UnifiedBurnoutAnalyzer:
 
             # Calculate period summary for consistent UI display
             team_overall_score = team_health.get("overall_score", 0.0)  # Already on 0-100 scale
-            period_average_score = team_overall_score  # No conversion needed
+            period_average_score = team_overall_score  # Compatibility field
+            period_risk_score_100 = team_health.get("risk_score_100", team_overall_score)
+            period_health_score_100 = team_health.get("health_score_100", max(0.0, 100.0 - period_risk_score_100))
             
             logger.info(f"Period summary calculation: team_overall_score={team_overall_score}, period_average_score={period_average_score}")
             logger.info(f"Team health keys: {list(team_health.keys()) if team_health else 'None'}")
@@ -1000,6 +1002,8 @@ class UnifiedBurnoutAnalyzer:
                 "raw_incident_data": slim_incidents(incidents),  # Store slimmed incident data (96% size reduction)
                 "period_summary": {
                     "average_score": round(period_average_score, 2),
+                    "average_risk_score_100": round(period_risk_score_100, 2),
+                    "average_health_score_100": round(period_health_score_100, 2),
                     "days_analyzed": time_range_days,
                     "total_days_with_data": len([d for d in daily_trends if d.get("incident_count", 0) > 0])
                 }
@@ -3376,6 +3380,10 @@ class UnifiedBurnoutAnalyzer:
             logger.warning(f"🏥 TEAM_HEALTH: No member analyses provided, returning neutral baseline")
             return {
                 "overall_score": 6.5,  # Neutral baseline if no data (not perfect health)
+                "overall_score_semantics": "health_10_compat",
+                "risk_score_100": 35.0,
+                "health_score_100": 65.0,
+                "average_risk_score_100": 35.0,
                 "risk_distribution": {"low": 0, "medium": 0, "high": 0, "critical": 0},
                 "average_health_score": 0,
                 "health_status": "fair",
@@ -3420,11 +3428,15 @@ class UnifiedBurnoutAnalyzer:
             # OCH scoring (0-100 where higher = more health risk)
             # Store raw OCH score as overall_score for frontend consumption
             overall_score = avg_score
+            risk_score_100 = max(0.0, min(100.0, avg_score))
+            health_score_100 = max(0.0, 100.0 - risk_score_100)
             logger.info(f"Using raw OCH score as overall_score: {overall_score}")
         else:
             # Legacy scoring - convert 0-10 health risk to 0-10 health scale (inverse)
             overall_score = 10 - avg_score
             overall_score = max(0, overall_score)
+            risk_score_100 = max(0.0, min(100.0, avg_score * 10.0))
+            health_score_100 = max(0.0, 100.0 - risk_score_100)
             logger.info(f"Using legacy health calculation: health_risk={avg_score} -> health={overall_score}")
         
         # Determine health status based on scoring method
@@ -3455,7 +3467,11 @@ class UnifiedBurnoutAnalyzer:
 
         return {
             "overall_score": round(overall_score, 2),
+            "overall_score_semantics": "risk_100" if using_och else "health_10_compat",
             "scoring_method": "OCH" if using_och else "Legacy",
+            "risk_score_100": round(risk_score_100, 2),
+            "health_score_100": round(health_score_100, 2),
+            "average_risk_score_100": round(risk_score_100, 2),
             "risk_distribution": risk_dist,
             "average_health_score": round(avg_score, 2),
             "health_status": health_status,
@@ -4639,9 +4655,15 @@ class UnifiedBurnoutAnalyzer:
                 else:
                     after_hours_percentage = 0
 
+                health_score_100 = round(max(0.0, min(100.0, daily_score * 10)), 1)
+                risk_score_100 = round(max(0.0, min(100.0, 100.0 - health_score_100)), 1)
+
                 daily_trends.append({
                     "date": date_str,
                     "overall_score": round(daily_score, 2),  # Keep as 0-10 scale (SimpleBurnoutAnalyzer approach)
+                    "overall_score_semantics": "health_10_compat",
+                    "health_score_100": health_score_100,
+                    "risk_score_100": risk_score_100,
                     "average_health_score": team_health.get("average_health_score", 0.0) if team_health else 0.0,
                     "incident_count": incident_count,
                     "severity_weighted_count": round(severity_weighted, 1),
@@ -4657,7 +4679,7 @@ class UnifiedBurnoutAnalyzer:
                     "members_at_risk": members_at_risk,
                     "total_members": total_members,
                     "health_status": health_status,
-                    "health_percentage": round(daily_score * 10, 1),  # Convert to percentage for display
+                    "health_percentage": health_score_100,  # Convert to percentage for display
                     # 🔍 DEBUG: Add penalty breakdown for debugging
                     "debug_penalties": {
                         "baseline": 8.7,
@@ -5298,6 +5320,20 @@ class UnifiedBurnoutAnalyzer:
             logger.error(f"JIRA CORRELATION: Error correlating Jira data: {e}")
             return members
 
+    def _apply_monotonic_och_overlay(self, original_och: float, overlay_och: float) -> tuple[float, float]:
+        """
+        Apply a monotonic 0-100 overlay score onto an existing OCH risk score.
+
+        The overlay can only increase risk and fills some of the remaining
+        headroom to 100 based on its magnitude.
+        """
+        original_och = max(0.0, min(100.0, float(original_och or 0.0)))
+        overlay_och = max(0.0, min(100.0, float(overlay_och or 0.0)))
+        final_och = original_och + (100.0 - original_och) * (overlay_och / 100.0)
+        final_och = max(original_och, min(100.0, final_och))
+        added_risk = final_och - original_och
+        return final_och, added_risk
+
     def _recalculate_burnout_with_jira(self, members: List[Dict[str, Any]], metadata: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
         Recalculate OCH scores incorporating Jira ticket workload data.
@@ -5331,17 +5367,10 @@ class UnifiedBurnoutAnalyzer:
                     jira_och_contribution = self._calculate_jira_och_contribution(jira_tickets)
                     jira_och_contribution = max(0.0, min(100.0, jira_och_contribution))
 
-                    # Combine using "headroom" model:
-                    # final = original + (100 - original) * (jira / 100)
-                    # - If jira = 0 → no change
-                    # - If jira = 100 → jump to 100
-                    # - Always >= original_och, <= 100
-                    final_och = original_och + (100.0 - original_och) * (jira_och_contribution / 100.0)
-
-                    # Just in case of any float weirdness, clamp again
-                    final_och = max(original_och, min(100.0, final_och))
-
-                    jira_added_risk = final_och - original_och
+                    final_och, jira_added_risk = self._apply_monotonic_och_overlay(
+                        original_och,
+                        jira_och_contribution,
+                    )
                     updated_member["och_score"] = round(final_och, 2)
 
                     logger.info(
@@ -5698,11 +5727,10 @@ class UnifiedBurnoutAnalyzer:
                     linear_och_contribution = self._calculate_linear_och_contribution(linear_issues)
                     linear_och_contribution = max(0.0, min(100.0, linear_och_contribution))
 
-                    # Combine using "headroom" model (same as Jira)
-                    final_och = original_och + (100.0 - original_och) * (linear_och_contribution / 100.0)
-                    final_och = max(original_och, min(100.0, final_och))
-
-                    linear_added_risk = final_och - original_och
+                    final_och, linear_added_risk = self._apply_monotonic_och_overlay(
+                        original_och,
+                        linear_och_contribution,
+                    )
                     updated_member["och_score"] = round(final_och, 2)
 
                     issue_count = len(linear_issues)

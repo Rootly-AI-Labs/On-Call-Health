@@ -15,6 +15,7 @@ import {
   getRemainingTagCount,
   getTagColorClasses
 } from '@/lib/githubMetricUtils'
+import { getRiskScore100FromMember } from '@/lib/scoring'
 
 interface GitHubAllMetricsPopupProps {
   isOpen: boolean
@@ -37,7 +38,7 @@ export default function GitHubAllMetricsPopup({
       id: member.user_id || '',
       name: member.user_name || 'Unknown',
       email: member.user_email || '',
-      burnoutScore: member.och_score || 0,
+      healthScore: getRiskScore100FromMember(member),
       riskLevel: (member.risk_level || 'low') as 'high' | 'medium' | 'low',
       trend: 'stable' as const,
       incidentsHandled: member.incident_count || 0,

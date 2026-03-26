@@ -8,6 +8,7 @@ import {
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { AIInsightsCard } from "./insights/AIInsightsCard"
+import { getRiskScore100FromMember, getRiskScore100FromTeamHealth, getRiskScore100FromTrend, getRiskStatusDescription, getRiskStatusLabel } from "@/lib/scoring"
 
 interface TeamHealthOverviewProps {
   currentAnalysis: any
@@ -31,8 +32,8 @@ function calculateTeamOCHScore(currentAnalysis: any): number | null {
   if (!members || members.length === 0) return null
 
   const ochScores = members
-    .map((m: any) => m.och_score)
-    .filter((s: any) => s !== undefined && s !== null && s > 0)
+    .map((m: any) => getRiskScore100FromMember(m))
+    .filter((s: any) => s > 0)
 
   if (ochScores.length === 0) return null
   return Math.round(ochScores.reduce((a: number, b: number) => a + b, 0) / ochScores.length)
@@ -44,8 +45,8 @@ function getHealthPercentage(currentAnalysis: any, historicalTrends: any): numbe
 
   if (onCallMembers.length > 0) {
     const ochScores = onCallMembers
-      .map((m: any) => m.och_score)
-      .filter((s: any) => s !== undefined && s !== null)
+      .map((m: any) => getRiskScore100FromMember(m))
+      .filter((s: any) => s > 0)
 
     if (ochScores.length > 0) {
       return ochScores.reduce((a: number, b: number) => a + b, 0) / ochScores.length
@@ -55,35 +56,33 @@ function getHealthPercentage(currentAnalysis: any, historicalTrends: any): numbe
   // Fallback to daily trends
   if (historicalTrends?.daily_trends?.length > 0) {
     const latestTrend = historicalTrends.daily_trends[historicalTrends.daily_trends.length - 1]
-    return latestTrend.overall_score * 10
+    return getRiskScore100FromTrend(latestTrend)
   }
   if (currentAnalysis?.analysis_data?.daily_trends?.length > 0) {
     const latestTrend = currentAnalysis.analysis_data.daily_trends[currentAnalysis.analysis_data.daily_trends.length - 1]
-    return latestTrend.overall_score * 10
+    return getRiskScore100FromTrend(latestTrend)
   }
   if (currentAnalysis?.analysis_data?.team_health) {
-    return currentAnalysis.analysis_data.team_health.overall_score * 10
+    return getRiskScore100FromTeamHealth(currentAnalysis.analysis_data.team_health)
   }
   if (currentAnalysis?.analysis_data?.team_summary) {
-    return currentAnalysis.analysis_data.team_summary.average_score * 10
+    const summary = currentAnalysis.analysis_data.team_summary
+    if (typeof summary.average_risk_score_100 === "number") return summary.average_risk_score_100
+    if (typeof summary.average_health_score_100 === "number") return 100 - summary.average_health_score_100
+    const averageScore = summary.average_score
+    if (typeof averageScore === "number") return averageScore > 10 ? averageScore : averageScore * 10
   }
   return 0
 }
 
 // Convert OCH score to health status label
 function getHealthStatusLabel(ochScore: number): string {
-  if (ochScore < 25) return 'Healthy'
-  if (ochScore < 50) return 'Fair'
-  if (ochScore < 75) return 'Poor'
-  return 'Critical'
+  return getRiskStatusLabel(ochScore)
 }
 
 // Get health status description
 function getHealthStatusDescription(ochScore: number): string {
-  if (ochScore < 25) return 'Sustainable workload'
-  if (ochScore < 50) return 'Monitor for trends'
-  if (ochScore < 75) return 'Consider intervention'
-  return 'Action needed'
+  return getRiskStatusDescription(ochScore)
 }
 
 // Tooltip show/hide helpers
@@ -195,10 +194,10 @@ export function TeamHealthOverview({
               (() => {
                 const teamOchScore = calculateTeamOCHScore(currentAnalysis)
                 const scoreValue = teamOchScore ?? (() => {
-                  if (historicalTrends?.daily_trends?.length > 0) return Math.round(historicalTrends.daily_trends[historicalTrends.daily_trends.length - 1].overall_score * 10)
-                  if (currentAnalysis?.analysis_data?.daily_trends?.length > 0) return Math.round(currentAnalysis.analysis_data.daily_trends[currentAnalysis.analysis_data.daily_trends.length - 1].overall_score * 10)
-                  if (currentAnalysis?.analysis_data?.team_health) return Math.round(currentAnalysis.analysis_data.team_health.overall_score * 10)
-                  if (currentAnalysis?.analysis_data?.team_summary) return Math.round(currentAnalysis.analysis_data.team_summary.average_score * 10)
+                  if (historicalTrends?.daily_trends?.length > 0) return Math.round(getRiskScore100FromTrend(historicalTrends.daily_trends[historicalTrends.daily_trends.length - 1]))
+                  if (currentAnalysis?.analysis_data?.daily_trends?.length > 0) return Math.round(getRiskScore100FromTrend(currentAnalysis.analysis_data.daily_trends[currentAnalysis.analysis_data.daily_trends.length - 1]))
+                  if (currentAnalysis?.analysis_data?.team_health) return Math.round(getRiskScore100FromTeamHealth(currentAnalysis.analysis_data.team_health))
+                  if (currentAnalysis?.analysis_data?.team_summary) return Math.round(getHealthPercentage(currentAnalysis, historicalTrends))
                   return null
                 })()
                 const barColor = scoreValue === null ? 'bg-neutral-300'
@@ -286,11 +285,12 @@ export function TeamHealthOverview({
                       const riskCounts = { critical: 0, high: 0, medium: 0, low: 0 };
 
                       onCallMembers.forEach((member: any) => {
-                        if (member.och_score !== undefined && member.och_score !== null) {
+                        const riskScore = getRiskScore100FromMember(member)
+                        if (riskScore > 0 || member?.och_score === 0 || member?.risk_score_100 === 0) {
                           // Use OCH scoring (0-100, higher = worse)
-                          if (member.och_score >= 75) riskCounts.critical++;
-                          else if (member.och_score >= 50) riskCounts.high++;
-                          else if (member.och_score >= 25) riskCounts.medium++;
+                          if (riskScore >= 75) riskCounts.critical++;
+                          else if (riskScore >= 50) riskCounts.high++;
+                          else if (riskScore >= 25) riskCounts.medium++;
                           else riskCounts.low++;
                         }
                         // No fallback - only count members with OCH risk levels

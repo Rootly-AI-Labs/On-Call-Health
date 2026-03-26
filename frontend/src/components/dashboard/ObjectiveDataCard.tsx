@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Info, TrendingUp, TrendingDown, Minus } from "lucide-react"
+import { getRiskScore100FromTrend } from "@/lib/scoring"
 
 interface ObjectiveDataCardProps {
   currentAnalysis: any
@@ -56,7 +57,7 @@ const METRIC_CONFIG: Record<string, MetricConfig> = {
     dataKey: "dailyScore",
     weeklyDataKey: "riskLevel",
     showMeanLine: true,
-    transformer: (trend: any) => Math.max(0, Math.min(100, 100 - Math.round(trend.overall_score * 10)))
+    transformer: (trend: any) => getRiskScore100FromTrend(trend)
   },
   incident_load: {
     label: "Incident Count",
@@ -117,10 +118,6 @@ function formatDateShort(date: Date): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-function calculateRiskLevel(overallScore: number): number {
-  return Math.max(0, Math.min(100, 100 - Math.round((overallScore || 0) * 10)))
-}
-
 function aggregateToWeekly(dailyData: any[]): any[] {
   if (!dailyData || dailyData.length === 0) return []
 
@@ -138,7 +135,7 @@ function aggregateToWeekly(dailyData: any[]): any[] {
       const dayCount = days.length
       const teamSize = days[0]?.total_members || 1
 
-      const avgRiskLevel = days.reduce((sum, d) => sum + calculateRiskLevel(d.overall_score), 0) / dayCount
+      const avgRiskLevel = days.reduce((sum, d) => sum + getRiskScore100FromTrend(d), 0) / dayCount
       const totalIncidents = days.reduce((sum, d) => sum + (d.incident_count || 0), 0)
       const avgAfterHours = days.reduce((sum, d) => sum + (d.after_hours_percentage || 0), 0) / dayCount
       const avgSeverityWeighted = days.reduce((sum, d) => sum + (d.severity_weighted_count || 0), 0) / dayCount

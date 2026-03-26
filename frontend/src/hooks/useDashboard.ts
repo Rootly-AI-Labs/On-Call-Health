@@ -4,6 +4,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { getValidToken, clearAuthData, redirectToLogin } from "@/lib/auth"
+import {
+  getRiskColor as getRiskFillColor,
+  getRiskLevelKey,
+  getRiskScore100FromMember,
+  getRiskScore100FromTeamHealth,
+  getRiskScore100FromTrend,
+} from "@/lib/scoring"
 
 import type {
   AnalysisResult,
@@ -2339,44 +2346,6 @@ export default function useDashboard() {
     }
   }
 
-  const getRiskColor = (riskLevel: string) => {
-    switch (riskLevel) {
-      // OCH 4-tier system
-      case "critical":
-        return "text-red-800 bg-red-100"    // Critical (75-100): Dark red
-      case "poor":
-        return "text-orange-800 bg-orange-100"     // Poor (50-74): Orange
-      case "fair":
-        return "text-yellow-800 bg-yellow-100" // Fair (25-49): Yellow
-      case "healthy":
-        return "text-green-800 bg-green-100"    // Healthy (0-24): Green
-
-      // Legacy 3-tier system fallback
-      case "high":
-        return "text-orange-800 bg-orange-100"
-      case "medium":
-        return "text-yellow-800 bg-yellow-100"
-      case "low":
-        return "text-green-800 bg-green-100"
-      default:
-        return "text-gray-800 bg-gray-100"
-    }
-  }
-
-  const getProgressColor = (riskLevel: string) => {
-    switch (riskLevel) {
-      case "high":
-        return "bg-red-500"
-      case "medium":
-        return "bg-yellow-500"
-      case "low":
-        return "bg-green-500"
-      default:
-        return "bg-gray-500"
-    }
-  }
-
-  
   const getTrendIcon = (trend?: string) => {
     switch (trend) {
       case "up":
@@ -2437,12 +2406,12 @@ export default function useDashboard() {
   const chartData = historicalTrends?.daily_trends?.length > 0 
     ? historicalTrends.daily_trends.slice(-7).map((trend: any) => ({
         date: new Date(trend.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        score: Math.round((10 - trend.overall_score) * 10) // Convert 0-10 burnout to 0-100 health scale
+        score: Math.round(getRiskScore100FromTrend(trend))
       }))
     : currentAnalysis?.analysis_data?.team_health 
       ? [{ 
           date: "Current", 
-          score: Math.round(currentAnalysis.analysis_data.team_health.overall_score * 10) 
+          score: Math.round(getRiskScore100FromTeamHealth(currentAnalysis.analysis_data.team_health))
         }] 
       : []
   
@@ -2451,34 +2420,19 @@ export default function useDashboard() {
     const members = Array.isArray(teamAnalysis) ? teamAnalysis : teamAnalysis?.members
     return members
       ?.filter((member) => {
-        // Only include members with OCH risk levels
-        const memberWithOch = member as any;
-        return memberWithOch.och_score !== undefined && memberWithOch.och_score !== null && memberWithOch.och_score > 0
+        return getRiskScore100FromMember(member) > 0
       })
       ?.map((member) => {
-        // Use OCH scoring system (0-100 scale, higher = more health risk)
-        const score = (member as any).och_score || 0
-
-        const healthScore = Math.max(0, score);
-
-        // Official OCH 4-color system based on health score (higher = worse)
-        const getRiskFromHealthScore = (healthScore: number) => {
-          if (healthScore < 25) return { level: 'low', color: '#10b981' };      // Green - Low/minimal health risk (0-24)
-          if (healthScore < 50) return { level: 'mild', color: '#eab308' };     // Yellow - Mild health risk (25-49)
-          if (healthScore < 75) return { level: 'moderate', color: '#f97316' }; // Orange - Moderate/significant health risk (50-74)
-          return { level: 'high', color: '#dc2626' };                           // Red - High/severe health risk (75-100)
-        };
-
-        const riskInfo = getRiskFromHealthScore(healthScore);
+        const healthScore = getRiskScore100FromMember(member)
 
         return {
           name: (member.user_name || member.user_email || '').split(" ")[0],
           fullName: member.user_name || member.user_email || '',
           score: healthScore,
-          riskLevel: riskInfo.level,
+          riskLevel: getRiskLevelKey(healthScore),
           backendRiskLevel: member.risk_level, // Keep original for reference
           scoreType: 'OCH',
-          fill: riskInfo.color,
+          fill: getRiskFillColor(healthScore),
         }
       })
       ?.sort((a, b) => b.score - a.score) // Sort by score descending (highest health risk first)
@@ -2521,20 +2475,11 @@ export default function useDashboard() {
   // Members with high GitHub activity but no incidents should still be included
   // Filter members with OCH risk levels only
   const membersWithOchScores = useMemo(() => members.filter((m: any) =>
-    m?.och_score !== undefined && m?.och_score !== null && m?.och_score > 0
+    getRiskScore100FromMember(m) > 0
   ), [members]);
 
   // For backward compatibility, keep membersWithIncidents for other parts of the code
   const membersWithIncidents = members.filter((m: any) => (m?.incident_count || 0) > 0);
-
-  // Check if we have any real factors data from the API (not calculated/fake values)
-  const hasRealFactorsData = membersWithIncidents.length > 0 &&
-    membersWithIncidents.some((m: any) => m?.factors && (
-      (m.factors.after_hours !== undefined && m.factors.after_hours !== null) ||
-      (m.factors.weekend_work !== undefined && m.factors.weekend_work !== null) ||
-      (m.factors.incident_load !== undefined && m.factors.incident_load !== null) ||
-      (m.factors.response_time !== undefined && m.factors.response_time !== null)
-    ));
 
   // Use backend-calculated factors for organization-level metrics
   // Backend provides pre-calculated factors - frontend should ONLY display, never recalculate
@@ -2688,8 +2633,6 @@ return {
 
   // helpers
   getTrendIcon,
-  getRiskColor,
-  getProgressColor,
   formatRadarLabel,
   getAnalysisStages,
   getAnalysisDescription,

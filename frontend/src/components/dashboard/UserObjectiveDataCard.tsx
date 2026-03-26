@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Info, TrendingUp, TrendingDown, Minus } from "lucide-react"
+import { getRiskScore100FromDailyHealth } from "@/lib/scoring"
 
 interface UserObjectiveDataCardProps {
   memberData: any
@@ -53,7 +54,7 @@ const METRIC_CONFIG: Record<string, MetricConfig> = {
     dataKey: "dailyScore",
     weeklyDataKey: "riskLevel",
     showMeanLine: true,
-    transformer: (day: any) => day.health_score || 0
+    transformer: (day: any) => getRiskScore100FromDailyHealth(day)
   },
   incident_load: {
     label: "Incident Count",
@@ -130,7 +131,7 @@ function aggregateToWeekly(dailyData: any[], config: MetricConfig): any[] {
     .map(([weekStart, days]) => {
       const dayCount = days.length
 
-      const avgRiskLevel = days.reduce((sum, d) => sum + (d.health_score || 0), 0) / dayCount
+      const avgRiskLevel = days.reduce((sum, d) => sum + getRiskScore100FromDailyHealth(d), 0) / dayCount
       const totalIncidents = days.reduce((sum, d) => sum + (d.incident_count || 0), 0)
       const totalAfterHours = days.reduce((sum, d) => sum + (d.after_hours_count || 0), 0)
       const avgSeverityWeighted = days.reduce((sum, d) => sum + (d.severity_weighted_count || 0), 0) / dayCount
@@ -234,7 +235,7 @@ export function UserObjectiveDataCard({
           const transformedData = Object.entries(dailyData)
             .map(([dateStr, dayData]: [string, any]) => ({
               date: dateStr,
-              health_score: dayData.health_score || 0,
+              health_score: getRiskScore100FromDailyHealth(dayData),
               incident_count: dayData.incident_count || 0,
               team_health: dayData.team_health || 0,
               day_name: dayData.day_name || new Date(dateStr).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
@@ -287,7 +288,7 @@ export function UserObjectiveDataCard({
     const chartData = dailyHealthData.map((day: any) => ({
       date: formatDateShort(new Date(day.date)),
       originalDate: day.date,
-      dailyScore: day.health_score || 0,
+      dailyScore: getRiskScore100FromDailyHealth(day),
       incidentCount: day.incident_count || 0,
       afterHoursCount: day.after_hours_count || 0,
       severityWeightedCount: day.severity_weighted_count || 0,

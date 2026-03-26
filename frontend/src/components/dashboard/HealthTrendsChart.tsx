@@ -3,6 +3,7 @@
 import React from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts"
+import { getRiskColor, getRiskScore100FromTrend, getRiskStatusLabel } from "@/lib/scoring"
 
 interface HealthTrendsChartProps {
   currentAnalysis: any
@@ -23,31 +24,21 @@ function getCardDescription(currentAnalysis: any, historicalTrends: any): string
   return "No daily trend data available for this analysis"
 }
 
-function getRiskLevel(ochScore: number): string {
-  if (ochScore < 25) return 'healthy'
-  if (ochScore < 50) return 'fair'
-  if (ochScore < 75) return 'poor'
-  return 'critical'
-}
-
 function getBarColor(entry: any): string {
   if (!entry.hasRealData) return '#E5E7EB'
-  if (entry.score < 25) return '#10B981'
-  if (entry.score < 50) return '#F59E0B'
-  if (entry.score < 75) return '#F97316'
-  return '#EF4444'
+  return getRiskColor(entry.score)
 }
 
 function transformDailyTrends(dailyTrends: any[]): any[] {
   return dailyTrends.map((trend: any, index: number) => {
     const incidentCount = trend.incident_count || trend.analysis_count || 0
     const hasRealData = incidentCount > 0
-    const ochScore = 100 - Math.round(trend.overall_score * 10)
+    const ochScore = Math.round(getRiskScore100FromTrend(trend))
 
     const entry = {
       date: new Date(trend.date).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' }),
       score: hasRealData ? Math.max(0, Math.min(100, ochScore)) : 0,
-      riskLevel: hasRealData ? getRiskLevel(ochScore) : null,
+      riskLevel: hasRealData ? getRiskStatusLabel(ochScore).toLowerCase() : null,
       membersAtRisk: hasRealData ? trend.members_at_risk : null,
       totalMembers: hasRealData ? trend.total_members : null,
       healthStatus: hasRealData ? trend.health_status : null,

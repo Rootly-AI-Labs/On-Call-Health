@@ -15,6 +15,7 @@ import { UserIncidentCard } from "@/components/dashboard/UserIncidentCard"
 import { SurveyResultsCard } from "@/components/dashboard/SurveyResultsCard"
 import { TicketingCard } from "@/components/dashboard/TicketingCard"
 import { UserAlertsCard } from "@/components/dashboard/UserAlertsCard"
+import { getRiskScore100FromDailyHealth, getRiskScore100FromMember } from "@/lib/scoring"
 
 // OCH risk level helpers
 function getOCHRiskInfo(score: number | undefined | null): { level: string; label: string } {
@@ -90,7 +91,7 @@ function IndividualDailyHealthChart({ memberData, analysisId, currentAnalysis }:
         if (result.status === 'success' && result.data?.daily_health) {
           const formattedData = result.data.daily_health.map((day: any) => {
             const has_data = day.has_data !== undefined ? day.has_data : day.incident_count > 0;
-            const health_score = day.health_score;
+            const health_score = getRiskScore100FromDailyHealth(day);
 
             // Calculate fill color based on health score and has_data
             const fill = !has_data ? '#D1D5DB' :
@@ -385,7 +386,7 @@ export function MemberDetailModal({
               <div className="mt-4 space-y-6">
                 {/* Overall Risk Level - Always shown first */}
                 {(() => {
-                  const score = memberData?.och_score
+                  const score = getRiskScore100FromMember(memberData)
                   const scoreNum = score !== undefined ? Math.round(score) : null
                   const riskInfo = getOCHRiskInfo(score)
                   const barColor = scoreNum === null ? 'bg-neutral-300'

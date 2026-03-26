@@ -1114,12 +1114,9 @@ class TestOffHoursContribution:
 
         # Moderate work-related factors
         work_metrics = {
-            'sprint_completion': 25,
-            'code_review_speed': 30,
-            'pr_frequency': 40,
-            'deployment_frequency': 35,
-            'meeting_load': 25,
-            'oncall_burden': 50
+            'sprint_completion': 7,
+            'oncall_burden': 50,
+            'alert_health': 60,
         }
 
         personal_result = calculate_personal_burnout(personal_metrics)
