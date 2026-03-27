@@ -443,24 +443,24 @@ async def manual_survey_delivery(
         email_set = {e.lower() for e in email_filter}
         return [r for r in all_recipients if r['email'].lower() in email_set]
 
-    # Get all eligible recipients (manual sends skip saved recipient filter)
-    all_recipients = survey_scheduler._get_survey_recipients(
-        organization_id, db, is_reminder=False, apply_saved_recipients=False
-    )
-
-    # First call without confirmation - return preview
-    if not request.confirmed:
-        recipients = filter_recipients(all_recipients, request.recipient_emails)
-        return {
-            "requires_confirmation": True,
-            "message": f"This will send surveys to {len(recipients)} team members via Slack DM.",
-            "recipient_count": len(recipients),
-            "recipients": [{"name": r.get('name', 'Unknown'), "email": r['email']} for r in recipients],
-            "note": "To proceed, send this request again with 'confirmed': true"
-        }
-
-    # Confirmed - trigger survey delivery
     try:
+        # Get all eligible recipients (manual sends skip saved recipient filter)
+        all_recipients = survey_scheduler._get_survey_recipients(
+            organization_id, db, is_reminder=False, apply_saved_recipients=False
+        )
+
+        # First call without confirmation - return preview
+        if not request.confirmed:
+            recipients = filter_recipients(all_recipients, request.recipient_emails)
+            return {
+                "requires_confirmation": True,
+                "message": f"This will send surveys to {len(recipients)} team members via Slack DM.",
+                "recipient_count": len(recipients),
+                "recipients": [{"name": r.get('name', 'Unknown'), "email": r['email']} for r in recipients],
+                "note": "To proceed, send this request again with 'confirmed': true"
+            }
+
+        # Confirmed - trigger survey delivery
         logger.info(f"Manual survey delivery triggered by {current_user.email} for org {organization_id}")
 
         # Re-verify workspace is still enabled (prevent TOCTOU race condition)
@@ -543,14 +543,20 @@ async def manual_survey_delivery(
                     "error": error_msg
                 })
 
-        # Create notification for admins
-        notification_service = NotificationService(db)
-        notification_service.create_survey_delivery_notification(
-            organization_id=organization_id,
-            triggered_by=current_user,
-            recipient_count=sent_count,  # Use actual sent count, not requested count
-            is_manual=True
-        )
+        # Notification failures should not turn a successful delivery into a 500.
+        try:
+            notification_service = NotificationService(db)
+            notification_service.create_survey_delivery_notification(
+                organization_id=organization_id,
+                triggered_by=current_user,
+                recipient_count=sent_count,  # Use actual sent count, not requested count
+                is_manual=True
+            )
+        except Exception as notification_error:
+            logger.error(
+                "Failed to create manual survey delivery notification: %s",
+                notification_error,
+            )
 
         # Build response message
         message = f"Sent surveys to {sent_count} recipient(s)"
@@ -570,22 +576,29 @@ async def manual_survey_delivery(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Manual survey delivery failed: {str(e)}")
+        logger.exception("Manual survey delivery failed")
 
-        # Create error notification for admin who triggered it
-        notification_service = NotificationService(db)
-        error_notification = UserNotification(
-            user_id=current_user.id,
-            organization_id=organization_id,
-            type='survey',
-            title="❌ Survey delivery failed",
-            message=f"Manual survey delivery failed: {str(e)}",
-            action_url="/integrations?tab=surveys",
-            action_text="Check Settings",
-            priority='high'
-        )
-        db.add(error_notification)
-        db.commit()
+        # Error notifications are helpful, but should not mask the original failure.
+        try:
+            notification_service = NotificationService(db)
+            error_notification = UserNotification(
+                user_id=current_user.id,
+                organization_id=organization_id,
+                type='survey',
+                title="❌ Survey delivery failed",
+                message=f"Manual survey delivery failed: {str(e)}",
+                action_url="/integrations?tab=surveys",
+                action_text="Check Settings",
+                priority='high'
+            )
+            db.add(error_notification)
+            db.commit()
+        except Exception as notification_error:
+            logger.error(
+                "Failed to create manual survey delivery error notification: %s",
+                notification_error,
+            )
+            db.rollback()
 
         raise HTTPException(status_code=500, detail=f"Survey delivery failed: {str(e)}")
 
