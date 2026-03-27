@@ -64,16 +64,32 @@ def get_active_workspace_mapping(db: Session, user: User) -> SlackWorkspaceMappi
     """
     workspace_mapping = None
     if user.organization_id:
-        workspace_mapping = db.query(SlackWorkspaceMapping).filter(
-            SlackWorkspaceMapping.organization_id == user.organization_id,
-            SlackWorkspaceMapping.status == 'active'
-        ).first()
+        workspace_mapping = (
+            db.query(SlackWorkspaceMapping)
+            .filter(
+                SlackWorkspaceMapping.organization_id == user.organization_id,
+                SlackWorkspaceMapping.status == 'active'
+            )
+            .order_by(
+                SlackWorkspaceMapping.registered_at.desc(),
+                SlackWorkspaceMapping.id.desc()
+            )
+            .first()
+        )
 
     if not workspace_mapping:
-        workspace_mapping = db.query(SlackWorkspaceMapping).filter(
-            SlackWorkspaceMapping.owner_user_id == user.id,
-            SlackWorkspaceMapping.status == 'active'
-        ).first()
+        workspace_mapping = (
+            db.query(SlackWorkspaceMapping)
+            .filter(
+                SlackWorkspaceMapping.owner_user_id == user.id,
+                SlackWorkspaceMapping.status == 'active'
+            )
+            .order_by(
+                SlackWorkspaceMapping.registered_at.desc(),
+                SlackWorkspaceMapping.id.desc()
+            )
+            .first()
+        )
 
     return workspace_mapping
 
@@ -863,24 +879,19 @@ async def sync_slack_user_ids(
             detail="No active Slack workspace connection found for your organization"
         )
 
-    # Get the bot token from SlackIntegration
-    slack_integration = db.query(SlackIntegration).filter(
-        SlackIntegration.workspace_id == workspace_mapping.workspace_id
-    ).first()
+    from ...services.slack_token_service import SlackTokenService
 
-    if not slack_integration:
+    slack_service = SlackTokenService(db)
+    access_token = slack_service.get_oauth_token_for_workspace(
+        workspace_mapping.workspace_id
+    )
+    if not access_token:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Slack bot token not found"
-        )
-
-    try:
-        access_token = decrypt_token(slack_integration.slack_token)
-    except Exception as e:
-        logger.error(f"Failed to decrypt Slack token: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to decrypt Slack token"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "No valid Slack token is available for the connected workspace. "
+                "Please reconnect Slack and try again."
+            )
         )
 
     # Fetch Slack workspace members
@@ -1038,19 +1049,22 @@ async def get_slack_users(
 
     logger.info(f"✅ SLACK_USERS_ENDPOINT: Found workspace mapping, workspace_id={workspace_mapping.workspace_id}")
 
-    # Get the bot token from SlackIntegration
-    slack_integration = db.query(SlackIntegration).filter(
-        SlackIntegration.workspace_id == workspace_mapping.workspace_id
-    ).first()
-
-    if not slack_integration:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Slack bot token not found"
-        )
+    from ...services.slack_token_service import SlackTokenService
 
     try:
-        access_token = decrypt_token(slack_integration.slack_token)
+        slack_service = SlackTokenService(db)
+        access_token = slack_service.get_oauth_token_for_workspace(
+            workspace_mapping.workspace_id
+        )
+
+        if not access_token:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    "No valid Slack token is available for the connected workspace. "
+                    "Please reconnect Slack and try again."
+                )
+            )
 
         # Validate decrypted token format
         if not access_token or not isinstance(access_token, str):
@@ -1351,6 +1365,11 @@ async def handle_oncall_health_command(
                 "response_type": "ephemeral"
             }
 
+        from ...services.slack_token_service import SlackTokenService
+
+        slack_service = SlackTokenService(db)
+        workspace_slack_token = slack_service.get_oauth_token_for_workspace(team_id)
+
         if organization.status != 'active':
             return {
                 "text": f"⚠️ Organization '{organization.name}' has status '{organization.status}' (needs 'active'). Please contact support.",
@@ -1374,20 +1393,14 @@ async def handle_oncall_health_command(
         if not user_correlation:
             # Try to fetch user's email from Slack API
             try:
-                # Get workspace bot token from SlackIntegration
-                slack_integration = db.query(SlackIntegration).filter(
-                    SlackIntegration.workspace_id == team_id
-                ).first()
-
-                if slack_integration and slack_integration.slack_token:
+                if workspace_slack_token:
                     import httpx
-                    slack_token = decrypt_token(slack_integration.slack_token)
 
                     async with httpx.AsyncClient() as client:
                         response = await client.get(
                             "https://slack.com/api/users.info",
                             params={"user": user_id},
-                            headers={"Authorization": f"Bearer {slack_token}"}
+                            headers={"Authorization": f"Bearer {workspace_slack_token}"}
                         )
 
                         if response.status_code == 200:
@@ -1435,12 +1448,7 @@ async def handle_oncall_health_command(
             is_update=bool(existing_report)
         )
 
-        # Get workspace bot token to open modal
-        slack_integration = db.query(SlackIntegration).filter(
-            SlackIntegration.workspace_id == team_id
-        ).first()
-
-        if not slack_integration or not slack_integration.slack_token:
+        if not workspace_slack_token:
             # Fallback to old button-based approach if no token
             survey_url = f"{settings.FRONTEND_URL}/survey?email={user_correlation.email}"
             if latest_analysis:
@@ -1463,13 +1471,12 @@ async def handle_oncall_health_command(
 
         # Open modal using Slack API
         import httpx
-        slack_token = decrypt_token(slack_integration.slack_token)
 
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 "https://slack.com/api/views.open",
                 headers={
-                    "Authorization": f"Bearer {slack_token}",
+                    "Authorization": f"Bearer {workspace_slack_token}",
                     "Content-Type": "application/json"
                 },
                 json={
@@ -1622,13 +1629,13 @@ async def handle_slack_interactions(
 
                     # Get Slack token to open modal
                     team_id = data.get("team", {}).get("id")
-                    slack_integration = db.query(SlackIntegration).filter(
-                        SlackIntegration.workspace_id == team_id
-                    ).first()
+                    from ...services.slack_token_service import SlackTokenService
 
-                    if slack_integration and slack_integration.slack_token:
+                    slack_service = SlackTokenService(db)
+                    slack_token = slack_service.get_oauth_token_for_workspace(team_id)
+
+                    if slack_token:
                         import httpx
-                        slack_token = decrypt_token(slack_integration.slack_token)
 
                         async with httpx.AsyncClient() as client:
                             response = await client.post(

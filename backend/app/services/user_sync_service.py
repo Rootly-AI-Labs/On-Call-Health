@@ -1127,15 +1127,21 @@ class UserSyncService:
         Returns statistics about matching results.
         """
         try:
-            from app.models import SlackWorkspaceMapping, SlackIntegration
-            from app.api.endpoints.slack import decrypt_token
+            from app.models import SlackWorkspaceMapping
+            from app.services.slack_token_service import SlackTokenService
             import httpx
 
             # Check for Slack workspace mapping
             logger.info(f"🔍 SLACK_MATCH: Checking Slack workspace for user {user.id}, email={user.email}, org_id={user.organization_id}")
-            workspace_mapping = self.db.query(SlackWorkspaceMapping).filter(
-                SlackWorkspaceMapping.organization_id == user.organization_id
-            ).first()
+            workspace_mapping = (
+                self.db.query(SlackWorkspaceMapping)
+                .filter(SlackWorkspaceMapping.organization_id == user.organization_id)
+                .order_by(
+                    SlackWorkspaceMapping.registered_at.desc(),
+                    SlackWorkspaceMapping.id.desc(),
+                )
+                .first()
+            )
 
             if not workspace_mapping:
                 logger.info("❌ SLACK_MATCH: No Slack workspace connected for this organization")
@@ -1143,34 +1149,16 @@ class UserSyncService:
 
             logger.info(f"✅ SLACK_MATCH: Found workspace mapping, workspace_id={workspace_mapping.workspace_id}")
 
-            # Get Slack integration for token
-            slack_integration = self.db.query(SlackIntegration).filter(
-                SlackIntegration.workspace_id == workspace_mapping.workspace_id
-            ).first()
+            slack_service = SlackTokenService(self.db)
+            access_token = slack_service.get_oauth_token_for_workspace(
+                workspace_mapping.workspace_id
+            )
 
-            if not slack_integration:
-                logger.info("❌ SLACK_MATCH: No Slack integration found for workspace")
+            if not access_token:
+                logger.info("❌ SLACK_MATCH: No valid Slack token found for workspace")
                 return None
 
-            logger.info(f"✅ SLACK_MATCH: Found Slack integration, starting matching for user {user.id}")
-
-            # Decrypt token
-            try:
-                access_token = decrypt_token(slack_integration.slack_token)
-
-                # Validate decrypted token format
-                if not access_token or not isinstance(access_token, str):
-                    logger.error("❌ SLACK_MATCH: Decrypted token is empty or invalid type")
-                    return None
-
-                if not access_token.startswith(("xoxb-", "xoxp-")):
-                    logger.error("❌ SLACK_MATCH: Decrypted token has invalid format (expected xoxb- or xoxp- prefix)")
-                    return None
-
-                logger.info("✅ SLACK_MATCH: Token decrypted and validated successfully")
-            except Exception as e:
-                logger.error(f"❌ SLACK_MATCH: Failed to decrypt Slack token: {e}")
-                return None
+            logger.info(f"✅ SLACK_MATCH: Found usable Slack token, starting matching for user {user.id}")
 
             # Fetch Slack workspace members using async httpx
             async with httpx.AsyncClient(timeout=30.0) as client:
