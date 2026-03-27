@@ -495,13 +495,19 @@ async def manual_survey_delivery(
 
         # Send surveys directly using the same logic as scheduled sends
         from ...services.slack_dm_sender import SlackDMSender
-        from ...services.slack_token_service import get_slack_token_for_organization
+        from ...services.slack_token_service import SlackTokenService
 
-        slack_token = get_slack_token_for_organization(db, organization_id)
+        slack_service = SlackTokenService(db)
+        slack_token = slack_service.get_oauth_token_for_workspace(
+            workspace_mapping.workspace_id
+        )
         if not slack_token:
             raise HTTPException(
-                status_code=500,
-                detail="No Slack token available for organization"
+                status_code=400,
+                detail=(
+                    "No valid Slack token is available for the connected workspace. "
+                    "Please reconnect Slack and try again."
+                )
             )
 
         dm_sender = SlackDMSender()
@@ -561,6 +567,8 @@ async def manual_survey_delivery(
             "triggered_by": current_user.email
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Manual survey delivery failed: {str(e)}")
 

@@ -31,6 +31,77 @@ class SlackTokenService:
     def __init__(self, db: Session):
         self.db = db
 
+    def _get_active_workspace_mapping_for_organization(
+        self,
+        organization_id: int,
+    ) -> Optional[SlackWorkspaceMapping]:
+        """Return the most recently registered active workspace for an organization."""
+        return (
+            self.db.query(SlackWorkspaceMapping)
+            .filter(
+                SlackWorkspaceMapping.organization_id == organization_id,
+                SlackWorkspaceMapping.status == 'active',
+            )
+            .order_by(
+                SlackWorkspaceMapping.registered_at.desc(),
+                SlackWorkspaceMapping.id.desc(),
+            )
+            .first()
+        )
+
+    def get_oauth_token_for_workspace(self, workspace_id: str) -> Optional[str]:
+        """
+        Get a decrypted OAuth Slack token for a specific workspace.
+
+        Tries the newest OAuth integrations first and falls back if older rows are stale
+        or contain undecryptable tokens.
+        """
+        slack_integrations = (
+            self.db.query(SlackIntegration)
+            .filter(
+                SlackIntegration.workspace_id == workspace_id,
+                SlackIntegration.token_source == "oauth",
+            )
+            .order_by(
+                SlackIntegration.updated_at.desc(),
+                SlackIntegration.created_at.desc(),
+                SlackIntegration.id.desc(),
+            )
+            .all()
+        )
+
+        if not slack_integrations:
+            logger.warning(
+                f"No OAuth Slack integrations found for workspace {workspace_id}"
+            )
+            return None
+
+        for slack_integration in slack_integrations:
+            if not slack_integration.slack_token:
+                logger.warning(
+                    f"Skipping Slack integration {slack_integration.id} with no token "
+                    f"(workspace {workspace_id})"
+                )
+                continue
+
+            try:
+                token = decrypt_token(slack_integration.slack_token)
+                logger.debug(
+                    f"Successfully retrieved OAuth Slack token from integration "
+                    f"{slack_integration.id} for workspace {workspace_id}"
+                )
+                return token
+            except Exception as e:
+                logger.warning(
+                    f"Failed to decrypt Slack token for integration "
+                    f"{slack_integration.id} in workspace {workspace_id}: {e}"
+                )
+
+        logger.error(
+            f"No valid decryptable OAuth Slack token found for workspace {workspace_id}"
+        )
+        return None
+
     def get_oauth_token_for_user(self, user: User) -> Optional[str]:
         """
         Get the decrypted OAuth Slack token for a user's organization.
@@ -58,48 +129,15 @@ class SlackTokenService:
             Decrypted Slack bot token, or None if not found
         """
         # Find active workspace mapping for this organization
-        workspace_mapping = self.db.query(SlackWorkspaceMapping).filter(
-            SlackWorkspaceMapping.organization_id == organization_id,
-            SlackWorkspaceMapping.status == 'active'
-        ).first()
+        workspace_mapping = self._get_active_workspace_mapping_for_organization(
+            organization_id
+        )
 
         if not workspace_mapping:
             logger.debug(f"No active Slack workspace mapping found for org {organization_id}")
             return None
 
-        # Get OAuth integration for this workspace
-        slack_integration = self.db.query(SlackIntegration).filter(
-            SlackIntegration.workspace_id == workspace_mapping.workspace_id,
-            SlackIntegration.token_source == "oauth"
-        ).first()
-
-        if not slack_integration:
-            logger.warning(
-                f"No OAuth Slack integration found for workspace {workspace_mapping.workspace_id} "
-                f"(org {organization_id})"
-            )
-            return None
-
-        if not slack_integration.slack_token:
-            logger.error(
-                f"Slack integration {slack_integration.id} has no token "
-                f"(workspace {workspace_mapping.workspace_id})"
-            )
-            return None
-
-        # Decrypt and return token
-        try:
-            token = decrypt_token(slack_integration.slack_token)
-            logger.debug(
-                f"Successfully retrieved OAuth Slack token for org {organization_id} "
-                f"(workspace {workspace_mapping.workspace_id})"
-            )
-            return token
-        except Exception as e:
-            logger.error(
-                f"Failed to decrypt Slack token for org {organization_id}: {e}"
-            )
-            return None
+        return self.get_oauth_token_for_workspace(workspace_mapping.workspace_id)
 
     def get_workspace_info_for_user(self, user: User) -> Optional[Tuple[str, str]]:
         """
@@ -114,10 +152,9 @@ class SlackTokenService:
         if not user.organization_id:
             return None
 
-        workspace_mapping = self.db.query(SlackWorkspaceMapping).filter(
-            SlackWorkspaceMapping.organization_id == user.organization_id,
-            SlackWorkspaceMapping.status == 'active'
-        ).first()
+        workspace_mapping = self._get_active_workspace_mapping_for_organization(
+            user.organization_id
+        )
 
         if workspace_mapping:
             return (workspace_mapping.workspace_id, workspace_mapping.workspace_name)
@@ -137,10 +174,9 @@ class SlackTokenService:
         if not user.organization_id:
             return None
 
-        workspace_mapping = self.db.query(SlackWorkspaceMapping).filter(
-            SlackWorkspaceMapping.organization_id == user.organization_id,
-            SlackWorkspaceMapping.status == 'active'
-        ).first()
+        workspace_mapping = self._get_active_workspace_mapping_for_organization(
+            user.organization_id
+        )
 
         if not workspace_mapping:
             return None
@@ -159,10 +195,9 @@ class SlackTokenService:
         Returns:
             SlackFeatureConfig or None if no workspace found
         """
-        workspace_mapping = self.db.query(SlackWorkspaceMapping).filter(
-            SlackWorkspaceMapping.organization_id == organization_id,
-            SlackWorkspaceMapping.status == 'active'
-        ).first()
+        workspace_mapping = self._get_active_workspace_mapping_for_organization(
+            organization_id
+        )
 
         if not workspace_mapping:
             return None
