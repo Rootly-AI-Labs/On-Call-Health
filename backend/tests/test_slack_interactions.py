@@ -352,6 +352,13 @@ class TestSlackDMSenderValidation:
 class TestSurveySchedulerUserValidation:
     """Tests for survey scheduler user validation."""
 
+    def test_survey_scheduler_imports_required_models(self):
+        """The scheduler recipient query depends on imported ORM models."""
+        from app.services import survey_scheduler as survey_scheduler_module
+
+        assert survey_scheduler_module.User.__name__ == "User"
+        assert survey_scheduler_module.UserSurveyPreference.__name__ == "UserSurveyPreference"
+
     def test_allow_users_without_user_id_when_email_present(self):
         """
         Test that roster members without a local User record are still eligible

@@ -13,6 +13,7 @@ from sqlalchemy import and_, func, or_
 import pytz
 
 from ..models.survey_schedule import SurveySchedule, UserSurveyPreference
+from ..models.user import User
 from ..models.user_correlation import UserCorrelation
 from ..models.slack_integration import SlackIntegration
 from ..models.slack_workspace_mapping import SlackWorkspaceMapping
