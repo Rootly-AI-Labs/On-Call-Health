@@ -646,7 +646,6 @@ class GitHubOnlyBurnoutAnalyzer:
             return {
                 "overall_score": 5.0,
                 "risk_distribution": {"low": 0, "medium": 0, "high": 0, "critical": 0},
-                "average_burnout_score": 0.0,
                 "health_status": "unknown",
                 "members_at_risk": 0,
                 "confidence_level": "low"
@@ -691,7 +690,6 @@ class GitHubOnlyBurnoutAnalyzer:
         return {
             "overall_score": round(health_score, 2),
             "risk_distribution": risk_counts,
-            "average_burnout_score": round(avg_burnout, 2),
             "health_status": health_status,
             "members_at_risk": risk_counts["high"] + risk_counts["medium"],
             "confidence_level": confidence_label,

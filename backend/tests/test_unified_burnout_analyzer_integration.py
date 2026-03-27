@@ -418,7 +418,7 @@ class TestCalculationMethods:
         # Check correct key names
         assert "overall_score" in result
         assert "scoring_method" in result
-        assert "average_health_score" in result  # NOT "average_burnout"
+        assert "average_risk_score_100" in result
         assert "health_status" in result
         assert "risk_distribution" in result
         assert "members_at_risk" in result

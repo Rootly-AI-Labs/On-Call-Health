@@ -372,7 +372,6 @@ class AIBurnoutAnalyzerService:
                     "email": member_email,
                     "user_id": member.get("user_id"),
                     "health_score": member.get("och_score") if member.get("och_score") is not None else member.get("burnout_score", 0),
-                    "scoring_type": "OCH" if member.get("och_score") is not None else "Legacy",
                     "incident_count": len(member.get("incidents", []))
                 })
 
@@ -633,15 +632,12 @@ class AIBurnoutAnalyzerService:
             avg_och_score = sum(och_scores) / len(och_scores)
             avg_legacy_score = 0  # Not used but defined for consistency
             using_och = True
-            # For display, convert OCH to health score (100 - OCH score)
-            overall_health_score = round(100 - avg_och_score, 1)
             avg_stress_display = round(avg_och_score, 1)
             trajectory_score = avg_och_score
         else:
             avg_legacy_score = sum(legacy_scores) / len(legacy_scores) if legacy_scores else 0
             avg_och_score = 0  # Not used but defined for consistency
             using_och = False
-            overall_health_score = round(100 - (avg_legacy_score * 10), 1)
             avg_stress_display = round(avg_legacy_score, 2)
             trajectory_score = avg_legacy_score * 10  # Convert to 0-100 scale
 
@@ -670,7 +666,6 @@ class AIBurnoutAnalyzerService:
 
         return {
             "urgency_level": urgency_level,
-            "overall_health_score": overall_health_score,
             "primary_concern": primary_concern,
             "key_metrics": {
                 "total_team_incidents": total_incidents,

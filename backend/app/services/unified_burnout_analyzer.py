@@ -3385,7 +3385,6 @@ class UnifiedBurnoutAnalyzer:
                 "health_score_100": 65.0,
                 "average_risk_score_100": 35.0,
                 "risk_distribution": {"low": 0, "medium": 0, "high": 0, "critical": 0},
-                "average_health_score": 0,
                 "health_status": "fair",
                 "members_at_risk": 0
             }
@@ -3473,7 +3472,6 @@ class UnifiedBurnoutAnalyzer:
             "health_score_100": round(health_score_100, 2),
             "average_risk_score_100": round(risk_score_100, 2),
             "risk_distribution": risk_dist,
-            "average_health_score": round(avg_score, 2),
             "health_status": health_status,
             "members_at_risk": risk_dist["high"] + risk_dist["critical"]
         }
@@ -4664,7 +4662,6 @@ class UnifiedBurnoutAnalyzer:
                     "overall_score_semantics": "health_10_compat",
                     "health_score_100": health_score_100,
                     "risk_score_100": risk_score_100,
-                    "average_health_score": team_health.get("average_health_score", 0.0) if team_health else 0.0,
                     "incident_count": incident_count,
                     "severity_weighted_count": round(severity_weighted, 1),
                     "after_hours_count": after_hours_count,
@@ -4679,7 +4676,6 @@ class UnifiedBurnoutAnalyzer:
                     "members_at_risk": members_at_risk,
                     "total_members": total_members,
                     "health_status": health_status,
-                    "health_percentage": health_score_100,  # Convert to percentage for display
                     # 🔍 DEBUG: Add penalty breakdown for debugging
                     "debug_penalties": {
                         "baseline": 8.7,

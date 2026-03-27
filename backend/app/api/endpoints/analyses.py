@@ -140,7 +140,6 @@ class DailyTrendPoint(BaseModel):
     overall_score_semantics: Optional[str] = None
     risk_score_100: Optional[float] = None
     health_score_100: Optional[float] = None
-    average_health_score: float
     members_at_risk: int
     total_members: int
     health_status: str
@@ -1204,7 +1203,6 @@ async def regenerate_analysis_trends(
                 "overall_score_semantics": "health_10_compat",
                 "risk_score_100": round(max(0.0, min(100.0, 100.0 - (daily_score * 10))), 1),
                 "health_score_100": round(max(0.0, min(100.0, daily_score * 10)), 1),
-                "average_health_score": 0.0,  # Legacy analyses don't have this data
                 "incident_count": incidents_for_day,
                 "members_at_risk": members_at_risk,
                 "total_members": total_members,
@@ -1605,7 +1603,6 @@ async def get_historical_trends(
             overall_score_semantics=trend_data.get("overall_score_semantics", "health_10_compat"),
             risk_score_100=float(risk_score_100),
             health_score_100=float(health_score_100),
-            average_health_score=float(trend_data.get("average_health_score", 0.0)),  # Actual average from team health
             members_at_risk=int(members_at_risk),
             total_members=max(int(total_members), 1),  # Use actual total_members from analysis
             health_status=health_status,
@@ -1828,7 +1825,6 @@ class DailyIncidentTrendPoint(BaseModel):
     members_at_risk: int
     total_members: int
     health_status: str
-    health_percentage: float
 
 
 class DailyIncidentTrendsResponse(BaseModel):
@@ -1899,8 +1895,7 @@ async def get_analysis_daily_trends(
             users_involved=trend.get("users_involved", 0),
             members_at_risk=trend.get("members_at_risk", 0),
             total_members=trend.get("total_members", 0),
-            health_status=trend.get("health_status", "unknown"),
-            health_percentage=trend.get("health_percentage", trend["overall_score"] * 10)
+            health_status=trend.get("health_status", "unknown")
         ))
     
     # Calculate summary statistics
@@ -2914,10 +2909,7 @@ async def get_member_daily_health(
             "summary": {
                 "total_days": len(daily_health_scores),
                 "days_with_data": len(days_with_data),
-                "days_without_data": len(days_without_data),
-                "avg_health_score": round(sum(d["health_score"] for d in days_with_data) / len(days_with_data)) if days_with_data else 0,
-                "lowest_health_day": min(days_with_data, key=lambda x: x["health_score"]) if days_with_data else None,
-                "highest_health_day": max(days_with_data, key=lambda x: x["health_score"]) if days_with_data else None
+                "days_without_data": len(days_without_data)
             }
         }
     }
