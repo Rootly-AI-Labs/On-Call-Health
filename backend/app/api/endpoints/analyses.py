@@ -13,9 +13,10 @@ from sqlalchemy import func, over
 from sqlalchemy.orm import Session, defer, load_only
 from sqlalchemy.exc import OperationalError
 
-from ...models import get_db, User, Analysis, RootlyIntegration, SlackIntegration, GitHubIntegration, JiraIntegration, LinearIntegration, UserCorrelation
+from ...models import get_db, User, Analysis, RootlyIntegration, GitHubIntegration, JiraIntegration, LinearIntegration, UserCorrelation
 from ...auth.dependencies import get_current_active_user, get_current_user_flexible
 from ...services.unified_burnout_analyzer import UnifiedBurnoutAnalyzer
+from ...services.slack_token_service import SlackTokenService
 from ...core.rate_limiting import analysis_rate_limit, general_rate_limit
 from ...core.input_validation import AnalysisRequest as ValidatedAnalysisRequest, AnalysisFilterRequest
 from ...core.alert_health_calculator import calculate_alert_health_score
@@ -3019,17 +3020,23 @@ async def run_analysis_task(
 
             if include_slack:
                 logger.info(f"BACKGROUND_TASK: Looking for Slack integration for user {user_id}")
-                slack_integration = db.query(SlackIntegration).filter(
-                    SlackIntegration.user_id == user_id
-                ).first()
-                logger.info(f"BACKGROUND_TASK: Slack integration query result: {slack_integration}")
-                if slack_integration and slack_integration.slack_token:
-                    # Decrypt the token
-                    from ...api.endpoints.slack import decrypt_token
-                    slack_token = decrypt_token(slack_integration.slack_token)
-                    logger.info(f"BACKGROUND_TASK: Found Slack integration for user {user_id} with token: {slack_token[:10]}...")
+                if 'user' not in locals() or user is None:
+                    user = db.query(User).filter(User.id == user_id).first()
+
+                if user:
+                    slack_service = SlackTokenService(db)
+                    slack_token = slack_service.get_oauth_token_for_user(user)
+
+                if slack_token:
+                    logger.info(
+                        f"BACKGROUND_TASK: Found Slack integration for user {user_id} "
+                        f"(org {user.organization_id})"
+                    )
                 else:
-                    logger.warning(f"BACKGROUND_TASK: No Slack integration found for user {user_id}")
+                    logger.warning(
+                        f"BACKGROUND_TASK: No usable Slack token available for user {user_id}; "
+                        "continuing without Slack data"
+                    )
 
             if include_github:
                 logger.info(f"BACKGROUND_TASK: Looking for GitHub integration for user {user_id}")
