@@ -12,6 +12,7 @@ from app.services.login_audit_service import (
     LoginAuditService,
     get_request_ip,
     get_request_user_agent,
+    MAX_USER_AGENT_LENGTH,
 )
 
 
@@ -71,9 +72,28 @@ class LoginAuditServiceTests(unittest.TestCase):
         )
         self.assertEqual(get_request_ip(request), "203.0.113.10")
 
+    def test_get_request_ip_ignores_invalid_forwarded_values(self):
+        request = SimpleNamespace(
+            headers={"x-forwarded-for": "definitely-not-an-ip", "x-real-ip": "198.51.100.8"},
+            client=SimpleNamespace(host="10.0.0.1"),
+        )
+        self.assertEqual(get_request_ip(request), "198.51.100.8")
+
+    def test_get_request_ip_returns_none_for_invalid_values(self):
+        request = SimpleNamespace(
+            headers={"x-forwarded-for": "bad-ip", "x-real-ip": "still-bad"},
+            client=SimpleNamespace(host="not-an-ip"),
+        )
+        self.assertIsNone(get_request_ip(request))
+
     def test_get_request_user_agent_returns_header(self):
         request = SimpleNamespace(headers={"user-agent": "Mozilla/Test"}, client=None)
         self.assertEqual(get_request_user_agent(request), "Mozilla/Test")
+
+    def test_get_request_user_agent_truncates_long_values(self):
+        user_agent = "a" * (MAX_USER_AGENT_LENGTH + 50)
+        request = SimpleNamespace(headers={"user-agent": user_agent}, client=None)
+        self.assertEqual(get_request_user_agent(request), "a" * MAX_USER_AGENT_LENGTH)
 
 
 if __name__ == "__main__":
