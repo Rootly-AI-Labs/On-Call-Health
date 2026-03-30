@@ -13,6 +13,7 @@ from app.services.login_audit_service import (
     get_request_ip,
     get_request_user_agent,
     MAX_USER_AGENT_LENGTH,
+    VALID_AUTH_METHODS,
 )
 
 
@@ -36,7 +37,9 @@ class LoginAuditServiceTests(unittest.TestCase):
         self.assertEqual(user.login_count, 3)
         self.assertIsNotNone(user.last_login_at)
         db.add.assert_called_once()
+        db.execute.assert_called_once()
         db.commit.assert_called_once()
+        db.refresh.assert_called_once_with(user)
 
         login_event = db.add.call_args.args[0]
         self.assertIsInstance(login_event, UserLoginEvent)
@@ -63,7 +66,29 @@ class LoginAuditServiceTests(unittest.TestCase):
         self.assertFalse(result)
         self.assertEqual(user.login_count, 4)
         self.assertIsNone(user.last_login_at)
+        db.execute.assert_called_once()
         db.rollback.assert_called_once()
+
+    def test_record_login_success_normalizes_unknown_auth_method(self):
+        db = MagicMock()
+        user = User(id=8, email="user@example.com", organization_id=2)
+        user.login_count = 0
+
+        result = LoginAuditService(db).record_login_success(
+            user=user,
+            auth_method=" definitely-not-real ",
+            request=SimpleNamespace(headers={}, client=SimpleNamespace(host="10.0.0.11")),
+        )
+
+        self.assertTrue(result)
+        login_event = db.add.call_args.args[0]
+        self.assertEqual(login_event.auth_method, "unknown")
+
+    def test_valid_auth_methods_cover_expected_login_sources(self):
+        self.assertEqual(
+            VALID_AUTH_METHODS,
+            {"password", "google", "github", "okta", "oauth", "unknown"},
+        )
 
     def test_get_request_ip_prefers_forwarded_for(self):
         request = SimpleNamespace(
