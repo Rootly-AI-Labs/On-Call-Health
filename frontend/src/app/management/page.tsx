@@ -190,7 +190,6 @@ function TeamPageContent() {
     const integrationLabel = getSelectedIntegrationLabel()
 
     if (
-      response.status === 401 ||
       normalizedDetail.includes("api request failed: 401") ||
       normalizedDetail.includes("token is expired or invalid") ||
       (normalizedDetail.includes("token") && normalizedDetail.includes("expired")) ||
@@ -199,6 +198,16 @@ function TeamPageContent() {
       return integrationLabel === "integration"
         ? "The integration token is expired or invalid. Please reconnect it and try again."
         : `The ${integrationLabel} token is expired or invalid. Please reconnect ${integrationLabel} and try again.`
+    }
+
+    if (
+      response.status === 401 &&
+      (
+        normalizedDetail.includes("could not validate credentials") ||
+        normalizedDetail.includes("not authenticated")
+      )
+    ) {
+      return "Session expired. Please log in again."
     }
 
     return detail
