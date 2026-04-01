@@ -241,19 +241,20 @@ function TeamPageContent() {
   }, [])
 
   const hasInvalidIntegrationToken = useCallback((integration?: Integration | null) => {
-    if (!integration?.permissions) return false
-
-    const combinedErrors = `${integration.permissions.users?.error ?? ""} ${integration.permissions.incidents?.error ?? ""}`
-    if (isTokenAttentionError(combinedErrors)) {
-      return true
-    }
-
     if (
+      integration &&
       selectedIntegration &&
       integration.id === selectedIntegration.id &&
       syncProgress?.error &&
       isTokenAttentionError(syncProgress.error)
     ) {
+      return true
+    }
+
+    if (!integration?.permissions) return false
+
+    const combinedErrors = `${integration.permissions.users?.error ?? ""} ${integration.permissions.incidents?.error ?? ""}`
+    if (isTokenAttentionError(combinedErrors)) {
       return true
     }
 

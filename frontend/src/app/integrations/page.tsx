@@ -2279,7 +2279,7 @@ export default function IntegrationsPage() {
     const usersAccess = permissions.users?.access
     const incidentsAccess = permissions.incidents?.access
 
-    if (usersAccess === null || incidentsAccess === null) {
+    if (usersAccess == null && incidentsAccess == null) {
       return null
     }
 
@@ -2332,6 +2332,22 @@ export default function IntegrationsPage() {
 
   const rootlyCount = useMemo(() => integrations.filter(i => i.platform === 'rootly').length, [integrations])
   const pagerdutyCount = useMemo(() => integrations.filter(i => i.platform === 'pagerduty').length, [integrations])
+  const getPlatformAttentionState = useCallback((platform: 'rootly' | 'pagerduty'): IntegrationAttentionState | null => {
+    const platformAttentions = integrations
+      .filter((integration) => integration.platform === platform)
+      .map((integration) => getIntegrationAttention(integration))
+      .filter(Boolean) as IntegrationAttention[]
+
+    if (platformAttentions.some((attention) => attention.state === 'expired')) {
+      return 'expired'
+    }
+
+    if (platformAttentions.some((attention) => attention.state === 'permissions')) {
+      return 'permissions'
+    }
+
+    return null
+  }, [getIntegrationAttention, integrations])
   const rootlyAttentionCount = useMemo(
     () => integrations.filter(i => i.platform === 'rootly' && getIntegrationAttention(i)).length,
     [getIntegrationAttention, integrations]
@@ -2339,6 +2355,14 @@ export default function IntegrationsPage() {
   const pagerdutyAttentionCount = useMemo(
     () => integrations.filter(i => i.platform === 'pagerduty' && getIntegrationAttention(i)).length,
     [getIntegrationAttention, integrations]
+  )
+  const rootlyAttentionState = useMemo(
+    () => getPlatformAttentionState('rootly'),
+    [getPlatformAttentionState]
+  )
+  const pagerdutyAttentionState = useMemo(
+    () => getPlatformAttentionState('pagerduty'),
+    [getPlatformAttentionState]
   )
 
   // Helper booleans to distinguish between Slack Survey (OAuth) and Enhanced Integration (webhook/token)
@@ -2446,7 +2470,13 @@ export default function IntegrationsPage() {
                     {rootlyAttentionCount > 0 && (
                       <Tooltip content={`${rootlyAttentionCount} Rootly integration${rootlyAttentionCount === 1 ? '' : 's'} need attention`}>
                         <span className="inline-flex" aria-label={`${rootlyAttentionCount} Rootly integration${rootlyAttentionCount === 1 ? '' : 's'} need attention`}>
-                          <span className="h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-red-100" />
+                          <span
+                            className={`h-2.5 w-2.5 rounded-full ring-2 ${
+                              rootlyAttentionState === 'permissions'
+                                ? 'bg-amber-500 ring-amber-100'
+                                : 'bg-red-500 ring-red-100'
+                            }`}
+                          />
                         </span>
                       </Tooltip>
                     )}
@@ -2509,7 +2539,13 @@ export default function IntegrationsPage() {
                   {pagerdutyAttentionCount > 0 && (
                     <Tooltip content={`${pagerdutyAttentionCount} PagerDuty integration${pagerdutyAttentionCount === 1 ? '' : 's'} need attention`}>
                       <span className="inline-flex" aria-label={`${pagerdutyAttentionCount} PagerDuty integration${pagerdutyAttentionCount === 1 ? '' : 's'} need attention`}>
-                        <span className="h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-red-100" />
+                        <span
+                          className={`h-2.5 w-2.5 rounded-full ring-2 ${
+                            pagerdutyAttentionState === 'permissions'
+                              ? 'bg-amber-500 ring-amber-100'
+                              : 'bg-red-500 ring-red-100'
+                          }`}
+                        />
                       </span>
                     </Tooltip>
                   )}
