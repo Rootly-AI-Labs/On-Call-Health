@@ -137,3 +137,29 @@ def test_get_rootly_teams_matches_token_with_stored_whitespace(client, mock_db):
     data = response.json()
     assert data["teams"][0]["already_added"] is True
     assert data["teams"][0]["existing_integration_name"] == "Rootly - Core"
+
+
+def test_sync_integration_users_returns_401_for_expired_rootly_token(client, mock_db):
+    mock_query = MagicMock()
+    mock_query.filter.return_value = mock_query
+
+    integration = MagicMock()
+    integration.id = 80
+    integration.user_id = 1
+    integration.platform = "rootly"
+    integration.last_synced_by = None
+    integration.last_synced_at = None
+
+    mock_query.first.return_value = integration
+    mock_db.query.return_value = mock_query
+
+    with patch(
+        "app.services.user_sync_service.UserSyncService.sync_integration_users",
+        new=AsyncMock(side_effect=Exception("API request failed: 401")),
+    ):
+        response = client.post("/rootly/integrations/80/sync-users")
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == (
+        "The Rootly token is expired or invalid. Please reconnect Rootly and try again."
+    )
