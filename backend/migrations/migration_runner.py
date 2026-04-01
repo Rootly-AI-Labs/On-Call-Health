@@ -1343,6 +1343,46 @@ class MigrationRunner:
                 "description": "Store scheduled Slack survey recipients on the org's active Slack workspace mapping",
                 "sql_file": "2026_03_13_add_survey_recipients_to_slack_workspace_mappings.sql"
             },
+            {
+                "name": "051_add_user_login_audit",
+                "description": "Track user login summaries and per-login audit events",
+                "sql": [
+                    """
+                    ALTER TABLE users
+                    ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMP WITH TIME ZONE
+                    """,
+                    """
+                    ALTER TABLE users
+                    ADD COLUMN IF NOT EXISTS login_count INTEGER NOT NULL DEFAULT 0
+                    """,
+                    """
+                    ALTER TABLE oauth_temp_codes
+                    ADD COLUMN IF NOT EXISTS auth_method VARCHAR(50)
+                    """,
+                    """
+                    CREATE TABLE IF NOT EXISTS user_login_events (
+                        id SERIAL PRIMARY KEY,
+                        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                        organization_id INTEGER REFERENCES organizations(id) ON DELETE SET NULL,
+                        auth_method VARCHAR(50) NOT NULL,
+                        ip_address VARCHAR(64),
+                        user_agent VARCHAR(1000),
+                        logged_in_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    )
+                    """,
+                    """
+                    CREATE INDEX IF NOT EXISTS idx_user_login_events_user_logged_in_at
+                    ON user_login_events(user_id, logged_in_at DESC)
+                    """,
+                    """
+                    CREATE INDEX IF NOT EXISTS idx_user_login_events_org_logged_in_at
+                    ON user_login_events(organization_id, logged_in_at DESC)
+                    """,
+                    """
+                    COMMENT ON TABLE user_login_events IS 'Audit log of successful user logins'
+                    """
+                ]
+            },
             # Add future migrations here with incrementing numbers
         ]
 

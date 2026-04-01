@@ -31,6 +31,8 @@ class User(Base):
     role = Column(String(20), default="member")  # 'admin', 'member'
     joined_org_at = Column(DateTime(timezone=True), server_default=func.now())
     last_active_at = Column(DateTime(timezone=True))
+    last_login_at = Column(DateTime(timezone=True), nullable=True)
+    login_count = Column(Integer, nullable=False, server_default="0")
     status = Column(String(20), default="active")  # 'active', 'suspended', 'pending'
     weekly_digest_enabled = Column(Boolean, server_default="true", nullable=False)
 
@@ -58,6 +60,7 @@ class User(Base):
     owned_jira_workspaces = relationship("JiraWorkspaceMapping", back_populates="owner")
     linear_integrations = relationship("LinearIntegration", back_populates="user", cascade="all, delete-orphan")
     owned_linear_workspaces = relationship("LinearWorkspaceMapping", back_populates="owner")
+    login_events = relationship("UserLoginEvent", back_populates="user", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<User(id={self.id}, email='{self.email}', providers={len(self.oauth_providers)})>"
@@ -190,6 +193,8 @@ class User(Base):
             'is_verified': self.is_verified,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'last_active_at': self.last_active_at.isoformat() if self.last_active_at else None,
+            'last_login_at': self.last_login_at.isoformat() if self.last_login_at else None,
+            'login_count': self.login_count or 0,
             'connected_platforms': self.connected_platforms
         }
 

@@ -1602,7 +1602,7 @@ class RootlyAPIClient:
         except Exception as e:
             logger.error(f"Error fetching users: {e}")
             raise
-    
+
     async def get_on_call_shifts(self, start_date: datetime, end_date: datetime) -> List[Dict[str, Any]]:
         """
         Get on-call shifts for a specific time period from Rootly.

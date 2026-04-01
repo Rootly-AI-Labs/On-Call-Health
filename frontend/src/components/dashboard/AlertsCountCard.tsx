@@ -122,6 +122,27 @@ function getTrendConfig(change: number): { label: string; icon: React.ReactNode;
   }
 }
 
+function buildWeeklyData(daily: Record<string, any>): Record<string, any> {
+  const weekData: Record<string, any> = {}
+  Object.keys(daily).sort().forEach((day) => {
+    const date = new Date(day + "T00:00:00")
+    const dow = date.getDay()
+    const daysBack = dow === 0 ? 6 : dow - 1
+    const monday = new Date(date)
+    monday.setDate(date.getDate() - daysBack)
+    const key = monday.toISOString().split("T")[0]
+    if (!weekData[key]) weekData[key] = { total: 0, incidents: 0, after_hours: 0, night_time: 0, escalated: 0, retrigger: 0 }
+    const d = daily[day] || {}
+    weekData[key].total      += d.total      ?? 0
+    weekData[key].incidents  += d.incidents  ?? 0
+    weekData[key].after_hours+= d.after_hours?? 0
+    weekData[key].night_time += d.night_time ?? 0
+    weekData[key].escalated  += d.escalated  ?? 0
+    weekData[key].retrigger  += d.retrigger  ?? 0
+  })
+  return weekData
+}
+
 function getSparklineColor(change: number | null): string {
   if (change === null) return "text-neutral-400"
   if (change <= -15) return "text-green-500"
@@ -207,10 +228,15 @@ function AlertBreakdownChart({
   const [hidden, setHidden] = useState<Set<AlertTrendKey>>(new Set())
   const [hoveredChip, setHoveredChip] = useState<AlertTrendKey | null>(null)
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
+  const [overlayMode, setOverlayMode] = useState<"none" | "dod" | "wow">("none")
   const svgRef = useRef<SVGSVGElement>(null)
 
   const days = Object.keys(daily).sort()
   if (days.length === 0) return null
+
+  const overlayOffset = overlayMode !== "none" ? 1 : 0
+  const chartData = overlayMode === "wow" ? buildWeeklyData(daily) : daily
+  const chartDays = Object.keys(chartData).sort()
 
   const toggle = (key: AlertTrendKey) => {
     setHidden((prev) => {
@@ -224,8 +250,13 @@ function AlertBreakdownChart({
 
   const allValues = activeMetrics
     .filter((m) => !hidden.has(m.key))
-    .flatMap((m) => days.map((d) => (daily[d]?.[m.key] ?? 0) as number))
-  const yMax = Math.max(...allValues, 1)
+    .flatMap((m) => chartDays.map((d) => (chartData[d]?.[m.key] ?? 0) as number))
+  const overlayValues = overlayOffset > 0
+    ? activeMetrics
+        .filter((m) => !hidden.has(m.key))
+        .flatMap((m) => chartDays.slice(overlayOffset).map((_, i) => (chartData[chartDays[i]]?.[m.key] ?? 0) as number))
+    : []
+  const yMax = Math.max(...allValues, ...overlayValues, 1)
 
   // Chart dimensions
   const ML = 44, MR = 16, MT = 12, MB = 36
@@ -233,20 +264,35 @@ function AlertBreakdownChart({
   const plotW = VW - ML - MR
   const plotH = VH - MT - MB
 
-  const xOf = (i: number) => ML + (i / Math.max(days.length - 1, 1)) * plotW
+  const xOf = (i: number) => ML + (i / Math.max(chartDays.length - 1, 1)) * plotW
   const yOf = (v: number) => MT + plotH - (v / yMax) * plotH
 
   const yTicks = Array.from(new Set(Array.from({ length: 5 }, (_, i) => Math.round((yMax / 4) * i))))
 
-  const xLabelStep = Math.max(1, Math.floor(days.length / 6))
-  const xLabels = days
+  const xLabelStep = Math.max(1, Math.floor(chartDays.length / 6))
+  const xLabels = chartDays
     .map((d, i) => ({ d, i }))
-    .filter(({ i }) => i % xLabelStep === 0 || i === days.length - 1)
+    .filter(({ i }) => i % xLabelStep === 0 || i === chartDays.length - 1)
 
-  const pathFor = (key: AlertTrendKey) => {
-    const pts = days.map((d, i) => {
-      const v = (daily[d]?.[key] ?? 0) as number
+  const xLabelFormat = (d: string) => overlayMode === "wow"
+    ? `Wk ${new Date(d).toLocaleDateString([], { month: "short", day: "numeric" })}`
+    : new Date(d).toLocaleDateString([], { month: "short", day: "numeric" })
+
+  const pathFor = (key: AlertTrendKey) =>
+    chartDays.map((d, i) => {
+      const v = (chartData[d]?.[key] ?? 0) as number
       return `${i === 0 ? "M" : "L"}${xOf(i)},${yOf(v)}`
+    }).join(" ")
+
+  const pathForOverlay = (key: AlertTrendKey) => {
+    const pts: string[] = []
+    let started = false
+    chartDays.forEach((_, i) => {
+      const histIdx = i - overlayOffset
+      if (histIdx < 0) return
+      const v = (chartData[chartDays[histIdx]]?.[key] ?? 0) as number
+      pts.push(`${!started ? "M" : "L"}${xOf(i)},${yOf(v)}`)
+      started = true
     })
     return pts.join(" ")
   }
@@ -258,18 +304,20 @@ function AlertBreakdownChart({
     const svgX = ((e.clientX - rect.left) / rect.width) * VW
     const plotX = svgX - ML
     const fraction = plotX / plotW
-    const idx = Math.round(fraction * (days.length - 1))
-    setHoverIndex(Math.max(0, Math.min(days.length - 1, idx)))
+    const idx = Math.round(fraction * (chartDays.length - 1))
+    setHoverIndex(Math.max(0, Math.min(chartDays.length - 1, idx)))
   }
 
   const hoverX = hoverIndex !== null ? xOf(hoverIndex) : null
-  const hoverDay = hoverIndex !== null ? days[hoverIndex] : null
+  const hoverDay = hoverIndex !== null ? chartDays[hoverIndex] : null
   const hoverLabel = hoverDay
-    ? new Date(hoverDay).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })
+    ? overlayMode === "wow"
+      ? `Week of ${new Date(hoverDay).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}`
+      : new Date(hoverDay).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })
     : null
 
   // Flip tooltip to left side if near right edge
-  const tooltipOnLeft = hoverIndex !== null && hoverIndex > days.length * 0.65
+  const tooltipOnLeft = hoverIndex !== null && hoverIndex > chartDays.length * 0.65
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
@@ -303,8 +351,8 @@ function AlertBreakdownChart({
 
         {tab === "breakdown" && (
           <>
-            {/* Toggle chips */}
-            <div className="flex flex-wrap gap-2 mb-4">
+            {/* Toggle chips + overlay toggles */}
+            <div className="flex flex-wrap items-center gap-2 mb-4">
               {activeMetrics.map((m) => {
                 const isHidden = hidden.has(m.key)
                 return (
@@ -327,7 +375,28 @@ function AlertBreakdownChart({
                   </button>
                 )
               })}
+              <div className="flex gap-1.5 ml-auto">
+                {(["dod", "wow"] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    onClick={() => setOverlayMode((prev) => prev === mode ? "none" : mode)}
+                    className={`text-[10px] px-2.5 py-0.5 rounded border transition-colors ${
+                      overlayMode === mode
+                        ? "bg-neutral-800 text-white border-neutral-800"
+                        : "bg-white text-neutral-400 border-neutral-200 hover:border-neutral-400 hover:text-neutral-600"
+                    }`}
+                  >
+                    {mode === "dod" ? "Day-over-Day" : "Week-over-Week"}
+                  </button>
+                ))}
+              </div>
             </div>
+            {overlayMode !== "none" && (
+              <div className="flex items-center gap-1.5 mb-2 text-[10px] text-neutral-400">
+                <svg width="20" height="8" viewBox="0 0 20 8"><line x1="0" y1="4" x2="20" y2="4" stroke="#9ca3af" strokeWidth="1.5" strokeDasharray="3 2" /></svg>
+                {overlayMode === "dod" ? "Dotted line = previous day" : "Dotted line = same day 1 week ago"}
+              </div>
+            )}
 
             {/* SVG chart */}
             <svg
@@ -345,7 +414,7 @@ function AlertBreakdownChart({
               ))}
               {xLabels.map(({ d, i }) => (
                 <text key={d} x={xOf(i)} y={VH - MB + 14} textAnchor="middle" fontSize="6" fill="#9ca3af">
-                  {new Date(d).toLocaleDateString([], { month: "short", day: "numeric" })}
+                  {xLabelFormat(d)}
                 </text>
               ))}
               {activeMetrics
@@ -366,27 +435,56 @@ function AlertBreakdownChart({
                     />
                   )
                 })}
+              {overlayOffset > 0 && activeMetrics
+                .filter((m) => !hidden.has(m.key))
+                .map((m) => (
+                  <path
+                    key={`overlay-${m.key}`}
+                    d={pathForOverlay(m.key)}
+                    fill="none"
+                    stroke={m.color}
+                    strokeWidth={0.75}
+                    strokeDasharray="3 2"
+                    strokeLinecap="round"
+                    opacity={0.45}
+                  />
+                ))}
               {hoverX !== null && hoverIndex !== null && (
                 <g>
                   <line x1={hoverX} y1={MT} x2={hoverX} y2={MT + plotH} stroke="#6b7280" strokeWidth="1" strokeDasharray="4 3" />
                   {activeMetrics
                     .filter((m) => !hidden.has(m.key))
                     .map((m) => {
-                      const v = (daily[days[hoverIndex]]?.[m.key] ?? 0) as number
+                      const v = (chartData[chartDays[hoverIndex]]?.[m.key] ?? 0) as number
                       return <circle key={m.key} cx={hoverX} cy={yOf(v)} r="3.5" fill={m.color} stroke="white" strokeWidth="1.5" />
                     })}
                   {hoverLabel && hoverDay && (() => {
                     const visibleMetrics = activeMetrics.filter((m) => !hidden.has(m.key))
-                    const boxW = 100
-                    const boxH = 12 + visibleMetrics.length * 13 + 6
+                    const hasOverlay = overlayOffset > 0
+                    const histIdx = hoverIndex - overlayOffset
+                    const histDay = hasOverlay && histIdx >= 0 ? chartDays[histIdx] : null
+                    const histLabel = histDay
+                      ? overlayMode === "wow"
+                        ? `Week of ${new Date(histDay).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}`
+                        : new Date(histDay).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })
+                      : null
+                    const boxW = hasOverlay ? 148 : 100
+                    const boxH = hasOverlay
+                      ? 12 + visibleMetrics.length * 13 + 8 + 11 + visibleMetrics.length * 13 + 6
+                      : 12 + visibleMetrics.length * 13 + 6
                     const boxX = tooltipOnLeft ? hoverX - boxW - 10 : hoverX + 10
                     const boxY = MT
+                    const histRowStart = 12 + visibleMetrics.length * 13 + 16
                     return (
                       <g>
                         <rect x={boxX} y={boxY} width={boxW} height={boxH} rx="3" fill="white" stroke="#e5e7eb" strokeWidth="1" filter="drop-shadow(0 1px 3px rgba(0,0,0,0.12))" />
-                        <text x={boxX + 6} y={boxY + 10} fontSize="6" fontWeight="600" fill="#374151">{hoverLabel}</text>
+
+                        {/* Current date header */}
+                        <text x={boxX + 6} y={boxY + 10} fontSize="6" fontWeight="700" fill="#374151">{hoverLabel}</text>
+
+                        {/* Current values */}
                         {visibleMetrics.map((m, idx) => {
-                          const v = (daily[hoverDay]?.[m.key] ?? 0) as number
+                          const v = (chartData[hoverDay]?.[m.key] ?? 0) as number
                           return (
                             <g key={m.key}>
                               <circle cx={boxX + 9} cy={boxY + 18 + idx * 13} r="2.5" fill={m.color} />
@@ -395,6 +493,34 @@ function AlertBreakdownChart({
                             </g>
                           )
                         })}
+
+                        {/* Overlay section */}
+                        {hasOverlay && histLabel && (
+                          <>
+                            <line x1={boxX + 4} y1={boxY + histRowStart - 7} x2={boxX + boxW - 4} y2={boxY + histRowStart - 7} stroke="#e5e7eb" strokeWidth="0.75" />
+                            {/* Historical date header — same style as current */}
+                            <text x={boxX + 6} y={boxY + histRowStart + 2} fontSize="6" fontWeight="700" fill="#374151">{histLabel}</text>
+
+                            {/* Historical values — faded circle swatch + delta */}
+                            {visibleMetrics.map((m, idx) => {
+                              const v = (chartData[hoverDay]?.[m.key] ?? 0) as number
+                              const histV = histDay ? (chartData[histDay]?.[m.key] ?? 0) as number : null
+                              const pct = histV !== null ? (histV > 0 ? Math.round(((v - histV) / histV) * 100) : v > 0 ? 100 : 0) : null
+                              return (
+                                <g key={`hist-${m.key}`}>
+                                  <circle cx={boxX + 9} cy={boxY + histRowStart + 9 + idx * 13} r="2.5" fill={m.color} opacity={0.35} />
+                                  <text x={boxX + 16} y={boxY + histRowStart + 13 + idx * 13} fontSize="6" fill="#6b7280">{m.label}</text>
+                                  {pct !== null && (
+                                    <text x={boxX + boxW - 20} y={boxY + histRowStart + 13 + idx * 13} fontSize="5.5" fontWeight="600" fill={pct > 0 ? "#ef4444" : pct < 0 ? "#22c55e" : "#9ca3af"} textAnchor="end">
+                                      {pct > 0 ? `+${pct}%` : pct < 0 ? `${pct}%` : "—"}
+                                    </text>
+                                  )}
+                                  <text x={boxX + boxW - 4} y={boxY + histRowStart + 13 + idx * 13} fontSize="6" fontWeight="600" fill="#374151" textAnchor="end">{histV ?? "—"}</text>
+                                </g>
+                              )
+                            })}
+                          </>
+                        )}
                       </g>
                     )
                   })()}
