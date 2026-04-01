@@ -40,6 +40,18 @@ def _tokens_match(stored_token: Optional[str], candidate_token: str) -> bool:
     except Exception:
         return False
 
+
+def _is_upstream_token_auth_error(message: str) -> bool:
+    """Detect expired/invalid upstream integration token failures."""
+    normalized = (message or "").lower()
+    return (
+        "api request failed: 401" in normalized
+        or "401 unauthorized" in normalized
+        or "unauthorized - check api token" in normalized
+        or ("token" in normalized and "expired" in normalized)
+        or ("token" in normalized and "invalid" in normalized)
+    )
+
 class RootlyTokenUpdate(BaseModel):
     token: str
 
@@ -1274,6 +1286,7 @@ async def sync_integration_users(
     
     Returns sync statistics showing how many users were created/updated.
     """
+    platform_label = "integration"
     try:
         from app.services.user_sync_service import UserSyncService
         import os
@@ -1286,6 +1299,7 @@ async def sync_integration_users(
 
             # Get beta token from environment
             if integration_id == "beta-rootly":
+                platform_label = "Rootly"
                 beta_token = os.getenv('ROOTLY_API_TOKEN')
                 if not beta_token:
                     raise HTTPException(
@@ -1306,6 +1320,7 @@ async def sync_integration_users(
                     })
                 platform = "rootly"
             else:  # beta-pagerduty
+                platform_label = "PagerDuty"
                 beta_token = os.getenv('PAGERDUTY_API_TOKEN')
                 if not beta_token:
                     raise HTTPException(
@@ -1381,6 +1396,18 @@ async def sync_integration_users(
 
         # Sync users from database integration
         sync_service = UserSyncService(db)
+        integration = db.query(RootlyIntegration).filter(
+            RootlyIntegration.id == numeric_id,
+            RootlyIntegration.user_id == current_user.id
+        ).first()
+
+        if not integration:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Integration {numeric_id} not found"
+            )
+
+        platform_label = "PagerDuty" if integration.platform == "pagerduty" else "Rootly"
 
         # Perform sync - GitHub matching is handled internally by _match_github_usernames()
         stats = await sync_service.sync_integration_users(
@@ -1391,9 +1418,6 @@ async def sync_integration_users(
         # Update last_synced_by and last_synced_at in separate transaction
         # This ensures metadata is only updated if sync completes successfully
         try:
-            integration = db.query(RootlyIntegration).filter(
-                RootlyIntegration.id == numeric_id
-            ).first()
             if integration:
                 integration.last_synced_by = current_user.id
                 integration.last_synced_at = datetime.now(timezone.utc)
@@ -1423,10 +1447,22 @@ async def sync_integration_users(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error syncing integration users: {str(e)}")
+        detail = str(e)
+        if _is_upstream_token_auth_error(detail):
+            logger.warning(f"Sync failed due to expired or invalid {platform_label} token: {detail}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=(
+                    "The integration token is expired or invalid. Please reconnect it and try again."
+                    if platform_label == "integration"
+                    else f"The {platform_label} token is expired or invalid. Please reconnect {platform_label} and try again."
+                )
+            )
+
+        logger.error(f"Error syncing integration users: {detail}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to sync users: {str(e)}"
+            detail=f"Failed to sync users: {detail}"
         )
 
 @router.get("/integrations/{integration_id}/oncall-users")

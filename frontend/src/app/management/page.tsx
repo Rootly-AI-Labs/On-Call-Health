@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
+import { Tooltip } from "@/components/ui/tooltip"
 import {
   Dialog,
   DialogContent,
@@ -33,6 +34,7 @@ import {
   Search,
   Pencil,
   CheckCircle,
+  AlertCircle,
   Users,
   ArrowUpDown,
   ArrowUp,
@@ -149,6 +151,7 @@ function TeamPageContent() {
     stage: string
     details: string
     isLoading: boolean
+    error?: string
     results?: {
       created?: number
       updated?: number
@@ -160,6 +163,103 @@ function TeamPageContent() {
       slack_skipped?: number
     }
   } | null>(null)
+
+  const getSelectedIntegrationLabel = () => {
+    const selectedIntegration = integrations.find((integration) => String(integration.id) === selectedOrganization)
+    if (selectedIntegration?.platform === "pagerduty") return "PagerDuty"
+    if (selectedIntegration?.platform === "rootly") return "Rootly"
+    return "integration"
+  }
+
+  const parseSyncErrorMessage = async (response: Response) => {
+    let detail = `Sync failed with status ${response.status}`
+    const contentType = response.headers.get("content-type") || ""
+
+    try {
+      if (contentType.includes("application/json")) {
+        const errorData = await response.json()
+        detail = errorData?.detail || errorData?.message || detail
+      } else {
+        const text = await response.text()
+        if (text) detail = text
+      }
+    } catch {
+      // Fall back to the default detail message when the error body can't be parsed.
+    }
+
+    const normalizedDetail = detail.toLowerCase()
+    const integrationLabel = getSelectedIntegrationLabel()
+
+    if (
+      normalizedDetail.includes("api request failed: 401") ||
+      normalizedDetail.includes("token is expired or invalid") ||
+      (normalizedDetail.includes("token") && normalizedDetail.includes("expired")) ||
+      (normalizedDetail.includes("token") && normalizedDetail.includes("invalid"))
+    ) {
+      return integrationLabel === "integration"
+        ? "The integration token is expired or invalid. Please reconnect it and try again."
+        : `The ${integrationLabel} token is expired or invalid. Please reconnect ${integrationLabel} and try again.`
+    }
+
+    if (
+      response.status === 401 &&
+      (
+        normalizedDetail.includes("could not validate credentials") ||
+        normalizedDetail.includes("not authenticated")
+      )
+    ) {
+      return "Session expired. Please log in again."
+    }
+
+    return detail
+  }
+
+  const selectedIntegration = selectedOrganization
+    ? integrations.find(i => i.id.toString() === selectedOrganization)
+    : null
+
+  const getTeamScopeLabel = (integration: Integration) => {
+    if (integration.platform !== "rootly") return null
+    return `Team: ${integration.team_name || "All users"}`
+  }
+
+  const getInvalidTokenTooltip = (integration: Integration) => (
+    integration.platform === "pagerduty"
+      ? "PagerDuty token expired or invalid. Reconnect PagerDuty to sync users."
+      : "Rootly token expired or invalid. Reconnect Rootly to sync users."
+  )
+
+  const isTokenAttentionError = useCallback((value?: string | null) => {
+    const normalized = (value || "").toLowerCase()
+    return (
+      normalized.includes("unauthorized") ||
+      normalized.includes("api request failed: 401") ||
+      normalized.includes("401 unauthorized") ||
+      (normalized.includes("token") && normalized.includes("expired")) ||
+      (normalized.includes("token") && normalized.includes("invalid"))
+    )
+  }, [])
+
+  const hasInvalidIntegrationToken = useCallback((integration?: Integration | null) => {
+    if (
+      integration &&
+      selectedIntegration &&
+      integration.id === selectedIntegration.id &&
+      syncProgress?.error &&
+      isTokenAttentionError(syncProgress.error)
+    ) {
+      return true
+    }
+
+    if (!integration?.permissions) return false
+
+    const combinedErrors = `${integration.permissions.users?.error ?? ""} ${integration.permissions.incidents?.error ?? ""}`
+    if (isTokenAttentionError(combinedErrors)) {
+      return true
+    }
+
+    return false
+  }, [isTokenAttentionError, selectedIntegration, syncProgress?.error])
 
   // Check if there are unsaved changes
   const hasUnsavedChanges = () => {
@@ -651,7 +751,7 @@ function TeamPageContent() {
 
       const authToken = localStorage.getItem("auth_token")
       if (!authToken) {
-        throw new Error("Not authenticated")
+        throw new Error("Please log in again to sync users.")
       }
 
       const response = await fetch(
@@ -663,7 +763,7 @@ function TeamPageContent() {
       )
 
       if (!response.ok) {
-        throw new Error("Sync failed")
+        throw new Error(await parseSyncErrorMessage(response))
       }
 
       const syncResults = await response.json()
@@ -701,22 +801,14 @@ function TeamPageContent() {
       // Refresh the user list
       await fetchSyncedUsers(false, false, true)
     } catch (error) {
-      setSyncProgress({ stage: "Error", details: "Failed to sync. Please try again.", isLoading: false })
-      // Clean up any existing timeout before setting a new one
-      if (syncTimeoutRef.current) {
-        clearTimeout(syncTimeoutRef.current)
-      }
-      // Only set new timeout if component is still mounted
-      if (isMountedRef.current) {
-        syncTimeoutRef.current = setTimeout(() => {
-          // Check again before setting state to prevent memory leaks
-          if (isMountedRef.current) {
-            setShowSyncConfirmModal(false)
-            setSyncProgress(null)
-            syncTimeoutRef.current = null
-          }
-        }, 2000)
-      }
+      const errorMessage = error instanceof Error ? error.message : "Failed to sync users. Please try again."
+      setSyncProgress({
+        stage: "Sync Failed",
+        details: errorMessage,
+        error: errorMessage,
+        isLoading: false
+      })
+      toast.error(errorMessage)
     }
   }
 
@@ -821,15 +913,6 @@ function TeamPageContent() {
     } finally {
       setSavingRecipients(false)
     }
-  }
-
-  // Find the currently selected integration (used for context elsewhere on the page)
-  const selectedIntegration = selectedOrganization
-    ? integrations.find(i => i.id.toString() === selectedOrganization)
-    : null
-  const getTeamScopeLabel = (integration: Integration) => {
-    if (integration.platform !== "rootly") return null
-    return `Team: ${integration.team_name || "All users"}`
   }
 
   // Check if any primary integration (Rootly or PagerDuty) exists
@@ -1087,6 +1170,13 @@ function TeamPageContent() {
                                     <div className="flex items-center gap-2 min-w-0">
                                       <span className={`w-2 h-2 rounded-full flex-shrink-0 ${selectedIntegration.platform === "rootly" ? "bg-purple-500" : "bg-green-500"}`}></span>
                                       <span className="truncate">{selectedIntegration.name || `Integration #${selectedIntegration.id}`}</span>
+                                      {hasInvalidIntegrationToken(selectedIntegration) && (
+                                        <Tooltip content={getInvalidTokenTooltip(selectedIntegration)}>
+                                          <span className="inline-flex flex-shrink-0" aria-label={getInvalidTokenTooltip(selectedIntegration)}>
+                                            <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
+                                          </span>
+                                        </Tooltip>
+                                      )}
                                       {getTeamScopeLabel(selectedIntegration) && (
                                         <span className="ml-auto inline-flex max-w-[140px] items-center truncate rounded bg-purple-100 px-1.5 py-0.5 text-[11px] font-medium text-purple-700 flex-shrink-0">
                                           {getTeamScopeLabel(selectedIntegration)}
@@ -1102,6 +1192,13 @@ function TeamPageContent() {
                                     <div className="flex items-center gap-2 min-w-0">
                                       <span className={`w-2 h-2 rounded-full flex-shrink-0 ${integration.platform === "rootly" ? "bg-purple-500" : "bg-green-500"}`}></span>
                                       <span className="truncate">{integration.name || `Integration #${integration.id}`}</span>
+                                      {hasInvalidIntegrationToken(integration) && (
+                                        <Tooltip content={getInvalidTokenTooltip(integration)}>
+                                          <span className="inline-flex flex-shrink-0" aria-label={getInvalidTokenTooltip(integration)}>
+                                            <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
+                                          </span>
+                                        </Tooltip>
+                                      )}
                                       {getTeamScopeLabel(integration) && (
                                         <span className="ml-auto inline-flex max-w-[140px] items-center truncate rounded bg-purple-100 px-1.5 py-0.5 text-[11px] font-medium text-purple-700 flex-shrink-0">
                                           {getTeamScopeLabel(integration)}
@@ -1770,6 +1867,41 @@ function TeamPageContent() {
                       <p className="text-sm text-neutral-600">{syncProgress.details}</p>
                     </div>
                   </div>
+                </>
+              ) : syncProgress.error ? (
+                <>
+                  <DialogHeader className="sr-only">
+                    <DialogTitle>Sync Failed</DialogTitle>
+                  </DialogHeader>
+                  <div className="py-6 px-6">
+                    <div className="flex justify-center mb-4">
+                      <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                        <AlertCircle className="w-7 h-7 text-red-600" />
+                      </div>
+                    </div>
+
+                    <h2 className="text-xl font-semibold text-center mb-2">Sync Failed</h2>
+
+                    <p className="text-sm text-neutral-600 text-center mb-6">
+                      We couldn&apos;t sync users for this organization.
+                    </p>
+
+                    <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+                      {syncProgress.error}
+                    </div>
+                  </div>
+
+                  <DialogFooter className="px-6 pb-6">
+                    <Button
+                      onClick={() => {
+                        setShowSyncConfirmModal(false)
+                        setSyncProgress(null)
+                      }}
+                      className="w-full bg-purple-700 hover:bg-purple-800"
+                    >
+                      Close
+                    </Button>
+                  </DialogFooter>
                 </>
               ) : (
                 <>

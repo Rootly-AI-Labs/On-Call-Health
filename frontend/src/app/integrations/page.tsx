@@ -165,6 +165,13 @@ import { JiraWorkspaceSelector } from "./dialogs/JiraWorkspaceSelector"
 import { NewMappingDialog } from "./dialogs/NewMappingDialog"
 import { PostIntegrationSyncModal } from "./dialogs/PostIntegrationSyncModal"
 
+type IntegrationAttentionState = "expired" | "permissions"
+
+type IntegrationAttention = {
+  state: IntegrationAttentionState
+  message: string
+}
+
 export default function IntegrationsPage() {
   // State management
   const [integrations, setIntegrations] = useState<Integration[]>([])
@@ -206,9 +213,9 @@ export default function IntegrationsPage() {
   // Token error modal state
   const [tokenErrorModalOpen, setTokenErrorModalOpen] = useState(false)
   const [tokenErrorType, setTokenErrorType] = useState<'expired' | 'permissions' | null>(null)
+  const [tokenErrorIntegrationId, setTokenErrorIntegrationId] = useState<string | null>(null)
   const [tokenErrorIntegrationName, setTokenErrorIntegrationName] = useState('')
   const [tokenErrorMissingPermissions, setTokenErrorMissingPermissions] = useState<string[]>([])
-  const [hasTokenError, setHasTokenError] = useState(false) // Track if current org has token issues
 
   const [mappingData, setMappingData] = useState<IntegrationMapping[]>([])
   const [mappingStats, setMappingStats] = useState<MappingStatistics | null>(null)
@@ -322,6 +329,7 @@ export default function IntegrationsPage() {
   const [, setShowSyncedUsers] = useState(false)
   const [, setTeamMembersDrawerOpen] = useState(false)
   const syncedUsersCacheRef = useRef<Map<string, any[]>>(new Map())
+  const permissionCheckRequestRef = useRef(0)
 
   const getActiveOrganizationId = () =>
     selectedOrganization || integrations.find(i => i.is_default)?.id?.toString() || ''
@@ -1427,6 +1435,13 @@ export default function IntegrationsPage() {
             ? { ...int, permissions: data.permissions }
             : int
         ))
+
+        if (selectedOrganization === integrationId.toString()) {
+          setTokenErrorType(null)
+          setTokenErrorIntegrationId(null)
+          setTokenErrorIntegrationName('')
+          setTokenErrorMissingPermissions([])
+        }
       }
     } catch (error) {
       // Silently handle permission refresh errors
@@ -2242,8 +2257,120 @@ export default function IntegrationsPage() {
     })
   }, [integrations, activeTab])
 
+  const isTokenAttentionError = useCallback((value?: string | null) => {
+    const normalized = (value || "").toLowerCase()
+    return (
+      normalized.includes("unauthorized")
+      || normalized.includes("api request failed: 401")
+      || normalized.includes("401 unauthorized")
+      || (normalized.includes("token") && normalized.includes("expired"))
+      || (normalized.includes("token") && normalized.includes("invalid"))
+    )
+  }, [])
+
+  const getIntegrationAttention = useCallback((integration: Integration): IntegrationAttention | null => {
+    const isSelectedIntegration = selectedOrganization === integration.id.toString()
+
+    if (isSelectedIntegration && tokenErrorIntegrationId === integration.id.toString() && tokenErrorType) {
+      return {
+        state: tokenErrorType,
+        message: tokenErrorType === "expired"
+          ? `${integration.name}: token expired or invalid`
+          : `${integration.name}: missing ${tokenErrorMissingPermissions.length > 0 ? tokenErrorMissingPermissions.join(" and ") : "required permissions"}`,
+      }
+    }
+
+    const permissions = integration.permissions
+    if (!permissions) return null
+
+    const usersAccess = permissions.users?.access
+    const incidentsAccess = permissions.incidents?.access
+
+    if (usersAccess == null && incidentsAccess == null) {
+      return null
+    }
+
+    if (usersAccess === false || incidentsAccess === false) {
+      const combinedErrors = `${permissions.users?.error ?? ""} ${permissions.incidents?.error ?? ""}`
+      if (isTokenAttentionError(combinedErrors)) {
+        return {
+          state: "expired",
+          message: `${integration.name}: token expired or invalid`,
+        }
+      }
+
+      const missingPermissions = [
+        usersAccess === false ? "Users" : null,
+        incidentsAccess === false ? "Incidents" : null,
+      ].filter(Boolean) as string[]
+
+      return {
+        state: "permissions",
+        message: missingPermissions.length > 0
+          ? `${integration.name}: missing ${missingPermissions.join(" and ")} access`
+          : `${integration.name}: missing required permissions`,
+      }
+    }
+
+    return null
+  }, [
+    isTokenAttentionError,
+    selectedOrganization,
+    tokenErrorIntegrationId,
+    tokenErrorMissingPermissions,
+    tokenErrorType,
+  ])
+
+  const renderAttentionDot = useCallback((attention: IntegrationAttention | null, sizeClass = "h-2.5 w-2.5") => {
+    if (!attention) return null
+
+    const dotClasses = attention.state === "expired"
+      ? `${sizeClass} rounded-full bg-red-500 ring-2 ring-red-100`
+      : `${sizeClass} rounded-full bg-amber-500 ring-2 ring-amber-100`
+
+    return (
+      <Tooltip content={attention.message}>
+        <span className="inline-flex" aria-label={attention.message}>
+          <span className={dotClasses} />
+        </span>
+      </Tooltip>
+    )
+  }, [])
+
   const rootlyCount = useMemo(() => integrations.filter(i => i.platform === 'rootly').length, [integrations])
   const pagerdutyCount = useMemo(() => integrations.filter(i => i.platform === 'pagerduty').length, [integrations])
+  const getPlatformAttentionState = useCallback((platform: 'rootly' | 'pagerduty'): IntegrationAttentionState | null => {
+    const platformAttentions = integrations
+      .filter((integration) => integration.platform === platform)
+      .map((integration) => getIntegrationAttention(integration))
+      .filter(Boolean) as IntegrationAttention[]
+
+    if (platformAttentions.some((attention) => attention.state === 'expired')) {
+      return 'expired'
+    }
+
+    if (platformAttentions.some((attention) => attention.state === 'permissions')) {
+      return 'permissions'
+    }
+
+    return null
+  }, [getIntegrationAttention, integrations])
+  const rootlyAttentionCount = useMemo(
+    () => integrations.filter(i => i.platform === 'rootly' && getIntegrationAttention(i)).length,
+    [getIntegrationAttention, integrations]
+  )
+  const pagerdutyAttentionCount = useMemo(
+    () => integrations.filter(i => i.platform === 'pagerduty' && getIntegrationAttention(i)).length,
+    [getIntegrationAttention, integrations]
+  )
+  const rootlyAttentionState = useMemo(
+    () => getPlatformAttentionState('rootly'),
+    [getPlatformAttentionState]
+  )
+  const pagerdutyAttentionState = useMemo(
+    () => getPlatformAttentionState('pagerduty'),
+    [getPlatformAttentionState]
+  )
 
   // Helper booleans to distinguish between Slack Survey (OAuth) and Enhanced Integration (webhook/token)
   // Note: Backend returns ONE integration at a time - either OAuth or manual, not both simultaneously
@@ -2341,17 +2468,34 @@ export default function IntegrationsPage() {
                 }}
               >
                 {activeTab === 'rootly' && (
-                  <>
-                    <div className="absolute top-2 left-2">
-                      <CheckCircle className="w-5 h-5 text-purple-600" />
-                    </div>
-                    <div className="absolute top-2 right-2">
-                      <Badge variant="secondary" className="bg-purple-100 text-purple-700 text-xs">{rootlyCount}</Badge>
-                    </div>
-                  </>
+                  <div className="absolute top-2 left-2">
+                    <CheckCircle className="w-5 h-5 text-purple-600" />
+                  </div>
                 )}
-                {activeTab !== 'rootly' && rootlyCount > 0 && (
-                  <Badge variant="secondary" className="absolute top-2 right-2 text-xs">{rootlyCount}</Badge>
+                {(rootlyCount > 0 || rootlyAttentionCount > 0) && (
+                  <div className="absolute top-2 right-2 flex items-center gap-2">
+                    {rootlyAttentionCount > 0 && (
+                      <Tooltip content={`${rootlyAttentionCount} Rootly integration${rootlyAttentionCount === 1 ? '' : 's'} need attention`}>
+                        <span className="inline-flex" aria-label={`${rootlyAttentionCount} Rootly integration${rootlyAttentionCount === 1 ? '' : 's'} need attention`}>
+                          <span
+                            className={`h-2.5 w-2.5 rounded-full ring-2 ${
+                              rootlyAttentionState === 'permissions'
+                                ? 'bg-amber-500 ring-amber-100'
+                                : 'bg-red-500 ring-red-100'
+                            }`}
+                          />
+                        </span>
+                      </Tooltip>
+                    )}
+                    {rootlyCount > 0 && (
+                      <Badge
+                        variant="secondary"
+                        className={activeTab === 'rootly' ? 'bg-purple-100 text-purple-700 text-xs' : 'text-xs'}
+                      >
+                        {rootlyCount}
+                      </Badge>
+                    )}
+                  </div>
                 )}
                 <div className="flex items-center justify-center">
                   <Image
@@ -2393,17 +2537,34 @@ export default function IntegrationsPage() {
               }}
             >
               {activeTab === 'pagerduty' && (
-                <>
-                  <div className="absolute top-2 left-2">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                  </div>
-                  <div className="absolute top-2 right-2">
-                    <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">{pagerdutyCount}</Badge>
-                  </div>
-                </>
+                <div className="absolute top-2 left-2">
+                  <CheckCircle className="w-5 h-5 text-green-600" />
+                </div>
               )}
-              {activeTab !== 'pagerduty' && pagerdutyCount > 0 && (
-                <Badge variant="secondary" className="absolute top-2 right-2 text-xs">{pagerdutyCount}</Badge>
+              {(pagerdutyCount > 0 || pagerdutyAttentionCount > 0) && (
+                <div className="absolute top-2 right-2 flex items-center gap-2">
+                  {pagerdutyAttentionCount > 0 && (
+                    <Tooltip content={`${pagerdutyAttentionCount} PagerDuty integration${pagerdutyAttentionCount === 1 ? '' : 's'} need attention`}>
+                      <span className="inline-flex" aria-label={`${pagerdutyAttentionCount} PagerDuty integration${pagerdutyAttentionCount === 1 ? '' : 's'} need attention`}>
+                        <span
+                          className={`h-2.5 w-2.5 rounded-full ring-2 ${
+                            pagerdutyAttentionState === 'permissions'
+                              ? 'bg-amber-500 ring-amber-100'
+                              : 'bg-red-500 ring-red-100'
+                          }`}
+                        />
+                      </span>
+                    </Tooltip>
+                  )}
+                  {pagerdutyCount > 0 && (
+                    <Badge
+                      variant="secondary"
+                      className={activeTab === 'pagerduty' ? 'bg-green-100 text-green-700 text-xs' : 'text-xs'}
+                    >
+                      {pagerdutyCount}
+                    </Badge>
+                  )}
+                </div>
               )}
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 bg-green-600 rounded flex items-center justify-center">
@@ -2566,6 +2727,12 @@ export default function IntegrationsPage() {
                         if (value !== selectedOrganization) {
                           const selected = integrations.find(i => i.id.toString() === value)
                           if (selected) {
+                            const requestId = permissionCheckRequestRef.current + 1
+                            permissionCheckRequestRef.current = requestId
+                            setTokenErrorType(null)
+                            setTokenErrorIntegrationId(null)
+                            setTokenErrorIntegrationName('')
+                            setTokenErrorMissingPermissions([])
                             toast.success(`${selected.name} set as default`)
 
                             // Show sync modal after switching organizations
@@ -2589,6 +2756,7 @@ export default function IntegrationsPage() {
 
                               if (response.ok) {
                                 const data = await response.json()
+                                if (permissionCheckRequestRef.current !== requestId) return
 
                                 if (data.has_users === false || data.has_incidents === false) {
                                   const missing = [
@@ -2597,20 +2765,24 @@ export default function IntegrationsPage() {
                                   ].filter(Boolean) as string[]
 
                                   setTokenErrorType('permissions')
+                                  setTokenErrorIntegrationId(selected.id.toString())
                                   setTokenErrorIntegrationName(selected.name)
                                   setTokenErrorMissingPermissions(missing)
                                   setTokenErrorModalOpen(true)
-                                  setHasTokenError(true)
                                 } else {
                                   // Token is valid and has permissions
-                                  setHasTokenError(false)
+                                  setTokenErrorType(null)
+                                  setTokenErrorIntegrationId(null)
+                                  setTokenErrorIntegrationName('')
+                                  setTokenErrorMissingPermissions([])
                                 }
                               } else if (response.status === 401 || response.status === 403) {
+                                if (permissionCheckRequestRef.current !== requestId) return
                                 setTokenErrorType('expired')
+                                setTokenErrorIntegrationId(selected.id.toString())
                                 setTokenErrorIntegrationName(selected.name)
                                 setTokenErrorMissingPermissions([])
                                 setTokenErrorModalOpen(true)
-                                setHasTokenError(true)
                               }
                             } catch (error) {
                               console.error('Error checking integration permissions:', error)
@@ -2624,6 +2796,7 @@ export default function IntegrationsPage() {
                           {selectedOrganization && (() => {
                             const selected = integrations.find(i => i.id.toString() === selectedOrganization)
                             if (selected) {
+                              const selectedAttention = getIntegrationAttention(selected)
                               const selectedDisplayName = (() => {
                                 if (selected.platform !== 'rootly') return selected.name
 
@@ -2656,6 +2829,18 @@ export default function IntegrationsPage() {
                                         className="px-1.5 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-700 inline-block max-w-44 flex-shrink-0 truncate align-middle"
                                       >
                                         {selectedScopeLabel}
+                                      </span>
+                                    )}
+                                    {selectedAttention && (
+                                      <span
+                                        title={selectedAttention.message}
+                                        className={`px-1.5 py-0.5 text-[11px] font-semibold rounded inline-block flex-shrink-0 ${
+                                          selectedAttention.state === 'expired'
+                                            ? 'bg-red-100 text-red-700'
+                                            : 'bg-amber-100 text-amber-700'
+                                        }`}
+                                      >
+                                        {selectedAttention.state === 'expired' ? 'Token issue' : 'Fix access'}
                                       </span>
                                     )}
                                   </div>
@@ -2746,6 +2931,7 @@ export default function IntegrationsPage() {
                   <div className="space-y-2">
                     {filteredIntegrations.map((integration) => {
                       const isExpanded = expandedIntegrations.has(integration.id)
+                      const integrationAttention = getIntegrationAttention(integration)
                       const rootlyScopeLabel = integration.platform === 'rootly'
                         ? (integration.team_name
                           ? `Team: ${integration.team_name}`
@@ -2814,6 +3000,11 @@ export default function IntegrationsPage() {
                           </div>
                         ) : (
                           <h3 className="font-semibold text-base truncate flex-1 min-w-0 mr-3 hidden md:block">{integration.name}</h3>
+                        )}
+                        {integrationAttention && (
+                          <div className="mr-3 flex-shrink-0">
+                            {renderAttentionDot(integrationAttention)}
+                          </div>
                         )}
 
                         {/* Stats in collapsed view - fixed widths for alignment */}
