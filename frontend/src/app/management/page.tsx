@@ -915,7 +915,6 @@ function TeamPageContent() {
     }
   }
 
-  // Find the currently selected integration (used for context elsewhere on the page)
   // Check if any primary integration (Rootly or PagerDuty) exists
   // Since the integrations array only contains Rootly and PagerDuty entries, length > 0 is sufficient
   const hasPrimaryIntegration = integrations.length > 0

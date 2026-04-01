@@ -1435,6 +1435,13 @@ export default function IntegrationsPage() {
             ? { ...int, permissions: data.permissions }
             : int
         ))
+
+        if (selectedOrganization === integrationId.toString()) {
+          setTokenErrorType(null)
+          setTokenErrorIntegrationId(null)
+          setTokenErrorIntegrationName('')
+          setTokenErrorMissingPermissions([])
+        }
       }
     } catch (error) {
       // Silently handle permission refresh errors
