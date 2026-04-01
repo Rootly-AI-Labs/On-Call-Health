@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
+import { Tooltip } from "@/components/ui/tooltip"
 import {
   Dialog,
   DialogContent,
@@ -212,6 +213,52 @@ function TeamPageContent() {
 
     return detail
   }
+
+  const selectedIntegration = selectedOrganization
+    ? integrations.find(i => i.id.toString() === selectedOrganization)
+    : null
+
+  const getTeamScopeLabel = (integration: Integration) => {
+    if (integration.platform !== "rootly") return null
+    return `Team: ${integration.team_name || "All users"}`
+  }
+
+  const getInvalidTokenTooltip = (integration: Integration) => (
+    integration.platform === "pagerduty"
+      ? "PagerDuty token expired or invalid. Reconnect PagerDuty to sync users."
+      : "Rootly token expired or invalid. Reconnect Rootly to sync users."
+  )
+
+  const isTokenAttentionError = useCallback((value?: string | null) => {
+    const normalized = (value || "").toLowerCase()
+    return (
+      normalized.includes("unauthorized") ||
+      normalized.includes("api request failed: 401") ||
+      normalized.includes("401 unauthorized") ||
+      (normalized.includes("token") && normalized.includes("expired")) ||
+      (normalized.includes("token") && normalized.includes("invalid"))
+    )
+  }, [])
+
+  const hasInvalidIntegrationToken = useCallback((integration?: Integration | null) => {
+    if (!integration?.permissions) return false
+
+    const combinedErrors = `${integration.permissions.users?.error ?? ""} ${integration.permissions.incidents?.error ?? ""}`
+    if (isTokenAttentionError(combinedErrors)) {
+      return true
+    }
+
+    if (
+      selectedIntegration &&
+      integration.id === selectedIntegration.id &&
+      syncProgress?.error &&
+      isTokenAttentionError(syncProgress.error)
+    ) {
+      return true
+    }
+
+    return false
+  }, [isTokenAttentionError, selectedIntegration, syncProgress?.error])
 
   // Check if there are unsaved changes
   const hasUnsavedChanges = () => {
@@ -868,14 +915,6 @@ function TeamPageContent() {
   }
 
   // Find the currently selected integration (used for context elsewhere on the page)
-  const selectedIntegration = selectedOrganization
-    ? integrations.find(i => i.id.toString() === selectedOrganization)
-    : null
-  const getTeamScopeLabel = (integration: Integration) => {
-    if (integration.platform !== "rootly") return null
-    return `Team: ${integration.team_name || "All users"}`
-  }
-
   // Check if any primary integration (Rootly or PagerDuty) exists
   // Since the integrations array only contains Rootly and PagerDuty entries, length > 0 is sufficient
   const hasPrimaryIntegration = integrations.length > 0
@@ -1131,6 +1170,13 @@ function TeamPageContent() {
                                     <div className="flex items-center gap-2 min-w-0">
                                       <span className={`w-2 h-2 rounded-full flex-shrink-0 ${selectedIntegration.platform === "rootly" ? "bg-purple-500" : "bg-green-500"}`}></span>
                                       <span className="truncate">{selectedIntegration.name || `Integration #${selectedIntegration.id}`}</span>
+                                      {hasInvalidIntegrationToken(selectedIntegration) && (
+                                        <Tooltip content={getInvalidTokenTooltip(selectedIntegration)}>
+                                          <span className="inline-flex flex-shrink-0" aria-label={getInvalidTokenTooltip(selectedIntegration)}>
+                                            <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
+                                          </span>
+                                        </Tooltip>
+                                      )}
                                       {getTeamScopeLabel(selectedIntegration) && (
                                         <span className="ml-auto inline-flex max-w-[140px] items-center truncate rounded bg-purple-100 px-1.5 py-0.5 text-[11px] font-medium text-purple-700 flex-shrink-0">
                                           {getTeamScopeLabel(selectedIntegration)}
@@ -1146,6 +1192,13 @@ function TeamPageContent() {
                                     <div className="flex items-center gap-2 min-w-0">
                                       <span className={`w-2 h-2 rounded-full flex-shrink-0 ${integration.platform === "rootly" ? "bg-purple-500" : "bg-green-500"}`}></span>
                                       <span className="truncate">{integration.name || `Integration #${integration.id}`}</span>
+                                      {hasInvalidIntegrationToken(integration) && (
+                                        <Tooltip content={getInvalidTokenTooltip(integration)}>
+                                          <span className="inline-flex flex-shrink-0" aria-label={getInvalidTokenTooltip(integration)}>
+                                            <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
+                                          </span>
+                                        </Tooltip>
+                                      )}
                                       {getTeamScopeLabel(integration) && (
                                         <span className="ml-auto inline-flex max-w-[140px] items-center truncate rounded bg-purple-100 px-1.5 py-0.5 text-[11px] font-medium text-purple-700 flex-shrink-0">
                                           {getTeamScopeLabel(integration)}
