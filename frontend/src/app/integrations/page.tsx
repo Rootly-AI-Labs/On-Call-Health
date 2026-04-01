@@ -213,9 +213,9 @@ export default function IntegrationsPage() {
   // Token error modal state
   const [tokenErrorModalOpen, setTokenErrorModalOpen] = useState(false)
   const [tokenErrorType, setTokenErrorType] = useState<'expired' | 'permissions' | null>(null)
+  const [tokenErrorIntegrationId, setTokenErrorIntegrationId] = useState<string | null>(null)
   const [tokenErrorIntegrationName, setTokenErrorIntegrationName] = useState('')
   const [tokenErrorMissingPermissions, setTokenErrorMissingPermissions] = useState<string[]>([])
-  const [hasTokenError, setHasTokenError] = useState(false) // Track if current org has token issues
 
   const [mappingData, setMappingData] = useState<IntegrationMapping[]>([])
   const [mappingStats, setMappingStats] = useState<MappingStatistics | null>(null)
@@ -329,6 +329,7 @@ export default function IntegrationsPage() {
   const [, setShowSyncedUsers] = useState(false)
   const [, setTeamMembersDrawerOpen] = useState(false)
   const syncedUsersCacheRef = useRef<Map<string, any[]>>(new Map())
+  const permissionCheckRequestRef = useRef(0)
 
   const getActiveOrganizationId = () =>
     selectedOrganization || integrations.find(i => i.is_default)?.id?.toString() || ''
@@ -2263,7 +2264,7 @@ export default function IntegrationsPage() {
   const getIntegrationAttention = useCallback((integration: Integration): IntegrationAttention | null => {
     const isSelectedIntegration = selectedOrganization === integration.id.toString()
 
-    if (isSelectedIntegration && hasTokenError && tokenErrorType) {
+    if (isSelectedIntegration && tokenErrorIntegrationId === integration.id.toString() && tokenErrorType) {
       return {
         state: tokenErrorType,
         message: tokenErrorType === "expired"
@@ -2306,9 +2307,9 @@ export default function IntegrationsPage() {
 
     return null
   }, [
-    hasTokenError,
     isTokenAttentionError,
     selectedOrganization,
+    tokenErrorIntegrationId,
     tokenErrorMissingPermissions,
     tokenErrorType,
   ])
@@ -2683,6 +2684,12 @@ export default function IntegrationsPage() {
                         if (value !== selectedOrganization) {
                           const selected = integrations.find(i => i.id.toString() === value)
                           if (selected) {
+                            const requestId = permissionCheckRequestRef.current + 1
+                            permissionCheckRequestRef.current = requestId
+                            setTokenErrorType(null)
+                            setTokenErrorIntegrationId(null)
+                            setTokenErrorIntegrationName('')
+                            setTokenErrorMissingPermissions([])
                             toast.success(`${selected.name} set as default`)
 
                             // Show sync modal after switching organizations
@@ -2706,6 +2713,7 @@ export default function IntegrationsPage() {
 
                               if (response.ok) {
                                 const data = await response.json()
+                                if (permissionCheckRequestRef.current !== requestId) return
 
                                 if (data.has_users === false || data.has_incidents === false) {
                                   const missing = [
@@ -2714,20 +2722,24 @@ export default function IntegrationsPage() {
                                   ].filter(Boolean) as string[]
 
                                   setTokenErrorType('permissions')
+                                  setTokenErrorIntegrationId(selected.id.toString())
                                   setTokenErrorIntegrationName(selected.name)
                                   setTokenErrorMissingPermissions(missing)
                                   setTokenErrorModalOpen(true)
-                                  setHasTokenError(true)
                                 } else {
                                   // Token is valid and has permissions
-                                  setHasTokenError(false)
+                                  setTokenErrorType(null)
+                                  setTokenErrorIntegrationId(null)
+                                  setTokenErrorIntegrationName('')
+                                  setTokenErrorMissingPermissions([])
                                 }
                               } else if (response.status === 401 || response.status === 403) {
+                                if (permissionCheckRequestRef.current !== requestId) return
                                 setTokenErrorType('expired')
+                                setTokenErrorIntegrationId(selected.id.toString())
                                 setTokenErrorIntegrationName(selected.name)
                                 setTokenErrorMissingPermissions([])
                                 setTokenErrorModalOpen(true)
-                                setHasTokenError(true)
                               }
                             } catch (error) {
                               console.error('Error checking integration permissions:', error)
