@@ -62,7 +62,7 @@
     "@playwright/test": "^1.58.2",
     "@types/d3-shape": "^3.1.8",
     "dotenv": "^17.3.1",
-    "eslint": "^9",
+    "eslint": "^10",
     "eslint-config-next": "^16.2.1",
     "husky": "^9.1.7"
   },
