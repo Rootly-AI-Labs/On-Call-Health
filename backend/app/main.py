@@ -105,8 +105,6 @@ def get_cors_origins() -> list[str]:
 
     # Production domains
     origins.extend([
-        "https://www.oncallburnout.com",
-        "https://oncallburnout.com",
         "https://oncallhealth.ai",
         "https://www.oncallhealth.ai",
         "https://testing.oncallhealth.ai",
