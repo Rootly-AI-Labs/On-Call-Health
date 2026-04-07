@@ -774,22 +774,27 @@ export function AlertsCountCard({ currentAnalysis }: AlertsCountCardProps): Reac
               {breakdownItems.length > 0 && (
                 <div>
                   <div className="text-[13px] font-semibold text-neutral-800 mb-1">Alert Breakdown</div>
-                  <div className="grid grid-cols-5 gap-2">
+                  <div
+                    className="grid gap-2"
+                    style={{ gridTemplateColumns: `repeat(${breakdownItems.length}, minmax(0, 1fr))` }}
+                  >
                     {breakdownItems.map((item) => {
                       return (
                         <div
                           key={item.label}
-                          className="flex flex-col p-2"
+                          className="flex flex-col items-start p-2 text-left"
                         >
-                          <div className="flex justify-end mb-0.5">
+                          <div className="mb-1 self-start">
                             <TrendTag change={item.trend} />
                           </div>
-                          <span className="text-base font-bold text-neutral-900 leading-tight">
-                            {item.count}
+                          <div className="flex flex-wrap items-baseline gap-x-1 gap-y-0.5">
+                            <span className="text-base font-bold text-neutral-900 leading-tight">
+                              {item.count}
+                            </span>
                             {item.pct !== null && (
-                              <span className="text-xs font-normal text-neutral-400 ml-1">({item.pct}%)</span>
+                              <span className="text-xs font-normal text-neutral-400">({item.pct}%)</span>
                             )}
-                          </span>
+                          </div>
                           <span className="text-[10px] mt-0.5 leading-tight text-neutral-400">{item.label}</span>
                         </div>
                       )
