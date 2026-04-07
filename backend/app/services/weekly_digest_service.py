@@ -346,21 +346,31 @@ def _build_email_content(
     critical_trend, worsening_trend = _build_member_lists(members, individual_daily_data)
     risk = _get_risk_summary(members)
 
-    # ─ Combine and sort trends by severity, then by risk level ─
-    risk_order = {"critical": 0, "high": 1, "medium": 2, "low": 3, "unknown": 4}
-    combined_trends = []
-    for member in critical_trend:
-        combined_trends.append({**member, "trend_type": "significantly_worsening", "trend_priority": 0})
-    for member in worsening_trend:
-        combined_trends.append({**member, "trend_type": "worsening", "trend_priority": 1})
+    # ─ Sort by worst trends first, then by risk level ─
+    critical_emails = {m.get("user_email") for m in critical_trend}
+    worsening_emails = {m.get("user_email") for m in worsening_trend}
 
-    combined_trends.sort(
+    combined_trends = []
+    for member in members:
+        email = member.get("user_email")
+        if email in critical_emails:
+            member["trend_type"] = "significantly_worsening"
+            member["trend_priority"] = 0
+        elif email in worsening_emails:
+            member["trend_type"] = "worsening"
+            member["trend_priority"] = 1
+        else:
+            member["trend_type"] = "worsening"
+            member["trend_priority"] = 2
+        combined_trends.append(member)
+
+    combined_trends = sorted(
+        combined_trends,
         key=lambda m: (
             m.get("trend_priority", 999),
-            risk_order.get((m.get("risk_level") or "unknown").lower(), 999)
+            -m.get("och_score", 0)
         )
-    )
-    combined_trends = combined_trends[:6]  # Top 6
+    )[:6]  # Top 6 by worst trends first, then highest risk level
 
     completed_at = analysis.completed_at
     if completed_at and completed_at.tzinfo is None:
@@ -416,7 +426,7 @@ def _build_email_content(
   </div>"""
         if is_pagerduty else
         f"""
-  <div style="margin-top: 24px; background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 8px; padding: 14px 16px;">
+  <div style="margin-top: 16px; margin-bottom: 16px; background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 8px; padding: 8px 12px;">
     <p style="margin: 0; font-size: 13px; color: #6b7280; line-height: 1.6;">
       You track the load. Now let <strong style="color: #5b21b6;">Rootly AI SRE</strong> reduce it.
       <a href="https://rootly.com/ai-sre" style="margin-left: 6px; font-size: 12px; font-weight: 600; color: #7c3aed; text-decoration: underline;">Learn more &rarr;</a>
@@ -623,6 +633,8 @@ def _build_email_content(
     </tr>
   </table>
 
+{rootly_promo_html}
+
   <table style="width: 100%; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; border-collapse: collapse; margin-bottom: 24px;">
     <tr>
       <td class="stats-cell" style="padding: 16px; text-align: center;">
@@ -658,8 +670,6 @@ def _build_email_content(
             padding: 10px 20px; border-radius: 6px; font-size: 14px; font-weight: 600; margin-bottom: 24px;">
     View Full Report &rarr;
   </a>
-
-{rootly_promo_html}
 
 {blocked_note_html}
 {unsubscribe_html}

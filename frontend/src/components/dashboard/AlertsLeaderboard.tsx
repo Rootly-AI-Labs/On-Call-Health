@@ -97,8 +97,9 @@ export function AlertsLeaderboard({ currentAnalysis, topAlerts: topAlertsProp, t
         </div>
 
         {/* Active filter description */}
-        <div className="flex items-center gap-1 mb-3 shrink-0">
+        <div className="flex items-center justify-between mb-3 shrink-0">
           <p className="text-xs text-neutral-400">{activeFilter.description}</p>
+          <InfoTooltip content="Results are limited to the top 50 alerts per filter." side="left" />
         </div>
 
         {topAlerts.length === 0 ? (
@@ -106,7 +107,7 @@ export function AlertsLeaderboard({ currentAnalysis, topAlerts: topAlertsProp, t
             No alert data available — run a new analysis to populate this.
           </div>
         ) : sorted.length === 0 ? (
-          <div className="text-sm text-neutral-400 text-center py-6">No alerts match this filter</div>
+          <div className="flex-1 flex items-center justify-center text-sm text-neutral-400">No alerts match this filter</div>
         ) : (
           <div className="overflow-y-auto flex-1 space-y-2.5 pr-2 min-h-0">
             {sorted.map((alert, i) => {
@@ -122,9 +123,6 @@ export function AlertsLeaderboard({ currentAnalysis, topAlerts: topAlertsProp, t
                       {alert.title}
                     </span>
                     <div className="flex items-center gap-1.5 shrink-0">
-                      {pct !== null && activeKey !== "total" && (
-                        <span className="text-xs text-neutral-400">{pct}%</span>
-                      )}
                       <span className="text-xs font-semibold text-neutral-800 w-6 text-right">{val}</span>
                     </div>
                   </div>

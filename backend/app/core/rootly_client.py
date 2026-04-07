@@ -47,6 +47,29 @@ RETRYABLE_EXCEPTIONS = (
 )
 
 
+_TOP_ALERT_METRICS = ["total", "noise", "night_time", "after_hours", "no_incident", "escalated", "retrigger"]
+
+def _build_top_alerts(per_alert_title: dict, per_alert_title_days: dict) -> list:
+    """Return the union of top 50 alerts per each breakdown metric.
+
+    This ensures the leaderboard always has the correct top offenders for every
+    filter (Night-Time, After-Hours, etc.), not just the globally most-fired alerts.
+    """
+    all_alerts = [
+        {"title": t, **counts, "days_fired": len(per_alert_title_days.get(t, set()))}
+        for t, counts in per_alert_title.items()
+    ]
+    top_titles: set = set()
+    for metric in _TOP_ALERT_METRICS:
+        for a in sorted(all_alerts, key=lambda x: x.get(metric) or 0, reverse=True)[:50]:
+            top_titles.add(a["title"])
+    return sorted(
+        [a for a in all_alerts if a["title"] in top_titles],
+        key=lambda x: x["total"],
+        reverse=True,
+    )
+
+
 class RootlyAPIClient:
     """Direct HTTP client for Rootly API."""
 
@@ -1392,10 +1415,7 @@ class RootlyAPIClient:
                 "per_user_mtta_avg_by_email": {k: per_user_mtta_sum_by_email[k] / per_user_mtta_count_by_email[k] for k in per_user_mtta_sum_by_email if per_user_mtta_count_by_email.get(k, 0) > 0},
                 "per_user_mttr_avg_by_id": {k: per_user_mttr_sum_by_id[k] / per_user_mttr_count_by_id[k] for k in per_user_mttr_sum_by_id if per_user_mttr_count_by_id.get(k, 0) > 0},
                 "per_user_mttr_avg_by_email": {k: per_user_mttr_sum_by_email[k] / per_user_mttr_count_by_email[k] for k in per_user_mttr_sum_by_email if per_user_mttr_count_by_email.get(k, 0) > 0},
-                "top_alerts": sorted(
-                    [{"title": t, **counts, "days_fired": len(per_alert_title_days.get(t, set()))} for t, counts in per_alert_title.items()],
-                    key=lambda x: x["total"], reverse=True
-                )[:50],
+                "top_alerts": _build_top_alerts(per_alert_title, per_alert_title_days),
                 "daily_alert_breakdown": daily_alert_breakdown,
                 "per_user_alert_title_by_id": {
                     uid: sorted([{"title": t, **c} for t, c in titles.items()], key=lambda x: x["total"], reverse=True)[:50]
@@ -1464,10 +1484,7 @@ class RootlyAPIClient:
             "per_user_mtta_avg_by_email": {k: per_user_mtta_sum_by_email[k] / per_user_mtta_count_by_email[k] for k in per_user_mtta_sum_by_email if per_user_mtta_count_by_email.get(k, 0) > 0},
             "per_user_mttr_avg_by_id": {k: per_user_mttr_sum_by_id[k] / per_user_mttr_count_by_id[k] for k in per_user_mttr_sum_by_id if per_user_mttr_count_by_id.get(k, 0) > 0},
             "per_user_mttr_avg_by_email": {k: per_user_mttr_sum_by_email[k] / per_user_mttr_count_by_email[k] for k in per_user_mttr_sum_by_email if per_user_mttr_count_by_email.get(k, 0) > 0},
-            "top_alerts": sorted(
-                [{"title": t, **counts, "days_fired": len(per_alert_title_days.get(t, set()))} for t, counts in per_alert_title.items()],
-                key=lambda x: x["total"], reverse=True
-            )[:50],
+            "top_alerts": _build_top_alerts(per_alert_title, per_alert_title_days),
             "daily_alert_breakdown": daily_alert_breakdown,
             "per_user_alert_title_by_id": {
                 uid: sorted([{"title": t, **c} for t, c in titles.items()], key=lambda x: x["total"], reverse=True)[:50]

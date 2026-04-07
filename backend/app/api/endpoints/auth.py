@@ -37,8 +37,6 @@ ALLOWED_OAUTH_ORIGINS = [
     "http://127.0.0.1:3001",
     "http://127.0.0.1:3002",
     settings.FRONTEND_URL,
-    "https://www.oncallburnout.com",
-    "https://oncallburnout.com",
     "https://oncallhealth.ai",
     "https://www.oncallhealth.ai",
     "https://testing.oncallhealth.ai",

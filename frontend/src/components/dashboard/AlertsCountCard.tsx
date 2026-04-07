@@ -51,6 +51,41 @@ const METRIC_CONFIGS: { key: AlertTrendKey; label: string; color: string }[] = [
 ]
 
 /**
+ * Fit a simple OLS linear regression through the daily total counts and return
+ * the predicted % change from day-0 to day-N (positive = worsening, negative = improving).
+ * Returns null if insufficient data (< 4 days).
+ */
+function calcTotalAlertTrend(
+  daily: Record<string, { total: number }>
+): number | null {
+  const days = Object.keys(daily).sort()
+  if (days.length < 4) return null
+
+  const values = days.map((d) => daily[d].total ?? 0)
+
+  const n = values.length
+  const xMean = (n - 1) / 2
+  const yMean = values.reduce((s, v) => s + v, 0) / n
+
+  let num = 0, den = 0
+  for (let i = 0; i < n; i++) {
+    num += (i - xMean) * (values[i] - yMean)
+    den += (i - xMean) ** 2
+  }
+
+  const slope = den !== 0 ? num / den : 0
+  const intercept = yMean - slope * xMean
+
+  const predicted0 = intercept
+  const predictedN = intercept + slope * (n - 1)
+
+  if (predicted0 <= 0 && predictedN <= 0) return 0
+  if (predicted0 <= 0) return predictedN > 0 ? 100 : 0
+
+  return Math.round(((predictedN - predicted0) / predicted0) * 100)
+}
+
+/**
  * Fit a simple OLS linear regression through the daily rates and return the
  * predicted % change from day-0 to day-N (positive = worsening, negative = improving).
  * Returns null if insufficient data (< 4 days).
@@ -564,6 +599,7 @@ export function AlertsCountCard({ currentAnalysis }: AlertsCountCardProps): Reac
   const trends = useMemo(() => {
     const d: Record<string, any> = currentAnalysis?.analysis_data?.metadata?.alerts?.daily_alert_breakdown || {}
     return {
+      total:       calcTotalAlertTrend(d),
       incidents:   calcAlertTrend(d, "incidents"),
       after_hours: calcAlertTrend(d, "after_hours"),
       night_time:  calcAlertTrend(d, "night_time"),
@@ -704,64 +740,33 @@ export function AlertsCountCard({ currentAnalysis }: AlertsCountCardProps): Reac
 
               {/* Total count */}
               <div className="flex flex-col gap-0.5">
-                <span className="text-4xl font-bold text-neutral-900 leading-tight">
-                  {typeof total === "number" ? total : "N/A"}
-                </span>
+                <div className="inline-flex items-start gap-1.5">
+                  <span className="text-4xl font-bold text-neutral-900 leading-tight">
+                    {typeof total === "number" ? total : "N/A"}
+                  </span>
+                  <div className="mt-1">
+                    <TrendTag change={trends.total} />
+                  </div>
+                </div>
                 <span className="text-xs text-neutral-400">{dateRange}</span>
               </div>
 
-              {/* Urgency + Signal Quality */}
-              {(urgencyEntries.length > 0 || notNoisePct !== null) && (
-                <div className="grid grid-cols-2 gap-4 my-6">
-                  {urgencyEntries.length > 0 && (
-                    <div>
-                      <div className="flex items-center justify-between text-[13px] mb-1">
-                        <div className="flex items-center gap-1">
-                          <span className="text-neutral-700 font-medium">Urgency</span>
-                          <InfoTooltip content="Breakdown of alert severity: High requires immediate action, Medium needs prompt response, Low is informational." side="bottom" />
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-neutral-600">
-                          {urgencyEntries.map(([key, value]) => (
-                            <div key={key} className="flex items-center gap-1">
-                              <span className={`w-2 h-2 rounded-full inline-block ${URGENCY_DOT_COLORS[key] ?? "bg-gray-400"}`} />
-                              <span className="capitalize font-medium">{key}</span>
-                              <span className="font-semibold text-neutral-800">{value as number}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="flex h-2.5 w-full rounded-full overflow-hidden bg-neutral-100 mb-2">
-                        {urgencyEntries.map(([key, value]) => {
-                          const pct = urgencyTotal > 0 ? ((value as number) / urgencyTotal) * 100 : 0
-                          return (
-                            <div
-                              key={key}
-                              className={`h-full ${URGENCY_COLORS[key] ?? "bg-gray-400"}`}
-                              style={{ width: `${pct}%` }}
-                            />
-                          )
-                        })}
-                      </div>
+              {/* Signal Quality */}
+              {notNoisePct !== null && (
+                <div className="my-6">
+                  <div className="flex items-center justify-between text-[13px] mb-1">
+                    <div className="flex items-center gap-1">
+                      <span className="text-neutral-700 font-medium">Signal Quality</span>
+                      <InfoTooltip content="Percentage of alerts that are actionable (not noise)." side="bottom" />
                     </div>
-                  )}
-
-                  {notNoisePct !== null && (
-                    <div>
-                      <div className="flex items-center justify-between text-[13px] mb-1">
-                        <div className="flex items-center gap-1">
-                          <span className="text-neutral-700 font-medium">Signal Quality</span>
-                          <InfoTooltip content="Percentage of alerts that are actionable (not noise)." side="bottom" />
-                        </div>
-                        <span className="text-green-600 font-medium">{notNoisePct}% actionable</span>
-                      </div>
-                      <div className="h-2 w-full bg-neutral-100 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-green-500 rounded-full"
-                          style={{ width: `${notNoisePct}%` }}
-                        />
-                      </div>
-                    </div>
-                  )}
+                    <span className="text-green-600 font-medium">{notNoisePct}% actionable</span>
+                  </div>
+                  <div className="h-2 w-full bg-neutral-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-green-500 rounded-full"
+                      style={{ width: `${notNoisePct}%` }}
+                    />
+                  </div>
                 </div>
               )}
 

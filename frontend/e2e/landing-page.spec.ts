@@ -1,6 +1,10 @@
 import { test, expect } from '@playwright/test';
 
+const anonymousStorageState = { cookies: [], origins: [] };
+
 test.describe('Landing Page', () => {
+  test.use({ storageState: anonymousStorageState });
+
   test('should load and display main heading', async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');

@@ -4,41 +4,60 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 3
     groups:
       actions:
         patterns:
           - "*"
+    cooldown:
+      default-days: 3
 
   - package-ecosystem: "npm"
     directory: "/frontend"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    cooldown:
+      default-days: 3
+      semver-major-days: 7
     groups:
       minor-and-patch:
         applies-to: version-updates
         update-types:
           - "minor"
           - "patch"
+    cooldown:
+      default-days: 3
 
   - package-ecosystem: "pip"
     directory: "/backend"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    cooldown:
+      default-days: 3
+      semver-major-days: 7
     groups:
       minor-and-patch:
         applies-to: version-updates
         update-types:
           - "minor"
           - "patch"
+    cooldown:
+      default-days: 3
+      semver-major-days: 7
 
   - package-ecosystem: "docker"
     directory: "/backend"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 3
 
   - package-ecosystem: "docker"
     directory: "/frontend"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 3

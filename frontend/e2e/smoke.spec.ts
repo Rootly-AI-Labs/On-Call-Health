@@ -4,7 +4,11 @@ import { test, expect } from '@playwright/test';
  * Smoke tests - verify the app loads and basic functionality works
  */
 
+const anonymousStorageState = { cookies: [], origins: [] };
+
 test.describe('Smoke Tests', () => {
+  test.use({ storageState: anonymousStorageState });
+
   test('landing page has correct title', async ({ page }) => {
     await page.goto('/');
 

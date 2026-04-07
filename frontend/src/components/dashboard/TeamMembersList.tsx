@@ -73,6 +73,9 @@ function calculateUserTrend(
   if (weeklyData.length < 2) return defaultTrend
 
   const scores = weeklyData.map((w) => w.score)
+
+  // If all weekly scores are zero there is nothing to trend on
+  if (scores.every((s) => s <= 0)) return defaultTrend
   const n = scores.length
   const xMean = (n - 1) / 2
   const yMean = scores.reduce((s, v) => s + v, 0) / n
@@ -88,6 +91,9 @@ function calculateUserTrend(
 
   const predicted0 = intercept
   const predictedN = intercept + slope * (n - 1)
+
+  // If the regression predicts the user ends at or below zero, they have no meaningful risk trend
+  if (predictedN <= 0) return defaultTrend
 
   // For low absolute scores use point diff to avoid misleading % (e.g. 0→3 = "300%")
   const bothLow = predicted0 < 10 && predictedN < 10
@@ -250,9 +256,10 @@ export function TeamMembersList({
   }
 
   const renderMemberRow = (member: any, index: number) => {
-    const trendInfo = calculateUserTrend(member.user_email, individualDailyData)
-    const trendConfig = getTrendConfig(trendInfo.trend)
     const memberRiskScore = getRiskScore100FromMember(member)
+    const rawTrendInfo = calculateUserTrend(member.user_email, individualDailyData)
+    const trendInfo = memberRiskScore <= 0 ? { trend: 'stable' as const, percentage: 0, firstHalfScore: 0, secondHalfScore: 0 } : rawTrendInfo
+    const trendConfig = getTrendConfig(trendInfo.trend)
     const hasRiskScore = hasMemberRiskScore(member)
 
     return (
