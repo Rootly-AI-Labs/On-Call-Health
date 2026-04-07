@@ -221,9 +221,12 @@ function TrendTag({ change }: { change: number | null }) {
   if (change === null) return null
   const { label, icon, className } = getTrendConfig(change)
   return (
-    <Badge className={`inline-flex items-center gap-0.5 ${className} border text-[9px] px-1 py-0`}>
-      {icon}
-      {label}
+    <Badge
+      title={label}
+      className={`inline-flex max-w-full items-center gap-0.5 whitespace-nowrap ${className} border px-1.5 py-0.5 text-[8px] leading-none sm:text-[9px]`}
+    >
+      <span className="inline-flex items-center gap-0.5">{icon}</span>
+      <span className="hidden min-[1200px]:inline">{label}</span>
     </Badge>
   )
 }
@@ -774,22 +777,24 @@ export function AlertsCountCard({ currentAnalysis }: AlertsCountCardProps): Reac
               {breakdownItems.length > 0 && (
                 <div>
                   <div className="text-[13px] font-semibold text-neutral-800 mb-1">Alert Breakdown</div>
-                  <div className="grid grid-cols-5 gap-2">
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-4 sm:gap-x-4 xl:gap-x-5">
                     {breakdownItems.map((item) => {
                       return (
                         <div
                           key={item.label}
-                          className="flex flex-col p-2"
+                          className="flex min-w-0 flex-col items-start p-2 text-left"
                         >
-                          <div className="flex justify-end mb-0.5">
+                          <div className="mb-1 min-h-6 self-start">
                             <TrendTag change={item.trend} />
                           </div>
-                          <span className="text-base font-bold text-neutral-900 leading-tight">
-                            {item.count}
+                          <div className="flex flex-wrap items-baseline gap-x-1 gap-y-0.5">
+                            <span className="text-base font-bold text-neutral-900 leading-tight">
+                              {item.count}
+                            </span>
                             {item.pct !== null && (
-                              <span className="text-xs font-normal text-neutral-400 ml-1">({item.pct}%)</span>
+                              <span className="text-xs font-normal text-neutral-400">({item.pct}%)</span>
                             )}
-                          </span>
+                          </div>
                           <span className="text-[10px] mt-0.5 leading-tight text-neutral-400">{item.label}</span>
                         </div>
                       )
