@@ -1002,7 +1002,7 @@ class UnifiedBurnoutAnalyzer:
                 "recommendations": self._generate_recommendations(team_health, team_analysis),
                 "daily_trends": daily_trends,
                 "individual_daily_data": individual_daily_data,
-                "raw_incident_data": slim_incidents(incidents),  # Store slimmed incident data (96% size reduction)
+                "raw_incident_data": slim_incidents(incidents, platform=self.platform),  # platform-aware slim + size cap
                 "period_summary": {
                     "average_score": round(period_average_score, 2),
                     "average_risk_score_100": round(period_risk_score_100, 2),
