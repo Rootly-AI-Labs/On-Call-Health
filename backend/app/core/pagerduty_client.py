@@ -234,6 +234,107 @@ class PagerDutyAPIClient:
             logger.error(f"PD GET_USERS: ERROR - {e}")
             return []
     
+    async def get_analytics_incidents(
+        self,
+        since: datetime,
+        until: Optional[datetime] = None,
+        limit: int = 1000,
+        time_zone: str = "Etc/UTC",
+    ) -> List[Dict[str, Any]]:
+        """Fetch incidents from the PagerDuty Analytics API (/analytics/raw/incidents).
+
+        Uses cursor-based pagination and returns richer per-incident data than the
+        REST /incidents endpoint, including:
+          - assigned_user_ids / acknowledged_user_ids / joined_user_ids  (accurate attribution)
+          - seconds_to_first_ack, seconds_to_resolve
+          - auto_resolved, escalation_count
+          - off_hour_interruptions, sleep_hour_interruptions, business_hour_interruptions
+          - total_interruptions, engaged_seconds
+
+        Replaces the legacy GET /incidents call so that per-user burnout analysis is
+        driven by pre-computed analytics fields rather than heuristic assignment extraction.
+        """
+        if until is None:
+            until = datetime.now(pytz.UTC)
+
+        since_str = since.astimezone(pytz.UTC).strftime("%Y-%m-%dT%H:%M:%S")
+        until_str = until.astimezone(pytz.UTC).strftime("%Y-%m-%dT%H:%M:%S")
+        days_back = (datetime.now(pytz.UTC) - since).days
+
+        logger.info(
+            f"PD ANALYTICS: Starting fetch for {days_back} days "
+            f"({since_str} → {until_str}, limit={limit})"
+        )
+
+        url = f"{self.base_url}/analytics/raw/incidents"
+        # Analytics API requires application/json Accept and Content-Type headers
+        analytics_headers = {
+            "Authorization": f"Token token={self.api_token}",
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
+
+        all_incidents: List[Dict[str, Any]] = []
+        cursor: Optional[str] = None
+        page = 0
+
+        try:
+            timeout = aiohttp.ClientTimeout(total=60)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                while len(all_incidents) < limit:
+                    page += 1
+                    payload: Dict[str, Any] = {
+                        "filters": {
+                            "created_at_start": since_str,
+                            "created_at_end": until_str,
+                        },
+                        "limit": min(1000, limit - len(all_incidents)),
+                        "order": "desc",
+                        "order_by": "created_at",
+                        "time_zone": time_zone,
+                    }
+                    if cursor:
+                        payload["cursor"] = cursor
+
+                    async with session.post(
+                        url, headers=analytics_headers, json=payload
+                    ) as response:
+                        if response.status != 200:
+                            error_text = await response.text()
+                            logger.error(
+                                f"PD ANALYTICS: HTTP {response.status} on page {page}: "
+                                f"{error_text[:300]}"
+                            )
+                            break
+
+                        data = await response.json()
+                        incidents = data.get("data", [])
+                        all_incidents.extend(incidents)
+
+                        # Cursor-based pagination
+                        cursor = (
+                            data.get("next_cursor")
+                            or data.get("cursor_after")
+                            or (data.get("response_metadata") or {}).get("cursors", {}).get("next")
+                        )
+                        if not cursor or not incidents:
+                            break  # last page
+
+                logger.info(
+                    f"PD ANALYTICS: Collected {len(all_incidents)} incidents in {page} page(s)"
+                )
+                return all_incidents
+
+        except asyncio.TimeoutError:
+            logger.error(
+                f"PD ANALYTICS: Timeout after {page} page(s), "
+                f"{len(all_incidents)} incidents collected"
+            )
+            return all_incidents
+        except Exception as e:
+            logger.error(f"PD ANALYTICS: Failed to fetch incidents: {e}")
+            return all_incidents
+
     async def get_incidents(
         self,
         since: datetime,
@@ -573,31 +674,32 @@ class PagerDutyDataCollector:
         
         # Fetch data in parallel (no limits for complete data collection)
         users_task = self.client.get_users(limit=1000)
-        incidents_task = self.client.get_incidents(since=since, until=until)
-        
-        logger.info(f"PAGERDUTY COLLECTION: Starting parallel API calls...")
-        users, incidents = await asyncio.gather(users_task, incidents_task)
-        
-        logger.info(f"PAGERDUTY COLLECTION: Collected {len(users)} users and {len(incidents)} incidents")
-        
-        # 🎯 RAILWAY DEBUG: Pre-normalization data check
+        analytics_task = self.client.get_analytics_incidents(since=since, until=until)
+
+        logger.info(f"PAGERDUTY COLLECTION: Starting parallel API calls (users + analytics)...")
+        users, analytics_incidents = await asyncio.gather(users_task, analytics_task)
+
+        logger.info(
+            f"PAGERDUTY COLLECTION: Collected {len(users)} users and "
+            f"{len(analytics_incidents)} analytics incidents"
+        )
+
         if users:
             sample_user = users[0]
             has_email = bool(sample_user.get('email'))
             logger.info(f"PAGERDUTY COLLECTION: Sample user structure - Keys: {list(sample_user.keys())}, Has email: {has_email}")
 
-        if incidents:
-            sample_incident = incidents[0]
-            assignments = sample_incident.get("assignments", [])
-            logger.info(f"PAGERDUTY COLLECTION: Sample incident has {len(assignments)} assignments")
-            if assignments:
-                assignee = assignments[0].get("assignee", {})
-                has_assignee_id = bool(assignee.get('id'))
-                logger.info(f"PAGERDUTY COLLECTION: Sample assignee structure - Has ID: {has_assignee_id}, Type: {assignee.get('type', 'NO_TYPE')}")
-        
-        # 🚀 ENHANCED NORMALIZATION
-        logger.info(f"🚀 PAGERDUTY COLLECTION: Starting ENHANCED normalization process...")
-        normalized_data = self._normalize_with_enhanced_assignment_extraction(incidents, users)
+        if analytics_incidents:
+            sample = analytics_incidents[0]
+            has_assigned = bool(sample.get("assigned_user_ids"))
+            logger.info(
+                f"PAGERDUTY COLLECTION: Sample analytics incident - "
+                f"Keys: {list(sample.keys())[:10]}, Has assigned_user_ids: {has_assigned}"
+            )
+
+        # Normalize analytics incidents using user lookup maps for email resolution
+        logger.info(f"🚀 PAGERDUTY COLLECTION: Starting analytics normalization process...")
+        normalized_data = self._normalize_analytics_incidents(analytics_incidents, users)
         
         # 🎯 RAILWAY DEBUG: Post-normalization validation
         normalized_incidents = normalized_data.get("incidents", [])
@@ -625,10 +727,8 @@ class PagerDutyDataCollector:
                 "start": since.isoformat(),
                 "end": until.isoformat()
             },
-            "enhancement_applied": metadata.get("enhancement_applied", False),
-            "enhancement_timestamp": metadata.get("enhancement_timestamp"),
-            "assignment_stats": metadata.get("assignment_stats", {}),
-            "total_incidents": len(incidents),
+            "data_source": "pagerduty_analytics_api",
+            "total_incidents": len(analytics_incidents),
             "total_users": len(users),
             "incidents_with_valid_emails": incidents_with_emails,
             "severity_breakdown": severity_counts
@@ -637,9 +737,133 @@ class PagerDutyDataCollector:
         logger.info(f"PAGERDUTY COLLECTION: COMPLETE - Returning enhanced data")
         return normalized_data
     
+    def _normalize_analytics_incidents(
+        self,
+        analytics_incidents: List[Dict[str, Any]],
+        users: List[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        """Normalize PagerDuty Analytics API incidents into the standard format.
+
+        Analytics incidents carry pre-computed attribution fields
+        (assigned_user_ids, acknowledged_user_ids, joined_user_ids) which are more
+        accurate than heuristic extraction from the REST /incidents endpoint.
+
+        Also preserves rich per-incident metrics:
+          seconds_to_first_ack, auto_resolved, escalation_count,
+          off_hour_interruptions, sleep_hour_interruptions, business_hour_interruptions
+        """
+        # Build user lookup maps from the /users response
+        user_id_to_email: Dict[str, str] = {}
+        user_id_to_name: Dict[str, str] = {}
+        for user in users:
+            uid = user.get("id")
+            if uid:
+                user_id_to_email[str(uid)] = user.get("email", "")
+                user_id_to_name[str(uid)] = user.get("name") or user.get("summary", "Unknown")
+
+        normalized_users = [
+            {
+                "id": u.get("id"),
+                "name": u.get("name") or u.get("summary", "Unknown"),
+                "email": u.get("email", ""),
+                "timezone": u.get("time_zone", "UTC"),
+                "role": u.get("role", "user"),
+                "source": "pagerduty",
+                "job_title": u.get("job_title", ""),
+                "teams": [t.get("summary", "") for t in u.get("teams", [])],
+                "contact_methods_count": len(u.get("contact_methods", [])),
+            }
+            for u in users
+        ]
+
+        normalized_incidents = []
+        incidents_with_emails = 0
+
+        for incident in analytics_incidents:
+            if not incident or not isinstance(incident, dict):
+                continue
+
+            assigned_ids = [str(i) for i in (incident.get("assigned_user_ids") or [])]
+            ack_ids      = [str(i) for i in (incident.get("acknowledged_user_ids") or [])]
+            joined_ids   = [str(i) for i in (incident.get("joined_user_ids") or [])]
+
+            # All users involved — used downstream for multi-user attribution
+            all_user_ids = list(dict.fromkeys(assigned_ids + ack_ids + joined_ids))
+
+            # Primary assignee: first assigned user wins, fall back to first acknowledger
+            primary_id = assigned_ids[0] if assigned_ids else (ack_ids[0] if ack_ids else None)
+            assigned_to = None
+            if primary_id:
+                email = user_id_to_email.get(primary_id, "")
+                assigned_to = {
+                    "id": primary_id,
+                    "name": user_id_to_name.get(primary_id, ""),
+                    "email": email,
+                    "assignment_method": "analytics_assigned",
+                    "confidence": "high",
+                }
+                if email:
+                    incidents_with_emails += 1
+
+            urgency = incident.get("incident_urgency") or incident.get("urgency", "low")
+
+            normalized_incidents.append({
+                "id": incident.get("id"),
+                "title": incident.get("title", ""),
+                "description": incident.get("description", ""),
+                "status": incident.get("status", "resolved"),
+                "severity": urgency,
+                "urgency": urgency,
+                "created_at": incident.get("created_at"),
+                "updated_at": incident.get("resolved_at"),
+                "resolved_at": incident.get("resolved_at"),
+                "assigned_to": assigned_to,
+                # All users involved — used by incident-to-user mapping for multi-user attribution
+                "analytics_user_ids": all_user_ids,
+                # Pre-computed interruption and response metrics from Analytics API
+                "analytics_data": {
+                    "seconds_to_first_ack":        incident.get("seconds_to_first_ack"),
+                    "seconds_to_resolve":           incident.get("seconds_to_resolve"),
+                    "auto_resolved":                bool(incident.get("auto_resolved")),
+                    "escalation_count":             incident.get("escalation_count", 0) or 0,
+                    "off_hour_interruptions":       incident.get("off_hour_interruptions", 0) or 0,
+                    "sleep_hour_interruptions":     incident.get("sleep_hour_interruptions", 0) or 0,
+                    "business_hour_interruptions":  incident.get("business_hour_interruptions", 0) or 0,
+                    "total_interruptions":          incident.get("total_interruptions", 0) or 0,
+                    "engaged_seconds":              incident.get("engaged_seconds", 0) or 0,
+                },
+                "service": incident.get("service_name", ""),
+                "incident_number": incident.get("incident_number"),
+                "teams": [incident.get("team_name")] if incident.get("team_name") else [],
+                "priority_name": incident.get("priority_name", ""),
+                "escalation_policy": incident.get("escalation_policy_name", ""),
+                "source": "pagerduty_analytics",
+                "raw_data": incident,
+            })
+
+        total = len(analytics_incidents)
+        email_pct = (incidents_with_emails / total * 100) if total > 0 else 0.0
+        logger.info(
+            f"🚀 PD ANALYTICS NORMALIZE: {total} incidents normalized, "
+            f"{incidents_with_emails} ({email_pct:.1f}%) with email attribution"
+        )
+
+        return {
+            "users": normalized_users,
+            "incidents": normalized_incidents,
+            "total_incidents": total,
+            "total_users": len(users),
+            "metadata": {
+                "source": "pagerduty_analytics",
+                "enhancement_applied": True,
+                "enhancement_timestamp": datetime.now(timezone.utc).isoformat(),
+                "email_success_rate": f"{incidents_with_emails}/{total} ({email_pct:.1f}%)",
+            },
+        }
+
     def _normalize_with_enhanced_assignment_extraction(
-        self, 
-        incidents: List[Dict[str, Any]], 
+        self,
+        incidents: List[Dict[str, Any]],
         users: List[Dict[str, Any]]
     ) -> Dict[str, Any]:
         """
