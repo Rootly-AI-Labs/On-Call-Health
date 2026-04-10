@@ -1632,12 +1632,15 @@ function DashboardContent() {
                       No teams found — analysis will cover the whole org
                     </div>
                   ) : (
-                    <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
+                    <Select
+                      value={selectedTeamId || "__all__"}
+                      onValueChange={v => setSelectedTeamId(v === "__all__" ? "" : v)}
+                    >
                       <SelectTrigger className="bg-white">
                         <SelectValue placeholder="Whole organization (all teams)" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Whole organization (all teams)</SelectItem>
+                        <SelectItem value="__all__">Whole organization (all teams)</SelectItem>
                         {availableTeams.map(t => (
                           <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
                         ))}
