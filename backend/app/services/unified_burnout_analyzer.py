@@ -97,6 +97,7 @@ class UnifiedBurnoutAnalyzer:
         db: Optional["Session"] = None,
         organization_id: Optional[int] = None,
         team_name: Optional[str] = None,
+        pagerduty_team_id: Optional[str] = None,
     ):
         # Check for mock data mode from environment
         self.use_mock_data = os.getenv('USE_MOCK_DATA', 'false').lower() == 'true'
@@ -110,6 +111,8 @@ class UnifiedBurnoutAnalyzer:
 
         # Store team_name for team-scoped Rootly keys
         self.team_name = team_name
+        # Store pagerduty_team_id for team-scoped PagerDuty analytics queries
+        self.pagerduty_team_id = pagerduty_team_id
 
         # Store db session for reuse (prevents connection pool exhaustion)
         self.db = db
@@ -1210,24 +1213,32 @@ class UnifiedBurnoutAnalyzer:
                 if self.platform == "pagerduty":
                     since = datetime.now(pytz.UTC) - timedelta(days=days_back)
                     until = datetime.now(pytz.UTC)
-                    raw_incidents = await self.client.get_incidents(since=since, until=until, limit=5000)
+                    # Use Analytics API; pass team_ids filter if a team scope is set.
+                    # If pagerduty_team_id is None we still pass team_ids=None which
+                    # means the collector will fetch all account-level teams automatically.
+                    pd_team_ids = [self.pagerduty_team_id] if self.pagerduty_team_id else None
+                    collector = PagerDutyDataCollector(self.client.api_token)
+                    analytics_incidents = await self.client.get_analytics_incidents(
+                        since=since,
+                        until=until,
+                        limit=5000,
+                        team_ids=pd_team_ids,
+                    )
+                    normalized_data = collector._normalize_analytics_incidents(
+                        analytics_incidents,
+                        await self.client.get_users(limit=10000),
+                    )
+                    incidents = normalized_data.get("incidents", [])
+                    logger.info(
+                        f"TEAM SYNC: Fetched {len(analytics_incidents)} analytics incidents "
+                        f"(team_ids={pd_team_ids}), normalized to {len(incidents)}"
+                    )
                 else:  # rootly
                     # Don't pass team_name here: synced_users already contains only team members,
                     # so incident-to-member matching naturally scopes the results.
                     # filter[team_names] only matches incidents explicitly tagged to a team,
                     # not incidents where team members were individual responders.
                     raw_incidents = await self.client.get_incidents(days_back=days_back, limit=5000)
-
-                # Normalize incidents for PagerDuty to extract assigned_to from assignments array
-                if self.platform == "pagerduty":
-                    collector = PagerDutyDataCollector(self.client.api_token)
-                    # Use the enhanced normalization to extract assignments
-                    normalized_data = collector._normalize_with_enhanced_assignment_extraction(
-                        raw_incidents,
-                        self.synced_users
-                    )
-                    incidents = normalized_data.get("incidents", [])
-                    logger.info(f"TEAM SYNC: Normalized {len(incidents)} PagerDuty incidents with assignment extraction")
                 else:
                     incidents = raw_incidents
 

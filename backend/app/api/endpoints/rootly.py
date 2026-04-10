@@ -1465,6 +1465,64 @@ async def sync_integration_users(
             detail=f"Failed to sync users: {detail}"
         )
 
+@router.get("/integrations/{integration_id}/teams")
+async def get_integration_teams(
+    integration_id: str,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Return the list of PagerDuty teams for a given integration.
+    Used by the "Start Analysis" dialog to let users scope analysis to a specific team.
+    Only meaningful for PagerDuty integrations.
+    """
+    try:
+        from app.core.pagerduty_client import PagerDutyAPIClient
+
+        # Resolve integration and token
+        if integration_id == "beta-pagerduty":
+            import os as _os
+            api_token = _os.getenv("PAGERDUTY_API_TOKEN")
+            if not api_token:
+                raise HTTPException(status_code=500, detail="Beta PagerDuty token not configured")
+        else:
+            try:
+                numeric_id = int(integration_id)
+            except ValueError:
+                raise HTTPException(status_code=400, detail=f"Invalid integration ID: {integration_id}")
+
+            integration = db.query(RootlyIntegration).filter(
+                RootlyIntegration.id == numeric_id,
+                RootlyIntegration.user_id == current_user.id
+            ).first()
+
+            if not integration:
+                raise HTTPException(status_code=404, detail="Integration not found")
+
+            if integration.platform != "pagerduty":
+                # Non-PagerDuty integrations don't have teams in this sense
+                return {"teams": []}
+
+            api_token = integration.api_token
+
+        client = PagerDutyAPIClient(api_token)
+        teams = await client.get_teams(limit=200)
+
+        return {
+            "teams": [
+                {"id": t.get("id"), "name": t.get("summary") or t.get("name", "")}
+                for t in teams
+                if t.get("id")
+            ]
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching teams for integration {integration_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch teams: {str(e)}")
+
+
 @router.get("/integrations/{integration_id}/oncall-users")
 async def get_oncall_users(
     integration_id: str,

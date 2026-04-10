@@ -316,6 +316,7 @@ class AnalysisRequest(BaseValidatedModel):
     enable_ai: bool = Field(False, description="Enable AI insights")
     auto_refresh_enabled: bool = Field(False, description="Enable auto-refresh mode")
     auto_refresh_interval: Optional[str] = Field(None, description="Auto-refresh interval: 24h, 3d, or 7d")
+    pagerduty_team_id: Optional[str] = Field(None, description="PagerDuty team ID to scope analysis (PagerDuty only)")
 
     @field_validator('integration_id')
     @classmethod

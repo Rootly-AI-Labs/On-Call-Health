@@ -1672,6 +1672,9 @@ export default function useDashboard() {
   const [isCustomRange, setIsCustomRange] = useState(false)
   const [dialogSelectedIntegration, setDialogSelectedIntegration] = useState<string>("")
   const [noIntegrationsFound, setNoIntegrationsFound] = useState(false)
+  const [availableTeams, setAvailableTeams] = useState<{id: string; name: string}[]>([])
+  const [selectedTeamId, setSelectedTeamId] = useState<string>("")  // "" = whole org
+  const [loadingTeams, setLoadingTeams] = useState(false)
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true)
   const [autoRefreshInterval, setAutoRefreshInterval] = useState("24h")
   
@@ -1737,6 +1740,26 @@ export default function useDashboard() {
       if (isNetworkError) {
         toast.error("Cannot connect to backend")
       }
+    }
+  }
+
+  const fetchTeamsForIntegration = async (integrationId: string) => {
+    setLoadingTeams(true)
+    setAvailableTeams([])
+    try {
+      const authToken = localStorage.getItem('auth_token')
+      if (!authToken) return
+      const response = await fetch(`${API_BASE}/rootly/integrations/${integrationId}/teams`, {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setAvailableTeams(data.teams || [])
+      }
+    } catch (e) {
+      console.warn('Could not fetch PagerDuty teams:', e)
+    } finally {
+      setLoadingTeams(false)
     }
   }
 
@@ -1836,7 +1859,16 @@ export default function useDashboard() {
 
     // Set the dialog integration to the currently selected one by default
     setDialogSelectedIntegration(integrationToUse)
+    setSelectedTeamId("")  // reset team selection on each dialog open
     setShowTimeRangeDialog(true)
+
+    // Fetch teams for PagerDuty integrations
+    const chosenIntegration = currentIntegrations.find(i => i.id.toString() === integrationToUse)
+    if (chosenIntegration?.platform === "pagerduty") {
+      fetchTeamsForIntegration(integrationToUse)
+    } else {
+      setAvailableTeams([])
+    }
 
     // Refresh permissions in background after modal opens
     // Modal will show loading state until permissions are loaded
@@ -1973,7 +2005,7 @@ export default function useDashboard() {
         }
       }
 
-      const requestData = {
+      const requestData: Record<string, any> = {
         integration_id: integrationId,
         time_range: parseInt(selectedTimeRange),
         include_weekends: true,
@@ -1985,6 +2017,10 @@ export default function useDashboard() {
         enable_ai: enableAI,  // User can toggle, uses Railway token when enabled
         auto_refresh_enabled: autoRefreshEnabled,
         auto_refresh_interval: autoRefreshEnabled ? autoRefreshInterval : null,
+      }
+      // Pass team scope for PagerDuty (empty string = whole org)
+      if (selectedTeamId) {
+        requestData.pagerduty_team_id = selectedTeamId
       }
       console.log("[useDashboard] runAnalysis payload:", {
         include_ai_usage: requestData.include_ai_usage,
@@ -2705,6 +2741,10 @@ return {
   setDialogSelectedIntegration,
   noIntegrationsFound,
   setNoIntegrationsFound,
+  availableTeams,
+  selectedTeamId,
+  setSelectedTeamId,
+  loadingTeams,
   autoRefreshEnabled,
   setAutoRefreshEnabled,
   autoRefreshInterval,
