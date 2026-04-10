@@ -3370,35 +3370,46 @@ async def run_analysis_task(
                 logger.warning(f"BACKGROUND_TASK: Team scope filter failed: {team_filter_err} — keeping all synced users")
 
         # Filter synced_users to PagerDuty team members when a team is selected.
-        # The pagerduty_teams column (synced during org sync) tells us which teams
-        # each user belongs to.  We use it to avoid fetching members from PD again.
+        # We fetch team members directly from the PD API so this works even if
+        # the pagerduty_teams DB column hasn't been populated by a re-sync yet.
         if pagerduty_team_id and platform == "pagerduty" and synced_users:
             before_count = len(synced_users)
-            # UserCorrelation rows have pagerduty_teams as [{id, name}, ...]
-            # The synced_users list above was built from correlations — re-query to
-            # get pagerduty_teams, then intersect by pagerduty_user_id.
-            corr_teams_map: dict = {}
-            if user and user.organization_id:
-                corr_rows = db.query(UserCorrelation).filter(
-                    UserCorrelation.organization_id == user.organization_id,
-                    UserCorrelation.user_id.is_(None),
-                ).all()
-                for row in corr_rows:
-                    if row.pagerduty_user_id and row.pagerduty_teams:
-                        corr_teams_map[row.pagerduty_user_id] = row.pagerduty_teams
+            try:
+                from ...core.pagerduty_client import PagerDutyAPIClient as _PDClient
+                _pd_client = _PDClient(effective_api_token)
+                team_members = await _pd_client.get_team_members(pagerduty_team_id)
 
-            def _user_in_team(u: dict) -> bool:
-                pd_uid = u.get('pagerduty_user_id') or u.get('id')
-                if not pd_uid:
-                    return False
-                teams = corr_teams_map.get(str(pd_uid), [])
-                return any(t.get('id') == pagerduty_team_id for t in teams)
+                # Build lookup sets: PD user IDs and emails of team members
+                team_pd_ids: set = set()
+                team_emails: set = set()
+                for m in team_members:
+                    if m.get("id"):
+                        team_pd_ids.add(str(m["id"]))
+                    if m.get("email"):
+                        team_emails.add(m["email"].lower())
 
-            synced_users = [u for u in synced_users if _user_in_team(u)]
-            logger.info(
-                f"BACKGROUND_TASK: PagerDuty team scope '{pagerduty_team_id}': "
-                f"{before_count} → {len(synced_users)} synced users"
-            )
+                if team_pd_ids or team_emails:
+                    def _user_in_team(u: dict) -> bool:
+                        pd_uid = str(u.get("pagerduty_user_id") or u.get("id") or "")
+                        email = (u.get("email") or "").lower()
+                        return pd_uid in team_pd_ids or email in team_emails
+
+                    synced_users = [u for u in synced_users if _user_in_team(u)]
+                    logger.info(
+                        f"BACKGROUND_TASK: PagerDuty team scope '{pagerduty_team_id}': "
+                        f"{before_count} → {len(synced_users)} synced users "
+                        f"(team has {len(team_members)} members)"
+                    )
+                else:
+                    logger.warning(
+                        f"BACKGROUND_TASK: PagerDuty team '{pagerduty_team_id}' returned "
+                        f"no members — keeping all synced users"
+                    )
+            except Exception as _team_err:
+                logger.warning(
+                    f"BACKGROUND_TASK: Failed to fetch PagerDuty team members: {_team_err} "
+                    f"— keeping all {before_count} synced users"
+                )
 
         # CRITICAL: Verify user_id hasn't been overwritten before passing to analyzer
         logger.info(f"BACKGROUND_TASK: Creating analyzer with current_user_id={user_id} (should match the logged-in user, NOT a team member ID)")

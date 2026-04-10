@@ -297,6 +297,57 @@ class PagerDutyAPIClient:
 
         return all_teams
 
+    async def get_team_members(self, team_id: str) -> List[Dict[str, Any]]:
+        """Fetch the members of a specific PagerDuty team.
+
+        Calls GET /teams/{team_id}/members (paginated).
+        Returns a list of user objects with at minimum id, email, name.
+        Results are cached for 1 hour.
+        """
+        cache_params = {"team_id": team_id}
+        cached = get_cached_api_response("pagerduty", f"team_members_{team_id}", self.api_token, cache_params)
+        if cached is not None:
+            logger.info(f"PD GET_TEAM_MEMBERS: Using cached data for team {team_id} ({len(cached)} members)")
+            return cached
+
+        all_members: List[Dict[str, Any]] = []
+        offset = 0
+        try:
+            timeout = aiohttp.ClientTimeout(total=30)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                while True:
+                    async with session.get(
+                        f"{self.base_url}/teams/{team_id}/members",
+                        headers=self.headers,
+                        params={"limit": 100, "offset": offset},
+                    ) as response:
+                        if response.status == 404:
+                            logger.warning(f"PD GET_TEAM_MEMBERS: Team {team_id} not found")
+                            break
+                        if response.status != 200:
+                            error_text = await response.text()
+                            logger.error(f"PD GET_TEAM_MEMBERS: HTTP {response.status}: {error_text[:200]}")
+                            break
+                        data = await response.json()
+                        # Response: {"members": [{"user": {...}, "role": "manager"}, ...]}
+                        members = data.get("members", [])
+                        all_members.extend(
+                            m["user"] for m in members if m.get("user")
+                        )
+                        if not data.get("more", False):
+                            break
+                        offset += len(members)
+
+            logger.info(f"PD GET_TEAM_MEMBERS: Team {team_id} has {len(all_members)} members")
+            set_cached_api_response(
+                "pagerduty", f"team_members_{team_id}", self.api_token,
+                all_members, PAGERDUTY_CACHE_TTL_SECONDS, cache_params
+            )
+        except Exception as e:
+            logger.error(f"PD GET_TEAM_MEMBERS: Error fetching members for team {team_id}: {e}")
+
+        return all_members
+
     async def get_analytics_incidents(
         self,
         since: datetime,
