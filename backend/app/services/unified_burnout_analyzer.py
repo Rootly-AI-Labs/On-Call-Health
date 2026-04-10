@@ -1236,10 +1236,7 @@ class UnifiedBurnoutAnalyzer:
                 else:  # rootly
                     # Don't pass team_name here: synced_users already contains only team members,
                     # so incident-to-member matching naturally scopes the results.
-                    # filter[team_names] only matches incidents explicitly tagged to a team,
-                    # not incidents where team members were individual responders.
                     raw_incidents = await self.client.get_incidents(days_back=days_back, limit=5000)
-                else:
                     incidents = raw_incidents
 
                 # Apply team scope to incidents for Rootly team-scoped integrations
