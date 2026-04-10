@@ -269,20 +269,69 @@ class UserSyncService:
         return users
 
     async def _fetch_pagerduty_users(self, api_token: str) -> List[Dict[str, Any]]:
-        """Fetch all users from PagerDuty API."""
+        """Fetch all users from PagerDuty API, enriched with team membership info."""
+        import asyncio as _asyncio
         client = PagerDutyAPIClient(api_token)
-        raw_users = await client.get_users(limit=10000)
 
-        # PagerDuty format (may need adjustment based on actual API response)
+        # Fetch users (with embedded teams) and top-level teams list in parallel.
+        # include_teams=True adds include[]=teams to the /users request so each user
+        # object already contains their team memberships.  We also fetch /teams
+        # separately to get richer name data and to have the full account team list.
+        raw_users, raw_teams = await _asyncio.gather(
+            client.get_users(limit=10000, include_teams=True),
+            client.get_teams(limit=200),
+        )
+
+        logger.info(
+            f"PD SYNC: Fetched {len(raw_users)} users and {len(raw_teams)} teams"
+        )
+
+        # Build team-members map: team_id → set of user IDs
+        # PagerDuty doesn't return members in /teams, so we use the `teams` array
+        # on each user object (GET /users includes a `teams` array when fetched with
+        # `include[]=teams`).  Fall back to an empty set if not present.
+        # NOTE: get_users already passes include[]=teams – check raw_users[0].
+        user_id_to_teams: Dict[str, List[Dict[str, str]]] = {}
+        for user in raw_users:
+            uid = user.get("id")
+            if not uid:
+                continue
+            user_teams = [
+                {"id": t.get("id"), "name": t.get("summary") or t.get("name", "")}
+                for t in user.get("teams", [])
+                if t.get("id")
+            ]
+            user_id_to_teams[str(uid)] = user_teams
+
+        # Build a quick lookup of all known teams by ID (from /teams response)
+        teams_by_id: Dict[str, Dict[str, str]] = {
+            t["id"]: {"id": t["id"], "name": t.get("summary") or t.get("name", "")}
+            for t in raw_teams
+            if t.get("id")
+        }
+
         users = []
         for user in raw_users:
+            uid = str(user.get("id", ""))
+            # Prefer teams embedded in the user object; enrich with /teams data if needed
+            user_teams = user_id_to_teams.get(uid, [])
+            # Enrich names from the teams endpoint (more reliable summary field)
+            enriched_teams = []
+            for t in user_teams:
+                tid = t.get("id")
+                if tid and tid in teams_by_id:
+                    enriched_teams.append(teams_by_id[tid])
+                else:
+                    enriched_teams.append(t)
+
             users.append({
                 "id": user.get("id"),
                 "email": user.get("email"),
                 "name": user.get("name"),
-                "timezone": user.get("time_zone"),  # User's configured timezone
-                "avatar_url": user.get("avatar_url"),  # Profile image URL
-                "platform": "pagerduty"
+                "timezone": user.get("time_zone"),
+                "avatar_url": user.get("avatar_url"),
+                "teams": enriched_teams,  # [{id, name}, ...]
+                "platform": "pagerduty",
             })
 
         return users
@@ -661,9 +710,19 @@ class UserSyncService:
                 correlation.rootly_email = user["email"]
                 updated = True
         elif platform == "pagerduty":
-            if not correlation.pagerduty_user_id or correlation.pagerduty_user_id != user["id"]:
-                correlation.pagerduty_user_id = user["id"]
+            if not correlation.pagerduty_user_id or correlation.pagerduty_user_id != user.get("id"):
+                correlation.pagerduty_user_id = user.get("id")
                 updated = True
+            # Store team membership info if provided
+            teams = user.get("teams")  # list of {id, name}
+            if teams is not None:
+                # Only update if actually changed (avoid spurious writes)
+                existing_teams = correlation.pagerduty_teams or []
+                new_ids = sorted(t.get("id", "") for t in teams)
+                old_ids = sorted(t.get("id", "") for t in existing_teams)
+                if new_ids != old_ids:
+                    correlation.pagerduty_teams = teams
+                    updated = True
 
         return 1 if updated else 0
 

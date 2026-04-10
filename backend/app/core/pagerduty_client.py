@@ -167,15 +167,25 @@ class PagerDutyAPIClient:
         except:
             return 0
     
-    async def get_users(self, limit: int = 100, offset: int = 0, force_refresh: bool = False) -> List[Dict[str, Any]]:
+    async def get_users(
+        self,
+        limit: int = 100,
+        offset: int = 0,
+        force_refresh: bool = False,
+        include_teams: bool = False,
+    ) -> List[Dict[str, Any]]:
         """Fetch users from PagerDuty with Redis caching.
 
         Args:
             limit: Maximum number of users to fetch
             offset: Pagination offset
             force_refresh: If True, bypass cache and fetch fresh data
+            include_teams: If True, request `include[]=teams` so each user object
+                           contains their team memberships.  This adds latency (~10-40 s
+                           for large accounts) so it defaults to False and should only
+                           be enabled during the org-sync flow.
         """
-        cache_params = {"limit": limit, "offset": offset}
+        cache_params = {"limit": limit, "offset": offset, "include_teams": include_teams}
 
         # Check cache first (unless force_refresh)
         if not force_refresh:
@@ -185,8 +195,9 @@ class PagerDutyAPIClient:
                 return cached
 
         try:
-            # Set 30 second timeout to prevent hanging on slow API responses
-            timeout = aiohttp.ClientTimeout(total=30)
+            # Increase timeout when fetching team memberships — include[]=teams can be slow
+            total_timeout = 90 if include_teams else 30
+            timeout = aiohttp.ClientTimeout(total=total_timeout)
             async with aiohttp.ClientSession(timeout=timeout) as session:
                 all_users = []
                 request_count = 0
@@ -195,15 +206,17 @@ class PagerDutyAPIClient:
                 while True:
                     request_count += 1
 
+                    params: Dict[str, Any] = {
+                        "limit": min(limit, 100),
+                        "offset": current_offset,
+                    }
+                    if include_teams:
+                        params["include[]"] = "teams"
+
                     async with session.get(
                         f"{self.base_url}/users",
                         headers=self.headers,
-                        params={
-                            "limit": min(limit, 100),
-                            "offset": current_offset
-                            # Removed include[]=contact_methods,teams - causes 40s+ response time
-                            # Only need basic user data (id, email, name) for sync
-                        }
+                        params=params,
                     ) as response:
                         if response.status != 200:
                             error_text = await response.text()

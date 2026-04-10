@@ -1327,17 +1327,9 @@ async def sync_integration_users(
                         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                         detail="Beta PagerDuty token not configured"
                     )
-                # Fetch users directly from API
-                client = PagerDutyAPIClient(beta_token)
-                raw_users = await client.get_users(limit=10000)
-                users = []
-                for user in raw_users:
-                    users.append({
-                        "id": user.get("id"),
-                        "email": user.get("email"),
-                        "name": user.get("name"),
-                        "platform": "pagerduty"
-                    })
+                # Delegate to UserSyncService so team info is also fetched
+                sync_service_beta = UserSyncService(db)
+                users = await sync_service_beta._fetch_pagerduty_users(beta_token)
                 platform = "pagerduty"
 
             # Sync to user_correlations with organization_id
@@ -1815,6 +1807,7 @@ async def get_synced_users(
                 "slack_user_id": corr.slack_user_id,
                 "rootly_user_id": corr.rootly_user_id,  # Added for Rootly incident matching
                 "pagerduty_user_id": corr.pagerduty_user_id,  # Added for PagerDuty incident matching
+                "pagerduty_teams": corr.pagerduty_teams or [],  # Teams from PagerDuty sync
                 "jira_account_id": corr.jira_account_id,
                 "jira_email": corr.jira_email,
                 "linear_user_id": corr.linear_user_id,
