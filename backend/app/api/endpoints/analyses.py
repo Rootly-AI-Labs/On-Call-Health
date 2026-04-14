@@ -417,7 +417,7 @@ async def run_burnout_analysis(
                 include_linear=request.include_linear,
                 user_id=current_user.id,
                 enable_ai=request.enable_ai,
-                pagerduty_team_id=getattr(request, 'pagerduty_team_id', None),,
+                pagerduty_team_id=getattr(request, 'pagerduty_team_id', None),
                 include_ai_usage=request.include_ai_usage
             )
             logger.info(f"ENDPOINT: Successfully added background task for analysis {analysis.id}")
@@ -2979,7 +2979,7 @@ async def run_analysis_task(
     include_linear: bool = False,
     user_id: int = None,
     enable_ai: bool = False,
-    pagerduty_team_id: str = None,,
+    pagerduty_team_id: str = None,
     include_ai_usage: bool = True
 ):
     """Background task to run the actual burnout analysis."""
