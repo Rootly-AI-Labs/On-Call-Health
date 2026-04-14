@@ -1226,7 +1226,7 @@ class UnifiedBurnoutAnalyzer:
                     )
                     normalized_data = collector._normalize_analytics_incidents(
                         analytics_incidents,
-                        await self.client.get_users(limit=10000),
+                        api_users,
                     )
                     incidents = normalized_data.get("incidents", [])
                     logger.info(
