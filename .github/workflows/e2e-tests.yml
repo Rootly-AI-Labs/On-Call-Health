@@ -115,7 +115,7 @@ jobs:
 
       - name: Comment PR with results
         if: github.event_name == 'pull_request' && failure() && github.event.pull_request.head.repo.full_name == github.repository
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             github.rest.issues.createComment({
