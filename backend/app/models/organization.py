@@ -42,6 +42,7 @@ class Organization(Base):
     workspace_mappings = relationship("SlackWorkspaceMapping", back_populates="organization")
     jira_workspace_mappings = relationship("JiraWorkspaceMapping", back_populates="organization")
     linear_workspace_mappings = relationship("LinearWorkspaceMapping", back_populates="organization")
+    ai_usage_integrations = relationship("AIUsageIntegration", back_populates="organization", cascade="all, delete-orphan")
 
     # Constraints
     __table_args__ = (

@@ -15,7 +15,7 @@ from .core.rate_limiting import limiter, custom_rate_limit_exceeded_handler
 from .middleware.security import security_middleware
 from .middleware.user_logging import user_logging_middleware
 from .middleware.logging_context import UserContextFilter
-from .api.endpoints import auth, rootly, analysis, analyses, pagerduty, github, slack, jira, linear, llm, mappings, manual_mappings, debug_mappings, migrate, admin, notifications, invitations, surveys, api_keys, digests
+from .api.endpoints import auth, rootly, analysis, analyses, pagerduty, github, slack, jira, linear, llm, mappings, manual_mappings, debug_mappings, migrate, admin, notifications, invitations, surveys, api_keys, digests, ai_usage
 
 # Configure logging based on environment variable
 LOG_LEVEL = getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO)
@@ -235,6 +235,7 @@ app.include_router(github.router, prefix="/integrations", tags=["github-integrat
 app.include_router(slack.router, prefix="/integrations", tags=["slack-integration"])
 app.include_router(jira.router, prefix="/integrations", tags=["jira-integration"])
 app.include_router(linear.router, prefix="/integrations", tags=["linear-integration"])
+app.include_router(ai_usage.router, prefix="/integrations", tags=["ai-usage-integration"])
 app.include_router(llm.router, tags=["llm-tokens"])
 app.include_router(mappings.router, prefix="/integrations", tags=["integration-mappings"])
 app.include_router(manual_mappings.router, prefix="/integrations", tags=["manual-mappings"])

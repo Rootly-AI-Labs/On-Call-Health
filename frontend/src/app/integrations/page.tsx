@@ -150,6 +150,10 @@ import { JiraConnectedCard } from "./components/JiraConnectedCard"
 import { JiraManualSetupForm } from "./components/JiraManualSetupForm"
 import { LinearIntegrationCard } from "./components/LinearIntegrationCard"
 import { LinearConnectedCard } from "./components/LinearConnectedCard"
+import { OpenAIUsageSetupCard } from "./components/OpenAIUsageSetupCard"
+import { OpenAIUsageConnectedCard } from "./components/OpenAIUsageConnectedCard"
+import { AnthropicUsageSetupCard } from "./components/AnthropicUsageSetupCard"
+import { AnthropicUsageConnectedCard } from "./components/AnthropicUsageConnectedCard"
 import { LinearManualSetupForm } from "./components/LinearManualSetupForm"
 import { RootlyIntegrationForm } from "./components/RootlyIntegrationForm"
 import { SurveyFeedbackSection } from "./components/SurveyFeedbackSection"
@@ -196,7 +200,13 @@ export default function IntegrationsPage() {
   const [slackIntegration, setSlackIntegration] = useState<SlackIntegration | null>(null)
   const [jiraIntegration, setJiraIntegration] = useState<JiraIntegration | null>(null)
   const [linearIntegration, setLinearIntegration] = useState<LinearIntegration | null>(null)
-  const [activeEnhancementTab, setActiveEnhancementTab] = useState<"github" | "slack" | "jira" | "linear" | null>(null)
+  const [activeEnhancementTab, setActiveEnhancementTab] = useState<"github" | "slack" | "jira" | "linear" | "openai-usage" | "anthropic-usage" | null>(null)
+  const [aiUsageStatus, setAiUsageStatus] = useState<{ connected: boolean; openai_enabled: boolean; anthropic_enabled: boolean } | null>(null)
+  const [loadingAiUsage, setLoadingAiUsage] = useState(false)
+  const [isConnectingOpenAI, setIsConnectingOpenAI] = useState(false)
+  const [isConnectingAnthropic, setIsConnectingAnthropic] = useState(false)
+  const [isDisconnectingOpenAI, setIsDisconnectingOpenAI] = useState(false)
+  const [isDisconnectingAnthropic, setIsDisconnectingAnthropic] = useState(false)
 
   // Slack feature selection for OAuth
   const [enableSlackSurvey, setEnableSlackSurvey] = useState(true) // Default both enabled
@@ -208,7 +218,7 @@ export default function IntegrationsPage() {
   
   // MappingDrawer state (reusable component)
   const [mappingDrawerOpen, setMappingDrawerOpen] = useState(false)
-  const [mappingDrawerPlatform, setMappingDrawerPlatform] = useState<'github' | 'slack' | 'jira'>('github')
+  const [mappingDrawerPlatform, setMappingDrawerPlatform] = useState<'github' | 'slack' | 'jira' | 'linear' | 'openai'>('github')
 
   // Token error modal state
   const [tokenErrorModalOpen, setTokenErrorModalOpen] = useState(false)
@@ -1391,7 +1401,13 @@ export default function IntegrationsPage() {
         const linearData = JSON.parse(cachedLinear)
         setLinearIntegration(linearData.connected ? linearData.integration : null)
       }
-      const hasAllCache = !!(cachedIntegrations && cachedGithub && cachedSlack && cachedJira && cachedLinear)
+
+      const cachedAiUsage = localStorage.getItem('ai_usage_status')
+      if (cachedAiUsage) {
+        setAiUsageStatus(JSON.parse(cachedAiUsage))
+      }
+
+      const hasAllCache = !!(cachedIntegrations && cachedGithub && cachedSlack && cachedJira && cachedLinear && cachedAiUsage)
       return hasAllCache
     } catch (error) {
       return false
@@ -1459,7 +1475,7 @@ export default function IntegrationsPage() {
       }
 
       // 🚀 PHASE 2: Backend now caches permissions for 24 hours
-      const [rootlyResponse, pagerdutyResponse, githubResponse, slackResponse, jiraResponse, linearResponse] = await Promise.all([
+      const [rootlyResponse, pagerdutyResponse, githubResponse, slackResponse, jiraResponse, linearResponse, aiUsageResponse] = await Promise.all([
         fetch(`${API_BASE}/rootly/integrations`, {
           headers: { 'Authorization': `Bearer ${authToken}` }
         }),
@@ -1477,16 +1493,20 @@ export default function IntegrationsPage() {
         }),
         fetch(`${API_BASE}/integrations/linear/status`, {
           headers: { 'Authorization': `Bearer ${authToken}` }
+        }),
+        fetch(`${API_BASE}/integrations/ai-usage/status`, {
+          headers: { 'Authorization': `Bearer ${authToken}` }
         })
       ])
 
-      const [rootlyData, pagerdutyData, githubData, slackData, jiraData, linearData] = await Promise.all([
+      const [rootlyData, pagerdutyData, githubData, slackData, jiraData, linearData, aiUsageData] = await Promise.all([
         rootlyResponse.ok ? rootlyResponse.json() : { integrations: [] },
         pagerdutyResponse.ok ? pagerdutyResponse.json() : { integrations: [] },
         githubResponse.ok ? githubResponse.json() : { connected: false, integration: null },
         slackResponse.ok ? slackResponse.json() : { integration: null },
         jiraResponse.ok ? jiraResponse.json() : { connected: false, integration: null },
-        linearResponse.ok ? linearResponse.json() : { connected: false, integration: null }
+        linearResponse.ok ? linearResponse.json() : { connected: false, integration: null },
+        aiUsageResponse.ok ? aiUsageResponse.json() : { connected: false, openai_enabled: false, anthropic_enabled: false }
       ])
 
       // Update state silently
@@ -1503,6 +1523,7 @@ export default function IntegrationsPage() {
         setSlackIntegration(slackData.integration)
         setJiraIntegration(jiraData.connected ? jiraData.integration : null)
         setLinearIntegration(linearData.connected ? linearData.integration : null)
+        setAiUsageStatus(aiUsageData)
 
         // Update cache with fresh data
         localStorage.setItem('all_integrations', JSON.stringify(allIntegrations))
@@ -1511,6 +1532,7 @@ export default function IntegrationsPage() {
         localStorage.setItem('slack_integration', JSON.stringify(slackData))
         localStorage.setItem('jira_integration', JSON.stringify(jiraData))
         localStorage.setItem('linear_integration', JSON.stringify(linearData))
+        localStorage.setItem('ai_usage_status', JSON.stringify(aiUsageData))
 
       }
 
@@ -1757,6 +1779,23 @@ export default function IntegrationsPage() {
           setLoadingLinear(false)
         }
       })
+
+      // Fetch AI usage status (non-blocking)
+      fetch(`${API_BASE}/integrations/ai-usage/status`, {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      }).then(async (resp: any) => {
+        try {
+          if (resp.ok) {
+            const data = await resp.json()
+            setAiUsageStatus(data)
+            localStorage.setItem('ai_usage_status', JSON.stringify(data))
+          }
+        } catch (e) {
+          console.error('Error fetching AI usage status:', e)
+        } finally {
+          setLoadingAiUsage(false)
+        }
+      }).catch(() => setLoadingAiUsage(false))
 
       // Wait for all promises to complete (for back URL logic)
       const [rootlyResponse, pagerdutyResponse] = await Promise.all([rootlyPromise, pagerdutyPromise])
@@ -3443,6 +3482,62 @@ export default function IntegrationsPage() {
                 </div>
               </Card>
             )}
+
+            {/* OpenAI Usage Card */}
+            <Card
+              className={`border-2 border-solid transition-all cursor-pointer hover:shadow-md ${
+                activeEnhancementTab === 'openai-usage'
+                  ? 'border-indigo-500 shadow-md bg-indigo-50'
+                  : 'border-neutral-300 hover:border-indigo-400'
+              } p-4 flex items-center justify-center relative h-20`}
+              onClick={() => setActiveEnhancementTab(activeEnhancementTab === 'openai-usage' ? null : 'openai-usage')}
+            >
+              {aiUsageStatus?.openai_enabled ? (
+                <div className="absolute top-2 right-2">
+                  <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200 text-xs">
+                    <CheckCircle className="w-3 h-3 mr-1" />
+                    Connected
+                  </Badge>
+                </div>
+              ) : null}
+              {activeEnhancementTab === 'openai-usage' && (
+                <div className="absolute top-2 left-2">
+                  <CheckCircle className="w-5 h-5 text-indigo-600" />
+                </div>
+              )}
+              <div className="flex items-center space-x-2">
+                <Image src="/images/openai-logo.svg" alt="OpenAI" width={20} height={20} className="w-5 h-5" />
+                <span className="text-lg font-bold text-neutral-900">OpenAI</span>
+              </div>
+            </Card>
+
+            {/* Anthropic Usage Card */}
+            <Card
+              className={`border-2 border-solid transition-all cursor-pointer hover:shadow-md ${
+                activeEnhancementTab === 'anthropic-usage'
+                  ? 'border-indigo-500 shadow-md bg-indigo-50'
+                  : 'border-neutral-300 hover:border-indigo-400'
+              } p-4 flex items-center justify-center relative h-20`}
+              onClick={() => setActiveEnhancementTab(activeEnhancementTab === 'anthropic-usage' ? null : 'anthropic-usage')}
+            >
+              {aiUsageStatus?.anthropic_enabled ? (
+                <div className="absolute top-2 right-2">
+                  <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200 text-xs">
+                    <CheckCircle className="w-3 h-3 mr-1" />
+                    Connected
+                  </Badge>
+                </div>
+              ) : null}
+              {activeEnhancementTab === 'anthropic-usage' && (
+                <div className="absolute top-2 left-2">
+                  <CheckCircle className="w-5 h-5 text-indigo-600" />
+                </div>
+              )}
+              <div className="flex items-center space-x-2">
+                <Image src="/images/anthropic-logo.svg" alt="Anthropic" width={20} height={20} className="w-5 h-5" />
+                <span className="text-lg font-bold text-neutral-900">Anthropic</span>
+              </div>
+            </Card>
           </div>
 
           {/* Integration Forms */}
@@ -3527,6 +3622,126 @@ export default function IntegrationsPage() {
                 onSwitchAuth={() => setLinearSwitchDialogOpen(true)}
                 onTest={handleLinearTest}
                 isLoading={isDisconnectingLinear}
+              />
+            )}
+
+            {/* OpenAI Usage — Not Connected */}
+            {activeEnhancementTab === 'openai-usage' && !aiUsageStatus?.openai_enabled && (
+              <OpenAIUsageSetupCard
+                onConnect={async (apiKey) => {
+                  setIsConnectingOpenAI(true)
+                  const _base = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000'
+                  try {
+                    const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token')
+                    const resp = await fetch(`${_base}/integrations/ai-usage/connect`, {
+                      method: 'POST',
+                      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ openai_api_key: apiKey }),
+                    })
+                    if (resp.ok) {
+                      const data = await resp.json()
+                      const newStatus = { connected: data.openai_enabled || data.anthropic_enabled, openai_enabled: data.openai_enabled, anthropic_enabled: data.anthropic_enabled }
+                      setAiUsageStatus(newStatus)
+                      localStorage.setItem('ai_usage_status', JSON.stringify(newStatus))
+                      toast.success('OpenAI Usage connected!')
+                    } else {
+                      const err = await resp.json().catch(() => ({}))
+                      toast.error(err.detail ?? 'Failed to connect OpenAI Usage')
+                    }
+                  } catch (e) {
+                    toast.error('Error connecting OpenAI Usage')
+                  } finally {
+                    setIsConnectingOpenAI(false)
+                  }
+                }}
+                isConnecting={isConnectingOpenAI}
+              />
+            )}
+
+            {/* OpenAI Usage — Connected */}
+            {activeEnhancementTab === 'openai-usage' && aiUsageStatus?.openai_enabled && (
+              <OpenAIUsageConnectedCard
+                onTest={async () => {
+                  const _base = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000'
+                  const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token')
+                  const resp = await fetch(`${_base}/integrations/ai-usage/test`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } })
+                  if (!resp.ok) { const err = await resp.json().catch(() => ({})); throw new Error(err.detail ?? 'Test failed') }
+                }}
+                onDisconnect={async () => {
+                  setIsDisconnectingOpenAI(true)
+                  const _base = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000'
+                  try {
+                    const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token')
+                    const resp = await fetch(`${_base}/integrations/ai-usage/disconnect?provider=openai`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } })
+                    if (resp.ok) {
+                      const newStatus = { connected: !!aiUsageStatus?.anthropic_enabled, openai_enabled: false, anthropic_enabled: aiUsageStatus?.anthropic_enabled ?? false }
+                      setAiUsageStatus(newStatus)
+                      localStorage.setItem('ai_usage_status', JSON.stringify(newStatus))
+                      toast.success('OpenAI Usage disconnected')
+                    } else { toast.error('Failed to disconnect') }
+                  } catch (e) { toast.error('Error disconnecting') } finally { setIsDisconnectingOpenAI(false) }
+                }}
+                isLoading={isDisconnectingOpenAI}
+              />
+            )}
+
+            {/* Anthropic Usage — Not Connected */}
+            {activeEnhancementTab === 'anthropic-usage' && !aiUsageStatus?.anthropic_enabled && (
+              <AnthropicUsageSetupCard
+                onConnect={async (apiKey) => {
+                  setIsConnectingAnthropic(true)
+                  const _base = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000'
+                  try {
+                    const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token')
+                    const resp = await fetch(`${_base}/integrations/ai-usage/connect`, {
+                      method: 'POST',
+                      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ anthropic_api_key: apiKey }),
+                    })
+                    if (resp.ok) {
+                      const data = await resp.json()
+                      const newStatus = { connected: data.openai_enabled || data.anthropic_enabled, openai_enabled: data.openai_enabled, anthropic_enabled: data.anthropic_enabled }
+                      setAiUsageStatus(newStatus)
+                      localStorage.setItem('ai_usage_status', JSON.stringify(newStatus))
+                      toast.success('Anthropic Usage connected!')
+                    } else {
+                      const err = await resp.json().catch(() => ({}))
+                      toast.error(err.detail ?? 'Failed to connect Anthropic Usage')
+                    }
+                  } catch (e) {
+                    toast.error('Error connecting Anthropic Usage')
+                  } finally {
+                    setIsConnectingAnthropic(false)
+                  }
+                }}
+                isConnecting={isConnectingAnthropic}
+              />
+            )}
+
+            {/* Anthropic Usage — Connected */}
+            {activeEnhancementTab === 'anthropic-usage' && aiUsageStatus?.anthropic_enabled && (
+              <AnthropicUsageConnectedCard
+                onTest={async () => {
+                  const _base = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000'
+                  const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token')
+                  const resp = await fetch(`${_base}/integrations/ai-usage/test`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } })
+                  if (!resp.ok) { const err = await resp.json().catch(() => ({})); throw new Error(err.detail ?? 'Test failed') }
+                }}
+                onDisconnect={async () => {
+                  setIsDisconnectingAnthropic(true)
+                  const _base = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000'
+                  try {
+                    const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token')
+                    const resp = await fetch(`${_base}/integrations/ai-usage/disconnect?provider=anthropic`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } })
+                    if (resp.ok) {
+                      const newStatus = { connected: !!aiUsageStatus?.openai_enabled, openai_enabled: aiUsageStatus?.openai_enabled ?? false, anthropic_enabled: false }
+                      setAiUsageStatus(newStatus)
+                      localStorage.setItem('ai_usage_status', JSON.stringify(newStatus))
+                      toast.success('Anthropic Usage disconnected')
+                    } else { toast.error('Failed to disconnect') }
+                  } catch (e) { toast.error('Error disconnecting') } finally { setIsDisconnectingAnthropic(false) }
+                }}
+                isLoading={isDisconnectingAnthropic}
               />
             )}
 

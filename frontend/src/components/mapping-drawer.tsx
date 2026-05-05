@@ -64,7 +64,7 @@ interface MappingStatistics {
 interface MappingDrawerProps {
   isOpen: boolean
   onClose: () => void
-  platform: 'github' | 'slack' | 'jira' | 'linear'
+  platform: 'github' | 'slack' | 'jira' | 'linear' | 'openai'
   onRefresh?: () => void
 }
 
@@ -328,8 +328,8 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
   }, [inlineEditingValue, platform, validateGitHubUsername])
 
   const runAutoMapping = async () => {
-    if (platform !== 'github' && platform !== 'jira' && platform !== 'linear') {
-      toast.error(`Auto-mapping is only available for GitHub, Jira, and Linear`)
+    if (platform !== 'github' && platform !== 'jira' && platform !== 'linear' && platform !== 'openai') {
+      toast.error(`Auto-mapping is only available for GitHub, Jira, Linear, and OpenAI`)
       return
     }
     setRunningAutoMapping(true)
@@ -348,6 +348,8 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
         ? `${API_BASE}/integrations/manual-mappings/run-github-mapping`
         : platform === 'jira'
         ? `${API_BASE}/integrations/manual-mappings/run-jira-mapping`
+        : platform === 'openai'
+        ? `${API_BASE}/integrations/manual-mappings/run-openai-mapping`
         : `${API_BASE}/integrations/manual-mappings/run-linear-mapping`
 
       const response = await fetch(endpoint, {
@@ -362,7 +364,7 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
       if (!response.ok) {
         const error = await response.json().catch(() => ({}))
 
-        if (error.detail === 'GitHub integration not found' || error.detail === 'Jira integration not found' || error.detail === 'Linear integration not found') {
+        if (error.detail === 'GitHub integration not found' || error.detail === 'Jira integration not found' || error.detail === 'Linear integration not found' || error.detail === 'OpenAI integration not found') {
           toast.error(`Please connect a ${platformTitle} integration first before running auto-mapping`)
           return
         }
@@ -724,8 +726,8 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
     }
   }
 
-  const platformTitle = platform === 'github' ? 'GitHub' : platform === 'jira' ? 'Jira' : platform === 'linear' ? 'Linear' : 'Slack'
-  const platformColor = platform === 'github' ? 'blue' : platform === 'jira' ? 'blue' : platform === 'linear' ? 'purple' : 'purple'
+  const platformTitle = platform === 'github' ? 'GitHub' : platform === 'jira' ? 'Jira' : platform === 'linear' ? 'Linear' : platform === 'openai' ? 'OpenAI' : 'Slack'
+  const platformColor = platform === 'github' ? 'blue' : platform === 'jira' ? 'blue' : platform === 'linear' ? 'purple' : platform === 'openai' ? 'indigo' : 'purple'
 
   // Platform logo component
   const PlatformLogo = ({ platform, size = 'sm' }: { platform: string, size?: 'sm' | 'md' }) => {
@@ -795,7 +797,7 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
                 <div className="mb-8">
                   <div className="mb-6 flex items-center justify-between">
                     <h3 className="font-semibold text-neutral-900">Mapping Statistics</h3>
-                    {(platform === 'github' || platform === 'jira') && (
+                    {(platform === 'github' || platform === 'jira' || platform === 'linear' || platform === 'openai') && (
                       <div className="flex space-x-2">
                         <Button
                           onClick={runAutoMapping}

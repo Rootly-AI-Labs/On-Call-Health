@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ChevronDown, ChevronRight, Users, Loader2, TrendingUp, TrendingDown, Minus, ChevronsUp, ChevronsDown, Info } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Image from "next/image"
 import {
   getRiskScore100FromDailyHealth,
@@ -180,9 +180,62 @@ export function TeamMembersList({
 }: TeamMembersListProps) {
   const [showMembersWithoutIncidents, setShowMembersWithoutIncidents] = useState(false);
   const [sortBy, setSortBy] = useState<'risk' | 'trend'>('risk');
+  const [liveOpenAIMappings, setLiveOpenAIMappings] = useState<Map<string, string>>(new Map());
   const dataSources = currentAnalysis?.analysis_data?.data_sources;
   const analysisConfig = currentAnalysis?.config;
   const individualDailyData = currentAnalysis?.analysis_data?.individual_daily_data;
+
+  useEffect(() => {
+    const integrationId = currentAnalysis?.integration_id;
+    const hasOpenAI = connectedIntegrations.has('openai-usage');
+
+    if (!integrationId || !hasOpenAI) {
+      setLiveOpenAIMappings(new Map());
+      return;
+    }
+
+    let cancelled = false;
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
+    async function loadLiveOpenAIMappings() {
+      try {
+        const authToken = localStorage.getItem('auth_token');
+        if (!authToken) return;
+
+        const response = await fetch(`${API_BASE}/rootly/synced-users?integration_id=${integrationId}`, {
+          headers: { Authorization: `Bearer ${authToken}` },
+        });
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+        const users = Array.isArray(data?.users) ? data.users : [];
+        const nextMappings = new Map<string, string>();
+
+        for (const user of users) {
+          const email = typeof user?.email === 'string' ? user.email.toLowerCase() : '';
+          const openaiUserId = typeof user?.openai_user_id === 'string' ? user.openai_user_id : '';
+          if (email && openaiUserId) {
+            nextMappings.set(email, openaiUserId);
+          }
+        }
+
+        if (!cancelled) {
+          setLiveOpenAIMappings(nextMappings);
+        }
+      } catch {
+        if (!cancelled) {
+          setLiveOpenAIMappings(new Map());
+        }
+      }
+    }
+
+    loadLiveOpenAIMappings();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentAnalysis?.integration_id, connectedIntegrations]);
 
   const isDataSourceEnabled = (source: 'github' | 'slack' | 'jira' | 'linear') => {
     if (Array.isArray(dataSources)) {
@@ -232,6 +285,7 @@ export function TeamMembersList({
 
   const handleMemberClick = (member: any, trendInfo: any) => {
     const memberRiskScore = getRiskScore100FromMember(member)
+    const liveOpenAIUserId = liveOpenAIMappings.get((member.user_email || '').toLowerCase()) || null
 
     setSelectedMember({
       id: member.user_id || '',
@@ -251,7 +305,8 @@ export function TeamMembersList({
       },
       metrics: member.metrics || {},
       github_activity: member.github_activity || null,
-      slack_activity: member.slack_activity || null
+      slack_activity: member.slack_activity || null,
+      openai_user_id: member.openai_user_id || liveOpenAIUserId
     })
   }
 
@@ -364,6 +419,9 @@ export function TeamMembersList({
             const slackEnabled = connectedIntegrations.has('slack') && isDataSourceEnabled('slack');
             const jiraEnabled = connectedIntegrations.has('jira') && isDataSourceEnabled('jira');
             const linearEnabled = connectedIntegrations.has('linear') && isDataSourceEnabled('linear');
+            const liveOpenAIUserId = liveOpenAIMappings.get((member.user_email || '').toLowerCase()) || null;
+            const hasOpenAIMapping = !!member.openai_user_id || !!liveOpenAIUserId;
+            const openaiEnabled = connectedIntegrations.has('openai-usage') || hasOpenAIMapping;
 
             const hasSurvey = !!currentAnalysis?.analysis_data?.member_surveys?.[member.user_email];
 
@@ -372,10 +430,8 @@ export function TeamMembersList({
               ...(slackEnabled ? [{ key: 'slack', mapped: !!member.slack_user_id, title: member.slack_user_id ? 'Slack: mapped' : 'Slack: not mapped' }] : []),
               ...(jiraEnabled ? [{ key: 'jira', mapped: !!member.jira_account_id, title: member.jira_account_id ? 'Jira: mapped' : 'Jira: not mapped' }] : []),
               ...(linearEnabled ? [{ key: 'linear', mapped: !!member.linear_user_id, title: member.linear_user_id ? 'Linear: mapped' : 'Linear: not mapped' }] : []),
+              ...(openaiEnabled ? [{ key: 'openai', mapped: hasOpenAIMapping, title: hasOpenAIMapping ? 'OpenAI: mapped' : 'OpenAI: not mapped' }] : []),
             ];
-
-            // Mapped first, then unmapped
-            const sorted = [...integrations.filter(i => i.mapped), ...integrations.filter(i => !i.mapped)];
 
             const renderIcon = (key: string, mapped: boolean, title: string) => {
               const opacity = mapped ? '' : 'opacity-25';
@@ -417,6 +473,12 @@ export function TeamMembersList({
                       <Image src="/images/linear-logo.png" alt="Linear" width={14} height={14} />
                     </div>
                   );
+                case 'openai':
+                  return (
+                    <div key={key} className={`flex items-center justify-center w-5 h-5 ${opacity}`} title={title}>
+                      <Image src="/images/openai-logo.svg" alt="OpenAI" width={14} height={14} />
+                    </div>
+                  );
                 default:
                   return null;
               }
@@ -430,8 +492,8 @@ export function TeamMembersList({
                     <Image src="/images/rootly-logo-icon.jpg" alt="Rootly" width={14} height={14} className="rounded" />
                   </div>
                 )}
-                {/* Mapped integrations first, then unmapped */}
-                {sorted.map(i => <span key={i.key}>{renderIcon(i.key, i.mapped, i.title)}</span>)}
+                {/* Fixed order: github, slack, jira, linear, openai */}
+                {integrations.map(i => <span key={i.key}>{renderIcon(i.key, i.mapped, i.title)}</span>)}
                 {/* Survey */}
                 {hasSurvey && (
                   <div className="flex items-center justify-center w-5 h-5 bg-blue-50 rounded-full border border-blue-200" title="Survey Data Available">

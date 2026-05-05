@@ -428,6 +428,12 @@ export interface AnalysisResult {
       days_analyzed: number
       total_days_with_data: number
     }
+    metadata?: {
+      openai_usage?: Record<string, { input_tokens: number; output_tokens: number; total_tokens: number; requests: number }>
+      anthropic_usage?: Record<string, { input_tokens: number; output_tokens: number; total_tokens: number; requests: number }>
+      openai_usage_per_user?: Record<string, Record<string, { input_tokens: number; output_tokens: number; total_tokens: number; requests: number }>>
+      [key: string]: any
+    }
   }
 }
 

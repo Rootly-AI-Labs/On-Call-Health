@@ -902,8 +902,8 @@ async def check_and_send_weekly_digests() -> None:
 
                 logger.info(f"📬 [WEEKLY_DIGEST] {user.email} timezone={tz_name} local_now={local_now.strftime('%A %H:%M')} (weekday={local_now.weekday()}, hour={local_now.hour})")
                 if not settings.WEEKLY_DIGEST_FORCE_SEND:
-                    if local_now.weekday() != 1 or local_now.hour != 10:
-                        logger.info(f"📬 [WEEKLY_DIGEST] SKIP {user.email}: not Tuesday 10am local (weekday={local_now.weekday()}, hour={local_now.hour})")
+                    if local_now.weekday() != 0 or local_now.hour != 10:
+                        logger.info(f"📬 [WEEKLY_DIGEST] SKIP {user.email}: not Monday 10am local (weekday={local_now.weekday()}, hour={local_now.hour})")
                         continue
 
                 week_start_date = _get_week_start_date(local_now)

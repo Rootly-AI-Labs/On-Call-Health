@@ -1669,7 +1669,7 @@ class RootlyAPIClient:
                             params={
                                 'filter[starts_at][lt]': end_str,
                                 'filter[ends_at][gt]': start_str,
-                                'include': 'user',
+                                'include': 'assignee,user',
                                 'page[size]': 100
                             },
                             timeout=30.0
@@ -1713,6 +1713,7 @@ class RootlyAPIClient:
             return set()
 
         # Step 1: Extract unique user IDs from shifts
+        # Rootly deprecated 'user' in favour of 'assignee' (Dec 2025); check both for compatibility
         user_ids = set()
         for shift in shifts:
             try:
@@ -1723,7 +1724,11 @@ class RootlyAPIClient:
                 if not relationships:
                     continue
 
-                user_data = relationships.get('user', {}).get('data', {})
+                # Prefer 'assignee' (new), fall back to 'user' (deprecated)
+                user_data = (
+                    relationships.get('assignee', {}).get('data')
+                    or relationships.get('user', {}).get('data')
+                )
 
                 if user_data and user_data.get('type') == 'users':
                     user_id = user_data.get('id')

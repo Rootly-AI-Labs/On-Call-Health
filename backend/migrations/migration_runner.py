@@ -1383,6 +1383,16 @@ class MigrationRunner:
                     """
                 ]
             },
+            {
+                "name": "052_add_openai_user_id_to_user_correlations",
+                "description": "Add openai_user_id column to user_correlations for per-user OpenAI token usage tracking",
+                "sql_file": "2026_04_20_add_openai_user_id_to_user_correlations.sql"
+            },
+            {
+                "name": "053_ai_usage_nullable_org",
+                "description": "Make organization_id nullable in ai_usage_integrations and add partial unique indexes",
+                "sql_file": "2026_04_20_ai_usage_nullable_org.sql"
+            },
             # Add future migrations here with incrementing numbers
         ]
 

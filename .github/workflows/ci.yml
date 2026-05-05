@@ -10,7 +10,7 @@ jobs:
   build-frontend:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Build frontend base image
         run: docker build -t rootlyio/on-call-health:frontend-base ./frontend -f ./frontend/Dockerfile.base
@@ -28,7 +28,10 @@ jobs:
   build-backend:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Check migration consistency
+        run: python3 backend/migrations/check_migrations.py
 
       - name: Build backend Docker image
         run: docker build -t backend-test ./backend
@@ -45,7 +48,7 @@ jobs:
   docker-compose:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Build frontend base image
         run: docker build -t rootlyio/on-call-health:frontend-base ./frontend -f ./frontend/Dockerfile.base
