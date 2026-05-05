@@ -106,17 +106,23 @@ export default function LandingPage() {
     }
   }, [])
 
-  // Auto-advance carousel every 7 seconds
+  // Auto-advance carousel every 7 seconds (respects reduced-motion preference)
   useEffect(() => {
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return
+    }
+    let releaseTimeout: ReturnType<typeof setTimeout> | undefined
     const interval = setInterval(() => {
       setCarouselTransition(true)
       setIsTransitioning(true)
       setSlideIndex((prev) => prev + 1)
       // Hold "shrunk" state through the slide, then release for the grow-back at the end
-      const releaseTimeout = setTimeout(() => setIsTransitioning(false), 700)
-      return () => clearTimeout(releaseTimeout)
+      releaseTimeout = setTimeout(() => setIsTransitioning(false), 700)
     }, 7000)
-    return () => clearInterval(interval)
+    return () => {
+      clearInterval(interval)
+      if (releaseTimeout) clearTimeout(releaseTimeout)
+    }
   }, [])
 
   // Seamless loop: when we land on the duplicate clone, snap back to 0 with no transition
