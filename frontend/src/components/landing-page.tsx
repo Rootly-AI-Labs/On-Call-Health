@@ -83,9 +83,6 @@ const ppMori = localFont({
 
 export default function LandingPage() {
   const [isLoading, setIsLoading] = useState<'google' | 'github' | 'okta' | null>(null)
-  const [slideIndex, setSlideIndex] = useState(0)
-  const [carouselTransition, setCarouselTransition] = useState(true)
-  const [isTransitioning, setIsTransitioning] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
 
   // Preload background images and autoplay video on mount
@@ -105,35 +102,6 @@ export default function LandingPage() {
       videoRef.current.play().catch(err => console.log('Autoplay failed:', err))
     }
   }, [])
-
-  // Auto-advance carousel every 7 seconds (respects reduced-motion preference)
-  useEffect(() => {
-    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      return
-    }
-    let releaseTimeout: ReturnType<typeof setTimeout> | undefined
-    const interval = setInterval(() => {
-      setCarouselTransition(true)
-      setIsTransitioning(true)
-      setSlideIndex((prev) => prev + 1)
-      // Hold "shrunk" state through the slide, then release for the grow-back at the end
-      releaseTimeout = setTimeout(() => setIsTransitioning(false), 700)
-    }, 7000)
-    return () => {
-      clearInterval(interval)
-      if (releaseTimeout) clearTimeout(releaseTimeout)
-    }
-  }, [])
-
-  // Seamless loop: when we land on the duplicate clone, snap back to 0 with no transition
-  useEffect(() => {
-    if (slideIndex !== testimonials.length) return
-    const timeout = setTimeout(() => {
-      setCarouselTransition(false)
-      setSlideIndex(0)
-    }, 1200)
-    return () => clearTimeout(timeout)
-  }, [slideIndex])
 
   const handleGoogleLogin = async () => {
     try {
@@ -394,58 +362,46 @@ export default function LandingPage() {
         </div>
         {/* Features Banner */}
         <div className="container mx-auto px-4 pt-12 pb-0 mt-6 lg:mt-40 lg:py-20 relative z-10">
-          <div className="relative w-11/12 sm:w-4/5 lg:w-2/3 mx-auto mt-2 lg:mt-0 overflow-hidden" style={{ aspectRatio: "1784 / 720" }}>
-            <div
-              className="flex h-full w-full gap-8"
-              style={{
-                transform: `translateX(calc(-${slideIndex * 100}% - ${slideIndex * 2}rem))`,
-                transition: carouselTransition ? "transform 1100ms cubic-bezier(0.4, 0.0, 0.2, 1)" : "none",
-              }}
-            >
-              {[...testimonials, testimonials[0]].map((t, i) => (
-                <div
-                  key={`${t.name}-${i}`}
-                  className="flex h-full w-full shrink-0 flex-col rounded-[28px] px-6 py-7 sm:px-10 sm:py-8 lg:px-16 lg:py-12 shadow-[0_20px_60px_-15px_rgba(124,87,196,0.18)] backdrop-blur-md transition-transform duration-700 ease-[cubic-bezier(0.4,0.0,0.2,1)]"
-                  style={{
-                    background: "linear-gradient(115deg, rgba(252,227,210,0.72) 0%, rgba(236,220,246,0.72) 55%, rgba(220,205,247,0.72) 100%)",
-                    transform: isTransitioning ? "scale(0.92)" : "scale(1)",
-                  }}
-                  aria-hidden={i !== slideIndex}
-                >
-                  <div className="flex-1 flex items-center justify-center">
-                    <p className="text-center text-base font-medium leading-relaxed text-slate-900 sm:text-lg sm:leading-relaxed lg:text-[26px] lg:leading-[1.45]">
-                      &ldquo;{t.quote}&rdquo;
-                    </p>
-                  </div>
-                  <div className="mt-5 sm:mt-6 lg:mt-8 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3 lg:gap-5">
-                      <Image
-                        src={t.photo}
-                        alt={t.name}
-                        width={96}
-                        height={96}
-                        className="h-12 w-12 sm:h-14 sm:w-14 lg:h-20 lg:w-20 rounded-xl object-cover"
-                      />
-                      <div>
-                        <p className="text-base sm:text-lg lg:text-xl font-semibold text-slate-900">{t.name}</p>
-                        <p className="text-xs sm:text-sm lg:text-base text-slate-700/70">{t.role}</p>
-                      </div>
+          <div className="w-11/12 sm:w-4/5 lg:w-2/3 mx-auto mt-2 lg:mt-0 flex flex-col gap-5 lg:gap-7">
+            {testimonials.map((t) => (
+              <div
+                key={t.name}
+                className="flex flex-col rounded-[28px] px-6 py-6 sm:px-10 sm:py-7 lg:px-14 lg:py-9 shadow-[0_20px_60px_-15px_rgba(124,87,196,0.18)] backdrop-blur-md"
+                style={{
+                  background: "linear-gradient(115deg, rgba(252,227,210,0.72) 0%, rgba(236,220,246,0.72) 55%, rgba(220,205,247,0.72) 100%)",
+                }}
+              >
+                <p className="text-center text-base font-medium leading-relaxed text-slate-900 sm:text-lg sm:leading-relaxed lg:text-[22px] lg:leading-[1.5]">
+                  &ldquo;{t.quote}&rdquo;
+                </p>
+                <div className="mt-5 sm:mt-6 lg:mt-7 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 lg:gap-5">
+                    <Image
+                      src={t.photo}
+                      alt={t.name}
+                      width={96}
+                      height={96}
+                      className="h-12 w-12 sm:h-14 sm:w-14 lg:h-16 lg:w-16 rounded-xl object-cover"
+                    />
+                    <div>
+                      <p className="text-base sm:text-lg lg:text-xl font-semibold text-slate-900">{t.name}</p>
+                      <p className="text-xs sm:text-sm lg:text-base text-slate-700/70">{t.role}</p>
                     </div>
-                    {t.logo.type === "image" ? (
-                      <Image
-                        src={t.logo.src}
-                        alt={t.logo.alt}
-                        width={t.logo.width}
-                        height={t.logo.height}
-                        className="h-6 sm:h-7 lg:h-9 w-auto"
-                      />
-                    ) : (
-                      <t.logo.Component className="h-6 sm:h-7 lg:h-9 w-auto" />
-                    )}
                   </div>
+                  {t.logo.type === "image" ? (
+                    <Image
+                      src={t.logo.src}
+                      alt={t.logo.alt}
+                      width={t.logo.width}
+                      height={t.logo.height}
+                      className="h-6 sm:h-7 lg:h-9 w-auto"
+                    />
+                  ) : (
+                    <t.logo.Component className="h-6 sm:h-7 lg:h-9 w-auto" />
+                  )}
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         </div>
     <div className="w-full mb-[-1px] absolute h-[240px] bottom-0 left-0 z-0 lg:h-[250px] bg-gradient-to-b from-transparent via-white/60 to-white pointer-events-none">                               
