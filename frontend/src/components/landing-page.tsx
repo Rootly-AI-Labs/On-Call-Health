@@ -85,6 +85,7 @@ export default function LandingPage() {
   const [isLoading, setIsLoading] = useState<'google' | 'github' | 'okta' | null>(null)
   const [slideIndex, setSlideIndex] = useState(0)
   const [carouselTransition, setCarouselTransition] = useState(true)
+  const [isTransitioning, setIsTransitioning] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
 
   // Preload background images and autoplay video on mount
@@ -109,7 +110,11 @@ export default function LandingPage() {
   useEffect(() => {
     const interval = setInterval(() => {
       setCarouselTransition(true)
+      setIsTransitioning(true)
       setSlideIndex((prev) => prev + 1)
+      // Hold "shrunk" state through the slide, then release for the grow-back at the end
+      const releaseTimeout = setTimeout(() => setIsTransitioning(false), 700)
+      return () => clearTimeout(releaseTimeout)
     }, 7000)
     return () => clearInterval(interval)
   }, [])
@@ -120,7 +125,7 @@ export default function LandingPage() {
     const timeout = setTimeout(() => {
       setCarouselTransition(false)
       setSlideIndex(0)
-    }, 1100)
+    }, 1200)
     return () => clearTimeout(timeout)
   }, [slideIndex])
 
@@ -383,20 +388,21 @@ export default function LandingPage() {
         </div>
         {/* Features Banner */}
         <div className="container mx-auto px-4 pt-12 pb-0 mt-6 lg:mt-40 lg:py-20 relative z-10">
-          <div className="relative w-11/12 sm:w-4/5 lg:w-2/3 mx-auto mt-2 lg:mt-0 overflow-hidden rounded-[28px]" style={{ aspectRatio: "1784 / 720" }}>
+          <div className="relative w-11/12 sm:w-4/5 lg:w-2/3 mx-auto mt-2 lg:mt-0 overflow-hidden" style={{ aspectRatio: "1784 / 720" }}>
             <div
-              className="flex h-full w-full"
+              className="flex h-full w-full gap-8"
               style={{
-                transform: `translateX(-${slideIndex * 100}%)`,
-                transition: carouselTransition ? "transform 1000ms cubic-bezier(0.4, 0.0, 0.2, 1)" : "none",
+                transform: `translateX(calc(-${slideIndex * 100}% - ${slideIndex * 2}rem))`,
+                transition: carouselTransition ? "transform 1100ms cubic-bezier(0.4, 0.0, 0.2, 1)" : "none",
               }}
             >
               {[...testimonials, testimonials[0]].map((t, i) => (
                 <div
                   key={`${t.name}-${i}`}
-                  className="flex h-full w-full shrink-0 flex-col rounded-[28px] px-6 py-7 sm:px-10 sm:py-8 lg:px-16 lg:py-12 shadow-[0_20px_60px_-15px_rgba(124,87,196,0.25)]"
+                  className="flex h-full w-full shrink-0 flex-col rounded-[28px] px-6 py-7 sm:px-10 sm:py-8 lg:px-16 lg:py-12 shadow-[0_20px_60px_-15px_rgba(124,87,196,0.18)] backdrop-blur-md transition-transform duration-700 ease-[cubic-bezier(0.4,0.0,0.2,1)]"
                   style={{
-                    background: "linear-gradient(115deg, #FCE3D2 0%, #ECDCF6 55%, #DCCDF7 100%)",
+                    background: "linear-gradient(115deg, rgba(252,227,210,0.72) 0%, rgba(236,220,246,0.72) 55%, rgba(220,205,247,0.72) 100%)",
+                    transform: isTransitioning ? "scale(0.92)" : "scale(1)",
                   }}
                   aria-hidden={i !== slideIndex}
                 >
