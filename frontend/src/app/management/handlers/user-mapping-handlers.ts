@@ -12,6 +12,7 @@ export async function updateUserCorrelation(
     jira_email?: string
     linear_user_id?: string
     slack_user_id?: string
+    openai_user_id?: string
   }
 ): Promise<boolean> {
   const authToken = localStorage.getItem("auth_token")
@@ -69,6 +70,18 @@ export async function updateUserCorrelation(
       promises.push(
         fetch(
           `${API_BASE}/rootly/user-correlation/${userId}/slack-mapping?slack_user_id=${encodeURIComponent(updates.slack_user_id)}`,
+          {
+            method: "PATCH",
+            headers: { Authorization: `Bearer ${authToken}` },
+          }
+        )
+      )
+    }
+
+    if (updates.openai_user_id !== undefined) {
+      promises.push(
+        fetch(
+          `${API_BASE}/rootly/user-correlation/${userId}/openai-mapping?openai_user_id=${encodeURIComponent(updates.openai_user_id)}`,
           {
             method: "PATCH",
             headers: { Authorization: `Bearer ${authToken}` },
@@ -221,6 +234,28 @@ export async function fetchLinearUsers(
     return []
   } catch (error) {
     console.error("Error fetching Linear users:", error)
+    return []
+  }
+}
+
+/**
+ * Fetch OpenAI org members for manual mapping
+ */
+export async function fetchOpenAIMembers(): Promise<{ id: string; email: string }[]> {
+  const authToken = localStorage.getItem("auth_token")
+  if (!authToken) return []
+
+  try {
+    const response = await fetch(`${API_BASE}/integrations/ai-usage/openai-members`, {
+      headers: { Authorization: `Bearer ${authToken}` },
+    })
+    if (response.ok) {
+      const data = await response.json()
+      return data.members || []
+    }
+    return []
+  } catch (error) {
+    console.error("Error fetching OpenAI members:", error)
     return []
   }
 }

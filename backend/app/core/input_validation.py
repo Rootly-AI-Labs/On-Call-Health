@@ -23,7 +23,9 @@ PATTERNS = {
     "github_token": re.compile(r"^(ghp_|gho_|ghu_|ghs_|ghr_)[A-Za-z0-9]{36,255}$"),
     "slack_token": re.compile(r"^[a-zA-Z]{3,4}-[A-Za-z0-9-]{10,100}$"),  # Slack token pattern
     "anthropic_token": re.compile(r"^sk-ant-[A-Za-z0-9-_]{20,200}$"),
-    "openai_token": re.compile(r"^sk-[A-Za-z0-9]{48}$"),
+    "anthropic_admin_token": re.compile(r"^sk-ant-admin-[A-Za-z0-9-_]{20,200}$"),
+    "openai_token": re.compile(r"^sk-[A-Za-z0-9_-]{20,200}$"),
+    "openai_admin_token": re.compile(r"^sk-admin-[A-Za-z0-9_-]{20,200}$"),
     
     # Identifiers
     "uuid": re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.IGNORECASE),
@@ -310,6 +312,7 @@ class AnalysisRequest(BaseValidatedModel):
     include_slack: bool = Field(False, description="Include Slack data")
     include_jira: bool = Field(False, description="Include Jira data")
     include_linear: bool = Field(False, description="Include Linear data")
+    include_ai_usage: bool = Field(True, description="Include AI usage tracking data")
     enable_ai: bool = Field(False, description="Enable AI insights")
     auto_refresh_enabled: bool = Field(False, description="Enable auto-refresh mode")
     auto_refresh_interval: Optional[str] = Field(None, description="Auto-refresh interval: 24h, 3d, or 7d")

@@ -45,7 +45,2339 @@
         "include_slack": true,
         "include_jira": true,
         "include_linear": true,
-        "enable_ai": false
+        "enable_ai": false,
+        "alerts": {
+          "start": "2026-03-22T14:41:48.635284-04:00",
+          "end": "2026-04-21T14:41:48.635284-04:00",
+          "total": 1274,
+          "filtered_total": 1274,
+          "team_name": null,
+          "team_id": null,
+          "filter_method": null,
+          "include": "environments,services,groups,responders,incidents,events,alert_urgency,heartbeat,live_call_router,alert_group,group_leader_alert,group_member_alerts,alert_field_values,alerting_targets,escalation_policies,alert_call_recording",
+          "pages_scanned": 13,
+          "total_pages": 13,
+          "truncated": false,
+          "error": null,
+          "noise_counts": {
+            "noise": 0,
+            "not_noise": 1274,
+            "unknown": 0
+          },
+          "source_counts": {
+            "sentry": 175,
+            "workflow": 73,
+            "datadog": 282,
+            "ai_agent": 5,
+            "web": 2,
+            "generic_webhook": 711,
+            "slack": 5,
+            "email": 17,
+            "mobile": 4
+          },
+          "derived_source_counts": {
+            "sentry": 177,
+            "workflow": 71,
+            "datadog": 293,
+            "ai_agent": 5,
+            "web": 2,
+            "generic_webhook": 671,
+            "slack": 5,
+            "email": 17,
+            "mobile": 4,
+            "chronosphere": 2,
+            "pagerduty": 18,
+            "cloudwatch": 1,
+            "prometheus": 1,
+            "opsgenie": 2,
+            "pingdom": 1,
+            "newrelic": 2,
+            "grafana": 2
+          },
+          "after_hours_count": 197,
+          "night_time_count": 47,
+          "urgency_counts": {
+            "high": 1224,
+            "medium": 50
+          },
+          "alerts_with_incidents_count": 82,
+          "related_counts": {
+            "events": 9499,
+            "groups": 6
+          },
+          "included_counts": {
+            "alert_events": 9499
+          },
+          "avg_mtta_seconds": 5058.1886858006055,
+          "mtta_count": 331,
+          "avg_mttr_seconds": 7362.254743764172,
+          "mttr_count": 441,
+          "escalated_count": 61,
+          "retrigger_count": 65,
+          "top_alerts": [
+            {
+              "title": "Support ticket created in helpdesk system",
+              "total": 649,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 649,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 11
+            },
+            {
+              "title": "P0 support ticket created in helpdesk system",
+              "total": 62,
+              "noise": 0,
+              "night_time": 5,
+              "after_hours": 20,
+              "no_incident": 61,
+              "escalated": 10,
+              "retriggered": 0,
+              "days_fired": 18
+            },
+            {
+              "title": "SQS | Dead Letter Queue - Processing Failures - alert-escalation-processor.fifo [PROD]",
+              "total": 58,
+              "noise": 0,
+              "night_time": 1,
+              "after_hours": 29,
+              "no_incident": 58,
+              "escalated": 1,
+              "retriggered": 10,
+              "days_fired": 6
+            },
+            {
+              "title": "RedisClient::OutOfMemoryError: OOM - Cache memory limit exceeded (rediss://master.prod-cache-001)",
+              "total": 44,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 44,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "SQS | Dead Letter Queue - Processing Failures - notification-step-function-invoker.fifo [PROD]",
+              "total": 23,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 10,
+              "no_incident": 23,
+              "escalated": 3,
+              "retriggered": 16,
+              "days_fired": 10
+            },
+            {
+              "title": "notification | Data Sync Mismatch for escalation-policy-targets [PROD]",
+              "total": 10,
+              "noise": 0,
+              "night_time": 1,
+              "after_hours": 6,
+              "no_incident": 10,
+              "escalated": 3,
+              "retriggered": 6,
+              "days_fired": 9
+            },
+            {
+              "title": "Lambda | Error Rate High - notification-dispatcher-handler [PROD]",
+              "total": 10,
+              "noise": 0,
+              "night_time": 6,
+              "after_hours": 10,
+              "no_incident": 10,
+              "escalated": 0,
+              "retriggered": 4,
+              "days_fired": 5
+            },
+            {
+              "title": "Lambda | Duration p99 High - schedule-reminder-handler [PROD]",
+              "total": 8,
+              "noise": 0,
+              "night_time": 2,
+              "after_hours": 8,
+              "no_incident": 8,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 8
+            },
+            {
+              "title": "Lambda | Error Rate High - schedule-reminder-handler [PROD]",
+              "total": 8,
+              "noise": 0,
+              "night_time": 6,
+              "after_hours": 7,
+              "no_incident": 8,
+              "escalated": 0,
+              "retriggered": 1,
+              "days_fired": 7
+            },
+            {
+              "title": "SQS | Dead Letter Queue - Processing Failures - push-notification-dispatcher.fifo [PROD]",
+              "total": 7,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 3,
+              "no_incident": 7,
+              "escalated": 0,
+              "retriggered": 3,
+              "days_fired": 1
+            },
+            {
+              "title": "api-gateway | Critical Endpoints Have Errors [PROD]",
+              "total": 7,
+              "noise": 0,
+              "night_time": 1,
+              "after_hours": 1,
+              "no_incident": 7,
+              "escalated": 1,
+              "retriggered": 0,
+              "days_fired": 2
+            },
+            {
+              "title": "[SEV0] Redis Out of Memory",
+              "total": 7,
+              "noise": 0,
+              "night_time": 1,
+              "after_hours": 7,
+              "no_incident": 0,
+              "escalated": 3,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "sidekiq | Search Index Sync Job Errors [PROD]",
+              "total": 6,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 3,
+              "no_incident": 6,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 6
+            },
+            {
+              "title": "SQS | Message Age High - Queue Processing Delayed - notification-raw-alerts.fifo [PROD]",
+              "total": 5,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 1,
+              "no_incident": 5,
+              "escalated": 0,
+              "retriggered": 1,
+              "days_fired": 3
+            },
+            {
+              "title": "Database::QueryTimeout: Statement cancelled due to execution time limit [PROD]",
+              "total": 5,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 5,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 3
+            },
+            {
+              "title": "SQS | Dead Letter Queue - Processing Failures - alerting-events-processor.fifo [PROD]",
+              "total": 5,
+              "noise": 0,
+              "night_time": 1,
+              "after_hours": 2,
+              "no_incident": 5,
+              "escalated": 2,
+              "retriggered": 3,
+              "days_fired": 3
+            },
+            {
+              "title": "PostgreSQL | Long-Running Transaction (>1hr) - prod-db-primary [PROD]",
+              "total": 5,
+              "noise": 0,
+              "night_time": 2,
+              "after_hours": 4,
+              "no_incident": 5,
+              "escalated": 1,
+              "retriggered": 2,
+              "days_fired": 3
+            },
+            {
+              "title": "Alert: Users with misconfigured notification delay rules detected",
+              "total": 5,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 5,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 5
+            },
+            {
+              "title": "ECS Fargate | Memory Utilization High (>90%) - api-service [PROD]",
+              "total": 5,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 1,
+              "no_incident": 5,
+              "escalated": 0,
+              "retriggered": 1,
+              "days_fired": 3
+            },
+            {
+              "title": "ECS Fargate | Service CPU High (>80%) - worker-broadcast-service [PROD]",
+              "total": 4,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 2,
+              "no_incident": 4,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 4
+            },
+            {
+              "title": "Lambda | Error Rate High - push-notification-dispatcher [PROD]",
+              "total": 4,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 2,
+              "no_incident": 4,
+              "escalated": 0,
+              "retriggered": 1,
+              "days_fired": 1
+            },
+            {
+              "title": "SQS | Message Age High - Queue Processing Delayed - push-notification-queue.fifo [PROD]",
+              "total": 4,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 2,
+              "no_incident": 4,
+              "escalated": 0,
+              "retriggered": 3,
+              "days_fired": 1
+            },
+            {
+              "title": "notification | Failed Push Notification - FCM Client Error [PROD]",
+              "total": 4,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 2,
+              "no_incident": 4,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "Lambda | Error Rate High - sms-notification-dispatcher [PROD]",
+              "total": 4,
+              "noise": 0,
+              "night_time": 1,
+              "after_hours": 4,
+              "no_incident": 4,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 4
+            },
+            {
+              "title": "Alert: On-call schedule has no future shifts configured",
+              "total": 4,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 4,
+              "escalated": 1,
+              "retriggered": 0,
+              "days_fired": 4
+            },
+            {
+              "title": "api-service | /api/v1/alerts - High Error Rate [PROD]",
+              "total": 4,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 3,
+              "no_incident": 4,
+              "escalated": 2,
+              "retriggered": 0,
+              "days_fired": 3
+            },
+            {
+              "title": "sidekiq | High Job Failure Rate - analytics-tracking-jobs [PROD]",
+              "total": 4,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 2,
+              "no_incident": 4,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "notification | SMS Delivery Spike (>200 in 5min) [PROD]",
+              "total": 4,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 1,
+              "no_incident": 4,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 2
+            },
+            {
+              "title": "[SEV1] Rate limit errors on notification service from API monolith",
+              "total": 4,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 0,
+              "escalated": 1,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "[SEV1] On-call paging system partially degraded",
+              "total": 4,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 0,
+              "escalated": 1,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "TemplateRenderError: undefined method on nil object in view layer",
+              "total": 3,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 3,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 2
+            },
+            {
+              "title": "SQS | Dead Letter Queue - Processing Failures - escalation-notification-processor.fifo [PROD]",
+              "total": 3,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 3,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 2
+            },
+            {
+              "title": "TemplateRenderError: undefined method 'name' on nil:NilClass",
+              "total": 3,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 3,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 3
+            },
+            {
+              "title": "JSON::ParseError: Received empty string, expected valid JSON payload",
+              "total": 3,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 3,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 2
+            },
+            {
+              "title": "[safely] RedisClient::OutOfMemoryError: Cache memory limit exceeded [PROD]",
+              "total": 3,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 3,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "SQS | Dead Letter Queue - Processing Failures - raw-alerts-ingestion.fifo [PROD]",
+              "total": 3,
+              "noise": 0,
+              "night_time": 1,
+              "after_hours": 3,
+              "no_incident": 2,
+              "escalated": 0,
+              "retriggered": 3,
+              "days_fired": 2
+            },
+            {
+              "title": "Critical: API Gateway Error Rate High - alert-integrations-resolve endpoint [PROD]",
+              "total": 3,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 3,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 2
+            },
+            {
+              "title": "Alert: Notification delivery error rate >= 1% - communications module [PROD]",
+              "total": 3,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 3,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 3
+            },
+            {
+              "title": "HTTPClient::TimeoutError: Upstream request timeout exceeded",
+              "total": 3,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 3,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 2
+            },
+            {
+              "title": "notification | Data Sync Mismatch for on-call shifts [PROD]",
+              "total": 3,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 2,
+              "no_incident": 3,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 3
+            },
+            {
+              "title": "[SEV3] Users receiving 422 errors on password reset flow",
+              "total": 2,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 0,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "Paged from incident: Alert integration intermittently failing to post to Slack",
+              "total": 2,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 0,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "[SEV3] Database integer column approaching max value - migration required",
+              "total": 2,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 1,
+              "no_incident": 0,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "TemplateRenderError: undefined method 'each' on nil:NilClass",
+              "total": 2,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 2,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 2
+            },
+            {
+              "title": "Paged from incident: Lambda | Errors High - route-matching-reducer [PROD]",
+              "total": 2,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 0,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "[SEV3] Customers unable to access on-call schedule view",
+              "total": 2,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 0,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "Process::Interrupt: Worker process received interrupt signal",
+              "total": 2,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 2,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 2
+            },
+            {
+              "title": "[SEV3] Elevated 500 errors from OAuth provider",
+              "total": 2,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 0,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "ECS Fargate | Memory Utilization High (>90%) - admin-service [PROD]",
+              "total": 2,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 2,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 2
+            },
+            {
+              "title": "[SEV3] SCIM provisioning failing for Observer role assignment",
+              "total": 2,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 0,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "[SEV3] Status page subscription button intermittently unresponsive",
+              "total": 2,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 0,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "[SEV3] Elevated 5xx errors on third-party webhook integration",
+              "total": 2,
+              "noise": 0,
+              "night_time": 1,
+              "after_hours": 1,
+              "no_incident": 0,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "OAuthError: invalid_grant - Token refresh failed for integration",
+              "total": 2,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 2,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "Alert: On-call users missing audible notification policy detected",
+              "total": 2,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 2,
+              "no_incident": 2,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 2
+            },
+            {
+              "title": "[SEV3] Enterprise customers receiving 500 errors on dashboard load",
+              "total": 2,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 0,
+              "escalated": 1,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "Lambda | Error Rate High - inbound-alert-ingestion-handler [PROD]",
+              "total": 2,
+              "noise": 0,
+              "night_time": 2,
+              "after_hours": 2,
+              "no_incident": 2,
+              "escalated": 1,
+              "retriggered": 0,
+              "days_fired": 2
+            },
+            {
+              "title": "TemplateRenderError: Timestamp comparison with nil failed in scheduling view",
+              "total": 2,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 2,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 2
+            },
+            {
+              "title": "sidekiq | Queue Latency Alert (30s SLA) - high-priority-jobs [PROD]",
+              "total": 2,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 1,
+              "no_incident": 2,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 2
+            },
+            {
+              "title": "Database::MigrationError: Column 'team_associations' does not exist in schema",
+              "total": 2,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 2,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 2
+            },
+            {
+              "title": "Critical: API Gateway Error Rate High - alert-integrations-generic endpoint [PROD]",
+              "total": 2,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 2,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "Critical: API Gateway Error Rate High - alert-integrations-index endpoint [PROD]",
+              "total": 2,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 2,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "Slack::ApiError: team_access_not_granted - Workspace integration permission revoked",
+              "total": 2,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 2,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "notification | Data Sync Mismatch for shift-reminders [PROD]",
+              "total": 2,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 2,
+              "no_incident": 2,
+              "escalated": 2,
+              "retriggered": 1,
+              "days_fired": 2
+            },
+            {
+              "title": "notification | Data Sync Mismatch for user records [PROD]",
+              "total": 2,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 2,
+              "no_incident": 2,
+              "escalated": 1,
+              "retriggered": 2,
+              "days_fired": 2
+            },
+            {
+              "title": "notification | Data Sync Mismatch for notification-rules [PROD]",
+              "total": 2,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 2,
+              "no_incident": 2,
+              "escalated": 1,
+              "retriggered": 1,
+              "days_fired": 2
+            },
+            {
+              "title": "[SEV2] Background job queue latency exceeds SLA threshold",
+              "total": 2,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 2,
+              "no_incident": 0,
+              "escalated": 1,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "SQS | Dead Letter Queue - Processing Failures - email-notification-dispatcher.fifo [PROD]",
+              "total": 2,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 2,
+              "no_incident": 2,
+              "escalated": 0,
+              "retriggered": 1,
+              "days_fired": 1
+            },
+            {
+              "title": "[SEV3] Voice call notification failing due to concurrent execution conflict",
+              "total": 2,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 2,
+              "no_incident": 0,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "[SEV2] Phone call escalation flow disconnecting on IVR interaction",
+              "total": 2,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 1,
+              "no_incident": 0,
+              "escalated": 1,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "Lambda | Timeouts Detected - alert-integrations-index-handler [PROD]",
+              "total": 2,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 1,
+              "no_incident": 2,
+              "escalated": 1,
+              "retriggered": 0,
+              "days_fired": 2
+            },
+            {
+              "title": "mobile-api | /mobile/v1/alerts/search - High Latency [PROD]",
+              "total": 2,
+              "noise": 0,
+              "night_time": 1,
+              "after_hours": 1,
+              "no_incident": 2,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 2
+            },
+            {
+              "title": "DynamoDB | System Errors (5xx) High - alerting-events-table [PROD]",
+              "total": 2,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 1,
+              "no_incident": 2,
+              "escalated": 1,
+              "retriggered": 0,
+              "days_fired": 2
+            },
+            {
+              "title": "[SEV3] Multiple customers hitting API rate limits",
+              "total": 2,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 2,
+              "no_incident": 0,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "[SEV3] Authentication failures on monitoring integration webhook",
+              "total": 2,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 2,
+              "no_incident": 0,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "TemplateRenderError: undefined method 'reject' called on String instance",
+              "total": 1,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 1,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "TemplateRenderError: undefined subscript method on nil:NilClass",
+              "total": 1,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 1,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "Alert: Test notification - deferred processing validation",
+              "total": 1,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 1,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "NoMethodError: undefined method 'schedule_unit' on nil:NilClass",
+              "total": 1,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 1,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "URI::InvalidURIError: Malformed URI in Microsoft Teams channel path",
+              "total": 1,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 1,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "Database::ValidationError: Form field condition configuration invalid",
+              "total": 1,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 1,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "Lambda | Error Rate High - voice-call-twiml-handler [PROD]",
+              "total": 1,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 1,
+              "no_incident": 1,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "TemplateRenderError: undefined markdown renderer method on chat component",
+              "total": 1,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 1,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "HTTP::RequestTimeout: Request exceeded 30s timeout threshold",
+              "total": 1,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 1,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "TemplateRenderError: undefined method 'second' called on Hash instance",
+              "total": 1,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 1,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "[IGNORE] Alert snooze mechanism validation test",
+              "total": 1,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 1,
+              "no_incident": 1,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "Database::ValidationError: Template syntax error in email automation rule",
+              "total": 1,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 1,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "NotionClient::ApiError: 401 Unauthorized - Integration token expired or revoked",
+              "total": 1,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 1,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "notification | SMS Delivery Spike (>200 in 5min) [PROD]",
+              "total": 1,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 1,
+              "no_incident": 1,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "mobile-api | /mobile/v1/devices/push-test - High Latency [PROD]",
+              "total": 1,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 1,
+              "no_incident": 1,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "ECS Fargate | Memory Utilization High (>90%) - tooling-service [PROD]",
+              "total": 1,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 1,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "TemplateRenderError: undefined method 'non_editable' on nil:NilClass",
+              "total": 1,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 1,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "5xx Errors on third-party workflow integration",
+              "total": 1,
+              "noise": 0,
+              "night_time": 1,
+              "after_hours": 1,
+              "no_incident": 1,
+              "escalated": 1,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "IntegrationError: 401 Unauthorized from upstream service API",
+              "total": 1,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 1,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "[SEV0] Service unavailable - manual escalation",
+              "total": 1,
+              "noise": 0,
+              "night_time": 1,
+              "after_hours": 1,
+              "no_incident": 1,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "Alert: Test notification",
+              "total": 1,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 1,
+              "no_incident": 1,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "SQS | Dead Letter Queue - Processing Failures - team-sync-events.fifo [PROD]",
+              "total": 1,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 1,
+              "no_incident": 1,
+              "escalated": 1,
+              "retriggered": 1,
+              "days_fired": 1
+            },
+            {
+              "title": "Lambda | Duration p99 High - inbound-alert-ingestion-handler [PROD]",
+              "total": 1,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 1,
+              "no_incident": 1,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "SQS | Message Age High - Queue Processing Delayed - alerting-events-processor.fifo [PROD]",
+              "total": 1,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 1,
+              "no_incident": 1,
+              "escalated": 1,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "Redis | Eviction Rate High - prod-cache-002 [PROD]",
+              "total": 1,
+              "noise": 0,
+              "night_time": 1,
+              "after_hours": 1,
+              "no_incident": 1,
+              "escalated": 1,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "Lambda | Sev0 - Error Rate Very High - team-sync-handler [PROD]",
+              "total": 1,
+              "noise": 0,
+              "night_time": 1,
+              "after_hours": 1,
+              "no_incident": 1,
+              "escalated": 1,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "Lambda | Sev0 - Error Rate Very High - alerting-events-dispatcher [PROD]",
+              "total": 1,
+              "noise": 0,
+              "night_time": 1,
+              "after_hours": 1,
+              "no_incident": 1,
+              "escalated": 1,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "Lambda | Sev0 - Error Rate Very High - inbound-alert-ingestion [PROD]",
+              "total": 1,
+              "noise": 0,
+              "night_time": 1,
+              "after_hours": 1,
+              "no_incident": 1,
+              "escalated": 1,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "Lambda | Error Rate High - team-sync-handler [PROD]",
+              "total": 1,
+              "noise": 0,
+              "night_time": 1,
+              "after_hours": 1,
+              "no_incident": 1,
+              "escalated": 1,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "Lambda | Error Rate High - alerting-events-dispatcher [PROD]",
+              "total": 1,
+              "noise": 0,
+              "night_time": 1,
+              "after_hours": 1,
+              "no_incident": 1,
+              "escalated": 1,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "[Synthetics] HTTP Health Check | api.acmecorp.com/heartbeat | production",
+              "total": 1,
+              "noise": 0,
+              "night_time": 1,
+              "after_hours": 1,
+              "no_incident": 1,
+              "escalated": 1,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "mobile-api | /mobile/v2/alerts - High Error Rate [PROD]",
+              "total": 1,
+              "noise": 0,
+              "night_time": 1,
+              "after_hours": 1,
+              "no_incident": 1,
+              "escalated": 1,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "Redis | Memory Utilization High - prod-cache-002 [PROD]",
+              "total": 1,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 1,
+              "no_incident": 1,
+              "escalated": 1,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "mobile-api | High Error Rate [PROD]",
+              "total": 1,
+              "noise": 0,
+              "night_time": 1,
+              "after_hours": 1,
+              "no_incident": 1,
+              "escalated": 1,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "internal-api | High 500 Error Rate (>10%) [PROD]",
+              "total": 1,
+              "noise": 0,
+              "night_time": 1,
+              "after_hours": 1,
+              "no_incident": 1,
+              "escalated": 1,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "webhook-service | High 500 Error Rate (>2.5%) [PROD]",
+              "total": 1,
+              "noise": 0,
+              "night_time": 1,
+              "after_hours": 1,
+              "no_incident": 1,
+              "escalated": 1,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "notification | Alert Acknowledgement Handler High Error Rate [PROD]",
+              "total": 1,
+              "noise": 0,
+              "night_time": 1,
+              "after_hours": 1,
+              "no_incident": 1,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "Lambda | Sev0 - Error Rate Very High - alerts-index-handler [PROD]",
+              "total": 1,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 1,
+              "escalated": 1,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "Lambda | Error Rate High - alerts-index-handler [PROD]",
+              "total": 1,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 1,
+              "escalated": 1,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "Lambda | Error Rate High - alert-integrations-index-handler [PROD]",
+              "total": 1,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 1,
+              "escalated": 1,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "Lambda | Error Rate High - alert-integrations-generic-handler [PROD]",
+              "total": 1,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 1,
+              "escalated": 1,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "Lambda | Error Rate High - alert-resolve-handler [PROD]",
+              "total": 1,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 1,
+              "escalated": 1,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "Lambda | Error Rate High - alert-integrations-resolve-handler [PROD]",
+              "total": 1,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 0,
+              "no_incident": 1,
+              "escalated": 1,
+              "retriggered": 0,
+              "days_fired": 1
+            },
+            {
+              "title": "Lambda | Timeouts Detected - alert-integrations-resolve-handler [PROD]",
+              "total": 1,
+              "noise": 0,
+              "night_time": 0,
+              "after_hours": 1,
+              "no_incident": 1,
+              "escalated": 1,
+              "retriggered": 1,
+              "days_fired": 1
+            },
+            {
+              "title": "Lambda | Error Rate Very High - sms-dispatcher-handler [PROD]",
+              "total": 1,
+              "noise": 0,
+              "night_time": 1,
+              "after_hours": 1,
+              "no_incident": 1,
+              "escalated": 0,
+              "retriggered": 0,
+              "days_fired": 1
+            }
+          ],
+          "daily_alert_breakdown": {
+            "2026-04-21": {
+              "total": 12,
+              "incidents": 4,
+              "after_hours": 5,
+              "night_time": 0,
+              "escalated": 0,
+              "retrigger": 0
+            },
+            "2026-04-20": {
+              "total": 44,
+              "incidents": 6,
+              "after_hours": 17,
+              "night_time": 4,
+              "escalated": 1,
+              "retrigger": 9
+            },
+            "2026-04-19": {
+              "total": 3,
+              "incidents": 0,
+              "after_hours": 3,
+              "night_time": 1,
+              "escalated": 0,
+              "retrigger": 0
+            },
+            "2026-04-18": {
+              "total": 9,
+              "incidents": 0,
+              "after_hours": 9,
+              "night_time": 3,
+              "escalated": 0,
+              "retrigger": 2
+            },
+            "2026-04-17": {
+              "total": 9,
+              "incidents": 2,
+              "after_hours": 4,
+              "night_time": 1,
+              "escalated": 1,
+              "retrigger": 2
+            },
+            "2026-04-16": {
+              "total": 19,
+              "incidents": 4,
+              "after_hours": 10,
+              "night_time": 2,
+              "escalated": 2,
+              "retrigger": 0
+            },
+            "2026-04-15": {
+              "total": 16,
+              "incidents": 2,
+              "after_hours": 9,
+              "night_time": 6,
+              "escalated": 2,
+              "retrigger": 1
+            },
+            "2026-04-14": {
+              "total": 15,
+              "incidents": 2,
+              "after_hours": 7,
+              "night_time": 3,
+              "escalated": 2,
+              "retrigger": 1
+            },
+            "2026-04-13": {
+              "total": 91,
+              "incidents": 8,
+              "after_hours": 87,
+              "night_time": 84,
+              "escalated": 21,
+              "retrigger": 1
+            },
+            "2026-04-12": {
+              "total": 3,
+              "incidents": 0,
+              "after_hours": 3,
+              "night_time": 1,
+              "escalated": 0,
+              "retrigger": 1
+            },
+            "2026-04-11": {
+              "total": 3,
+              "incidents": 2,
+              "after_hours": 3,
+              "night_time": 0,
+              "escalated": 0,
+              "retrigger": 1
+            },
+            "2026-04-10": {
+              "total": 10,
+              "incidents": 0,
+              "after_hours": 4,
+              "night_time": 1,
+              "escalated": 0,
+              "retrigger": 3
+            },
+            "2026-04-09": {
+              "total": 40,
+              "incidents": 2,
+              "after_hours": 14,
+              "night_time": 3,
+              "escalated": 7,
+              "retrigger": 2
+            },
+            "2026-04-08": {
+              "total": 26,
+              "incidents": 5,
+              "after_hours": 18,
+              "night_time": 5,
+              "escalated": 2,
+              "retrigger": 3
+            },
+            "2026-04-07": {
+              "total": 33,
+              "incidents": 4,
+              "after_hours": 14,
+              "night_time": 8,
+              "escalated": 5,
+              "retrigger": 2
+            },
+            "2026-04-06": {
+              "total": 16,
+              "incidents": 6,
+              "after_hours": 14,
+              "night_time": 4,
+              "escalated": 3,
+              "retrigger": 5
+            },
+            "2026-04-05": {
+              "total": 6,
+              "incidents": 0,
+              "after_hours": 6,
+              "night_time": 0,
+              "escalated": 0,
+              "retrigger": 2
+            },
+            "2026-04-04": {
+              "total": 5,
+              "incidents": 2,
+              "after_hours": 5,
+              "night_time": 1,
+              "escalated": 0,
+              "retrigger": 0
+            },
+            "2026-04-03": {
+              "total": 4,
+              "incidents": 0,
+              "after_hours": 1,
+              "night_time": 1,
+              "escalated": 2,
+              "retrigger": 1
+            },
+            "2026-04-02": {
+              "total": 13,
+              "incidents": 2,
+              "after_hours": 2,
+              "night_time": 0,
+              "escalated": 1,
+              "retrigger": 1
+            },
+            "2026-04-01": {
+              "total": 55,
+              "incidents": 2,
+              "after_hours": 19,
+              "night_time": 2,
+              "escalated": 2,
+              "retrigger": 2
+            },
+            "2026-03-31": {
+              "total": 109,
+              "incidents": 4,
+              "after_hours": 59,
+              "night_time": 22,
+              "escalated": 2,
+              "retrigger": 6
+            },
+            "2026-03-30": {
+              "total": 88,
+              "incidents": 2,
+              "after_hours": 56,
+              "night_time": 16,
+              "escalated": 0,
+              "retrigger": 0
+            },
+            "2026-03-29": {
+              "total": 41,
+              "incidents": 0,
+              "after_hours": 41,
+              "night_time": 24,
+              "escalated": 4,
+              "retrigger": 1
+            },
+            "2026-03-28": {
+              "total": 12,
+              "incidents": 0,
+              "after_hours": 12,
+              "night_time": 4,
+              "escalated": 1,
+              "retrigger": 0
+            },
+            "2026-03-27": {
+              "total": 88,
+              "incidents": 3,
+              "after_hours": 51,
+              "night_time": 16,
+              "escalated": 0,
+              "retrigger": 1
+            },
+            "2026-03-26": {
+              "total": 117,
+              "incidents": 6,
+              "after_hours": 71,
+              "night_time": 22,
+              "escalated": 0,
+              "retrigger": 2
+            },
+            "2026-03-25": {
+              "total": 129,
+              "incidents": 2,
+              "after_hours": 79,
+              "night_time": 15,
+              "escalated": 0,
+              "retrigger": 4
+            },
+            "2026-03-24": {
+              "total": 128,
+              "incidents": 2,
+              "after_hours": 75,
+              "night_time": 22,
+              "escalated": 0,
+              "retrigger": 8
+            },
+            "2026-03-23": {
+              "total": 122,
+              "incidents": 10,
+              "after_hours": 91,
+              "night_time": 27,
+              "escalated": 3,
+              "retrigger": 4
+            },
+            "2026-03-22": {
+              "total": 8,
+              "incidents": 0,
+              "after_hours": 8,
+              "night_time": 7,
+              "escalated": 0,
+              "retrigger": 0
+            }
+          }
+        },
+        "openai_usage": {
+          "2026-03-23": {
+            "input_tokens": 86547,
+            "output_tokens": 3704,
+            "total_tokens": 90251,
+            "requests": 8
+          },
+          "2026-03-24": {
+            "input_tokens": 85527,
+            "output_tokens": 4384,
+            "total_tokens": 89911,
+            "requests": 9
+          },
+          "2026-03-25": {
+            "input_tokens": 112857,
+            "output_tokens": 7412,
+            "total_tokens": 120269,
+            "requests": 8
+          },
+          "2026-03-26": {
+            "input_tokens": 1440,
+            "output_tokens": 735,
+            "total_tokens": 2175,
+            "requests": 4
+          },
+          "2026-03-27": {
+            "input_tokens": 135517,
+            "output_tokens": 4659,
+            "total_tokens": 140176,
+            "requests": 9
+          },
+          "2026-03-28": {
+            "input_tokens": 31087,
+            "output_tokens": 280,
+            "total_tokens": 31367,
+            "requests": 1
+          },
+          "2026-03-29": {
+            "input_tokens": 44904,
+            "output_tokens": 462,
+            "total_tokens": 45366,
+            "requests": 3
+          },
+          "2026-03-30": {
+            "input_tokens": 114787,
+            "output_tokens": 6216,
+            "total_tokens": 121003,
+            "requests": 8
+          },
+          "2026-03-31": {
+            "input_tokens": 42774,
+            "output_tokens": 2454,
+            "total_tokens": 45228,
+            "requests": 3
+          },
+          "2026-04-01": {
+            "input_tokens": 101283,
+            "output_tokens": 2486,
+            "total_tokens": 103769,
+            "requests": 6
+          },
+          "2026-04-02": {
+            "input_tokens": 65559,
+            "output_tokens": 1065,
+            "total_tokens": 66624,
+            "requests": 6
+          },
+          "2026-04-03": {
+            "input_tokens": 74503,
+            "output_tokens": 1939,
+            "total_tokens": 76442,
+            "requests": 7
+          },
+          "2026-04-04": {
+            "input_tokens": 124741,
+            "output_tokens": 1739,
+            "total_tokens": 126480,
+            "requests": 4
+          },
+          "2026-04-05": {
+            "input_tokens": 133337,
+            "output_tokens": 2248,
+            "total_tokens": 135585,
+            "requests": 7
+          },
+          "2026-04-06": {
+            "input_tokens": 1079,
+            "output_tokens": 146,
+            "total_tokens": 1225,
+            "requests": 1
+          },
+          "2026-04-07": {
+            "input_tokens": 91369,
+            "output_tokens": 708,
+            "total_tokens": 92077,
+            "requests": 3
+          },
+          "2026-04-08": {
+            "input_tokens": 204211,
+            "output_tokens": 4811,
+            "total_tokens": 209022,
+            "requests": 7
+          },
+          "2026-04-09": {
+            "input_tokens": 254962,
+            "output_tokens": 7641,
+            "total_tokens": 262603,
+            "requests": 12
+          },
+          "2026-04-10": {
+            "input_tokens": 328876,
+            "output_tokens": 9701,
+            "total_tokens": 338577,
+            "requests": 13
+          },
+          "2026-04-11": {
+            "input_tokens": 249793,
+            "output_tokens": 7976,
+            "total_tokens": 257769,
+            "requests": 10
+          },
+          "2026-04-12": {
+            "input_tokens": 548,
+            "output_tokens": 462,
+            "total_tokens": 1010,
+            "requests": 3
+          },
+          "2026-04-13": {
+            "input_tokens": 279050,
+            "output_tokens": 5454,
+            "total_tokens": 284504,
+            "requests": 11
+          },
+          "2026-04-14": {
+            "input_tokens": 428716,
+            "output_tokens": 7496,
+            "total_tokens": 436212,
+            "requests": 13
+          },
+          "2026-04-15": {
+            "input_tokens": 428054,
+            "output_tokens": 8365,
+            "total_tokens": 436419,
+            "requests": 15
+          },
+          "2026-04-16": {
+            "input_tokens": 342762,
+            "output_tokens": 4775,
+            "total_tokens": 347537,
+            "requests": 8
+          },
+          "2026-04-18": {
+            "input_tokens": 561286,
+            "output_tokens": 7613,
+            "total_tokens": 568899,
+            "requests": 11
+          },
+          "2026-04-19": {
+            "input_tokens": 459531,
+            "output_tokens": 4309,
+            "total_tokens": 463840,
+            "requests": 10
+          },
+          "2026-04-20": {
+            "input_tokens": 587839,
+            "output_tokens": 5088,
+            "total_tokens": 592927,
+            "requests": 16
+          },
+          "2026-04-21": {
+            "input_tokens": 570335,
+            "output_tokens": 5968,
+            "total_tokens": 576303,
+            "requests": 12
+          }
+        },
+        "anthropic_usage": {
+          "2026-03-23": {
+            "input_tokens": 64141,
+            "output_tokens": 30185,
+            "total_tokens": 94326,
+            "requests": 18
+          },
+          "2026-03-24": {
+            "input_tokens": 73919,
+            "output_tokens": 34786,
+            "total_tokens": 108705,
+            "requests": 19
+          },
+          "2026-03-25": {
+            "input_tokens": 72806,
+            "output_tokens": 34263,
+            "total_tokens": 107069,
+            "requests": 23
+          },
+          "2026-03-26": {
+            "input_tokens": 76500,
+            "output_tokens": 36001,
+            "total_tokens": 112501,
+            "requests": 22
+          },
+          "2026-03-27": {
+            "input_tokens": 87349,
+            "output_tokens": 41106,
+            "total_tokens": 128455,
+            "requests": 23
+          },
+          "2026-03-30": {
+            "input_tokens": 68017,
+            "output_tokens": 32009,
+            "total_tokens": 100026,
+            "requests": 19
+          },
+          "2026-03-31": {
+            "input_tokens": 48205,
+            "output_tokens": 22686,
+            "total_tokens": 70891,
+            "requests": 12
+          },
+          "2026-04-01": {
+            "input_tokens": 47720,
+            "output_tokens": 22457,
+            "total_tokens": 70177,
+            "requests": 15
+          },
+          "2026-04-02": {
+            "input_tokens": 31458,
+            "output_tokens": 14805,
+            "total_tokens": 46263,
+            "requests": 12
+          },
+          "2026-04-03": {
+            "input_tokens": 25913,
+            "output_tokens": 12195,
+            "total_tokens": 38108,
+            "requests": 12
+          },
+          "2026-04-06": {
+            "input_tokens": 33695,
+            "output_tokens": 15857,
+            "total_tokens": 49552,
+            "requests": 12
+          },
+          "2026-04-07": {
+            "input_tokens": 43028,
+            "output_tokens": 20249,
+            "total_tokens": 63277,
+            "requests": 12
+          },
+          "2026-04-08": {
+            "input_tokens": 43677,
+            "output_tokens": 20555,
+            "total_tokens": 64232,
+            "requests": 15
+          },
+          "2026-04-09": {
+            "input_tokens": 49435,
+            "output_tokens": 23264,
+            "total_tokens": 72699,
+            "requests": 17
+          },
+          "2026-04-10": {
+            "input_tokens": 70401,
+            "output_tokens": 33131,
+            "total_tokens": 103532,
+            "requests": 21
+          },
+          "2026-04-13": {
+            "input_tokens": 75582,
+            "output_tokens": 35568,
+            "total_tokens": 111150,
+            "requests": 21
+          },
+          "2026-04-14": {
+            "input_tokens": 75316,
+            "output_tokens": 35443,
+            "total_tokens": 110759,
+            "requests": 24
+          },
+          "2026-04-15": {
+            "input_tokens": 73811,
+            "output_tokens": 34735,
+            "total_tokens": 108546,
+            "requests": 21
+          },
+          "2026-04-16": {
+            "input_tokens": 73930,
+            "output_tokens": 34792,
+            "total_tokens": 108722,
+            "requests": 20
+          },
+          "2026-04-17": {
+            "input_tokens": 68326,
+            "output_tokens": 32154,
+            "total_tokens": 100480,
+            "requests": 18
+          },
+          "2026-04-20": {
+            "input_tokens": 42278,
+            "output_tokens": 19896,
+            "total_tokens": 62174,
+            "requests": 13
+          }
+        },
+        "openai_usage_per_user": {
+          "marcus.thompson@example.com": {
+            "2026-03-23": {
+              "input_tokens": 22951,
+              "output_tokens": 141,
+              "total_tokens": 23092,
+              "requests": 2
+            },
+            "2026-03-24": {
+              "input_tokens": 19650,
+              "output_tokens": 134,
+              "total_tokens": 19784,
+              "requests": 1
+            },
+            "2026-03-25": {
+              "input_tokens": 29841,
+              "output_tokens": 338,
+              "total_tokens": 30179,
+              "requests": 1
+            },
+            "2026-03-27": {
+              "input_tokens": 35984,
+              "output_tokens": 222,
+              "total_tokens": 36206,
+              "requests": 1
+            },
+            "2026-03-28": {
+              "input_tokens": 31087,
+              "output_tokens": 280,
+              "total_tokens": 31367,
+              "requests": 1
+            },
+            "2026-03-29": {
+              "input_tokens": 44904,
+              "output_tokens": 462,
+              "total_tokens": 45366,
+              "requests": 3
+            },
+            "2026-03-30": {
+              "input_tokens": 39577,
+              "output_tokens": 377,
+              "total_tokens": 39954,
+              "requests": 1
+            },
+            "2026-04-01": {
+              "input_tokens": 72507,
+              "output_tokens": 504,
+              "total_tokens": 73011,
+              "requests": 3
+            },
+            "2026-04-02": {
+              "input_tokens": 62297,
+              "output_tokens": 431,
+              "total_tokens": 62728,
+              "requests": 2
+            },
+            "2026-04-03": {
+              "input_tokens": 57764,
+              "output_tokens": 478,
+              "total_tokens": 58242,
+              "requests": 2
+            },
+            "2026-04-04": {
+              "input_tokens": 109167,
+              "output_tokens": 1050,
+              "total_tokens": 110217,
+              "requests": 1
+            },
+            "2026-04-05": {
+              "input_tokens": 115240,
+              "output_tokens": 1062,
+              "total_tokens": 116302,
+              "requests": 4
+            },
+            "2026-04-07": {
+              "input_tokens": 91369,
+              "output_tokens": 708,
+              "total_tokens": 92077,
+              "requests": 3
+            },
+            "2026-04-08": {
+              "input_tokens": 150626,
+              "output_tokens": 1540,
+              "total_tokens": 152166,
+              "requests": 1
+            },
+            "2026-04-09": {
+              "input_tokens": 178865,
+              "output_tokens": 1902,
+              "total_tokens": 180767,
+              "requests": 2
+            },
+            "2026-04-10": {
+              "input_tokens": 225228,
+              "output_tokens": 2522,
+              "total_tokens": 227750,
+              "requests": 5
+            },
+            "2026-04-11": {
+              "input_tokens": 174920,
+              "output_tokens": 1716,
+              "total_tokens": 176636,
+              "requests": 4
+            },
+            "2026-04-13": {
+              "input_tokens": 202302,
+              "output_tokens": 1645,
+              "total_tokens": 203947,
+              "requests": 4
+            },
+            "2026-04-14": {
+              "input_tokens": 333871,
+              "output_tokens": 3372,
+              "total_tokens": 337243,
+              "requests": 4
+            },
+            "2026-04-15": {
+              "input_tokens": 355936,
+              "output_tokens": 2501,
+              "total_tokens": 358437,
+              "requests": 5
+            },
+            "2026-04-16": {
+              "input_tokens": 290152,
+              "output_tokens": 2401,
+              "total_tokens": 292553,
+              "requests": 4
+            },
+            "2026-04-18": {
+              "input_tokens": 534105,
+              "output_tokens": 5905,
+              "total_tokens": 540010,
+              "requests": 6
+            },
+            "2026-04-19": {
+              "input_tokens": 439350,
+              "output_tokens": 2720,
+              "total_tokens": 442070,
+              "requests": 7
+            },
+            "2026-04-20": {
+              "input_tokens": 564737,
+              "output_tokens": 3612,
+              "total_tokens": 568349,
+              "requests": 9
+            },
+            "2026-04-21": {
+              "input_tokens": 551061,
+              "output_tokens": 4957,
+              "total_tokens": 556018,
+              "requests": 9
+            }
+          },
+          "david.chen@example.com": {
+            "2026-03-23": {
+              "input_tokens": 60712,
+              "output_tokens": 3453,
+              "total_tokens": 64165,
+              "requests": 4
+            },
+            "2026-03-24": {
+              "input_tokens": 65301,
+              "output_tokens": 4168,
+              "total_tokens": 69469,
+              "requests": 5
+            },
+            "2026-03-25": {
+              "input_tokens": 82426,
+              "output_tokens": 6498,
+              "total_tokens": 88924,
+              "requests": 5
+            },
+            "2026-03-27": {
+              "input_tokens": 99533,
+              "output_tokens": 4437,
+              "total_tokens": 103970,
+              "requests": 8
+            },
+            "2026-03-30": {
+              "input_tokens": 74033,
+              "output_tokens": 5237,
+              "total_tokens": 79270,
+              "requests": 5
+            },
+            "2026-03-31": {
+              "input_tokens": 42774,
+              "output_tokens": 2454,
+              "total_tokens": 45228,
+              "requests": 3
+            },
+            "2026-04-01": {
+              "input_tokens": 28776,
+              "output_tokens": 1982,
+              "total_tokens": 30758,
+              "requests": 3
+            },
+            "2026-04-03": {
+              "input_tokens": 15444,
+              "output_tokens": 927,
+              "total_tokens": 16371,
+              "requests": 1
+            },
+            "2026-04-04": {
+              "input_tokens": 15574,
+              "output_tokens": 689,
+              "total_tokens": 16263,
+              "requests": 3
+            },
+            "2026-04-05": {
+              "input_tokens": 18097,
+              "output_tokens": 1186,
+              "total_tokens": 19283,
+              "requests": 3
+            },
+            "2026-04-08": {
+              "input_tokens": 50586,
+              "output_tokens": 2780,
+              "total_tokens": 53366,
+              "requests": 3
+            },
+            "2026-04-09": {
+              "input_tokens": 74063,
+              "output_tokens": 5269,
+              "total_tokens": 79332,
+              "requests": 6
+            },
+            "2026-04-10": {
+              "input_tokens": 99810,
+              "output_tokens": 6383,
+              "total_tokens": 106193,
+              "requests": 7
+            },
+            "2026-04-11": {
+              "input_tokens": 71815,
+              "output_tokens": 5541,
+              "total_tokens": 77356,
+              "requests": 5
+            },
+            "2026-04-13": {
+              "input_tokens": 76748,
+              "output_tokens": 3809,
+              "total_tokens": 80557,
+              "requests": 7
+            },
+            "2026-04-14": {
+              "input_tokens": 91266,
+              "output_tokens": 3963,
+              "total_tokens": 95229,
+              "requests": 7
+            },
+            "2026-04-15": {
+              "input_tokens": 71034,
+              "output_tokens": 5620,
+              "total_tokens": 76654,
+              "requests": 6
+            },
+            "2026-04-16": {
+              "input_tokens": 52610,
+              "output_tokens": 2374,
+              "total_tokens": 54984,
+              "requests": 4
+            },
+            "2026-04-18": {
+              "input_tokens": 26307,
+              "output_tokens": 1226,
+              "total_tokens": 27533,
+              "requests": 3
+            },
+            "2026-04-19": {
+              "input_tokens": 18741,
+              "output_tokens": 1066,
+              "total_tokens": 19807,
+              "requests": 1
+            },
+            "2026-04-20": {
+              "input_tokens": 19221,
+              "output_tokens": 1349,
+              "total_tokens": 20570,
+              "requests": 3
+            },
+            "2026-04-21": {
+              "input_tokens": 19274,
+              "output_tokens": 1011,
+              "total_tokens": 20285,
+              "requests": 3
+            }
+          },
+          "sophia.nguyen@example.com": {
+            "2026-03-23": {
+              "input_tokens": 2884,
+              "output_tokens": 110,
+              "total_tokens": 2994,
+              "requests": 2
+            },
+            "2026-03-24": {
+              "input_tokens": 576,
+              "output_tokens": 82,
+              "total_tokens": 658,
+              "requests": 3
+            },
+            "2026-03-25": {
+              "input_tokens": 590,
+              "output_tokens": 576,
+              "total_tokens": 1166,
+              "requests": 2
+            },
+            "2026-03-26": {
+              "input_tokens": 1440,
+              "output_tokens": 735,
+              "total_tokens": 2175,
+              "requests": 4
+            },
+            "2026-03-30": {
+              "input_tokens": 1177,
+              "output_tokens": 602,
+              "total_tokens": 1779,
+              "requests": 2
+            },
+            "2026-04-02": {
+              "input_tokens": 3262,
+              "output_tokens": 634,
+              "total_tokens": 3896,
+              "requests": 4
+            },
+            "2026-04-03": {
+              "input_tokens": 1295,
+              "output_tokens": 534,
+              "total_tokens": 1829,
+              "requests": 4
+            },
+            "2026-04-06": {
+              "input_tokens": 1079,
+              "output_tokens": 146,
+              "total_tokens": 1225,
+              "requests": 1
+            },
+            "2026-04-08": {
+              "input_tokens": 2999,
+              "output_tokens": 491,
+              "total_tokens": 3490,
+              "requests": 3
+            },
+            "2026-04-09": {
+              "input_tokens": 2034,
+              "output_tokens": 470,
+              "total_tokens": 2504,
+              "requests": 4
+            },
+            "2026-04-10": {
+              "input_tokens": 3838,
+              "output_tokens": 796,
+              "total_tokens": 4634,
+              "requests": 1
+            },
+            "2026-04-11": {
+              "input_tokens": 3058,
+              "output_tokens": 719,
+              "total_tokens": 3777,
+              "requests": 1
+            },
+            "2026-04-12": {
+              "input_tokens": 548,
+              "output_tokens": 462,
+              "total_tokens": 1010,
+              "requests": 3
+            },
+            "2026-04-14": {
+              "input_tokens": 3579,
+              "output_tokens": 161,
+              "total_tokens": 3740,
+              "requests": 2
+            },
+            "2026-04-15": {
+              "input_tokens": 1084,
+              "output_tokens": 244,
+              "total_tokens": 1328,
+              "requests": 4
+            },
+            "2026-04-18": {
+              "input_tokens": 874,
+              "output_tokens": 482,
+              "total_tokens": 1356,
+              "requests": 2
+            },
+            "2026-04-19": {
+              "input_tokens": 1440,
+              "output_tokens": 523,
+              "total_tokens": 1963,
+              "requests": 2
+            },
+            "2026-04-20": {
+              "input_tokens": 3881,
+              "output_tokens": 127,
+              "total_tokens": 4008,
+              "requests": 4
+            }
+          }
+        }
       },
       "data_sources": {
         "incident_data": true,
@@ -103,14 +2435,14 @@
             "och_reasoning": [
               "Critical burnout risk (OCH: 89/100) - immediate attention needed",
               "PERSONAL:",
-              "\u00e2\u20ac\u00a2 Non-business hours incident activity (60.4 points)",
-              "\u00e2\u20ac\u00a2 High-severity incident stress (52.5 points)",
-              "\u00e2\u20ac\u00a2 High task workload (13.8 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 Non-business hours incident activity (60.4 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 High-severity incident stress (52.5 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 High task workload (13.8 points)",
               "WORK-RELATED:",
-              "\u00e2\u20ac\u00a2 On-call responsibility load: 27 total incidents (35.0 points)",
-              "\u00e2\u20ac\u00a2 Incident severity-weighted workload (8.0 points)",
-              "\u00e2\u20ac\u00a2 Incident response meeting load (7.5 points)",
-              "\u00e2\u20ac\u00a2 Critical production incident frequency: 19 sev2, 5 sev3, 2 unknown, 1 sev1 (1.2 points total for 27 incidents)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 On-call responsibility load: 27 total incidents (35.0 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 Incident severity-weighted workload (8.0 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 Incident response meeting load (7.5 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 Critical production incident frequency: 19 sev2, 5 sev3, 2 unknown, 1 sev1 (1.2 points total for 27 incidents)",
               "Personal stress significantly higher than work stress - focus on recovery and boundaries"
             ],
             "och_factors": {
@@ -534,7 +2866,192 @@
                 "overdue_count": 2,
                 "due_in_7_days": 8
               }
-            }
+            },
+            "openai_user_id": "mock-openai-uid-marcus-001",
+            "alerts_count": 61,
+            "alerts_related_counts": {
+              "groups": 3,
+              "events": 1120
+            },
+            "alerts_noise_counts": {
+              "noise": 4,
+              "not_noise": 57,
+              "unknown": 0
+            },
+            "alerts_after_hours_count": 48,
+            "alerts_night_time_count": 14,
+            "alerts_urgency_counts": {
+              "high": 53,
+              "medium": 8
+            },
+            "alerts_notified_count": 61,
+            "alerts_responded_count": 58,
+            "alerts_with_incidents_count": 9,
+            "alerts_source_counts": {
+              "datadog": 44,
+              "workflow": 9,
+              "slack": 3,
+              "email": 5
+            },
+            "alerts_derived_source_counts": {
+              "datadog": 44,
+              "workflow": 9,
+              "slack": 3,
+              "email": 5
+            },
+            "alerts_acked_count": 41,
+            "alerts_resolved_count": 12,
+            "alerts_escalated_count": 27,
+            "alerts_retriggered_count": 6,
+            "alerts_avg_mtta_seconds": 118.4,
+            "alerts_avg_mttr_seconds": 14220.5,
+            "alerts_daily_breakdown": {
+              "2026-04-17": {
+                "total": 5,
+                "incidents": 2,
+                "after_hours": 3,
+                "night_time": 1,
+                "escalated": 2,
+                "retrigger": 1
+              },
+              "2026-04-16": {
+                "total": 8,
+                "incidents": 3,
+                "after_hours": 6,
+                "night_time": 2,
+                "escalated": 4,
+                "retrigger": 1
+              },
+              "2026-04-15": {
+                "total": 4,
+                "incidents": 1,
+                "after_hours": 4,
+                "night_time": 1,
+                "escalated": 2,
+                "retrigger": 0
+              },
+              "2026-04-14": {
+                "total": 11,
+                "incidents": 2,
+                "after_hours": 9,
+                "night_time": 3,
+                "escalated": 5,
+                "retrigger": 2
+              },
+              "2026-04-13": {
+                "total": 6,
+                "incidents": 1,
+                "after_hours": 6,
+                "night_time": 2,
+                "escalated": 3,
+                "retrigger": 1
+              },
+              "2026-04-10": {
+                "total": 9,
+                "incidents": 0,
+                "after_hours": 8,
+                "night_time": 3,
+                "escalated": 4,
+                "retrigger": 1
+              },
+              "2026-04-07": {
+                "total": 7,
+                "incidents": 0,
+                "after_hours": 7,
+                "night_time": 2,
+                "escalated": 4,
+                "retrigger": 0
+              },
+              "2026-04-03": {
+                "total": 11,
+                "incidents": 0,
+                "after_hours": 5,
+                "night_time": 0,
+                "escalated": 3,
+                "retrigger": 0
+              }
+            },
+            "alerts_health_score": 12.8,
+            "alerts_health_interpretation": "low",
+            "alerts_top_alerts": [
+              {
+                "title": "[SEV1] API Gateway Error Rate Critical",
+                "total": 14,
+                "noise": 0,
+                "night_time": 4,
+                "after_hours": 10,
+                "no_incident": 5,
+                "escalated": 8,
+                "retriggered": 3,
+                "days_fired": 7
+              },
+              {
+                "title": "[SEV1] Payment Service Latency Spike",
+                "total": 11,
+                "noise": 0,
+                "night_time": 3,
+                "after_hours": 9,
+                "no_incident": 2,
+                "escalated": 6,
+                "retriggered": 2,
+                "days_fired": 5
+              },
+              {
+                "title": "[SEV2] Database Connection Pool Exhausted",
+                "total": 9,
+                "noise": 1,
+                "night_time": 2,
+                "after_hours": 7,
+                "no_incident": 6,
+                "escalated": 5,
+                "retriggered": 1,
+                "days_fired": 6
+              },
+              {
+                "title": "[SEV1] Notification Service Queue Backlog",
+                "total": 8,
+                "noise": 0,
+                "night_time": 1,
+                "after_hours": 7,
+                "no_incident": 1,
+                "escalated": 4,
+                "retriggered": 0,
+                "days_fired": 4
+              },
+              {
+                "title": "[SEV2] Worker Process Crash Loop",
+                "total": 7,
+                "noise": 2,
+                "night_time": 2,
+                "after_hours": 5,
+                "no_incident": 4,
+                "escalated": 2,
+                "retriggered": 0,
+                "days_fired": 5
+              },
+              {
+                "title": "[SEV3] Cache Miss Rate Elevated",
+                "total": 6,
+                "noise": 1,
+                "night_time": 2,
+                "after_hours": 5,
+                "no_incident": 5,
+                "escalated": 1,
+                "retriggered": 0,
+                "days_fired": 4
+              },
+              {
+                "title": "[SEV2] Auth Service Token Validation Failures",
+                "total": 6,
+                "noise": 0,
+                "night_time": 2,
+                "after_hours": 5,
+                "no_incident": 3,
+                "escalated": 1,
+                "retriggered": 0,
+                "days_fired": 3
+              }
+            ]
           },
           {
             "user_id": "199176",
@@ -570,13 +3087,13 @@
             "och_reasoning": [
               "High burnout risk (OCH: 67/100) - monitor closely",
               "PERSONAL:",
-              "\u00e2\u20ac\u00a2 High-severity incident stress (52.5 points)",
-              "\u00e2\u20ac\u00a2 Non-business hours incident activity (16.6 points)",
-              "\u00e2\u20ac\u00a2 High task workload (13.9 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 High-severity incident stress (52.5 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 Non-business hours incident activity (16.6 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 High task workload (13.9 points)",
               "WORK-RELATED:",
-              "\u00e2\u20ac\u00a2 On-call responsibility load: 28 total incidents (35.0 points)",
-              "\u00e2\u20ac\u00a2 Incident severity-weighted workload (8.0 points)",
-              "\u00e2\u20ac\u00a2 Incident response meeting load (7.5 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 On-call responsibility load: 28 total incidents (35.0 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 Incident severity-weighted workload (8.0 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 Incident response meeting load (7.5 points)",
               "Personal stress significantly higher than work stress - focus on recovery and boundaries"
             ],
             "och_factors": {
@@ -915,7 +3432,191 @@
                 "overdue_count": 1,
                 "due_in_7_days": 4
               }
-            }
+            },
+            "alerts_count": 55,
+            "alerts_related_counts": {
+              "groups": 3,
+              "events": 980
+            },
+            "alerts_noise_counts": {
+              "noise": 3,
+              "not_noise": 52,
+              "unknown": 0
+            },
+            "alerts_after_hours_count": 43,
+            "alerts_night_time_count": 12,
+            "alerts_urgency_counts": {
+              "high": 48,
+              "medium": 7
+            },
+            "alerts_notified_count": 55,
+            "alerts_responded_count": 52,
+            "alerts_with_incidents_count": 8,
+            "alerts_source_counts": {
+              "datadog": 39,
+              "workflow": 8,
+              "slack": 3,
+              "email": 5
+            },
+            "alerts_derived_source_counts": {
+              "datadog": 39,
+              "workflow": 8,
+              "slack": 3,
+              "email": 5
+            },
+            "alerts_acked_count": 37,
+            "alerts_resolved_count": 10,
+            "alerts_escalated_count": 24,
+            "alerts_retriggered_count": 5,
+            "alerts_avg_mtta_seconds": 132.7,
+            "alerts_avg_mttr_seconds": 15330.0,
+            "alerts_daily_breakdown": {
+              "2026-04-17": {
+                "total": 5,
+                "incidents": 2,
+                "after_hours": 4,
+                "night_time": 1,
+                "escalated": 3,
+                "retrigger": 1
+              },
+              "2026-04-16": {
+                "total": 7,
+                "incidents": 2,
+                "after_hours": 6,
+                "night_time": 2,
+                "escalated": 4,
+                "retrigger": 1
+              },
+              "2026-04-15": {
+                "total": 4,
+                "incidents": 1,
+                "after_hours": 3,
+                "night_time": 1,
+                "escalated": 2,
+                "retrigger": 0
+              },
+              "2026-04-14": {
+                "total": 9,
+                "incidents": 2,
+                "after_hours": 8,
+                "night_time": 3,
+                "escalated": 5,
+                "retrigger": 2
+              },
+              "2026-04-13": {
+                "total": 6,
+                "incidents": 1,
+                "after_hours": 6,
+                "night_time": 2,
+                "escalated": 3,
+                "retrigger": 0
+              },
+              "2026-04-10": {
+                "total": 8,
+                "incidents": 0,
+                "after_hours": 7,
+                "night_time": 2,
+                "escalated": 4,
+                "retrigger": 1
+              },
+              "2026-04-07": {
+                "total": 7,
+                "incidents": 0,
+                "after_hours": 5,
+                "night_time": 1,
+                "escalated": 3,
+                "retrigger": 0
+              },
+              "2026-04-03": {
+                "total": 9,
+                "incidents": 0,
+                "after_hours": 4,
+                "night_time": 0,
+                "escalated": 0,
+                "retrigger": 0
+              }
+            },
+            "alerts_health_score": 16.4,
+            "alerts_health_interpretation": "low",
+            "alerts_top_alerts": [
+              {
+                "title": "[SEV1] Core Service HTTP 5xx Spike",
+                "total": 13,
+                "noise": 0,
+                "night_time": 4,
+                "after_hours": 10,
+                "no_incident": 5,
+                "escalated": 7,
+                "retriggered": 2,
+                "days_fired": 7
+              },
+              {
+                "title": "[SEV1] On-Call Escalation Triggered - No Response",
+                "total": 10,
+                "noise": 0,
+                "night_time": 3,
+                "after_hours": 9,
+                "no_incident": 2,
+                "escalated": 7,
+                "retriggered": 3,
+                "days_fired": 6
+              },
+              {
+                "title": "[SEV2] Infrastructure Provisioning Failure",
+                "total": 8,
+                "noise": 1,
+                "night_time": 2,
+                "after_hours": 7,
+                "no_incident": 4,
+                "escalated": 4,
+                "retriggered": 0,
+                "days_fired": 5
+              },
+              {
+                "title": "[SEV2] Downstream Dependency Response Time Critical",
+                "total": 7,
+                "noise": 0,
+                "night_time": 1,
+                "after_hours": 6,
+                "no_incident": 3,
+                "escalated": 3,
+                "retriggered": 0,
+                "days_fired": 4
+              },
+              {
+                "title": "[SEV2] Certificate Renewal Failed - Expiry Imminent",
+                "total": 6,
+                "noise": 0,
+                "night_time": 1,
+                "after_hours": 5,
+                "no_incident": 2,
+                "escalated": 2,
+                "retriggered": 0,
+                "days_fired": 4
+              },
+              {
+                "title": "[SEV3] Kubernetes Pod Restart Rate Elevated",
+                "total": 5,
+                "noise": 1,
+                "night_time": 1,
+                "after_hours": 3,
+                "no_incident": 4,
+                "escalated": 1,
+                "retriggered": 0,
+                "days_fired": 3
+              },
+              {
+                "title": "[SEV3] Load Balancer Health Check Failures",
+                "total": 6,
+                "noise": 1,
+                "night_time": 0,
+                "after_hours": 3,
+                "no_incident": 5,
+                "escalated": 0,
+                "retriggered": 0,
+                "days_fired": 3
+              }
+            ]
           },
           {
             "user_id": "87587",
@@ -951,12 +3652,12 @@
             "och_reasoning": [
               "High burnout risk (OCH: 54/100) - monitor closely",
               "PERSONAL:",
-              "\u00e2\u20ac\u00a2 High-severity incident stress (52.5 points)",
-              "\u00e2\u20ac\u00a2 High task workload (9.9 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 High-severity incident stress (52.5 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 High task workload (9.9 points)",
               "WORK-RELATED:",
-              "\u00e2\u20ac\u00a2 On-call responsibility load: 11 total incidents (35.0 points)",
-              "\u00e2\u20ac\u00a2 Incident severity-weighted workload (5.7 points)",
-              "\u00e2\u20ac\u00a2 Incident response meeting load (5.4 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 On-call responsibility load: 11 total incidents (35.0 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 Incident severity-weighted workload (5.7 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 Incident response meeting load (5.4 points)",
               "Personal stress significantly higher than work stress - focus on recovery and boundaries"
             ],
             "och_factors": {
@@ -1286,13 +3987,13 @@
             "och_reasoning": [
               "Critical burnout risk (OCH: 86/100) - immediate attention needed",
               "PERSONAL:",
-              "\u00e2\u20ac\u00a2 Non-business hours incident activity (75.0 points)",
-              "\u00e2\u20ac\u00a2 High-severity incident stress (52.5 points)",
-              "\u00e2\u20ac\u00a2 High task workload (6.0 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 Non-business hours incident activity (75.0 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 High-severity incident stress (52.5 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 High task workload (6.0 points)",
               "WORK-RELATED:",
-              "\u00e2\u20ac\u00a2 On-call responsibility load: 5 total incidents (32.1 points)",
-              "\u00e2\u20ac\u00a2 Incident severity-weighted workload (3.2 points)",
-              "\u00e2\u20ac\u00a2 Incident response meeting load (3.0 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 On-call responsibility load: 5 total incidents (32.1 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 Incident severity-weighted workload (3.2 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 Incident response meeting load (3.0 points)",
               "Personal stress significantly higher than work stress - focus on recovery and boundaries"
             ],
             "och_factors": {
@@ -1650,7 +4351,165 @@
                 "high_workload": false,
                 "urgent_ratio_high": true
               }
-            }
+            },
+            "openai_user_id": "mock-openai-uid-david-002",
+            "alerts_count": 34,
+            "alerts_related_counts": {
+              "groups": 2,
+              "events": 590
+            },
+            "alerts_noise_counts": {
+              "noise": 3,
+              "not_noise": 31,
+              "unknown": 0
+            },
+            "alerts_after_hours_count": 20,
+            "alerts_night_time_count": 5,
+            "alerts_urgency_counts": {
+              "high": 27,
+              "medium": 7
+            },
+            "alerts_notified_count": 34,
+            "alerts_responded_count": 33,
+            "alerts_with_incidents_count": 5,
+            "alerts_source_counts": {
+              "datadog": 24,
+              "workflow": 5,
+              "slack": 2,
+              "email": 3
+            },
+            "alerts_derived_source_counts": {
+              "datadog": 24,
+              "workflow": 5,
+              "slack": 2,
+              "email": 3
+            },
+            "alerts_acked_count": 22,
+            "alerts_resolved_count": 8,
+            "alerts_escalated_count": 14,
+            "alerts_retriggered_count": 3,
+            "alerts_avg_mtta_seconds": 203.6,
+            "alerts_avg_mttr_seconds": 18940.0,
+            "alerts_daily_breakdown": {
+              "2026-04-17": {
+                "total": 3,
+                "incidents": 1,
+                "after_hours": 2,
+                "night_time": 0,
+                "escalated": 1,
+                "retrigger": 0
+              },
+              "2026-04-15": {
+                "total": 4,
+                "incidents": 1,
+                "after_hours": 3,
+                "night_time": 1,
+                "escalated": 2,
+                "retrigger": 1
+              },
+              "2026-04-13": {
+                "total": 7,
+                "incidents": 2,
+                "after_hours": 5,
+                "night_time": 2,
+                "escalated": 4,
+                "retrigger": 1
+              },
+              "2026-04-10": {
+                "total": 5,
+                "incidents": 1,
+                "after_hours": 3,
+                "night_time": 1,
+                "escalated": 3,
+                "retrigger": 1
+              },
+              "2026-04-07": {
+                "total": 6,
+                "incidents": 0,
+                "after_hours": 4,
+                "night_time": 1,
+                "escalated": 2,
+                "retrigger": 0
+              },
+              "2026-04-03": {
+                "total": 9,
+                "incidents": 0,
+                "after_hours": 3,
+                "night_time": 0,
+                "escalated": 2,
+                "retrigger": 0
+              }
+            },
+            "alerts_health_score": 32.5,
+            "alerts_health_interpretation": "moderate",
+            "alerts_top_alerts": [
+              {
+                "title": "[SEV2] ML Pipeline Job Timeout",
+                "total": 9,
+                "noise": 1,
+                "night_time": 2,
+                "after_hours": 6,
+                "no_incident": 4,
+                "escalated": 4,
+                "retriggered": 1,
+                "days_fired": 5
+              },
+              {
+                "title": "[SEV1] Data Ingestion Service Unavailable",
+                "total": 7,
+                "noise": 0,
+                "night_time": 1,
+                "after_hours": 5,
+                "no_incident": 2,
+                "escalated": 4,
+                "retriggered": 1,
+                "days_fired": 4
+              },
+              {
+                "title": "[SEV2] Feature Flag Service Health Check Failed",
+                "total": 6,
+                "noise": 1,
+                "night_time": 1,
+                "after_hours": 4,
+                "no_incident": 4,
+                "escalated": 3,
+                "retriggered": 1,
+                "days_fired": 3
+              },
+              {
+                "title": "[SEV2] Search Index Replication Lag Critical",
+                "total": 5,
+                "noise": 0,
+                "night_time": 1,
+                "after_hours": 2,
+                "no_incident": 3,
+                "escalated": 2,
+                "retriggered": 0,
+                "days_fired": 4
+              },
+              {
+                "title": "[SEV3] Background Job Queue Depth High",
+                "total": 4,
+                "noise": 1,
+                "night_time": 0,
+                "after_hours": 2,
+                "no_incident": 4,
+                "escalated": 1,
+                "retriggered": 0,
+                "days_fired": 3
+              },
+              {
+                "title": "[SEV3] Memory Utilization Threshold Exceeded",
+                "total": 3,
+                "noise": 0,
+                "night_time": 0,
+                "after_hours": 1,
+                "no_incident": 3,
+                "escalated": 0,
+                "retriggered": 0,
+                "days_fired": 2
+              }
+            ]
           },
           {
             "user_id": "117101",
@@ -1686,14 +4545,14 @@
             "och_reasoning": [
               "Critical burnout risk (OCH: 83/100) - immediate attention needed",
               "PERSONAL:",
-              "\u00e2\u20ac\u00a2 Non-business hours incident activity (75.0 points)",
-              "\u00e2\u20ac\u00a2 High-severity incident stress (52.5 points)",
-              "\u00e2\u20ac\u00a2 High task workload (3.9 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 Non-business hours incident activity (75.0 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 High-severity incident stress (52.5 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 High task workload (3.9 points)",
               "WORK-RELATED:",
-              "\u00e2\u20ac\u00a2 On-call responsibility load: 3 total incidents (29.7 points)",
-              "\u00e2\u20ac\u00a2 Incident severity-weighted workload (2.1 points)",
-              "\u00e2\u20ac\u00a2 Incident response meeting load (1.9 points)",
-              "\u00e2\u20ac\u00a2 Critical production incident frequency: 1 sev1, 2 sev4 (1.2 points total for 3 incidents)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 On-call responsibility load: 3 total incidents (29.7 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 Incident severity-weighted workload (2.1 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 Incident response meeting load (1.9 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 Critical production incident frequency: 1 sev1, 2 sev4 (1.2 points total for 3 incidents)",
               "Personal stress significantly higher than work stress - focus on recovery and boundaries"
             ],
             "och_factors": {
@@ -1948,7 +4807,172 @@
                 "high_workload": false,
                 "urgent_ratio_high": false
               }
-            }
+            },
+            "alerts_count": 42,
+            "alerts_related_counts": {
+              "groups": 2,
+              "events": 710
+            },
+            "alerts_noise_counts": {
+              "noise": 5,
+              "not_noise": 37,
+              "unknown": 0
+            },
+            "alerts_after_hours_count": 31,
+            "alerts_night_time_count": 10,
+            "alerts_urgency_counts": {
+              "high": 35,
+              "medium": 7
+            },
+            "alerts_notified_count": 42,
+            "alerts_responded_count": 40,
+            "alerts_with_incidents_count": 7,
+            "alerts_source_counts": {
+              "datadog": 30,
+              "workflow": 7,
+              "slack": 2,
+              "email": 3
+            },
+            "alerts_derived_source_counts": {
+              "datadog": 30,
+              "workflow": 7,
+              "slack": 2,
+              "email": 3
+            },
+            "alerts_acked_count": 28,
+            "alerts_resolved_count": 9,
+            "alerts_escalated_count": 18,
+            "alerts_retriggered_count": 5,
+            "alerts_avg_mtta_seconds": 165.2,
+            "alerts_avg_mttr_seconds": 16550.0,
+            "alerts_daily_breakdown": {
+              "2026-04-17": {
+                "total": 4,
+                "incidents": 2,
+                "after_hours": 3,
+                "night_time": 1,
+                "escalated": 2,
+                "retrigger": 1
+              },
+              "2026-04-15": {
+                "total": 6,
+                "incidents": 2,
+                "after_hours": 5,
+                "night_time": 2,
+                "escalated": 3,
+                "retrigger": 2
+              },
+              "2026-04-14": {
+                "total": 3,
+                "incidents": 1,
+                "after_hours": 2,
+                "night_time": 0,
+                "escalated": 1,
+                "retrigger": 0
+              },
+              "2026-04-13": {
+                "total": 8,
+                "incidents": 1,
+                "after_hours": 7,
+                "night_time": 3,
+                "escalated": 4,
+                "retrigger": 1
+              },
+              "2026-04-10": {
+                "total": 5,
+                "incidents": 1,
+                "after_hours": 5,
+                "night_time": 2,
+                "escalated": 3,
+                "retrigger": 1
+              },
+              "2026-04-07": {
+                "total": 6,
+                "incidents": 0,
+                "after_hours": 5,
+                "night_time": 2,
+                "escalated": 3,
+                "retrigger": 0
+              },
+              "2026-04-03": {
+                "total": 10,
+                "incidents": 0,
+                "after_hours": 4,
+                "night_time": 0,
+                "escalated": 2,
+                "retrigger": 0
+              }
+            },
+            "alerts_health_score": 22.1,
+            "alerts_health_interpretation": "low",
+            "alerts_top_alerts": [
+              {
+                "title": "[SEV1] Mobile Push Notification Delivery Failure",
+                "total": 11,
+                "noise": 1,
+                "night_time": 3,
+                "after_hours": 8,
+                "no_incident": 4,
+                "escalated": 6,
+                "retriggered": 2,
+                "days_fired": 6
+              },
+              {
+                "title": "[SEV2] CDN Cache Invalidation Errors",
+                "total": 8,
+                "noise": 2,
+                "night_time": 2,
+                "after_hours": 6,
+                "no_incident": 5,
+                "escalated": 4,
+                "retriggered": 1,
+                "days_fired": 5
+              },
+              {
+                "title": "[SEV1] User Session Store Capacity Critical",
+                "total": 7,
+                "noise": 0,
+                "night_time": 2,
+                "after_hours": 6,
+                "no_incident": 2,
+                "escalated": 4,
+                "retriggered": 1,
+                "days_fired": 4
+              },
+              {
+                "title": "[SEV2] Email Delivery Rate Below Threshold",
+                "total": 6,
+                "noise": 1,
+                "night_time": 1,
+                "after_hours": 5,
+                "no_incident": 4,
+                "escalated": 2,
+                "retriggered": 1,
+                "days_fired": 4
+              },
+              {
+                "title": "[SEV2] Webhook Retry Queue Overflow",
+                "total": 5,
+                "noise": 0,
+                "night_time": 1,
+                "after_hours": 4,
+                "no_incident": 3,
+                "escalated": 1,
+                "retriggered": 0,
+                "days_fired": 3
+              },
+              {
+                "title": "[SEV3] Disk I/O Latency Threshold Exceeded",
+                "total": 5,
+                "noise": 1,
+                "night_time": 1,
+                "after_hours": 2,
+                "no_incident": 5,
+                "escalated": 1,
+                "retriggered": 0,
+                "days_fired": 3
+              }
+            ]
           },
           {
             "user_id": "29683",
@@ -1984,13 +5008,13 @@
             "och_reasoning": [
               "High burnout risk (OCH: 52/100) - monitor closely",
               "PERSONAL:",
-              "\u00e2\u20ac\u00a2 High-severity incident stress (52.5 points)",
-              "\u00e2\u20ac\u00a2 High task workload (7.0 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 High-severity incident stress (52.5 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 High task workload (7.0 points)",
               "WORK-RELATED:",
-              "\u00e2\u20ac\u00a2 On-call responsibility load: 6 total incidents (35.0 points)",
-              "\u00e2\u20ac\u00a2 Incident severity-weighted workload (3.8 points)",
-              "\u00e2\u20ac\u00a2 Incident response meeting load (3.5 points)",
-              "\u00e2\u20ac\u00a2 Critical production incident frequency: 2 sev0, 4 unknown (2.4 points total for 6 incidents)"
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 On-call responsibility load: 6 total incidents (35.0 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 Incident severity-weighted workload (3.8 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 Incident response meeting load (3.5 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 Critical production incident frequency: 2 sev0, 4 unknown (2.4 points total for 6 incidents)"
             ],
             "och_factors": {
               "personal": [
@@ -2221,13 +5245,13 @@
             "och_reasoning": [
               "High burnout risk (OCH: 52/100) - monitor closely",
               "PERSONAL:",
-              "\u00e2\u20ac\u00a2 High-severity incident stress (52.5 points)",
-              "\u00e2\u20ac\u00a2 High task workload (7.0 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 High-severity incident stress (52.5 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 High task workload (7.0 points)",
               "WORK-RELATED:",
-              "\u00e2\u20ac\u00a2 On-call responsibility load: 6 total incidents (35.0 points)",
-              "\u00e2\u20ac\u00a2 Incident severity-weighted workload (3.8 points)",
-              "\u00e2\u20ac\u00a2 Incident response meeting load (3.5 points)",
-              "\u00e2\u20ac\u00a2 Critical production incident frequency: 5 unknown, 1 sev0 (1.2 points total for 6 incidents)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 On-call responsibility load: 6 total incidents (35.0 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 Incident severity-weighted workload (3.8 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 Incident response meeting load (3.5 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 Critical production incident frequency: 5 unknown, 1 sev0 (1.2 points total for 6 incidents)",
               "Personal stress significantly higher than work stress - focus on recovery and boundaries"
             ],
             "och_factors": {
@@ -2567,13 +5591,13 @@
             "och_reasoning": [
               "Critical burnout risk (OCH: 82/100) - immediate attention needed",
               "PERSONAL:",
-              "\u00e2\u20ac\u00a2 Non-business hours incident activity (75.0 points)",
-              "\u00e2\u20ac\u00a2 High-severity incident stress (52.5 points)",
-              "\u00e2\u20ac\u00a2 High task workload (3.9 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 Non-business hours incident activity (75.0 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 High-severity incident stress (52.5 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 High task workload (3.9 points)",
               "WORK-RELATED:",
-              "\u00e2\u20ac\u00a2 On-call responsibility load: 3 total incidents (28.5 points)",
-              "\u00e2\u20ac\u00a2 Incident severity-weighted workload (2.1 points)",
-              "\u00e2\u20ac\u00a2 Incident response meeting load (1.9 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 On-call responsibility load: 3 total incidents (28.5 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 Incident severity-weighted workload (2.1 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 Incident response meeting load (1.9 points)",
               "Personal stress significantly higher than work stress - focus on recovery and boundaries"
             ],
             "och_factors": {
@@ -2881,7 +5905,146 @@
                 "overdue_count": 0,
                 "due_in_7_days": 3
               }
-            }
+            },
+            "openai_user_id": "mock-openai-uid-sophia-003",
+            "alerts_count": 18,
+            "alerts_related_counts": {
+              "groups": 1,
+              "events": 290
+            },
+            "alerts_noise_counts": {
+              "noise": 2,
+              "not_noise": 16,
+              "unknown": 0
+            },
+            "alerts_after_hours_count": 9,
+            "alerts_night_time_count": 2,
+            "alerts_urgency_counts": {
+              "high": 13,
+              "medium": 5
+            },
+            "alerts_notified_count": 18,
+            "alerts_responded_count": 18,
+            "alerts_with_incidents_count": 3,
+            "alerts_source_counts": {
+              "datadog": 12,
+              "workflow": 3,
+              "slack": 1,
+              "email": 2
+            },
+            "alerts_derived_source_counts": {
+              "datadog": 12,
+              "workflow": 3,
+              "slack": 1,
+              "email": 2
+            },
+            "alerts_acked_count": 13,
+            "alerts_resolved_count": 5,
+            "alerts_escalated_count": 7,
+            "alerts_retriggered_count": 1,
+            "alerts_avg_mtta_seconds": 278.0,
+            "alerts_avg_mttr_seconds": 21600.0,
+            "alerts_daily_breakdown": {
+              "2026-04-17": {
+                "total": 2,
+                "incidents": 1,
+                "after_hours": 1,
+                "night_time": 0,
+                "escalated": 1,
+                "retrigger": 0
+              },
+              "2026-04-15": {
+                "total": 3,
+                "incidents": 1,
+                "after_hours": 2,
+                "night_time": 1,
+                "escalated": 2,
+                "retrigger": 0
+              },
+              "2026-04-13": {
+                "total": 4,
+                "incidents": 1,
+                "after_hours": 2,
+                "night_time": 1,
+                "escalated": 2,
+                "retrigger": 1
+              },
+              "2026-04-10": {
+                "total": 5,
+                "incidents": 0,
+                "after_hours": 2,
+                "night_time": 0,
+                "escalated": 1,
+                "retrigger": 0
+              },
+              "2026-04-07": {
+                "total": 4,
+                "incidents": 0,
+                "after_hours": 2,
+                "night_time": 0,
+                "escalated": 1,
+                "retrigger": 0
+              }
+            },
+            "alerts_health_score": 51.3,
+            "alerts_health_interpretation": "moderate",
+            "alerts_top_alerts": [
+              {
+                "title": "[SEV2] Analytics Event Tracking Dropped",
+                "total": 5,
+                "noise": 1,
+                "night_time": 1,
+                "after_hours": 3,
+                "no_incident": 3,
+                "escalated": 2,
+                "retriggered": 0,
+                "days_fired": 3
+              },
+              {
+                "title": "[SEV2] Report Generation Service Timeout",
+                "total": 4,
+                "noise": 0,
+                "night_time": 1,
+                "after_hours": 2,
+                "no_incident": 2,
+                "escalated": 2,
+                "retriggered": 0,
+                "days_fired": 3
+              },
+              {
+                "title": "[SEV3] Third-Party Integration Sync Failure",
+                "total": 4,
+                "noise": 1,
+                "night_time": 0,
+                "after_hours": 2,
+                "no_incident": 3,
+                "escalated": 2,
+                "retriggered": 1,
+                "days_fired": 2
+              },
+              {
+                "title": "[SEV3] Scheduled Task Missed Execution Window",
+                "total": 3,
+                "noise": 0,
+                "night_time": 0,
+                "after_hours": 1,
+                "no_incident": 3,
+                "escalated": 1,
+                "retriggered": 0,
+                "days_fired": 2
+              },
+              {
+                "title": "[SEV4] Dashboard Load Time Degraded",
+                "total": 2,
+                "noise": 0,
+                "night_time": 0,
+                "after_hours": 1,
+                "no_incident": 2,
+                "escalated": 0,
+                "retriggered": 0,
+                "days_fired": 2
+              }
+            ]
           },
           {
             "user_id": "9130",
@@ -2917,13 +6080,13 @@
             "och_reasoning": [
               "Moderate stress levels (OCH: 48/100) - manageable with care",
               "PERSONAL:",
-              "\u00e2\u20ac\u00a2 Non-business hours incident activity (75.0 points)",
-              "\u00e2\u20ac\u00a2 High-severity incident stress (13.0 points)",
-              "\u00e2\u20ac\u00a2 High task workload (1.4 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 Non-business hours incident activity (75.0 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 High-severity incident stress (13.0 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 High task workload (1.4 points)",
               "WORK-RELATED:",
-              "\u00e2\u20ac\u00a2 On-call responsibility load: 1 total incidents (4.9 points)",
-              "\u00e2\u20ac\u00a2 Incident severity-weighted workload (0.7 points)",
-              "\u00e2\u20ac\u00a2 Incident response meeting load (0.7 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 On-call responsibility load: 1 total incidents (4.9 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 Incident severity-weighted workload (0.7 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 Incident response meeting load (0.7 points)",
               "Personal stress significantly higher than work stress - focus on recovery and boundaries"
             ],
             "och_factors": {
@@ -3264,12 +6427,12 @@
             "och_reasoning": [
               "Moderate stress levels (OCH: 47/100) - manageable with care",
               "PERSONAL:",
-              "\u00e2\u20ac\u00a2 High-severity incident stress (52.5 points)",
-              "\u00e2\u20ac\u00a2 High task workload (4.9 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 High-severity incident stress (52.5 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 High task workload (4.9 points)",
               "WORK-RELATED:",
-              "\u00e2\u20ac\u00a2 On-call responsibility load: 4 total incidents (30.9 points)",
-              "\u00e2\u20ac\u00a2 Incident severity-weighted workload (2.6 points)",
-              "\u00e2\u20ac\u00a2 Incident response meeting load (2.5 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 On-call responsibility load: 4 total incidents (30.9 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 Incident severity-weighted workload (2.6 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 Incident response meeting load (2.5 points)",
               "Personal stress significantly higher than work stress - focus on recovery and boundaries"
             ],
             "och_factors": {
@@ -3487,12 +6650,12 @@
             "och_reasoning": [
               "Low burnout risk (OCH: 20/100) - healthy stress levels",
               "PERSONAL:",
-              "\u00e2\u20ac\u00a2 High-severity incident stress (24.2 points)",
-              "\u00e2\u20ac\u00a2 High task workload (2.8 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 High-severity incident stress (24.2 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 High task workload (2.8 points)",
               "WORK-RELATED:",
-              "\u00e2\u20ac\u00a2 On-call responsibility load: 2 total incidents (9.1 points)",
-              "\u00e2\u20ac\u00a2 Incident severity-weighted workload (1.5 points)",
-              "\u00e2\u20ac\u00a2 Incident response meeting load (1.4 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 On-call responsibility load: 2 total incidents (9.1 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 Incident severity-weighted workload (1.5 points)",
+              "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2 Incident response meeting load (1.4 points)",
               "Personal stress significantly higher than work stress - focus on recovery and boundaries"
             ],
             "och_factors": {
@@ -22872,7 +26035,7 @@
             "sequential_id": 3758,
             "slug": "crazy",
             "title": "CRAZY",
-            "summary": "%%%\n@webhook-Apple\n\nTest notification triggered by arjun.reddy@example.com.\n\nThe **count** of events matching **[*](https://demo.datadoghq.com/event/explorer?query=%2A&from_ts=1768854760000&to_ts=1768855060000&live=false)** was **> 10.0** during the **last 5m**.\n\nThe monitor was last triggered at Mon Jan 19 2026 20:37:40 UTC.\n\n- - -\n\n[[Monitor Status](https://app.datadoghq.com/monitors/137617737?from_ts=1768854160000&to_ts=1768855360000&event_id=8465652244875351515&link_source=monitor_notif)] \u00c2\u00b7 [[Edit Monitor](https://app.datadoghq.com/monitors/137617737/edit?link_source=monitor_notif)] \u00c2\u00b7 [[Related Logs](https://app.datadoghq.com/logs?from_ts=1768854760000&to_ts=1768855060000&live=false&link_source=monitor_notif)]\n%%%",
+            "summary": "%%%\n@webhook-Apple\n\nTest notification triggered by arjun.reddy@example.com.\n\nThe **count** of events matching **[*](https://demo.datadoghq.com/event/explorer?query=%2A&from_ts=1768854760000&to_ts=1768855060000&live=false)** was **> 10.0** during the **last 5m**.\n\nThe monitor was last triggered at Mon Jan 19 2026 20:37:40 UTC.\n\n- - -\n\n[[Monitor Status](https://app.datadoghq.com/monitors/137617737?from_ts=1768854160000&to_ts=1768855360000&event_id=8465652244875351515&link_source=monitor_notif)] \u00c3\u201a\u00c2\u00b7 [[Edit Monitor](https://app.datadoghq.com/monitors/137617737/edit?link_source=monitor_notif)] \u00c3\u201a\u00c2\u00b7 [[Related Logs](https://app.datadoghq.com/logs?from_ts=1768854760000&to_ts=1768855060000&live=false&link_source=monitor_notif)]\n%%%",
             "status": "cancelled",
             "created_at": "2026-01-19T12:38:57.428-08:00",
             "started_at": "2026-01-19T12:38:57.367-08:00",

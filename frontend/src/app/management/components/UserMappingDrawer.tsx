@@ -33,13 +33,14 @@ interface UserMappingDrawerProps {
     linear_user_id?: string
     linear_email?: string
     slack_user_id?: string
+    openai_user_id?: string
   } | null
   selectedOrganization: string
   onMappingUpdated: () => void
   connectedIntegrations?: Set<string>
 }
 
-type IntegrationType = "github" | "jira" | "linear"
+type IntegrationType = "github" | "jira" | "linear" | "openai"
 
 export function UserMappingDrawer({
   isOpen,
@@ -56,12 +57,14 @@ export function UserMappingDrawer({
   const [linearUsers, setLinearUsers] = useState<any[]>([])
   const [loadingOptions, setLoadingOptions] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [openaiInputValue, setOpenaiInputValue] = useState("")
 
   // Reset state when drawer opens/closes
   useEffect(() => {
     if (!isOpen) {
       setEditingIntegration(null)
       setSearchQuery("")
+      setOpenaiInputValue("")
     }
   }, [isOpen])
 
@@ -132,6 +135,8 @@ export function UserMappingDrawer({
         }
       } else if (integration === "linear") {
         updates.linear_user_id = value
+      } else if (integration === "openai") {
+        updates.openai_user_id = value
       }
 
       const success = await updateUserCorrelation(user.id, updates)
@@ -139,6 +144,7 @@ export function UserMappingDrawer({
         toast.success(`${integration.charAt(0).toUpperCase() + integration.slice(1)} mapping updated`)
         setEditingIntegration(null)
         setSearchQuery("")
+        setOpenaiInputValue("")
         onMappingUpdated()
       }
     } catch (error) {
@@ -160,6 +166,8 @@ export function UserMappingDrawer({
         updates.jira_account_id = ""
       } else if (integration === "linear") {
         updates.linear_user_id = ""
+      } else if (integration === "openai") {
+        updates.openai_user_id = ""
       }
 
       const success = await updateUserCorrelation(user.id, updates)
@@ -167,6 +175,7 @@ export function UserMappingDrawer({
         toast.success(`${integration.charAt(0).toUpperCase() + integration.slice(1)} mapping cleared`)
         setEditingIntegration(null)
         setSearchQuery("")
+        setOpenaiInputValue("")
         onMappingUpdated()
       }
     } catch (error) {
@@ -482,6 +491,77 @@ export function UserMappingDrawer({
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+          </div>}
+
+          {/* OpenAI Integration */}
+          {connectedIntegrations.has('openai-usage') && <div className="space-y-2">
+            <div className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 flex items-center justify-center">
+                  <Image src="/images/openai-logo.svg" alt="OpenAI" width={24} height={24} />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">OpenAI</p>
+                  <p className="text-xs text-neutral-500 font-mono">
+                    {user.openai_user_id || <em className="not-italic text-neutral-400">Not mapped</em>}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  if (editingIntegration === "openai") {
+                    setEditingIntegration(null)
+                    setOpenaiInputValue("")
+                  } else {
+                    setEditingIntegration("openai")
+                    setOpenaiInputValue(user.openai_user_id || "")
+                  }
+                }}
+                className="text-neutral-500 hover:text-neutral-700 transition-colors"
+                disabled={saving}
+              >
+                {editingIntegration === "openai" ? (
+                  <X className="w-4 h-4" />
+                ) : (
+                  <Pencil className="w-4 h-4" />
+                )}
+              </button>
+            </div>
+
+            {/* OpenAI Manual Input */}
+            {editingIntegration === "openai" && (
+              <div className="border rounded-lg p-3 bg-white space-y-2">
+                <p className="text-xs text-neutral-500">Enter the OpenAI user ID (e.g. user-abc123). Use "Auto-map" on the integrations page to match by email automatically.</p>
+                <Input
+                  placeholder="user-abc123..."
+                  value={openaiInputValue}
+                  onChange={(e) => setOpenaiInputValue(e.target.value)}
+                  className="font-mono text-sm"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => handleSelectMapping("openai", openaiInputValue.trim())}
+                    disabled={saving || !openaiInputValue.trim()}
+                    className="flex-1"
+                  >
+                    {saving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Check className="w-3 h-3 mr-1" />}
+                    Save
+                  </Button>
+                  {user.openai_user_id && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleClearMapping("openai")}
+                      disabled={saving}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </div>
               </div>
             )}
           </div>}

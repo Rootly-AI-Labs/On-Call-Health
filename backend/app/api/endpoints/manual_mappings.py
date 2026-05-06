@@ -2,6 +2,7 @@
 API endpoints for manual mapping management.
 """
 import logging
+import os
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
@@ -1255,3 +1256,144 @@ async def run_linear_mapping(
     except Exception as e:
         logger.error(f"Error running Linear mapping: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to run Linear mapping: {str(e)}")
+
+
+@router.post("/manual-mappings/run-openai-mapping", summary="Run OpenAI user mapping process")
+async def run_openai_mapping(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Auto-map team members to OpenAI user IDs by comparing emails.
+
+    Strategy:
+    1. Fetch all members from OpenAI via GET /v1/organization/members
+    2. Match team member email == OpenAI member email (exact, case-insensitive)
+    3. Store openai_user_id in UserCorrelation for matched members
+    4. Also create a UserMapping record for the mapping drawer display
+    """
+    try:
+        from ...models import AIUsageIntegration, UserCorrelation, RootlyIntegration
+        from cryptography.fernet import Fernet
+        import base64
+        import httpx
+
+        org_id = current_user.organization_id
+        if not org_id:
+            raise HTTPException(status_code=400, detail="User has no organization")
+
+        ai_integration = db.query(AIUsageIntegration).filter(
+            AIUsageIntegration.organization_id == org_id
+        ).first()
+
+        if not ai_integration or not ai_integration.openai_enabled or not ai_integration.openai_api_key:
+            raise HTTPException(status_code=400, detail="OpenAI integration not found")
+
+        _jwt_secret = os.environ.get("JWT_SECRET_KEY", "default-secret-key-change-me")
+        _fernet_key = base64.urlsafe_b64encode(_jwt_secret.encode()[:32].ljust(32, b"\0"))
+        openai_key = Fernet(_fernet_key).decrypt(ai_integration.openai_api_key.encode()).decode()
+
+        # Fetch OpenAI organization members
+        openai_members: dict[str, str] = {}  # email -> openai_user_id
+        async with httpx.AsyncClient(timeout=20) as client:
+            after = None
+            for _ in range(20):
+                params = {"limit": 100}
+                if after:
+                    params["after"] = after
+                resp = await client.get(
+                    "https://api.openai.com/v1/organization/members",
+                    headers={"Authorization": f"Bearer {openai_key}"},
+                    params=params,
+                )
+                if resp.status_code != 200:
+                    logger.warning(f"[OPENAI_MAP] Members API returned {resp.status_code}: {resp.text[:200]}")
+                    raise HTTPException(status_code=400, detail="Failed to fetch OpenAI organization members")
+                data = resp.json()
+                for member in data.get("data", []):
+                    user = member.get("user", {})
+                    email = (user.get("email") or "").lower().strip()
+                    uid = user.get("id", "")
+                    if email and uid:
+                        openai_members[email] = uid
+                if not data.get("has_more"):
+                    break
+                last = data.get("data", [])
+                after = last[-1]["user"]["id"] if last else None
+
+        logger.info(f"[OPENAI_MAP] Fetched {len(openai_members)} OpenAI org members")
+
+        # Get all team member correlations for this org
+        correlations = db.query(UserCorrelation).filter(
+            UserCorrelation.organization_id == org_id,
+            UserCorrelation.email.isnot(None)
+        ).all()
+
+        service = ManualMappingService(db)
+        results = []
+        mapped_count = 0
+        not_found_count = 0
+
+        for corr in correlations:
+            email_lower = (corr.email or "").lower().strip()
+            if not email_lower:
+                continue
+
+            openai_uid = openai_members.get(email_lower)
+
+            if openai_uid:
+                # Remove this openai_user_id from any other correlation first
+                conflicting = db.query(UserCorrelation).filter(
+                    UserCorrelation.id != corr.id,
+                    UserCorrelation.openai_user_id == openai_uid,
+                    UserCorrelation.organization_id == org_id
+                ).all()
+                for c in conflicting:
+                    c.openai_user_id = None
+
+                corr.openai_user_id = openai_uid
+
+                # Create/update a UserMapping record for the mapping drawer
+                service.create_mapping(
+                    user_id=current_user.id,
+                    source_platform="rootly",
+                    source_identifier=corr.email,
+                    target_platform="openai",
+                    target_identifier=openai_uid,
+                    created_by=current_user.id,
+                    mapping_type="automated"
+                )
+
+                results.append({
+                    "email": corr.email,
+                    "openai_user_id": openai_uid,
+                    "status": "mapped",
+                    "match_method": "email"
+                })
+                mapped_count += 1
+                logger.info(f"[OPENAI_MAP] Mapped {corr.email} -> {openai_uid}")
+            else:
+                results.append({
+                    "email": corr.email,
+                    "openai_user_id": None,
+                    "status": "not_found"
+                })
+                not_found_count += 1
+
+        db.commit()
+
+        return {
+            "total_processed": len(results),
+            "mapped": mapped_count,
+            "not_found": not_found_count,
+            "errors": 0,
+            "success_rate": mapped_count / len(results) if results else 0,
+            "results": results
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error running OpenAI mapping: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to run OpenAI mapping: {str(e)}")

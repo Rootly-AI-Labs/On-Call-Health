@@ -23,6 +23,7 @@ from .linear_workspace_mapping import LinearWorkspaceMapping
 from .survey_period import SurveyPeriod
 from .api_key import APIKey
 from .weekly_digest_log import WeeklyDigestLog
+from .ai_usage_integration import AIUsageIntegration
 from .user_login_event import UserLoginEvent
 
 __all__ = [
@@ -30,6 +31,6 @@ __all__ = [
     "RootlyIntegration", "OAuthProvider", "UserEmail", "GitHubIntegration",
     "SlackIntegration", "UserCorrelation", "IntegrationMapping", "UserMapping",
     "UserBurnoutReport", "SlackWorkspaceMapping", "JiraIntegration", "JiraWorkspaceMapping",
-    "LinearIntegration", "LinearWorkspaceMapping", "SurveyPeriod", "APIKey", "WeeklyDigestLog",
-    "UserLoginEvent",
+    "LinearIntegration", "LinearWorkspaceMapping", "SurveyPeriod", "APIKey", "WeeklyDigestLog", "AIUsageIntegration",
+    "UserLoginEvent"
 ]

@@ -11,6 +11,39 @@ import Image from "next/image"
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 const OKTA_SSO_ENABLED = process.env.NEXT_PUBLIC_ENABLE_OKTA_SSO === 'true'
 
+const BrexLogo = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 110 40" className={className} role="img" aria-label="Brex" xmlns="http://www.w3.org/2000/svg">
+    <text x="0" y="32" fontFamily="system-ui, -apple-system, BlinkMacSystemFont, sans-serif" fontWeight="800" fontSize="34" fill="#0F172A" letterSpacing="-1.5">Brex</text>
+  </svg>
+)
+
+type TestimonialLogo =
+  | { type: "image"; src: string; alt: string; width: number; height: number }
+  | { type: "component"; Component: React.ComponentType<{ className?: string }> }
+
+const testimonials: ReadonlyArray<{
+  name: string
+  role: string
+  photo: string
+  logo: TestimonialLogo
+  quote: string
+}> = [
+  {
+    name: "Casey Brown",
+    role: "Head of Infrastructure Engineering",
+    photo: "/images/landing/casey_brown.png",
+    logo: { type: "image", src: "/images/landing/wandb_logo.png", alt: "Weights & Biases", width: 848, height: 110 },
+    quote: "This is the on-call visibility I wish I'd had on day one.",
+  },
+  {
+    name: "Joshua Inoa",
+    role: "Engineering Manager for Release Infrastructure",
+    photo: "/images/landing/joshua_inoa.jpg",
+    logo: { type: "component", Component: BrexLogo },
+    quote: "On-Call Health turns anecdotal feedback into data-backed evidence, so I can tell a clear story about team health, quantify on-call burden, and make the case for operational improvements before burnout becomes a retention problem.",
+  },
+]
+
 const ppMori = localFont({
   src: [
     {
@@ -329,15 +362,47 @@ export default function LandingPage() {
         </div>
         {/* Features Banner */}
         <div className="container mx-auto px-4 pt-12 pb-0 mt-6 lg:mt-40 lg:py-20 relative z-10">
-          <Image
-            src="/images/landing/wandb_testimonial_large.png"
-            alt="Rootly customer story"
-            width={1784}
-            height={602}
-            className="w-11/12 sm:w-4/5 lg:w-2/3 h-auto mx-auto mt-2 lg:mt-0"
-            priority
-            quality={90}
-          />
+          <div className="w-11/12 sm:w-4/5 lg:w-2/3 mx-auto mt-2 lg:mt-0 flex flex-col gap-5 lg:gap-7">
+            {testimonials.map((t) => (
+              <div
+                key={t.name}
+                className="flex flex-col rounded-[28px] px-6 py-6 sm:px-10 sm:py-7 lg:px-14 lg:py-9 shadow-[0_20px_60px_-15px_rgba(124,87,196,0.18)] backdrop-blur-md"
+                style={{
+                  background: "linear-gradient(115deg, rgba(252,227,210,0.72) 0%, rgba(236,220,246,0.72) 55%, rgba(220,205,247,0.72) 100%)",
+                }}
+              >
+                <p className="text-center text-base font-medium leading-relaxed text-slate-900 sm:text-lg sm:leading-relaxed lg:text-[22px] lg:leading-[1.5]">
+                  &ldquo;{t.quote}&rdquo;
+                </p>
+                <div className="mt-5 sm:mt-6 lg:mt-7 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 lg:gap-5">
+                    <Image
+                      src={t.photo}
+                      alt={t.name}
+                      width={96}
+                      height={96}
+                      className="h-12 w-12 sm:h-14 sm:w-14 lg:h-16 lg:w-16 rounded-xl object-cover"
+                    />
+                    <div>
+                      <p className="text-base sm:text-lg lg:text-xl font-semibold text-slate-900">{t.name}</p>
+                      <p className="text-xs sm:text-sm lg:text-base text-slate-700/70">{t.role}</p>
+                    </div>
+                  </div>
+                  {t.logo.type === "image" ? (
+                    <Image
+                      src={t.logo.src}
+                      alt={t.logo.alt}
+                      width={t.logo.width}
+                      height={t.logo.height}
+                      className="h-6 sm:h-7 lg:h-9 w-auto"
+                    />
+                  ) : (
+                    <t.logo.Component className="h-6 sm:h-7 lg:h-9 w-auto" />
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
     <div className="w-full mb-[-1px] absolute h-[240px] bottom-0 left-0 z-0 lg:h-[250px] bg-gradient-to-b from-transparent via-white/60 to-white pointer-events-none">                               
     </div> 

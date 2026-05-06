@@ -203,6 +203,21 @@ class UserSyncService:
                 stats['slack_skipped'] = 0
                 stats['slack_error'] = error_msg
 
+            # After syncing, try to match OpenAI accounts by email
+            try:
+                openai_stats = await self._match_openai_users(current_user)
+                if openai_stats:
+                    stats['openai_matched'] = openai_stats['matched']
+                    stats['openai_skipped'] = openai_stats['skipped']
+                    logger.info(
+                        f"OpenAI matching: {openai_stats['matched']} users matched, "
+                        f"{openai_stats['skipped']} skipped"
+                    )
+            except Exception as e:
+                logger.error(f"OpenAI matching failed: {e} - continuing")
+                stats['openai_matched'] = 0
+                stats['openai_skipped'] = 0
+
             return stats
 
         except Exception as e:
@@ -1580,5 +1595,96 @@ class UserSyncService:
 
         except Exception as e:
             logger.error(f"Error in Linear matching: {e}", exc_info=True)
+            self.db.rollback()
+            return None
+
+    async def _match_openai_users(self, user: User) -> Optional[Dict[str, int]]:
+        """
+        Match synced users to OpenAI accounts by exact email.
+        Only runs when an AIUsageIntegration with openai_enabled exists.
+        """
+        try:
+            from app.models import AIUsageIntegration
+            from app.services.ai_usage_collector import fetch_openai_members
+            import base64
+            from cryptography.fernet import Fernet
+            from app.core.config import settings
+
+            # Find AI usage integration scoped to this user's org (or user)
+            if user.organization_id:
+                ai_int = self.db.query(AIUsageIntegration).filter(
+                    AIUsageIntegration.organization_id == user.organization_id,
+                    AIUsageIntegration.openai_enabled == True,
+                ).first()
+            else:
+                ai_int = self.db.query(AIUsageIntegration).filter(
+                    AIUsageIntegration.user_id == user.id,
+                    AIUsageIntegration.organization_id.is_(None),
+                    AIUsageIntegration.openai_enabled == True,
+                ).first()
+
+            if not ai_int:
+                logger.info("Skipping OpenAI matching - no active OpenAI integration")
+                return None
+
+            # Decrypt key
+            key = settings.JWT_SECRET_KEY.encode()
+            key = base64.urlsafe_b64encode(key[:32].ljust(32, b'\0'))
+            api_key = Fernet(key).decrypt(ai_int.openai_api_key.encode()).decode()
+
+            # Fetch OpenAI members: {user_id -> email}
+            uid_to_email = await fetch_openai_members(api_key)
+            if not uid_to_email:
+                logger.info("No OpenAI members returned")
+                return {"matched": 0, "skipped": 0}
+
+            email_to_uid = {email.lower(): uid for uid, email in uid_to_email.items()}
+
+            # Get correlations without OpenAI mapping yet
+            if user.organization_id:
+                correlations = self.db.query(UserCorrelation).filter(
+                    UserCorrelation.organization_id == user.organization_id,
+                    UserCorrelation.user_id.is_(None),
+                    UserCorrelation.openai_user_id.is_(None),
+                ).all()
+            else:
+                correlations = self.db.query(UserCorrelation).filter(
+                    UserCorrelation.user_id == user.id,
+                    UserCorrelation.openai_user_id.is_(None),
+                ).all()
+
+            matched = 0
+            skipped = 0
+            for corr in correlations:
+                if not corr.email:
+                    skipped += 1
+                    continue
+                uid = email_to_uid.get(corr.email.lower())
+                if uid:
+                    # Enforce uniqueness within scope
+                    conflict_filter = [
+                        UserCorrelation.id != corr.id,
+                        UserCorrelation.openai_user_id == uid,
+                    ]
+                    if user.organization_id:
+                        conflict_filter.append(UserCorrelation.organization_id == user.organization_id)
+                    else:
+                        conflict_filter.append(UserCorrelation.user_id == user.id)
+                    for c in self.db.query(UserCorrelation).filter(*conflict_filter).all():
+                        c.openai_user_id = None
+                    corr.openai_user_id = uid
+                    matched += 1
+                    logger.info(f"✅ OpenAI matched {corr.email} → {uid}")
+                else:
+                    skipped += 1
+
+            if matched > 0:
+                self.db.commit()
+                logger.info(f"✅ Completed {matched} OpenAI account matches")
+
+            return {"matched": matched, "skipped": skipped, "total": len(correlations)}
+
+        except Exception as e:
+            logger.error(f"Error in OpenAI matching: {e}", exc_info=True)
             self.db.rollback()
             return None

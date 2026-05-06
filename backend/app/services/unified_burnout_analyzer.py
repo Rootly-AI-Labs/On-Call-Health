@@ -1724,6 +1724,7 @@ class UnifiedBurnoutAnalyzer:
         github_username = user.get("github_username")
         linear_user_id = user.get("linear_user_id")
         slack_user_id = user.get("slack_user_id")
+        openai_user_id = user.get("openai_user_id")
         rootly_user_id = user.get("rootly_user_id")
         pagerduty_user_id = user.get("pagerduty_user_id")
         avatar_url = user.get("avatar_url")  # Profile image from PagerDuty/Rootly
@@ -1734,7 +1735,7 @@ class UnifiedBurnoutAnalyzer:
             logger.info(f"🔍 JIRA MAPPING FOUND: User {user_name} has jira_account_id={jira_account_id}")
         if github_username:
             logger.info(f"🔍 GITHUB MAPPING FOUND: User {user_name} has github_username={github_username}")
-        if not any([jira_account_id, github_username, linear_user_id, slack_user_id]):
+        if not any([jira_account_id, github_username, linear_user_id, slack_user_id, openai_user_id]):
             logger.debug(f"⚠️ NO INTEGRATION MAPPINGS: User {user_name} (email: {user_email}) has no integration mappings. User object keys: {list(user.keys())}")
 
         # If no incidents, return minimal analysis
@@ -1773,6 +1774,7 @@ class UnifiedBurnoutAnalyzer:
                 "slack_user_id": slack_user_id,  # Include Slack mapping for logo display
                 "jira_account_id": jira_account_id,  # Include Jira mapping for workload correlation
                 "linear_user_id": linear_user_id,  # Include Linear mapping for logo display
+                "openai_user_id": openai_user_id,  # Include OpenAI mapping for usage card display
                 "rootly_user_id": rootly_user_id,  # Include Rootly mapping for logo display
                 "pagerduty_user_id": pagerduty_user_id,  # Include PagerDuty mapping for logo display
                 "avatar_url": avatar_url,  # Profile image URL from PagerDuty/Rootly
@@ -2076,6 +2078,7 @@ class UnifiedBurnoutAnalyzer:
             "slack_user_id": slack_user_id,  # Include Slack mapping
             "jira_account_id": jira_account_id,  # Include Jira mapping
             "linear_user_id": linear_user_id,  # Include Linear mapping
+            "openai_user_id": openai_user_id,  # Include OpenAI mapping
             "rootly_user_id": rootly_user_id,  # Include Rootly mapping for logo display
             "pagerduty_user_id": pagerduty_user_id,  # Include PagerDuty mapping for logo display
             "avatar_url": avatar_url,  # Profile image URL from PagerDuty/Rootly

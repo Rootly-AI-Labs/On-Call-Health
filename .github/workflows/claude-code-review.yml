@@ -17,12 +17,12 @@ jobs:
       id-token: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 0
 
       - name: Run Claude Code Action
-        uses: anthropics/claude-code-action@beta
+        uses: anthropics/claude-code-action@5d5c10a4f389689f992ea10bb14dcb6fcc83146d # beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ github.token }}
@@ -40,12 +40,12 @@ jobs:
       id-token: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 0
 
       - name: Claude Auto Review
-        uses: anthropics/claude-code-action@beta
+        uses: anthropics/claude-code-action@5d5c10a4f389689f992ea10bb14dcb6fcc83146d # beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ github.token }}

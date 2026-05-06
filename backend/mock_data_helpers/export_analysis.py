@@ -188,9 +188,9 @@ def export_analysis(analysis_id: int, output_file: str = "mock_analysis_data.jso
         print("[*] Database connection closed")
 
 if __name__ == "__main__":
-    # Export analysis ID 836 which includes user_id 1
+    # Export analysis ID 421 which includes user_id 1
     # This will also export all health check-ins (user_burnout_reports) for user_id 1
-    print("[*] Exporting analysis ID 836 with all health check-ins for user_id 1...")
+    print("[*] Exporting analysis ID 421 with all health check-ins for user_id 1...")
     print("[*] The export_analysis function will:")
     print("   1. Export the analysis record")
     print("   2. Export all integration mappings for this analysis")
@@ -198,8 +198,8 @@ if __name__ == "__main__":
     print()
 
     success = export_analysis(
-        analysis_id=842,
-        output_file="mock_analysis_data.json"
+        analysis_id=421,
+        output_file="new_mock_analysis_data.json"
     )
 
     if success:

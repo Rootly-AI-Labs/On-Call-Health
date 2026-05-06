@@ -40,15 +40,51 @@ const URGENCY_DOT_COLORS: Record<string, string> = {
   low: "bg-gray-400",
 }
 
-type AlertTrendKey = "incidents" | "after_hours" | "night_time" | "escalated" | "retrigger"
+type AlertTrendKey = "total" | "incidents" | "after_hours" | "night_time" | "escalated" | "retrigger"
 
 const METRIC_CONFIGS: { key: AlertTrendKey; label: string; color: string }[] = [
+  { key: "total",       label: "All Alerts",     color: "#6b7280" },
   { key: "incidents",   label: "With incidents", color: "#3b82f6" },
   { key: "after_hours", label: "After-hours",    color: "#f97316" },
   { key: "night_time",  label: "Night-time",     color: "#a855f7" },
   { key: "escalated",   label: "Escalated",      color: "#ef4444" },
   { key: "retrigger",   label: "Retriggered",    color: "#ec4899" },
 ]
+
+/**
+ * Fit a simple OLS linear regression through the daily total counts and return
+ * the predicted % change from day-0 to day-N (positive = worsening, negative = improving).
+ * Returns null if insufficient data (< 4 days).
+ */
+function calcTotalAlertTrend(
+  daily: Record<string, { total: number }>
+): number | null {
+  const days = Object.keys(daily).sort()
+  if (days.length < 4) return null
+
+  const values = days.map((d) => daily[d].total ?? 0)
+
+  const n = values.length
+  const xMean = (n - 1) / 2
+  const yMean = values.reduce((s, v) => s + v, 0) / n
+
+  let num = 0, den = 0
+  for (let i = 0; i < n; i++) {
+    num += (i - xMean) * (values[i] - yMean)
+    den += (i - xMean) ** 2
+  }
+
+  const slope = den !== 0 ? num / den : 0
+  const intercept = yMean - slope * xMean
+
+  const predicted0 = intercept
+  const predictedN = intercept + slope * (n - 1)
+
+  if (predicted0 <= 0 && predictedN <= 0) return 0
+  if (predicted0 <= 0) return predictedN > 0 ? 100 : 0
+
+  return Math.round(((predictedN - predicted0) / predicted0) * 100)
+}
 
 /**
  * Fit a simple OLS linear regression through the daily rates and return the
@@ -122,6 +158,22 @@ function getTrendConfig(change: number): { label: string; icon: React.ReactNode;
   }
 }
 
+function buildMonthlyData(daily: Record<string, any>): Record<string, any> {
+  const monthData: Record<string, any> = {}
+  Object.keys(daily).sort().forEach((day) => {
+    const key = day.slice(0, 7) + "-01" // YYYY-MM-01
+    if (!monthData[key]) monthData[key] = { total: 0, incidents: 0, after_hours: 0, night_time: 0, escalated: 0, retrigger: 0 }
+    const d = daily[day] || {}
+    monthData[key].total      += d.total      ?? 0
+    monthData[key].incidents  += d.incidents  ?? 0
+    monthData[key].after_hours+= d.after_hours?? 0
+    monthData[key].night_time += d.night_time ?? 0
+    monthData[key].escalated  += d.escalated  ?? 0
+    monthData[key].retrigger  += d.retrigger  ?? 0
+  })
+  return monthData
+}
+
 function buildWeeklyData(daily: Record<string, any>): Record<string, any> {
   const weekData: Record<string, any> = {}
   Object.keys(daily).sort().forEach((day) => {
@@ -186,9 +238,12 @@ function TrendTag({ change }: { change: number | null }) {
   if (change === null) return null
   const { label, icon, className } = getTrendConfig(change)
   return (
-    <Badge className={`inline-flex items-center gap-0.5 ${className} border text-[9px] px-1 py-0`}>
-      {icon}
-      {label}
+    <Badge
+      title={label}
+      className={`inline-flex max-w-full items-center gap-0.5 whitespace-nowrap ${className} border px-1.5 py-0.5 text-[8px] leading-none sm:text-[9px]`}
+    >
+      <span className="inline-flex items-center gap-0.5">{icon}</span>
+      <span className="hidden min-[1200px]:inline">{label}</span>
     </Badge>
   )
 }
@@ -228,14 +283,15 @@ function AlertBreakdownChart({
   const [hidden, setHidden] = useState<Set<AlertTrendKey>>(new Set())
   const [hoveredChip, setHoveredChip] = useState<AlertTrendKey | null>(null)
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
-  const [overlayMode, setOverlayMode] = useState<"none" | "dod" | "wow">("none")
+  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null)
+  const [overlayMode, setOverlayMode] = useState<"none" | "wow" | "mom">("none")
   const svgRef = useRef<SVGSVGElement>(null)
 
   const days = Object.keys(daily).sort()
   if (days.length === 0) return null
 
   const overlayOffset = overlayMode !== "none" ? 1 : 0
-  const chartData = overlayMode === "wow" ? buildWeeklyData(daily) : daily
+  const chartData = overlayMode === "wow" ? buildWeeklyData(daily) : overlayMode === "mom" ? buildMonthlyData(daily) : daily
   const chartDays = Object.keys(chartData).sort()
 
   const toggle = (key: AlertTrendKey) => {
@@ -275,8 +331,10 @@ function AlertBreakdownChart({
     .filter(({ i }) => i % xLabelStep === 0 || i === chartDays.length - 1)
 
   const xLabelFormat = (d: string) => overlayMode === "wow"
-    ? `Wk ${new Date(d).toLocaleDateString([], { month: "short", day: "numeric" })}`
-    : new Date(d).toLocaleDateString([], { month: "short", day: "numeric" })
+    ? `Wk ${new Date(d + "T00:00:00").toLocaleDateString([], { month: "short", day: "numeric" })}`
+    : overlayMode === "mom"
+    ? new Date(d + "T00:00:00").toLocaleDateString([], { month: "short", year: "numeric" })
+    : new Date(d + "T00:00:00").toLocaleDateString([], { month: "short", day: "numeric" })
 
   const pathFor = (key: AlertTrendKey) =>
     chartDays.map((d, i) => {
@@ -306,14 +364,17 @@ function AlertBreakdownChart({
     const fraction = plotX / plotW
     const idx = Math.round(fraction * (chartDays.length - 1))
     setHoverIndex(Math.max(0, Math.min(chartDays.length - 1, idx)))
+    setMousePos({ x: e.clientX, y: e.clientY })
   }
 
   const hoverX = hoverIndex !== null ? xOf(hoverIndex) : null
   const hoverDay = hoverIndex !== null ? chartDays[hoverIndex] : null
   const hoverLabel = hoverDay
     ? overlayMode === "wow"
-      ? `Week of ${new Date(hoverDay).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}`
-      : new Date(hoverDay).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })
+      ? `Week of ${new Date(hoverDay + "T00:00:00").toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}`
+      : overlayMode === "mom"
+      ? new Date(hoverDay + "T00:00:00").toLocaleDateString([], { month: "long", year: "numeric" })
+      : new Date(hoverDay + "T00:00:00").toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })
     : null
 
   // Flip tooltip to left side if near right edge
@@ -351,8 +412,8 @@ function AlertBreakdownChart({
 
         {tab === "breakdown" && (
           <>
-            {/* Toggle chips + overlay toggles */}
-            <div className="flex flex-wrap items-center gap-2 mb-4">
+            {/* Toggle chips */}
+            <div className="flex flex-wrap items-center gap-2 mb-2">
               {activeMetrics.map((m) => {
                 const isHidden = hidden.has(m.key)
                 return (
@@ -375,28 +436,30 @@ function AlertBreakdownChart({
                   </button>
                 )
               })}
-              <div className="flex gap-1.5 ml-auto">
-                {(["dod", "wow"] as const).map((mode) => (
-                  <button
-                    key={mode}
-                    onClick={() => setOverlayMode((prev) => prev === mode ? "none" : mode)}
-                    className={`text-[10px] px-2.5 py-0.5 rounded border transition-colors ${
-                      overlayMode === mode
-                        ? "bg-neutral-800 text-white border-neutral-800"
-                        : "bg-white text-neutral-400 border-neutral-200 hover:border-neutral-400 hover:text-neutral-600"
-                    }`}
-                  >
-                    {mode === "dod" ? "Day-over-Day" : "Week-over-Week"}
-                  </button>
-                ))}
-              </div>
             </div>
-            {overlayMode !== "none" && (
-              <div className="flex items-center gap-1.5 mb-2 text-[10px] text-neutral-400">
-                <svg width="20" height="8" viewBox="0 0 20 8"><line x1="0" y1="4" x2="20" y2="4" stroke="#9ca3af" strokeWidth="1.5" strokeDasharray="3 2" /></svg>
-                {overlayMode === "dod" ? "Dotted line = previous day" : "Dotted line = same day 1 week ago"}
-              </div>
-            )}
+            {/* Compare row */}
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-neutral-400">Compare:</span>
+              {(["wow", ...(days.length > 31 ? ["mom"] : [])] as ("wow" | "mom")[]).map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => setOverlayMode((prev) => prev === mode ? "none" : mode)}
+                  className={`text-[10px] px-2.5 py-0.5 rounded border transition-colors ${
+                    overlayMode === mode
+                      ? "bg-neutral-800 text-white border-neutral-800"
+                      : "bg-white text-neutral-400 border-neutral-200 hover:border-neutral-400 hover:text-neutral-600"
+                  }`}
+                >
+                  {mode === "wow" ? "Week-over-Week" : "Month-over-Month"}
+                </button>
+              ))}
+              {overlayMode !== "none" && (
+                <span className="flex items-center gap-1 text-[10px] text-neutral-400 ml-1">
+                  <svg width="20" height="8" viewBox="0 0 20 8"><line x1="0" y1="4" x2="20" y2="4" stroke="#9ca3af" strokeWidth="1.5" strokeDasharray="3 2" /></svg>
+                  {overlayMode === "mom" ? "Dotted line = same month last period" : "Dotted line = same day 1 week ago"}
+                </span>
+              )}
+            </div>
 
             {/* SVG chart */}
             <svg
@@ -404,7 +467,7 @@ function AlertBreakdownChart({
               viewBox={`0 0 ${VW} ${VH}`}
               className="w-full cursor-crosshair"
               onMouseMove={handleMouseMove}
-              onMouseLeave={() => setHoverIndex(null)}
+              onMouseLeave={() => { setHoverIndex(null); setMousePos(null) }}
             >
               {yTicks.map((v, i) => (
                 <g key={`ytick-${i}-${v}`}>
@@ -458,75 +521,75 @@ function AlertBreakdownChart({
                       const v = (chartData[chartDays[hoverIndex]]?.[m.key] ?? 0) as number
                       return <circle key={m.key} cx={hoverX} cy={yOf(v)} r="3.5" fill={m.color} stroke="white" strokeWidth="1.5" />
                     })}
-                  {hoverLabel && hoverDay && (() => {
-                    const visibleMetrics = activeMetrics.filter((m) => !hidden.has(m.key))
-                    const hasOverlay = overlayOffset > 0
-                    const histIdx = hoverIndex - overlayOffset
-                    const histDay = hasOverlay && histIdx >= 0 ? chartDays[histIdx] : null
-                    const histLabel = histDay
-                      ? overlayMode === "wow"
-                        ? `Week of ${new Date(histDay).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}`
-                        : new Date(histDay).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })
-                      : null
-                    const boxW = hasOverlay ? 148 : 100
-                    const boxH = hasOverlay
-                      ? 12 + visibleMetrics.length * 13 + 8 + 11 + visibleMetrics.length * 13 + 6
-                      : 12 + visibleMetrics.length * 13 + 6
-                    const boxX = tooltipOnLeft ? hoverX - boxW - 10 : hoverX + 10
-                    const boxY = MT
-                    const histRowStart = 12 + visibleMetrics.length * 13 + 16
-                    return (
-                      <g>
-                        <rect x={boxX} y={boxY} width={boxW} height={boxH} rx="3" fill="white" stroke="#e5e7eb" strokeWidth="1" filter="drop-shadow(0 1px 3px rgba(0,0,0,0.12))" />
-
-                        {/* Current date header */}
-                        <text x={boxX + 6} y={boxY + 10} fontSize="6" fontWeight="700" fill="#374151">{hoverLabel}</text>
-
-                        {/* Current values */}
-                        {visibleMetrics.map((m, idx) => {
-                          const v = (chartData[hoverDay]?.[m.key] ?? 0) as number
-                          return (
-                            <g key={m.key}>
-                              <circle cx={boxX + 9} cy={boxY + 18 + idx * 13} r="2.5" fill={m.color} />
-                              <text x={boxX + 16} y={boxY + 22 + idx * 13} fontSize="6" fill="#6b7280">{m.label}</text>
-                              <text x={boxX + boxW - 6} y={boxY + 22 + idx * 13} fontSize="6" fontWeight="600" fill="#111827" textAnchor="end">{v}</text>
-                            </g>
-                          )
-                        })}
-
-                        {/* Overlay section */}
-                        {hasOverlay && histLabel && (
-                          <>
-                            <line x1={boxX + 4} y1={boxY + histRowStart - 7} x2={boxX + boxW - 4} y2={boxY + histRowStart - 7} stroke="#e5e7eb" strokeWidth="0.75" />
-                            {/* Historical date header — same style as current */}
-                            <text x={boxX + 6} y={boxY + histRowStart + 2} fontSize="6" fontWeight="700" fill="#374151">{histLabel}</text>
-
-                            {/* Historical values — faded circle swatch + delta */}
-                            {visibleMetrics.map((m, idx) => {
-                              const v = (chartData[hoverDay]?.[m.key] ?? 0) as number
-                              const histV = histDay ? (chartData[histDay]?.[m.key] ?? 0) as number : null
-                              const pct = histV !== null ? (histV > 0 ? Math.round(((v - histV) / histV) * 100) : v > 0 ? 100 : 0) : null
-                              return (
-                                <g key={`hist-${m.key}`}>
-                                  <circle cx={boxX + 9} cy={boxY + histRowStart + 9 + idx * 13} r="2.5" fill={m.color} opacity={0.35} />
-                                  <text x={boxX + 16} y={boxY + histRowStart + 13 + idx * 13} fontSize="6" fill="#6b7280">{m.label}</text>
-                                  {pct !== null && (
-                                    <text x={boxX + boxW - 20} y={boxY + histRowStart + 13 + idx * 13} fontSize="5.5" fontWeight="600" fill={pct > 0 ? "#ef4444" : pct < 0 ? "#22c55e" : "#9ca3af"} textAnchor="end">
-                                      {pct > 0 ? `+${pct}%` : pct < 0 ? `${pct}%` : "—"}
-                                    </text>
-                                  )}
-                                  <text x={boxX + boxW - 4} y={boxY + histRowStart + 13 + idx * 13} fontSize="6" fontWeight="600" fill="#374151" textAnchor="end">{histV ?? "—"}</text>
-                                </g>
-                              )
-                            })}
-                          </>
-                        )}
-                      </g>
-                    )
-                  })()}
                 </g>
               )}
             </svg>
+            {mousePos && hoverIndex !== null && hoverDay && hoverLabel && (() => {
+              const visibleMetrics = activeMetrics.filter((m) => !hidden.has(m.key))
+              const hasOverlay = overlayOffset > 0
+              const histIdx = hoverIndex - overlayOffset
+              const histDay = hasOverlay && histIdx >= 0 ? chartDays[histIdx] : null
+              const histLabel = histDay
+                ? overlayMode === "wow"
+                  ? `Week of ${new Date(histDay + "T00:00:00").toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}`
+                  : overlayMode === "mom"
+                  ? new Date(histDay + "T00:00:00").toLocaleDateString([], { month: "long", year: "numeric" })
+                  : new Date(histDay + "T00:00:00").toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })
+                : null
+              return (
+                <div
+                  className="fixed z-50 pointer-events-none"
+                  style={{ left: tooltipOnLeft ? mousePos.x - 180 : mousePos.x + 16, top: mousePos.y - 10 }}
+                >
+                  <div className="bg-white border border-neutral-200 rounded-lg shadow-lg text-xs p-2.5 min-w-[160px]">
+                    <div className="font-semibold text-neutral-800 mb-1.5 text-[11px]">{hoverLabel}</div>
+                    <div className="space-y-1">
+                      {visibleMetrics.map((m) => {
+                        const v = (chartData[hoverDay]?.[m.key] ?? 0) as number
+                        return (
+                          <div key={m.key} className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full inline-block shrink-0" style={{ backgroundColor: m.color }} />
+                              <span className="text-neutral-500">{m.label}</span>
+                            </div>
+                            <span className="font-semibold text-neutral-900">{v}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                    {hasOverlay && histLabel && (
+                      <>
+                        <div className="border-t border-neutral-100 my-1.5" />
+                        <div className="font-semibold text-neutral-800 mb-1.5 text-[11px]">{histLabel}</div>
+                        <div className="space-y-1">
+                          {visibleMetrics.map((m) => {
+                            const v = (chartData[hoverDay]?.[m.key] ?? 0) as number
+                            const histV = histDay ? (chartData[histDay]?.[m.key] ?? 0) as number : null
+                            const pct = histV !== null ? (histV > 0 ? Math.round(((v - histV) / histV) * 100) : v > 0 ? 100 : 0) : null
+                            return (
+                              <div key={m.key} className="flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="w-2 h-2 rounded-full inline-block shrink-0 opacity-40" style={{ backgroundColor: m.color }} />
+                                  <span className="text-neutral-500">{m.label}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  {pct !== null && (
+                                    <span className={`text-[10px] font-semibold ${pct > 0 ? "text-red-500" : pct < 0 ? "text-green-500" : "text-neutral-400"}`}>
+                                      {pct > 0 ? `+${pct}%` : pct < 0 ? `${pct}%` : "—"}
+                                    </span>
+                                  )}
+                                  <span className="font-semibold text-neutral-700">{histV ?? "—"}</span>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )
+            })()}
           </>
         )}
 
@@ -564,6 +627,7 @@ export function AlertsCountCard({ currentAnalysis }: AlertsCountCardProps): Reac
   const trends = useMemo(() => {
     const d: Record<string, any> = currentAnalysis?.analysis_data?.metadata?.alerts?.daily_alert_breakdown || {}
     return {
+      total:       calcTotalAlertTrend(d),
       incidents:   calcAlertTrend(d, "incidents"),
       after_hours: calcAlertTrend(d, "after_hours"),
       night_time:  calcAlertTrend(d, "night_time"),
@@ -653,7 +717,7 @@ export function AlertsCountCard({ currentAnalysis }: AlertsCountCardProps): Reac
       metricKey: "night_time" as AlertTrendKey,
       trend: trends.night_time,
     },
-    escalatedCount !== null && escalatedCount > 0 && {
+    escalatedCount !== null && {
       icon: <TrendingUp className="w-4 h-4" />,
       count: escalatedCount,
       pct: escalatedPct,
@@ -661,7 +725,7 @@ export function AlertsCountCard({ currentAnalysis }: AlertsCountCardProps): Reac
       metricKey: "escalated" as AlertTrendKey,
       trend: trends.escalated,
     },
-    retriggerCount !== null && retriggerCount > 0 && {
+    retriggerCount !== null && {
       icon: <RefreshCw className="w-4 h-4" />,
       count: retriggerCount,
       pct: retriggerPct,
@@ -671,7 +735,7 @@ export function AlertsCountCard({ currentAnalysis }: AlertsCountCardProps): Reac
     },
   ].filter(Boolean) as { icon: React.ReactElement; count: number; pct: number | null; label: string; metricKey: AlertTrendKey; trend: number | null }[]
 
-  const visibleKeys = new Set(breakdownItems.map((i) => i.metricKey))
+  const visibleKeys = new Set<AlertTrendKey>(["total", ...breakdownItems.map((i) => i.metricKey)])
 
   return (
     <>
@@ -704,64 +768,33 @@ export function AlertsCountCard({ currentAnalysis }: AlertsCountCardProps): Reac
 
               {/* Total count */}
               <div className="flex flex-col gap-0.5">
-                <span className="text-4xl font-bold text-neutral-900 leading-tight">
-                  {typeof total === "number" ? total : "N/A"}
-                </span>
+                <div className="inline-flex items-start gap-1.5">
+                  <span className="text-4xl font-bold text-neutral-900 leading-tight">
+                    {typeof total === "number" ? total : "N/A"}
+                  </span>
+                  <div className="mt-1">
+                    <TrendTag change={trends.total} />
+                  </div>
+                </div>
                 <span className="text-xs text-neutral-400">{dateRange}</span>
               </div>
 
-              {/* Urgency + Signal Quality */}
-              {(urgencyEntries.length > 0 || notNoisePct !== null) && (
-                <div className="grid grid-cols-2 gap-4 my-6">
-                  {urgencyEntries.length > 0 && (
-                    <div>
-                      <div className="flex items-center justify-between text-[13px] mb-1">
-                        <div className="flex items-center gap-1">
-                          <span className="text-neutral-700 font-medium">Urgency</span>
-                          <InfoTooltip content="Breakdown of alert severity: High requires immediate action, Medium needs prompt response, Low is informational." side="bottom" />
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-neutral-600">
-                          {urgencyEntries.map(([key, value]) => (
-                            <div key={key} className="flex items-center gap-1">
-                              <span className={`w-2 h-2 rounded-full inline-block ${URGENCY_DOT_COLORS[key] ?? "bg-gray-400"}`} />
-                              <span className="capitalize font-medium">{key}</span>
-                              <span className="font-semibold text-neutral-800">{value as number}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="flex h-2.5 w-full rounded-full overflow-hidden bg-neutral-100 mb-2">
-                        {urgencyEntries.map(([key, value]) => {
-                          const pct = urgencyTotal > 0 ? ((value as number) / urgencyTotal) * 100 : 0
-                          return (
-                            <div
-                              key={key}
-                              className={`h-full ${URGENCY_COLORS[key] ?? "bg-gray-400"}`}
-                              style={{ width: `${pct}%` }}
-                            />
-                          )
-                        })}
-                      </div>
+              {/* Signal Quality */}
+              {notNoisePct !== null && (
+                <div className="my-6">
+                  <div className="flex items-center justify-between text-[13px] mb-1">
+                    <div className="flex items-center gap-1">
+                      <span className="text-neutral-700 font-medium">Signal Quality</span>
+                      <InfoTooltip content="Percentage of alerts that are actionable (not noise)." side="bottom" />
                     </div>
-                  )}
-
-                  {notNoisePct !== null && (
-                    <div>
-                      <div className="flex items-center justify-between text-[13px] mb-1">
-                        <div className="flex items-center gap-1">
-                          <span className="text-neutral-700 font-medium">Signal Quality</span>
-                          <InfoTooltip content="Percentage of alerts that are actionable (not noise)." side="bottom" />
-                        </div>
-                        <span className="text-green-600 font-medium">{notNoisePct}% actionable</span>
-                      </div>
-                      <div className="h-2 w-full bg-neutral-100 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-green-500 rounded-full"
-                          style={{ width: `${notNoisePct}%` }}
-                        />
-                      </div>
-                    </div>
-                  )}
+                    <span className="text-green-600 font-medium">{notNoisePct}% actionable</span>
+                  </div>
+                  <div className="h-2 w-full bg-neutral-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-green-500 rounded-full"
+                      style={{ width: `${notNoisePct}%` }}
+                    />
+                  </div>
                 </div>
               )}
 
@@ -769,22 +802,24 @@ export function AlertsCountCard({ currentAnalysis }: AlertsCountCardProps): Reac
               {breakdownItems.length > 0 && (
                 <div>
                   <div className="text-[13px] font-semibold text-neutral-800 mb-1">Alert Breakdown</div>
-                  <div className="grid grid-cols-5 gap-2">
+                  <div className="flex justify-between items-start w-full">
                     {breakdownItems.map((item) => {
                       return (
                         <div
                           key={item.label}
-                          className="flex flex-col p-2"
+                          className="flex min-w-0 flex-col items-start text-left"
                         >
-                          <div className="flex justify-end mb-0.5">
+                          <div className="mb-0.5 self-start">
                             <TrendTag change={item.trend} />
                           </div>
-                          <span className="text-base font-bold text-neutral-900 leading-tight">
-                            {item.count}
+                          <div className="flex flex-wrap items-baseline gap-x-1 gap-y-0.5">
+                            <span className="text-base font-bold text-neutral-900 leading-tight">
+                              {item.count}
+                            </span>
                             {item.pct !== null && (
-                              <span className="text-xs font-normal text-neutral-400 ml-1">({item.pct}%)</span>
+                              <span className="text-xs font-normal text-neutral-400">({item.pct}%)</span>
                             )}
-                          </span>
+                          </div>
                           <span className="text-[10px] mt-0.5 leading-tight text-neutral-400">{item.label}</span>
                         </div>
                       )

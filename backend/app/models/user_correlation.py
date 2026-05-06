@@ -24,6 +24,7 @@ class UserCorrelation(Base):
     jira_email = Column(String(255), nullable=True)  # Jira-specific email
     linear_user_id = Column(String(100), nullable=True, index=True)  # Linear user UUID
     linear_email = Column(String(255), nullable=True)  # Linear-specific email
+    openai_user_id = Column(String(100), nullable=True, index=True)  # OpenAI opaque user ID
     timezone = Column(String(50), nullable=True)  # User's timezone from Rootly/PagerDuty (e.g., "America/New_York")
     avatar_url = Column(String(512), nullable=True)  # Profile image URL from PagerDuty/Rootly
     integration_ids = Column(JSON, nullable=True)  # Array of integration IDs this user belongs to
@@ -54,6 +55,8 @@ class UserCorrelation(Base):
             platforms.append("jira")
         if self.linear_user_id:
             platforms.append("linear")
+        if self.openai_user_id:
+            platforms.append("openai")
         return platforms
     
     @property
@@ -77,6 +80,8 @@ class UserCorrelation(Base):
             self.jira_account_id = identifier
         elif platform == "linear":
             self.linear_user_id = identifier
+        elif platform == "openai":
+            self.openai_user_id = identifier
         else:
             raise ValueError(f"Unknown platform: {platform}")
     
@@ -94,6 +99,8 @@ class UserCorrelation(Base):
             return self.jira_account_id
         elif platform == "linear":
             return self.linear_user_id
+        elif platform == "openai":
+            return self.openai_user_id
         else:
             raise ValueError(f"Unknown platform: {platform}")
     

@@ -53,6 +53,7 @@ import {
   fetchGithubUsers,
   fetchJiraUsers,
   fetchLinearUsers,
+  fetchOpenAIMembers,
   fetchSlackUsers,
   updateUserCorrelation,
 } from "./handlers/user-mapping-handlers"
@@ -71,6 +72,7 @@ interface SyncedUser {
   linear_user_id?: string
   linear_email?: string
   slack_user_id?: string
+  openai_user_id?: string
   on_call_status?: string
   is_oncall?: boolean
   role?: string
@@ -142,6 +144,7 @@ function TeamPageContent() {
   const [jiraUsers, setJiraUsers] = useState<any[]>([])
   const [linearUsers, setLinearUsers] = useState<any[]>([])
   const [slackUsers, setSlackUsers] = useState<any[]>([])
+  const [openaiMembers, setOpenaiMembers] = useState<{ id: string; email: string }[]>([])
   const [loadingIntegrationUsers, setLoadingIntegrationUsers] = useState(false)
   const [integrationSearchQuery, setIntegrationSearchQuery] = useState("")
 
@@ -161,6 +164,7 @@ function TeamPageContent() {
       linear_matched?: number
       slack_matched?: number
       slack_skipped?: number
+      openai_matched?: number
     }
   } | null>(null)
 
@@ -383,6 +387,19 @@ function TeamPageContent() {
           }
         }
 
+        // Check AI usage (OpenAI) status
+        try {
+          const aiResp = await fetch(`${API_BASE}/integrations/ai-usage/status`, {
+            headers: { Authorization: `Bearer ${authToken}` },
+          })
+          if (aiResp.ok) {
+            const aiData = await aiResp.json()
+            if (aiData.openai_enabled) connected.add('openai-usage')
+          }
+        } catch (error) {
+          console.debug('Failed to check AI usage status:', error)
+        }
+
         setConnectedIntegrations(connected)
       } catch (error) {
         console.error("Failed to fetch connected integrations:", error)
@@ -519,6 +536,9 @@ function TeamPageContent() {
       if (connectedIntegrations.has('slack') && (orgChanged || slackUsers.length === 0)) {
         promises.push(loadSlackUsersForMapping())
       }
+      if (connectedIntegrations.has('openai-usage') && (orgChanged || openaiMembers.length === 0)) {
+        promises.push(loadOpenAIMembersForMapping())
+      }
 
       if (promises.length > 0) {
         await Promise.all(promises)
@@ -547,6 +567,9 @@ function TeamPageContent() {
       }
       if (connectedIntegrations.has('slack') && slackUsers.length === 0) {
         promises.push(loadSlackUsersForMapping())
+      }
+      if (connectedIntegrations.has('openai-usage') && openaiMembers.length === 0) {
+        promises.push(loadOpenAIMembersForMapping())
       }
 
       if (promises.length > 0) {
@@ -615,6 +638,19 @@ function TeamPageContent() {
     }
   }
 
+  const loadOpenAIMembersForMapping = async () => {
+    setLoadingIntegrationUsers(true)
+    try {
+      const members = await fetchOpenAIMembers()
+      setOpenaiMembers(members || [])
+    } catch (error) {
+      console.error('Error loading OpenAI members:', error)
+      setOpenaiMembers([])
+    } finally {
+      setLoadingIntegrationUsers(false)
+    }
+  }
+
   const handleUserMapping = async (userId: number, integrationType: string, integrationUserId: string) => {
     try {
       // Build the updates object based on integration type
@@ -627,6 +663,8 @@ function TeamPageContent() {
         updates.linear_user_id = integrationUserId
       } else if (integrationType === 'slack') {
         updates.slack_user_id = integrationUserId
+      } else if (integrationType === 'openai') {
+        updates.openai_user_id = integrationUserId
       }
 
       const success = await updateUserCorrelation(userId, updates)
@@ -795,6 +833,7 @@ function TeamPageContent() {
           linear_matched: syncResults.stats?.linear_matched,
           slack_matched: syncResults.stats?.slack_matched,
           slack_skipped: syncResults.stats?.slack_skipped,
+          openai_matched: syncResults.stats?.openai_matched,
         }
       })
 
@@ -1002,6 +1041,13 @@ function TeamPageContent() {
       integrations.push('slack')
     }
 
+    // Show OpenAI if user is mapped and OpenAI Usage is connected.
+    // We trust the persisted OpenAI mapping here, same as Slack, so the
+    // compact integrations cell stays consistent with the mapping popover.
+    if (user.openai_user_id && connectedIntegrations.has('openai-usage')) {
+      integrations.push('openai')
+    }
+
     return integrations
   }
 
@@ -1045,6 +1091,13 @@ function TeamPageContent() {
     const slackUser = slackUsers.find(u => u.id === userId)
     // Never show raw ID - show "Unmapped" instead for privacy
     return slackUser?.name || slackUser?.email || 'Unmapped'
+  }
+
+  const getOpenAIEmail = (userId: string | null | undefined) => {
+    if (!userId) return 'Not mapped'
+    if (openaiMembers.length === 0) return 'Loading...'
+    const member = openaiMembers.find(m => m.id === userId)
+    return member?.email || 'Unmapped'
   }
 
   // Handle column header click for sorting
@@ -1416,6 +1469,9 @@ function TeamPageContent() {
                                         {integration === 'slack' && (
                                           <Image src="/images/slack-logo.png" alt="Slack" width={20} height={20} />
                                         )}
+                                        {integration === 'openai' && (
+                                          <Image src="/images/openai-logo.svg" alt="OpenAI" width={20} height={20} />
+                                        )}
                                       </div>
                                     ))
                                   ) : (
@@ -1759,6 +1815,87 @@ function TeamPageContent() {
                                             )}
                                           </div>
                                         )}
+
+                                        {/* OpenAI */}
+                                        {connectedIntegrations.has('openai-usage') && (
+                                          <div className="border border-neutral-200 rounded">
+                                            <button
+                                              onClick={() => setExpandedIntegration(expandedIntegration === 'openai' ? null : 'openai')}
+                                              className="w-full flex items-center justify-between p-2 hover:bg-neutral-50"
+                                            >
+                                              <div className="flex items-center gap-2">
+                                                <Image src="/images/openai-logo.svg" alt="OpenAI" width={16} height={16} />
+                                                <div className="text-left">
+                                                  <div className="text-sm font-medium">OpenAI</div>
+                                                  <div className={`text-xs ${user.openai_user_id ? 'text-green-600' : 'text-red-600'}`}>
+                                                    {user.openai_user_id ? getOpenAIEmail(user.openai_user_id) : 'Not mapped'}
+                                                  </div>
+                                                </div>
+                                              </div>
+                                              <ChevronDown className={`w-4 h-4 transition-transform ${expandedIntegration === 'openai' ? 'rotate-180' : ''}`} />
+                                            </button>
+                                            {expandedIntegration === 'openai' && (
+                                              <div className="p-2 border-t border-neutral-200">
+                                                {/* Auto Map by email */}
+                                                {!user.openai_user_id && (() => {
+                                                  const emailMatch = openaiMembers.find(m => m.email.toLowerCase() === user.email.toLowerCase())
+                                                  return emailMatch ? (
+                                                    <button
+                                                      onClick={() => handleUserMapping(user.id, 'openai', emailMatch.id)}
+                                                      className="w-full text-left px-2 py-1 text-sm bg-purple-50 text-purple-700 rounded border border-purple-200 mb-2 flex items-center gap-1"
+                                                    >
+                                                      <CheckCircle className="w-3 h-3 shrink-0" />
+                                                      Auto Map: {emailMatch.email}
+                                                    </button>
+                                                  ) : null
+                                                })()}
+                                                <input
+                                                  type="text"
+                                                  placeholder="Search OpenAI members..."
+                                                  value={integrationSearchQuery}
+                                                  onChange={(e) => setIntegrationSearchQuery(e.target.value)}
+                                                  className="w-full px-3 py-2 text-sm border border-neutral-300 rounded-md mb-2"
+                                                />
+                                                <div className="max-h-32 overflow-y-auto space-y-1">
+                                                  {loadingIntegrationUsers ? (
+                                                    <div className="text-center py-2">
+                                                      <Loader2 className="w-4 h-4 animate-spin mx-auto text-neutral-400" />
+                                                    </div>
+                                                  ) : (
+                                                    <>
+                                                      {user.openai_user_id && (
+                                                        <button
+                                                          onClick={() => handleUserMapping(user.id, 'openai', '')}
+                                                          className="w-full text-left px-2 py-1 text-sm hover:bg-red-50 text-red-600 rounded border-b border-neutral-200 mb-1"
+                                                        >
+                                                          Clear mapping
+                                                        </button>
+                                                      )}
+                                                      {openaiMembers.filter(m => m.email.toLowerCase().includes(integrationSearchQuery.toLowerCase())).length > 0 ? (
+                                                        openaiMembers
+                                                          .filter(m => m.email.toLowerCase().includes(integrationSearchQuery.toLowerCase()))
+                                                          .map((member) => (
+                                                            <button
+                                                              key={member.id}
+                                                              onClick={() => handleUserMapping(user.id, 'openai', member.id)}
+                                                              className={`w-full text-left px-2 py-1 text-sm hover:bg-neutral-50 rounded flex items-center justify-between ${user.openai_user_id === member.id ? 'bg-neutral-50' : ''}`}
+                                                            >
+                                                              <span>{member.email}</span>
+                                                              {user.openai_user_id === member.id && <CheckCircle className="w-3 h-3 text-green-600" />}
+                                                            </button>
+                                                          ))
+                                                      ) : (
+                                                        <p className="text-xs text-neutral-500 text-center py-2">
+                                                          {openaiMembers.length === 0 ? 'No OpenAI members loaded' : 'No members found'}
+                                                        </p>
+                                                      )}
+                                                    </>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
                                       </div>
                           ) : (
                             <p className="text-xs text-neutral-500 text-center py-2">No integrations connected</p>
@@ -1961,7 +2098,8 @@ function TeamPageContent() {
                         {(syncProgress.results.github_matched !== undefined ||
                           syncProgress.results.jira_matched !== undefined ||
                           syncProgress.results.linear_matched !== undefined ||
-                          syncProgress.results.slack_matched !== undefined) && (
+                          syncProgress.results.slack_matched !== undefined ||
+                          syncProgress.results.openai_matched !== undefined) && (
                           <div className="border rounded-lg p-4">
                             <div className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-3">
                               Newly Mapped Integrations
@@ -2019,6 +2157,19 @@ function TeamPageContent() {
                                   </div>
                                   <span className="text-sm font-semibold text-neutral-900">
                                     {syncProgress.results.slack_matched}
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* OpenAI */}
+                              {syncProgress.results.openai_matched !== undefined && (
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <Image src="/images/openai-logo.svg" alt="OpenAI" width={20} height={20} />
+                                    <span className="text-sm font-medium text-neutral-700">OpenAI</span>
+                                  </div>
+                                  <span className="text-sm font-semibold text-neutral-900">
+                                    {syncProgress.results.openai_matched}
                                   </span>
                                 </div>
                               )}

@@ -162,7 +162,7 @@ def _has_demo_analysis(db: Session, user_id: int) -> bool:
     return False
 
 
-def _load_health_checkins_for_user(db: Session, user_id: int, organization_id: int, mock_data: dict) -> dict:
+def _load_health_checkins_for_user(db: Session, user_id: int, organization_id: Optional[int], mock_data: dict) -> dict:
     """
     Load health check-in records from mock data for a user.
 
@@ -200,39 +200,36 @@ def _load_health_checkins_for_user(db: Session, user_id: int, organization_id: i
             'errors': []
         }
 
-        # First, ensure team members exist in UserCorrelation for this organization
-        logger.info(f"Creating UserCorrelation records for {len(reports_data)} team members")
-        for report_data in reports_data:
-            email = report_data.get('email', '')
-            if not email:
-                continue
+        # Only create UserCorrelation records when an organization exists
+        if organization_id is not None:
+            logger.info(f"Creating UserCorrelation records for {len(reports_data)} team members")
+            for report_data in reports_data:
+                email = report_data.get('email', '')
+                if not email:
+                    continue
+
+                try:
+                    existing = db.query(UserCorrelation).filter(
+                        UserCorrelation.organization_id == organization_id,
+                        UserCorrelation.email == email,
+                        UserCorrelation.user_id.is_(None)
+                    ).first()
+
+                    if not existing:
+                        correlation = UserCorrelation(
+                            organization_id=organization_id,
+                            email=email,
+                        )
+                        db.add(correlation)
+                except Exception as e:
+                    logger.warning(f"Failed to create UserCorrelation for {email}: {e}")
+                    continue
 
             try:
-                # Check if UserCorrelation already exists (team roster only)
-                existing = db.query(UserCorrelation).filter(
-                    UserCorrelation.organization_id == organization_id,
-                    UserCorrelation.email == email,
-                    UserCorrelation.user_id.is_(None)  # Team roster only
-                ).first()
-
-                if not existing:
-                    # Create UserCorrelation record for team member
-                    correlation = UserCorrelation(
-                        organization_id=organization_id,
-                        email=email,
-                        # Other fields can be set if needed
-                    )
-                    db.add(correlation)
+                db.commit()
             except Exception as e:
-                logger.warning(f"Failed to create UserCorrelation for {email}: {e}")
-                continue
-
-        # Commit UserCorrelations before creating reports
-        try:
-            db.commit()
-        except Exception as e:
-            logger.warning(f"Failed to commit UserCorrelations: {e}")
-            db.rollback()
+                logger.warning(f"Failed to commit UserCorrelations: {e}")
+                db.rollback()
 
         # Load each burnout report
         for report_data in reports_data:
@@ -251,16 +248,22 @@ def _load_health_checkins_for_user(db: Session, user_id: int, organization_id: i
                     # Parse ISO format datetime string
                     submitted_at = datetime.fromisoformat(submitted_at.replace('Z', '+00:00'))
 
-                # ✅ DEDUPLICATION CHECK: Prevent duplicate reports when multiple users sign up
-                # Reports are organization-scoped (all demo users share the same team member data)
-                existing_report = db.query(UserBurnoutReport).filter(
-                    UserBurnoutReport.organization_id == organization_id,
-                    UserBurnoutReport.email == email,
-                    UserBurnoutReport.submitted_at == submitted_at
-                ).first()
+                # Deduplication: scope by user_id for org-less demos, org for org-scoped demos
+                if organization_id is None:
+                    existing_report = db.query(UserBurnoutReport).filter(
+                        UserBurnoutReport.user_id == user_id,
+                        UserBurnoutReport.email == email,
+                        UserBurnoutReport.submitted_at == submitted_at
+                    ).first()
+                else:
+                    existing_report = db.query(UserBurnoutReport).filter(
+                        UserBurnoutReport.organization_id == organization_id,
+                        UserBurnoutReport.email == email,
+                        UserBurnoutReport.submitted_at == submitted_at
+                    ).first()
 
                 if existing_report:
-                    logger.debug(f"Report for {email} at {submitted_at} already exists in organization {organization_id}, skipping")
+                    logger.debug(f"Report for {email} at {submitted_at} already exists, skipping")
                     result['skipped'] += 1
                     continue
 
@@ -377,9 +380,13 @@ def create_demo_analysis_for_new_user(db: Session, user: User) -> bool:
             f"UUID: {analysis.uuid}"
         )
 
-        # Skip health check-in data for org-less demo analyses
-        # Health check-ins require organization_id, so we don't load them for demos anymore
-        logger.info(f"Skipping health check-ins for org-less demo user {user.id}")
+        # Load health check-ins with organization_id=None (org-less demo)
+        # The survey query falls back to user_id lookup when organization_id is null
+        checkins = _load_health_checkins_for_user(db, user.id, None, mock_data)
+        logger.info(
+            f"Health check-ins for demo user {user.id}: "
+            f"{checkins['created']} created, {checkins['skipped']} skipped, {checkins['failed']} failed"
+        )
 
         return True
 

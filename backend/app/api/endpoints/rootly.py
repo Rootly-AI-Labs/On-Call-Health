@@ -1368,6 +1368,12 @@ async def sync_integration_users(
                     f"{jira_stats['skipped']} skipped"
                 )
 
+            # After syncing, try to match OpenAI accounts by email
+            openai_stats = await sync_service._match_openai_users(current_user)
+            if openai_stats:
+                stats['openai_matched'] = openai_stats['matched']
+                stats['openai_skipped'] = openai_stats['skipped']
+
             # Build detailed message for beta integration (matching regular integration format)
             message_parts = [f"Successfully synced {stats['total']} users from beta integration"]
             if stats.get('github_matched'):
@@ -1437,6 +1443,8 @@ async def sync_integration_users(
             message_parts.append(f"Jira: {stats['jira_matched']} users matched")
         if stats.get('jira_skipped'):
             message_parts.append(f"({stats['jira_skipped']} skipped)")
+        if stats.get('openai_matched'):
+            message_parts.append(f"OpenAI: {stats['openai_matched']} users matched")
 
         return {
             "success": True,
@@ -1773,6 +1781,8 @@ async def get_synced_users(
                 platforms.append("jira")
             if corr.linear_user_id:
                 platforms.append("linear")
+            if corr.openai_user_id:
+                platforms.append("openai")
 
             # Check if user is currently on-call
             # SAFETY: Guard against NULL email to prevent crash
@@ -1809,6 +1819,7 @@ async def get_synced_users(
                 "jira_email": corr.jira_email,
                 "linear_user_id": corr.linear_user_id,
                 "linear_email": corr.linear_email,
+                "openai_user_id": corr.openai_user_id,
                 "is_oncall": is_oncall,
                 "survey_count": survey_counts.get(corr.id, 0),
                 "selected_for_automated_surveys": selected_for_automated_surveys,
@@ -2567,4 +2578,76 @@ async def update_user_correlation_slack_mapping(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to update Slack mapping: {str(e)}"
+        )
+
+
+@router.patch("/user-correlation/{correlation_id}/openai-mapping")
+async def update_user_correlation_openai_mapping(
+    correlation_id: int,
+    openai_user_id: str = "",
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Manually update OpenAI user mapping for a UserCorrelation.
+    The openai_user_id is the opaque ID returned by GET /v1/organization/members.
+    """
+    try:
+        from sqlalchemy import or_, and_
+
+        correlation = db.query(UserCorrelation).filter(
+            UserCorrelation.id == correlation_id,
+            or_(
+                UserCorrelation.user_id == current_user.id,
+                and_(
+                    UserCorrelation.user_id.is_(None),
+                    UserCorrelation.organization_id.isnot(None),
+                    UserCorrelation.organization_id == current_user.organization_id
+                )
+            )
+        ).first()
+
+        if not correlation:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User correlation not found or doesn't belong to your organization"
+            )
+
+        openai_user_id = (openai_user_id or "").strip()
+
+        if openai_user_id == "":
+            correlation.openai_user_id = None
+            db.commit()
+            message = "OpenAI mapping cleared"
+        else:
+            # Remove this openai_user_id from any other correlation in the org
+            conflicting = db.query(UserCorrelation).filter(
+                UserCorrelation.id != correlation_id,
+                UserCorrelation.openai_user_id == openai_user_id,
+                UserCorrelation.organization_id == current_user.organization_id
+            ).all()
+            for c in conflicting:
+                c.openai_user_id = None
+            correlation.openai_user_id = openai_user_id
+            db.commit()
+            message = f"OpenAI user ID '{openai_user_id}' assigned"
+
+        return {
+            "success": True,
+            "message": message,
+            "correlation": {
+                "id": correlation.id,
+                "email": correlation.email,
+                "openai_user_id": correlation.openai_user_id,
+            }
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Failed to update OpenAI mapping: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update OpenAI mapping: {str(e)}"
         )

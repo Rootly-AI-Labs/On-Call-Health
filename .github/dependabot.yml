@@ -1,55 +1,104 @@
 version: 2
+
 updates:
-  - package-ecosystem: "github-actions"
+  - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
-    groups:
-      actions:
-        patterns:
-          - "*"
+    open-pull-requests-limit: 20
     cooldown:
       default-days: 3
+      semver-major-days: 7
+    groups:
+      minor-and-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+        patterns:
+          - "*"
 
   - package-ecosystem: "npm"
     directory: "/frontend"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 20
+    cooldown:
+      default-days: 3
+      semver-major-days: 7
     groups:
       minor-and-patch:
         applies-to: version-updates
         update-types:
           - "minor"
           - "patch"
-    cooldown:
-      default-days: 3
+        patterns:
+          - "*"
 
   - package-ecosystem: "pip"
     directory: "/backend"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 20
+    cooldown:
+      default-days: 3
+      semver-major-days: 7
     groups:
       minor-and-patch:
         applies-to: version-updates
         update-types:
           - "minor"
           - "patch"
-    cooldown:
-      default-days: 3
-      semver-major-days: 7
-
-  - package-ecosystem: "docker"
-    directory: "/backend"
-    schedule:
-      interval: "weekly"
-    cooldown:
-      default-days: 3
+        patterns:
+          - "*"
 
   - package-ecosystem: "docker"
     directory: "/frontend"
     schedule:
       interval: "weekly"
+    open-pull-requests-limit: 20
     cooldown:
       default-days: 3
+      semver-major-days: 7
+    groups:
+      minor-and-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+        patterns:
+          - "*"
+
+  - package-ecosystem: "docker"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 20
+    cooldown:
+      default-days: 3
+      semver-major-days: 7
+    groups:
+      minor-and-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+        patterns:
+          - "*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 20
+    cooldown:
+      default-days: 3
+      semver-major-days: 7
+    groups:
+      minor-and-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+        patterns:
+          - "*"
