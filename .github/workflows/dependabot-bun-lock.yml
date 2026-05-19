@@ -1,0 +1,31 @@
+name: Update bun.lock for Dependabot PRs
+
+on:
+  pull_request:
+    paths:
+      - 'frontend/package.json'
+
+permissions:
+  contents: write
+
+jobs:
+  update-lockfile:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: oven-sh/setup-bun@v2
+
+      - run: cd frontend && bun install
+
+      - name: Commit updated lockfile
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add frontend/bun.lock
+          git diff --cached --quiet || git commit -m "chore: update bun.lock"
+          git push
