@@ -4,7 +4,7 @@ import { useGettingStarted } from "@/contexts/GettingStartedContext"
 import IntroGuide from "@/components/IntroGuide"
 
 export function GettingStartedDialog() {
-  const { isOpen, currentStep, nextStep, prevStep, closeGettingStarted } = useGettingStarted()
+  const { isOpen, currentStep, nextStep, prevStep, closeGettingStarted, setCurrentStep } = useGettingStarted()
 
   return (
     <IntroGuide
@@ -13,6 +13,7 @@ export function GettingStartedDialog() {
       onNext={nextStep}
       onPrev={prevStep}
       onClose={closeGettingStarted}
+      onGoToStep={setCurrentStep}
     />
   )
 }

@@ -408,6 +408,7 @@ function DashboardContent() {
           onNext={onboarding.nextStep}
           onPrev={onboarding.prevStep}
           onClose={onboarding.skipOnboarding}
+          onGoToStep={onboarding.goToStep}
         />
       )}
       <div className="flex flex-1 overflow-hidden">

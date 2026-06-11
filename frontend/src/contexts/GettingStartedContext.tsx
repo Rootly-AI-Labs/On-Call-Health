@@ -28,7 +28,7 @@ export function GettingStartedProvider({ children }: { children: ReactNode }) {
   }
 
   const nextStep = () => {
-    if (currentStep < 3) {
+    if (currentStep < 4) {
       setCurrentStepState(currentStep + 1)
     } else {
       closeGettingStarted()
