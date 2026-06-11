@@ -10,9 +10,10 @@ interface IntroGuideProps {
   onNext: () => void
   onPrev: () => void
   onClose: () => void
+  onGoToStep: (step: number) => void
 }
 
-function IntroGuide({ isOpen, currentStep, onNext, onPrev, onClose }: IntroGuideProps) {
+function IntroGuide({ isOpen, currentStep, onNext, onPrev, onClose, onGoToStep }: IntroGuideProps) {
   if (!isOpen) return null
 
   const steps = [
@@ -41,6 +42,15 @@ function IntroGuide({ isOpen, currentStep, onNext, onPrev, onClose }: IntroGuide
       description: "Get AI-generated summaries to quickly prep for incident reviews or spot trends you might have missed.",
       image: "/images/ai-team-insights.png",
     },
+  ]
+
+  const integrations = [
+    { name: "Rootly", src: "/images/rootly-ai-logo.png", wordmark: true },
+    { name: "PagerDuty", src: "/images/pagerduty-logo.svg" },
+    { name: "GitHub", src: "/images/github-logo.png" },
+    { name: "Slack", src: "/images/slack-logo.png" },
+    { name: "Linear", src: "/images/linear-logo.png" },
+    { name: "Jira", src: "/images/jira-logo.png" },
   ]
 
   const step = steps[currentStep]
@@ -75,7 +85,26 @@ function IntroGuide({ isOpen, currentStep, onNext, onPrev, onClose }: IntroGuide
           <div className="p-6">
             <p className="text-lg text-slate-700 dark:text-slate-300 mb-3">{step.description}</p>
 
-            {step.image && (
+            {currentStep === 0 ? (
+              <div className="mt-6 rounded-lg bg-white p-8">
+                <div className="grid grid-cols-3 gap-x-8 gap-y-10">
+                  {integrations.map((integration) => (
+                    <div key={integration.name} className="flex items-center justify-center gap-2.5">
+                      <Image
+                        src={integration.src}
+                        alt={integration.name}
+                        width={integration.wordmark ? 180 : 32}
+                        height={40}
+                        className={integration.wordmark ? "h-10 w-auto object-contain" : "h-8 w-8 object-contain"}
+                      />
+                      {!integration.wordmark && (
+                        <span className="text-lg font-semibold text-slate-900 select-none cursor-default">{integration.name}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : step.image && (
               <div className="mt-6 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-50 dark:bg-slate-900/30">
                 <div className="relative w-full flex items-center justify-center" style={{ maxHeight: '320px' }}>
                   <Image
@@ -95,10 +124,14 @@ function IntroGuide({ isOpen, currentStep, onNext, onPrev, onClose }: IntroGuide
           {/* Progress dots */}
           <div className="flex justify-center gap-2 px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/30">
             {steps.map((_, index) => (
-              <div
+              <button
                 key={index}
-                className={`h-2 rounded-full transition-all ${
-                  index === currentStep ? "w-6 bg-purple-700 dark:bg-purple-500" : "w-2 bg-slate-300 dark:bg-slate-600"
+                type="button"
+                onClick={() => onGoToStep(index)}
+                aria-label={`Go to step ${index + 1}`}
+                aria-current={index === currentStep ? "step" : undefined}
+                className={`h-1.5 rounded-full transition-all cursor-pointer hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 ${
+                  index === currentStep ? "w-4 bg-purple-600 dark:bg-purple-500" : "w-1.5 bg-slate-300 dark:bg-slate-600 hover:bg-slate-400 dark:hover:bg-slate-500"
                 }`}
               />
             ))}
