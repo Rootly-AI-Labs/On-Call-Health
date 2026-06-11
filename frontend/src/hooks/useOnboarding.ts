@@ -24,7 +24,7 @@ export function useOnboarding(userId?: string | number) {
   }, [storageKey])
 
   const nextStep = () => {
-    if (currentStep < 3) {
+    if (currentStep < 4) {
       setCurrentStep(currentStep + 1)
     } else {
       completeOnboarding()
@@ -35,6 +35,10 @@ export function useOnboarding(userId?: string | number) {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1)
     }
+  }
+
+  const goToStep = (step: number) => {
+    setCurrentStep(step)
   }
 
   const completeOnboarding = () => {
@@ -59,6 +63,7 @@ export function useOnboarding(userId?: string | number) {
     hasSeenOnboarding,
     nextStep,
     prevStep,
+    goToStep,
     completeOnboarding,
     skipOnboarding,
     restartOnboarding,
