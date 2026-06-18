@@ -41,13 +41,13 @@
     "clsx": "^2.0.0",
     "date-fns": "^4.4.0",
     "lucide-react": "^0.577.0",
-    "next": "^16.2.7",
+    "next": "^16.2.9",
     "next-themes": "^0.4.6",
     "postcss": "^8.5.10",
     "react": "^19.2.7",
     "react-day-picker": "^9.14.0",
     "react-dom": "^19.2.7",
-    "react-hook-form": "^7.78.0",
+    "react-hook-form": "^7.79.0",
     "react-markdown": "^10.1.0",
     "recharts": "^3.8.1",
     "simple-icons": "^16.23.0",
@@ -59,11 +59,11 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@playwright/test": "^1.60.0",
+    "@playwright/test": "^1.61.0",
     "@types/d3-shape": "^3.1.8",
     "dotenv": "^17.4.2",
     "eslint": "^10",
-    "eslint-config-next": "^16.2.7",
+    "eslint-config-next": "^16.2.9",
     "husky": "^9.1.7"
   },
   "overrides": {
