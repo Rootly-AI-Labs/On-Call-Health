@@ -205,22 +205,6 @@ async def startup_event():
     finally:
         db.close()
 
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Dispose the database engine on graceful shutdown.
-
-    Releases all pooled connections back to PostgreSQL promptly when the
-    container stops or is redeployed, instead of leaving them to linger
-    server-side until they time out. This shrinks the window during a deploy
-    where the old and new containers both hold full pools and can push the
-    shared server over its connection limit.
-    """
-    from app.models.base import engine
-    engine.dispose()
-    logger.info("Database engine disposed on shutdown")
-
-
     # Start auto-refresh analysis scheduler — one cron job per interval cadence
     from apscheduler.schedulers.asyncio import AsyncIOScheduler
     from apscheduler.triggers.cron import CronTrigger
@@ -248,6 +232,21 @@ async def shutdown_event():
         print("Weekly digest scheduler started (fires */30; sends Tuesday 10am per user's local timezone)")
     else:
         print("Weekly digest scheduler disabled (WEEKLY_DIGEST_ENABLED=false)")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Dispose the database engine on graceful shutdown.
+
+    Releases all pooled connections back to PostgreSQL promptly when the
+    container stops or is redeployed, instead of leaving them to linger
+    server-side until they time out. This shrinks the window during a deploy
+    where the old and new containers both hold full pools and can push the
+    shared server over its connection limit.
+    """
+    from app.models.base import engine
+    engine.dispose()
+    logger.info("Database engine disposed on shutdown")
 
 
 # Include API routers

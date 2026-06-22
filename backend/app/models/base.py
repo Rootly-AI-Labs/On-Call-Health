@@ -78,7 +78,7 @@ engine = create_engine(
                             # connections in the idle tail age out and get recycled —
                             # keeps the number of actually-open connections low under
                             # bursty load instead of holding the full pool open
-    echo_pool=False,        # set to True (or DB_ECHO_POOL) for verbose pool debugging
+    echo_pool=os.getenv("DB_ECHO_POOL", "").lower() in ("1", "true", "yes"),  # set DB_ECHO_POOL=true for verbose pool debugging
     connect_args={
         "application_name": APP_NAME,
         "options": f"-c statement_timeout={STATEMENT_TIMEOUT_MS} -c lock_timeout={LOCK_TIMEOUT_MS}",
