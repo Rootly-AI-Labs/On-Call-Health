@@ -28,12 +28,8 @@ class PagerDutyAPIClient:
             "Content-Type": "application/json"
         }
         
-        # 🎯 RAILWAY DEBUG: Token identification for debugging
         token_suffix = api_token[-4:] if len(api_token) > 4 else "***"
-        logger.info(f"PAGERDUTY CLIENT: Initialized with token ending in {token_suffix}")
-        logger.info(f"PAGERDUTY CLIENT: Enhanced normalization version ACTIVE - Build 875bd95")
-        import time
-        logger.info(f"PAGERDUTY CLIENT: On-call methods deployed - Build {int(time.time())}")
+        logger.debug(f"PAGERDUTY CLIENT: Initialized with token ending in {token_suffix}")
         
     async def test_connection(self) -> Dict[str, Any]:
         """Test the PagerDuty API connection and get account info."""
@@ -807,16 +803,14 @@ class PagerDutyAPIClient:
         logger.info(f"Successfully extracted {len(on_call_user_emails)} on-call user emails from PagerDuty")
         return on_call_user_emails
 
-    async def collect_analysis_data(self, days_back: int = 30) -> Dict[str, Any]:
-        """🚀 ENHANCED: Collect all data needed for burnout analysis with enhanced normalization."""
-        # 🎯 CRITICAL FIX: This method was using old normalization - now using enhanced version
-        logger.info(f"🚀 ENHANCED PD COLLECT_ANALYSIS_DATA: Starting {days_back}-day collection")
-        
-        # Delegate to the enhanced data collection method 
+    async def collect_analysis_data(self, days_back: int = 30, team_ids: list = None) -> Dict[str, Any]:
+        """Collect all data needed for burnout analysis with enhanced normalization."""
+        logger.info(f"PD COLLECT_ANALYSIS_DATA: Starting {days_back}-day collection (team_ids={team_ids})")
+
         collector = PagerDutyDataCollector(self.api_token)
-        enhanced_data = await collector.collect_all_data(days_back)
-        
-        logger.info(f"🚀 ENHANCED PD COLLECT_ANALYSIS_DATA: Enhanced collection completed")
+        enhanced_data = await collector.collect_all_data(days_back, team_ids=team_ids)
+
+        logger.info(f"PD COLLECT_ANALYSIS_DATA: Collection completed")
         return enhanced_data
 
 
@@ -826,32 +820,35 @@ class PagerDutyDataCollector:
     def __init__(self, api_token: str):
         self.client = PagerDutyAPIClient(api_token)
         
-    async def collect_all_data(self, days_back: int = 30) -> Dict[str, Any]:
-        """Collect all necessary data for burnout analysis."""
-        # 🎯 RAILWAY DEBUG: Collection start
+    async def collect_all_data(self, days_back: int = 30, team_ids: list = None) -> Dict[str, Any]:
+        """Collect all necessary data for burnout analysis.
+
+        Args:
+            days_back: Number of days to look back.
+            team_ids: Optional list of PagerDuty team IDs to scope the query.
+                      When None, all account teams are fetched and used.
+        """
         token_suffix = self.client.api_token[-4:] if len(self.client.api_token) > 4 else "***"
         logger.info(f"PAGERDUTY COLLECTION: Starting {days_back}-day collection with token ending in {token_suffix}")
-        
-        # Calculate date range
+
         until = datetime.now(pytz.UTC)
         since = until - timedelta(days=days_back)
-        
+
         logger.info(f"PAGERDUTY COLLECTION: Date range {since.isoformat()} to {until.isoformat()}")
-        
-        # Fetch users AND teams in parallel first; teams are needed to scope the analytics query
+
         users_task = self.client.get_users(limit=1000)
         teams_task = self.client.get_teams(limit=200)
 
         logger.info(f"PAGERDUTY COLLECTION: Starting parallel API calls (users + teams)...")
         users, teams = await asyncio.gather(users_task, teams_task)
 
-        team_ids = [t["id"] for t in teams if t.get("id")]
+        if team_ids is None:
+            team_ids = [t["id"] for t in teams if t.get("id")]
         logger.info(
             f"PAGERDUTY COLLECTION: Collected {len(users)} users and "
-            f"{len(teams)} teams (IDs: {team_ids})"
+            f"{len(teams)} teams (scoped team_ids: {team_ids})"
         )
 
-        # Now fetch analytics incidents scoped to the account's teams
         analytics_incidents = await self.client.get_analytics_incidents(
             since=since,
             until=until,

@@ -1341,7 +1341,8 @@ class UnifiedBurnoutAnalyzer:
 
             # Fallback: Use the existing data collection method (backward compatibility)
             logger.info(f"ANALYZER DATA FETCH: No synced users provided, delegating to client.collect_analysis_data for {days_back} days")
-            data = await self.client.collect_analysis_data(days_back=days_back, team_name=self.team_name)
+            pd_team_ids = [self.pagerduty_team_id] if self.pagerduty_team_id else None
+            data = await self.client.collect_analysis_data(days_back=days_back, team_ids=pd_team_ids)
             
             fetch_duration = (datetime.now() - fetch_start_time).total_seconds()
             logger.info(f"ANALYZER DATA FETCH: Client returned after {fetch_duration:.2f}s - Type: {type(data)}")
