@@ -1384,19 +1384,19 @@ class MigrationRunner:
                 ]
             },
             {
-                "name": "052_add_openai_user_id_to_user_correlations",
+                "name": "052_add_pagerduty_teams_to_user_correlations",
+                "description": "Add pagerduty_teams JSONB column to user_correlations for storing team membership info",
+                "sql_file": "2026_04_10_add_pagerduty_teams_to_user_correlations.sql"
+            },
+            {
+                "name": "053_add_openai_user_id_to_user_correlations",
                 "description": "Add openai_user_id column to user_correlations for per-user OpenAI token usage tracking",
                 "sql_file": "2026_04_20_add_openai_user_id_to_user_correlations.sql"
             },
             {
-                "name": "053_ai_usage_nullable_org",
+                "name": "054_ai_usage_nullable_org",
                 "description": "Make organization_id nullable in ai_usage_integrations and add partial unique indexes",
                 "sql_file": "2026_04_20_ai_usage_nullable_org.sql"
-            },
-            {
-                "name": "054_add_pagerduty_teams_to_user_correlations",
-                "description": "Add pagerduty_teams JSONB column to user_correlations for storing team membership info",
-                "sql_file": "2026_04_10_add_pagerduty_teams_to_user_correlations.sql"
             },
             # Add future migrations here with incrementing numbers
         ]

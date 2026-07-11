@@ -27,6 +27,8 @@ interface Incident {
     started_by?: IncidentUser
     resolved_by?: IncidentUser
     mitigated_by?: IncidentUser
+    all_user_ids?: string[]
+    assigned_to?: IncidentUser
   }
   // PagerDuty normalized format (flat structure)
   title?: string
@@ -41,6 +43,8 @@ interface Incident {
   started_by?: IncidentUser
   resolved_by?: IncidentUser
   mitigated_by?: IncidentUser
+  all_user_ids?: string[]
+  assigned_to?: IncidentUser
 }
 
 // Safely extract numeric value, handling NaN and non-numbers
