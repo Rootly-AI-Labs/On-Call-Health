@@ -983,7 +983,8 @@ class PagerDutyDataCollector:
 
             normalized_incidents.append({
                 "id": incident.get("id"),
-                "title": incident.get("title", ""),
+                # Analytics API returns the incident title under `description`, not `title`.
+                "title": incident.get("title") or incident.get("description", ""),
                 "description": incident.get("description", ""),
                 "status": incident.get("status", "resolved"),
                 "severity": urgency,

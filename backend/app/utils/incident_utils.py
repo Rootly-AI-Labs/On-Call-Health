@@ -222,6 +222,11 @@ def slim_pd_incident(incident: Dict[str, Any]) -> Dict[str, Any]:
         return incident
 
     assigned_to = incident.get("assigned_to") or {}
+    # Pre-computed metrics live under `analytics_data` on the normalized incident,
+    # not at the top level.
+    analytics_data = incident.get("analytics_data") or {}
+    # html_url isn't set during normalization; pull it from the raw Analytics payload.
+    raw_data = incident.get("raw_data") or {}
 
     return {
         "id": incident.get("id"),
@@ -230,17 +235,19 @@ def slim_pd_incident(incident: Dict[str, Any]) -> Dict[str, Any]:
         "severity": incident.get("severity", ""),
         "created_at": incident.get("created_at"),
         "service": incident.get("service", ""),
-        "seconds_to_first_ack": incident.get("seconds_to_first_ack"),
-        "auto_resolved": incident.get("auto_resolved"),
-        "html_url": incident.get("html_url"),
+        "seconds_to_first_ack": analytics_data.get("seconds_to_first_ack"),
+        "auto_resolved": analytics_data.get("auto_resolved"),
+        "html_url": incident.get("html_url") or raw_data.get("html_url"),
         # Map assigned_to → user so UserIncidentCard filter finds it via attrs.user
         "user": {
             "id": assigned_to.get("id"),
             "email": assigned_to.get("email"),
             "name": assigned_to.get("name"),
         } if assigned_to.get("id") else None,
-        # Keep all involved user IDs for fallback filtering
-        "all_user_ids": incident.get("all_user_ids", []),
+        # Keep all involved user IDs for fallback filtering.
+        # Normalization stores these under `analytics_user_ids`; expose them as
+        # `all_user_ids` which is the key the frontend (UserIncidentCard) reads.
+        "all_user_ids": incident.get("all_user_ids") or incident.get("analytics_user_ids", []),
     }
 
 

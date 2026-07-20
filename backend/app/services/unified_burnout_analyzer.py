@@ -1341,8 +1341,13 @@ class UnifiedBurnoutAnalyzer:
 
             # Fallback: Use the existing data collection method (backward compatibility)
             logger.info(f"ANALYZER DATA FETCH: No synced users provided, delegating to client.collect_analysis_data for {days_back} days")
-            pd_team_ids = [self.pagerduty_team_id] if self.pagerduty_team_id else None
-            data = await self.client.collect_analysis_data(days_back=days_back, team_ids=pd_team_ids)
+            # collect_analysis_data has a platform-specific signature: PagerDuty takes
+            # team_ids, Rootly takes team_name. Passing the wrong kwarg raises TypeError.
+            if self.platform == "pagerduty":
+                pd_team_ids = [self.pagerduty_team_id] if self.pagerduty_team_id else None
+                data = await self.client.collect_analysis_data(days_back=days_back, team_ids=pd_team_ids)
+            else:  # rootly
+                data = await self.client.collect_analysis_data(days_back=days_back, team_name=self.team_name)
             
             fetch_duration = (datetime.now() - fetch_start_time).total_seconds()
             logger.info(f"ANALYZER DATA FETCH: Client returned after {fetch_duration:.2f}s - Type: {type(data)}")
