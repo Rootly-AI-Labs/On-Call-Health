@@ -16,6 +16,11 @@ logger = logging.getLogger(__name__)
 # Cache TTL for PagerDuty data (1 hour - users/services rarely change)
 PAGERDUTY_CACHE_TTL_SECONDS = 3600
 
+# Cache TTL for the Analytics API entitlement verdict per token. Entitlement
+# (plan/add-on) changes very rarely, so we cache the answer for longer to avoid
+# repeatedly probing an endpoint we already know the account can't use.
+PAGERDUTY_ENTITLEMENT_TTL_SECONDS = 6 * 3600
+
 
 class PagerDutyAnalyticsUnavailable(Exception):
     """Raised when the PagerDuty Analytics API is not accessible for this account/token.
@@ -360,6 +365,26 @@ class PagerDutyAPIClient:
 
         return all_members
 
+    def _analytics_unavailable_status(self) -> Optional[int]:
+        """Return the cached HTTP status (401/402/403) if we've already determined
+        this token can't use the Analytics API, else None. Lets callers skip the
+        network round-trip and go straight to the REST fallback."""
+        cached = get_cached_api_response("pagerduty", "analytics_entitlement", self.api_token, {})
+        if cached and not cached.get("available", True):
+            return cached.get("status", 402)
+        return None
+
+    def _cache_analytics_entitlement(self, available: bool, status: Optional[int] = None) -> None:
+        """Remember whether this token can use the Analytics API, so we neither
+        re-probe when it's available nor keep hammering it when it isn't."""
+        payload = {"available": available}
+        if status is not None:
+            payload["status"] = status
+        set_cached_api_response(
+            "pagerduty", "analytics_entitlement", self.api_token,
+            payload, PAGERDUTY_ENTITLEMENT_TTL_SECONDS, {},
+        )
+
     async def get_analytics_incidents(
         self,
         since: datetime,
@@ -403,6 +428,17 @@ class PagerDutyAPIClient:
             f"PD ANALYTICS: Starting fetch for {days_back} days "
             f"({since_str} → {until_str}, limit={limit}, teams={team_ids_str})"
         )
+
+        # Short-circuit: if a prior call already found this token isn't entitled to
+        # the Analytics API, don't waste a round-trip — signal the caller to use the
+        # REST fallback immediately.
+        cached_status = self._analytics_unavailable_status()
+        if cached_status is not None:
+            logger.info(
+                f"PD ANALYTICS: Skipping call — analytics known unavailable "
+                f"(cached HTTP {cached_status}) for this token"
+            )
+            raise PagerDutyAnalyticsUnavailable(cached_status, "cached entitlement verdict")
 
         url = f"{self.base_url}/analytics/raw/incidents"
         # Analytics API requires application/json Accept and Content-Type headers
@@ -448,12 +484,17 @@ class PagerDutyAPIClient:
                                 f"{error_text[:300]}"
                             )
                             # Entitlement/permission failures mean this account or token
-                            # can't use the Analytics API at all — signal the caller so it
-                            # can fall back to the REST /incidents endpoint instead of
-                            # silently returning zero incidents.
+                            # can't use the Analytics API at all — cache the verdict so we
+                            # stop probing it, and signal the caller to fall back to the
+                            # REST /incidents endpoint instead of silently returning zero.
                             if response.status in (401, 402, 403):
+                                self._cache_analytics_entitlement(False, response.status)
                                 raise PagerDutyAnalyticsUnavailable(response.status, error_text[:200])
                             break
+
+                        # First successful page confirms the token is entitled.
+                        if page == 1:
+                            self._cache_analytics_entitlement(True)
 
                         data = await response.json()
                         incidents = data.get("data", [])
@@ -611,6 +652,16 @@ class PagerDutyAPIClient:
 
         async def _check_analytics_endpoint(session):
             """Check analytics API access via a minimal POST probe."""
+            # Reuse the cached entitlement verdict if we have one — no need to probe
+            # an endpoint we already know the answer for.
+            cached_status = self._analytics_unavailable_status()
+            if cached_status is not None:
+                reason = {
+                    402: "Requires Analytics add-on (plan upgrade needed)",
+                    403: "Token lacks analytics permission",
+                    401: "Unauthorized - check API token",
+                }.get(cached_status, f"HTTP {cached_status}")
+                return ("analytics", False, f"{reason} (cached)")
             try:
                 now = datetime.now(pytz.UTC)
                 payload = {
@@ -631,12 +682,16 @@ class PagerDutyAPIClient:
                     json=payload,
                 ) as response:
                     if response.status == 200:
+                        self._cache_analytics_entitlement(True)
                         return ("analytics", True, None)
                     elif response.status == 402:
+                        self._cache_analytics_entitlement(False, 402)
                         return ("analytics", False, "Requires Analytics add-on (plan upgrade needed)")
                     elif response.status == 403:
+                        self._cache_analytics_entitlement(False, 403)
                         return ("analytics", False, "Token lacks analytics permission")
                     elif response.status == 401:
+                        self._cache_analytics_entitlement(False, 401)
                         return ("analytics", False, "Unauthorized - check API token")
                     else:
                         return ("analytics", False, f"HTTP {response.status}")
@@ -861,11 +916,10 @@ class PagerDutyDataCollector:
 
         logger.info(f"PAGERDUTY COLLECTION: Date range {since.isoformat()} to {until.isoformat()}")
 
-        users_task = self.client.get_users(limit=1000)
-        teams_task = self.client.get_teams(limit=200)
-
-        logger.info(f"PAGERDUTY COLLECTION: Starting parallel API calls (users + teams)...")
-        users, teams = await asyncio.gather(users_task, teams_task)
+        # Only users are needed here: incident scoping is handled by the Analytics
+        # `team_ids` filter (or the synced-user set), so we no longer fetch the full
+        # teams list — it was an unused API call.
+        users = await self.client.get_users(limit=1000)
 
         # When no explicit team scope is requested, do NOT expand to the full
         # team list: passing team_ids=None returns every incident (including
@@ -873,8 +927,8 @@ class PagerDutyDataCollector:
         # for a specific team scope.
         scoped_team_ids = team_ids if team_ids else None
         logger.info(
-            f"PAGERDUTY COLLECTION: Collected {len(users)} users and "
-            f"{len(teams)} teams (scoped team_ids: {scoped_team_ids or 'ALL (no filter)'})"
+            f"PAGERDUTY COLLECTION: Collected {len(users)} users "
+            f"(scoped team_ids: {scoped_team_ids or 'ALL (no filter)'})"
         )
 
         data_source = "pagerduty_analytics_api"

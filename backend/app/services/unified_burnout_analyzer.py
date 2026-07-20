@@ -1200,10 +1200,8 @@ class UnifiedBurnoutAnalyzer:
 
                 # Always fetch fresh users from API to get current timezone settings
                 # Timezone is the source of truth from Rootly/PagerDuty
-                if self.platform == "pagerduty":
-                    api_users = await self.client.get_users(limit=10000)
-                else:  # rootly
-                    api_users = await self.client.get_users(limit=10000)
+                # (both platforms use the same call, so no per-platform branch needed)
+                api_users = await self.client.get_users(limit=10000)
 
                 # Store API users for timezone map (will be used by _build_user_tz_map)
                 self._api_users_for_timezone = api_users
