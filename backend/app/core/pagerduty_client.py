@@ -16,6 +16,22 @@ logger = logging.getLogger(__name__)
 # Cache TTL for PagerDuty data (1 hour - users/services rarely change)
 PAGERDUTY_CACHE_TTL_SECONDS = 3600
 
+
+class PagerDutyAnalyticsUnavailable(Exception):
+    """Raised when the PagerDuty Analytics API is not accessible for this account/token.
+
+    Typical causes: HTTP 402 (account lacks the Analytics entitlement/add-on),
+    403 (token lacks the analytics scope) or 401 (unauthorized). These are not
+    recoverable by retrying, so callers should fall back to the REST /incidents
+    endpoint, which is available on all PagerDuty plans.
+    """
+
+    def __init__(self, status: int, message: str = ""):
+        self.status = status
+        self.message = message
+        super().__init__(f"Analytics API unavailable (HTTP {status}): {message}")
+
+
 class PagerDutyAPIClient:
     """Client for interacting with PagerDuty API."""
     
@@ -431,6 +447,12 @@ class PagerDutyAPIClient:
                                 f"PD ANALYTICS: HTTP {response.status} on page {page}: "
                                 f"{error_text[:300]}"
                             )
+                            # Entitlement/permission failures mean this account or token
+                            # can't use the Analytics API at all — signal the caller so it
+                            # can fall back to the REST /incidents endpoint instead of
+                            # silently returning zero incidents.
+                            if response.status in (401, 402, 403):
+                                raise PagerDutyAnalyticsUnavailable(response.status, error_text[:200])
                             break
 
                         data = await response.json()
@@ -451,6 +473,9 @@ class PagerDutyAPIClient:
                 )
                 return all_incidents
 
+        except PagerDutyAnalyticsUnavailable:
+            # Propagate so the caller can fall back to REST /incidents.
+            raise
         except asyncio.TimeoutError:
             logger.error(
                 f"PD ANALYTICS: Timeout after {page} page(s), "
@@ -852,31 +877,49 @@ class PagerDutyDataCollector:
             f"{len(teams)} teams (scoped team_ids: {scoped_team_ids or 'ALL (no filter)'})"
         )
 
-        analytics_incidents = await self.client.get_analytics_incidents(
-            since=since,
-            until=until,
-            team_ids=scoped_team_ids,
-        )
-
-        logger.info(
-            f"PAGERDUTY COLLECTION: Collected {len(analytics_incidents)} analytics incidents"
-        )
-
-        if users:
-            has_email = bool(users[0].get('email'))
-            logger.info(f"PAGERDUTY COLLECTION: Sample user structure - Keys: {list(users[0].keys())}, Has email: {has_email}")
-
-        if analytics_incidents:
-            sample = analytics_incidents[0]
-            has_assigned = bool(sample.get("assigned_user_ids"))
-            logger.info(
-                f"PAGERDUTY COLLECTION: Sample analytics incident - "
-                f"Keys: {list(sample.keys())[:10]}, Has assigned_user_ids: {has_assigned}"
+        data_source = "pagerduty_analytics_api"
+        try:
+            analytics_incidents = await self.client.get_analytics_incidents(
+                since=since,
+                until=until,
+                team_ids=scoped_team_ids,
             )
 
-        # Normalize analytics incidents using user lookup maps for email resolution
-        logger.info(f"🚀 PAGERDUTY COLLECTION: Starting analytics normalization process...")
-        normalized_data = self._normalize_analytics_incidents(analytics_incidents, users)
+            logger.info(
+                f"PAGERDUTY COLLECTION: Collected {len(analytics_incidents)} analytics incidents"
+            )
+
+            if users:
+                has_email = bool(users[0].get('email'))
+                logger.info(f"PAGERDUTY COLLECTION: Sample user structure - Keys: {list(users[0].keys())}, Has email: {has_email}")
+
+            if analytics_incidents:
+                sample = analytics_incidents[0]
+                has_assigned = bool(sample.get("assigned_user_ids"))
+                logger.info(
+                    f"PAGERDUTY COLLECTION: Sample analytics incident - "
+                    f"Keys: {list(sample.keys())[:10]}, Has assigned_user_ids: {has_assigned}"
+                )
+
+            # Normalize analytics incidents using user lookup maps for email resolution
+            logger.info(f"🚀 PAGERDUTY COLLECTION: Starting analytics normalization process...")
+            normalized_data = self._normalize_analytics_incidents(analytics_incidents, users)
+        except PagerDutyAnalyticsUnavailable as e:
+            # Account/token can't use the Analytics API — fall back to the REST
+            # /incidents endpoint (available on all plans) with the legacy
+            # assignment-extraction normalization so the analysis still works.
+            logger.warning(
+                f"PAGERDUTY COLLECTION: Analytics API unavailable ({e}); "
+                f"falling back to REST /incidents endpoint. Team scoping is not "
+                f"applied on the REST fallback."
+            )
+            analytics_incidents = await self.client.get_incidents(
+                since=since, until=until, limit=5000
+            )
+            normalized_data = self._normalize_with_enhanced_assignment_extraction(
+                analytics_incidents, users
+            )
+            data_source = "pagerduty_rest_fallback"
         
         # 🎯 RAILWAY DEBUG: Post-normalization validation
         normalized_incidents = normalized_data.get("incidents", [])
@@ -904,7 +947,7 @@ class PagerDutyDataCollector:
                 "start": since.isoformat(),
                 "end": until.isoformat()
             },
-            "data_source": "pagerduty_analytics_api",
+            "data_source": data_source,
             "total_incidents": len(analytics_incidents),
             "total_users": len(users),
             "incidents_with_valid_emails": incidents_with_emails,

@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from sqlalchemy.orm import Session
 
 from ..core.rootly_client import RootlyAPIClient
-from ..core.pagerduty_client import PagerDutyAPIClient, PagerDutyDataCollector
+from ..core.pagerduty_client import PagerDutyAPIClient, PagerDutyDataCollector, PagerDutyAnalyticsUnavailable
 from ..core.och_config import calculate_composite_och_score, calculate_personal_burnout, calculate_work_related_burnout, generate_och_score_reasoning, get_structured_och_factors, OCHConfig
 from ..core.alert_health_calculator import calculate_alert_health_score
 from .ai_burnout_analyzer import get_ai_burnout_analyzer
@@ -1218,21 +1218,43 @@ class UnifiedBurnoutAnalyzer:
                     # means the collector will fetch all account-level teams automatically.
                     pd_team_ids = [self.pagerduty_team_id] if self.pagerduty_team_id else None
                     collector = PagerDutyDataCollector(self.client.api_token)
-                    analytics_incidents = await self.client.get_analytics_incidents(
-                        since=since,
-                        until=until,
-                        limit=5000,
-                        team_ids=pd_team_ids,
-                    )
-                    normalized_data = collector._normalize_analytics_incidents(
-                        analytics_incidents,
-                        api_users,
-                    )
-                    incidents = normalized_data.get("incidents", [])
-                    logger.info(
-                        f"TEAM SYNC: Fetched {len(analytics_incidents)} analytics incidents "
-                        f"(team_ids={pd_team_ids}), normalized to {len(incidents)}"
-                    )
+                    try:
+                        analytics_incidents = await self.client.get_analytics_incidents(
+                            since=since,
+                            until=until,
+                            limit=5000,
+                            team_ids=pd_team_ids,
+                        )
+                        normalized_data = collector._normalize_analytics_incidents(
+                            analytics_incidents,
+                            api_users,
+                        )
+                        incidents = normalized_data.get("incidents", [])
+                        logger.info(
+                            f"TEAM SYNC: Fetched {len(analytics_incidents)} analytics incidents "
+                            f"(team_ids={pd_team_ids}), normalized to {len(incidents)}"
+                        )
+                    except PagerDutyAnalyticsUnavailable as e:
+                        # Account/token can't use the Analytics API — fall back to REST
+                        # /incidents (available on all plans). Note team scoping is not
+                        # applied on the REST fallback; the synced_users set already
+                        # limits attribution to team members, so scoping still holds.
+                        logger.warning(
+                            f"TEAM SYNC: Analytics API unavailable ({e}); "
+                            f"falling back to REST /incidents endpoint"
+                        )
+                        raw_incidents = await self.client.get_incidents(
+                            since=since, until=until, limit=5000
+                        )
+                        normalized_data = collector._normalize_with_enhanced_assignment_extraction(
+                            raw_incidents,
+                            api_users,
+                        )
+                        incidents = normalized_data.get("incidents", [])
+                        logger.info(
+                            f"TEAM SYNC: REST fallback fetched {len(raw_incidents)} incidents, "
+                            f"normalized to {len(incidents)}"
+                        )
                 else:  # rootly
                     # Don't pass team_name here: synced_users already contains only team members,
                     # so incident-to-member matching naturally scopes the results.
