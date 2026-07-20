@@ -842,17 +842,20 @@ class PagerDutyDataCollector:
         logger.info(f"PAGERDUTY COLLECTION: Starting parallel API calls (users + teams)...")
         users, teams = await asyncio.gather(users_task, teams_task)
 
-        if team_ids is None:
-            team_ids = [t["id"] for t in teams if t.get("id")]
+        # When no explicit team scope is requested, do NOT expand to the full
+        # team list: passing team_ids=None returns every incident (including
+        # ones not associated with any team). Only filter when a caller asks
+        # for a specific team scope.
+        scoped_team_ids = team_ids if team_ids else None
         logger.info(
             f"PAGERDUTY COLLECTION: Collected {len(users)} users and "
-            f"{len(teams)} teams (scoped team_ids: {team_ids})"
+            f"{len(teams)} teams (scoped team_ids: {scoped_team_ids or 'ALL (no filter)'})"
         )
 
         analytics_incidents = await self.client.get_analytics_incidents(
             since=since,
             until=until,
-            team_ids=team_ids if team_ids else None,
+            team_ids=scoped_team_ids,
         )
 
         logger.info(
