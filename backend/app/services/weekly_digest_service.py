@@ -946,6 +946,13 @@ async def check_and_send_weekly_digests() -> None:
 
                 logger.info(f"📬 [WEEKLY_DIGEST] Sending digest to {user.email} (analysis={analysis.id})...")
 
+                # Close out any open read transaction before the email send await.
+                # In normal operation the send-slot claim above already committed,
+                # but the FORCE_SEND path skips that commit and would otherwise sit
+                # idle-in-transaction while awaiting Resend — long enough for Postgres
+                # to reap the connection (idle_in_transaction_session_timeout).
+                db.commit()
+
                 sent = await _send_resend_email(
                     to_email=user.email,
                     to_name=user.name,
