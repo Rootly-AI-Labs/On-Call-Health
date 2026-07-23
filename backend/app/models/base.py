@@ -60,6 +60,24 @@ POOL_RECYCLE = _int_env("DB_POOL_RECYCLE", 1800)  # recycle connections older th
 STATEMENT_TIMEOUT_MS = _int_env("DB_STATEMENT_TIMEOUT_MS", 60000)  # 60 seconds default
 LOCK_TIMEOUT_MS = _int_env("DB_LOCK_TIMEOUT_MS", 30000)            # 30 seconds default
 
+# Idle-transaction reaper (in milliseconds). Railway Postgres has no idle
+# timeout and its TCP proxy keeps orphaned backends ESTABLISHED, so a connection
+# left idle-in-transaction (e.g. a leaked/stranded session that opened a
+# transaction but never committed) would otherwise live forever and count
+# against the shared max_connections budget until the server is fully locked out
+# ("FATAL: sorry, too many clients already"). This makes Postgres itself close
+# such connections so a leak can never saturate the server. pool_pre_ping
+# reconnects transparently when the server closes a pooled connection.
+#
+# NOTE: we deliberately do NOT set idle_session_timeout here. It would reap idle
+# connections regardless of transaction state — including the warm pooled
+# connections we intend to keep — and it is only recognized on PostgreSQL 14+,
+# so on an older server every connection would be rejected at connect time
+# ("FATAL: unrecognized configuration parameter"). idle_in_transaction_session_timeout
+# is supported since PostgreSQL 9.6 and only targets leaked transactions, which
+# is the actual connection-leak hazard we need to guard against.
+IDLE_IN_TX_TIMEOUT_MS = _int_env("DB_IDLE_IN_TRANSACTION_TIMEOUT_MS", 60000)      # 60 seconds
+
 # Tag every connection so it is identifiable in pg_stat_activity. This is what
 # lets you run, during an incident:
 #   SELECT application_name, count(*) FROM pg_stat_activity GROUP BY 1 ORDER BY 2 DESC;
@@ -81,7 +99,11 @@ engine = create_engine(
     echo_pool=os.getenv("DB_ECHO_POOL", "").lower() in ("1", "true", "yes"),  # set DB_ECHO_POOL=true for verbose pool debugging
     connect_args={
         "application_name": APP_NAME,
-        "options": f"-c statement_timeout={STATEMENT_TIMEOUT_MS} -c lock_timeout={LOCK_TIMEOUT_MS}",
+        "options": (
+            f"-c statement_timeout={STATEMENT_TIMEOUT_MS} "
+            f"-c lock_timeout={LOCK_TIMEOUT_MS} "
+            f"-c idle_in_transaction_session_timeout={IDLE_IN_TX_TIMEOUT_MS}"
+        ),
     },
 )
 

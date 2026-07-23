@@ -1864,12 +1864,14 @@ async def handle_slack_interactions(
 
 @router.post("/survey/submit")
 async def submit_slack_burnout_survey(
+    request: Request,
     submission: SlackSurveySubmission,
     db: Session = Depends(get_db)
 ):
     """
     Submit burnout survey response from Slack.
     """
+    await verify_slack_request_signature(request)
     try:
         # Find the user by email
         report_email = normalize_survey_email(submission.user_email)
