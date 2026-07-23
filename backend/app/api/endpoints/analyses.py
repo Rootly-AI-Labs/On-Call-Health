@@ -2962,6 +2962,44 @@ async def get_member_daily_health(
     }
 
 
+def _persist_analysis_result(
+    analysis_id: int,
+    *,
+    status: str,
+    results=None,
+    error_message=None,
+) -> bool:
+    """Persist a terminal analysis state using a FRESH database session.
+
+    The burnout analysis runs for up to 15 minutes and spends most of that
+    time awaiting external APIs, not touching the DB. The connection the task
+    checked out at the start can be reaped server-side during that window (an
+    idle-in-transaction connection is closed after 60s by Postgres), so reusing
+    it to write the final status would raise and leave the analysis stuck in
+    "running". Writing through a brand-new session guarantees a healthy
+    connection (pool_pre_ping validates it on checkout) so the status is always
+    recorded. Returns True if the analysis row was found and updated.
+    """
+    from datetime import datetime
+    from ...models import SessionLocal
+
+    result_db = SessionLocal()
+    try:
+        analysis = result_db.query(Analysis).filter(Analysis.id == analysis_id).first()
+        if not analysis:
+            return False
+        analysis.status = status
+        if results is not None:
+            analysis.results = results
+        if error_message is not None:
+            analysis.error_message = error_message
+        analysis.completed_at = datetime.now()
+        result_db.commit()
+        return True
+    finally:
+        result_db.close()
+
+
 async def run_analysis_task(
     analysis_id: int,
     analysis_uuid: str,
@@ -3361,6 +3399,16 @@ async def run_analysis_task(
                     logger.warning(f"BACKGROUND_TASK: Team scope filter '{rootly_team_name}': no team member emails returned — keeping all synced users")
             except Exception as team_filter_err:
                 logger.warning(f"BACKGROUND_TASK: Team scope filter failed: {team_filter_err} — keeping all synced users")
+
+        # Release any open read transaction before the long-running analysis
+        # await. All setup reads above run inside an uncommitted transaction;
+        # leaving it open would make this connection idle-in-transaction while
+        # analyze_burnout spends minutes awaiting external APIs, and Postgres
+        # reaps idle-in-transaction connections after 60s. Committing here keeps
+        # the connection merely idle (not reaped) during the await. Terminal
+        # status writes still go through _persist_analysis_result on a fresh
+        # session so a lost connection can never leave the analysis "running".
+        db.commit()
 
         # CRITICAL: Verify user_id hasn't been overwritten before passing to analyzer
         logger.info(f"BACKGROUND_TASK: Creating analyzer with current_user_id={user_id} (should match the logged-in user, NOT a team member ID)")
@@ -3827,15 +3875,11 @@ async def run_analysis_task(
 
             logger.info(f"🔍 DEBUG: About to save results for analysis {analysis_ref}")
 
-            # Update analysis with results
+            # Update analysis with results using a fresh session (the task's
+            # original connection may have been reaped during the long await).
             logger.info(f"💾 Analysis {analysis_ref}: Saving results to database")
-            analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
-            if analysis:
-                analysis.status = "completed"
-                analysis.results = results
-                analysis.completed_at = datetime.now()
-                logger.info(f"💾 Analysis {analysis_ref}: Committing to database")
-                db.commit()
+            saved = _persist_analysis_result(analysis_id, status="completed", results=results)
+            if saved:
                 logger.info(f"✅ Analysis {analysis_ref}: Successfully saved and committed")
 
                 # Log task completion with visual markers
@@ -3856,139 +3900,129 @@ async def run_analysis_task(
             logger.error(f"BACKGROUND_TASK: Analysis was stuck - likely during incident data collection phase")
             logger.error(f"BACKGROUND_TASK: This typically happens when Rootly API is slow or experiencing connectivity issues")
 
-            analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
-            if not analysis:
+            # Fresh session: the original connection may be dead after the timeout.
+            if _persist_analysis_result(
+                analysis_id,
+                status="failed",
+                error_message="Analysis timed out after 15 minutes. This may be due to network connectivity issues or API slowness. Please try again.",
+            ):
+                logger.info(f"BACKGROUND_TASK: Updated analysis {analysis_ref} status to failed due to timeout")
+            else:
                 logger.info(f"BACKGROUND_TASK: Analysis {analysis_ref} was deleted, not updating status")
-                return
-
-            analysis.status = "failed"
-            analysis.error_message = "Analysis timed out after 15 minutes. This may be due to network connectivity issues or API slowness. Please try again."
-            analysis.completed_at = datetime.now()
-            db.commit()
-            logger.info(f"BACKGROUND_TASK: Updated analysis {analysis_ref} status to failed due to timeout")
                 
         except Exception as analysis_error:
             # Handle analysis-specific errors
             logger.error(f"BACKGROUND_TASK: Analysis {analysis_ref} failed: {analysis_error}")
             logger.error(f"🔍 DEBUG: Exception type: {type(analysis_error).__name__}, traceback:", exc_info=True)
 
-            analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
-            if not analysis:
-                logger.info(f"BACKGROUND_TASK: Analysis {analysis_ref} was deleted, not updating status")
+            # All terminal writes below go through _persist_analysis_result on a
+            # fresh session, since the task's connection may have been reaped
+            # during the long-running analysis await.
+            # Check if this is a permission error - if so, fail immediately
+            error_message = str(analysis_error)
+            if "Cannot access incidents endpoint" in error_message or "incidents:read" in error_message:
+                logger.error(f"BACKGROUND_TASK: Permission error detected for analysis {analysis_ref}, failing immediately")
+                _persist_analysis_result(analysis_id, status="failed", error_message=error_message)
                 return
 
-            if analysis:
-                # Check if this is a permission error - if so, fail immediately
-                error_message = str(analysis_error)
-                if "Cannot access incidents endpoint" in error_message or "incidents:read" in error_message:
-                    logger.error(f"BACKGROUND_TASK: Permission error detected for analysis {analysis_ref}, failing immediately")
-                    analysis.status = "failed"
-                    analysis.error_message = error_message
-                    analysis.completed_at = datetime.now()
-                    db.commit()
-                    return
-                
-                # For other errors, try to collect raw data even if analysis failed
+            # For other errors, try to collect raw data even if analysis failed
+            try:
+                logger.info(f"BACKGROUND_TASK: Attempting to save raw data for failed analysis {analysis_ref}")
+                raw_data = None
+
+                # Access the appropriate client based on platform with comprehensive error handling
                 try:
-                    logger.info(f"BACKGROUND_TASK: Attempting to save raw data for failed analysis {analysis_ref}")
-                    raw_data = None
-                    
-                    # Access the appropriate client based on platform with comprehensive error handling
-                    try:
-                        # Check if analyzer_service exists and is not None
-                        if analyzer_service is None:
-                            logger.warning(f"BACKGROUND_TASK: analyzer_service is None for analysis {analysis_ref}")
-                        elif hasattr(analyzer_service, 'client'):
-                            client = getattr(analyzer_service, 'client', None)
-                            if client is not None:
-                                try:
-                                    logger.info(f"BACKGROUND_TASK: Attempting raw data collection with client type: {type(client).__name__}")
-                                    raw_data = await client.collect_analysis_data(days_back=time_range)
-                                    logger.info(f"BACKGROUND_TASK: Successfully collected raw data for analysis {analysis_ref}")
-                                except Exception as client_error:
-                                    logger.warning(f"BACKGROUND_TASK: Failed to collect raw data for analysis {analysis_ref}: {client_error}")
-                            else:
-                                logger.warning(f"BACKGROUND_TASK: analyzer_service.client is None for analysis {analysis_ref}")
-                        else:
-                            logger.warning(f"BACKGROUND_TASK: analyzer_service has no 'client' attribute for analysis {analysis_ref} (type: {type(analyzer_service).__name__})")
-                            
-                            # Try alternative approaches for different analyzer types
-                            if hasattr(analyzer_service, 'api_token'):
-                                try:
-                                    # For SimpleBurnoutAnalyzer or similar, try to create a client
-                                    from ...core.rootly_client import RootlyAPIClient
-                                    temp_client = RootlyAPIClient(analyzer_service.api_token)
-                                    raw_data = await temp_client.collect_analysis_data(days_back=time_range)
-                                    logger.info(f"BACKGROUND_TASK: Successfully collected raw data using temporary client for analysis {analysis_ref}")
-                                except Exception as temp_client_error:
-                                    logger.warning(f"BACKGROUND_TASK: Failed to collect raw data using temporary client for analysis {analysis_ref}: {temp_client_error}")
-                    except Exception as client_access_error:
-                        logger.error(f"BACKGROUND_TASK: Error accessing client for raw data collection in analysis {analysis_ref}: {client_access_error}")
-                    
-                    # Save partial results with raw data (safely handle None raw_data)
-                    try:
-                        partial_results = {
-                            "error": f"Analysis failed: {str(analysis_error)}",
-                            "partial_data": {
-                                "users": [],
-                                "incidents": [],
-                                "metadata": {}
-                            },
-                            "data_collection_successful": False,
-                            "failure_stage": "analysis_processing"
-                        }
-                        
-                        # Safely extract data if raw_data exists
-                        if raw_data and isinstance(raw_data, dict):
+                    # Check if analyzer_service exists and is not None
+                    if analyzer_service is None:
+                        logger.warning(f"BACKGROUND_TASK: analyzer_service is None for analysis {analysis_ref}")
+                    elif hasattr(analyzer_service, 'client'):
+                        client = getattr(analyzer_service, 'client', None)
+                        if client is not None:
                             try:
-                                users_data = raw_data.get("users")
-                                if users_data and isinstance(users_data, list):
-                                    partial_results["partial_data"]["users"] = users_data
-                                    
-                                incidents_data = raw_data.get("incidents")
-                                if incidents_data and isinstance(incidents_data, list):
-                                    partial_results["partial_data"]["incidents"] = incidents_data
-                                    
-                                metadata_data = raw_data.get("collection_metadata")
-                                if metadata_data and isinstance(metadata_data, dict):
-                                    partial_results["partial_data"]["metadata"] = metadata_data
-                                    
-                                partial_results["data_collection_successful"] = True
-                            except Exception as extract_error:
-                                logger.warning(f"BACKGROUND_TASK: Error extracting partial data for analysis {analysis_ref}: {extract_error}")
-                    except Exception as partial_error:
-                        logger.error(f"BACKGROUND_TASK: Error creating partial results for analysis {analysis_ref}: {partial_error}")
-                        partial_results = {
-                            "error": f"Analysis failed: {str(analysis_error)}",
-                            "partial_data": {"users": [], "incidents": [], "metadata": {}},
-                            "data_collection_successful": False,
-                            "failure_stage": "analysis_processing"
-                        }
-                    
-                    analysis.status = "failed"
-                    analysis.error_message = f"Analysis failed: {str(analysis_error)}"
-                    analysis.results = partial_results
-                    analysis.completed_at = datetime.now()
-                    db.commit()
-                    logger.info(f"BACKGROUND_TASK: Saved partial data for failed analysis {analysis_ref}")
-                    
-                except Exception as data_error:
-                    logger.error(f"BACKGROUND_TASK: Could not save partial data for analysis {analysis_ref}: {data_error}")
-                    analysis.status = "failed"
-                    analysis.error_message = f"Analysis failed: {str(analysis_error)}"
-                    analysis.completed_at = datetime.now()
-                    db.commit()
-        
+                                logger.info(f"BACKGROUND_TASK: Attempting raw data collection with client type: {type(client).__name__}")
+                                raw_data = await client.collect_analysis_data(days_back=time_range)
+                                logger.info(f"BACKGROUND_TASK: Successfully collected raw data for analysis {analysis_ref}")
+                            except Exception as client_error:
+                                logger.warning(f"BACKGROUND_TASK: Failed to collect raw data for analysis {analysis_ref}: {client_error}")
+                        else:
+                            logger.warning(f"BACKGROUND_TASK: analyzer_service.client is None for analysis {analysis_ref}")
+                    else:
+                        logger.warning(f"BACKGROUND_TASK: analyzer_service has no 'client' attribute for analysis {analysis_ref} (type: {type(analyzer_service).__name__})")
+
+                        # Try alternative approaches for different analyzer types
+                        if hasattr(analyzer_service, 'api_token'):
+                            try:
+                                # For SimpleBurnoutAnalyzer or similar, try to create a client
+                                from ...core.rootly_client import RootlyAPIClient
+                                temp_client = RootlyAPIClient(analyzer_service.api_token)
+                                raw_data = await temp_client.collect_analysis_data(days_back=time_range)
+                                logger.info(f"BACKGROUND_TASK: Successfully collected raw data using temporary client for analysis {analysis_ref}")
+                            except Exception as temp_client_error:
+                                logger.warning(f"BACKGROUND_TASK: Failed to collect raw data using temporary client for analysis {analysis_ref}: {temp_client_error}")
+                except Exception as client_access_error:
+                    logger.error(f"BACKGROUND_TASK: Error accessing client for raw data collection in analysis {analysis_ref}: {client_access_error}")
+
+                # Save partial results with raw data (safely handle None raw_data)
+                try:
+                    partial_results = {
+                        "error": f"Analysis failed: {str(analysis_error)}",
+                        "partial_data": {
+                            "users": [],
+                            "incidents": [],
+                            "metadata": {}
+                        },
+                        "data_collection_successful": False,
+                        "failure_stage": "analysis_processing"
+                    }
+
+                    # Safely extract data if raw_data exists
+                    if raw_data and isinstance(raw_data, dict):
+                        try:
+                            users_data = raw_data.get("users")
+                            if users_data and isinstance(users_data, list):
+                                partial_results["partial_data"]["users"] = users_data
+
+                            incidents_data = raw_data.get("incidents")
+                            if incidents_data and isinstance(incidents_data, list):
+                                partial_results["partial_data"]["incidents"] = incidents_data
+
+                            metadata_data = raw_data.get("collection_metadata")
+                            if metadata_data and isinstance(metadata_data, dict):
+                                partial_results["partial_data"]["metadata"] = metadata_data
+
+                            partial_results["data_collection_successful"] = True
+                        except Exception as extract_error:
+                            logger.warning(f"BACKGROUND_TASK: Error extracting partial data for analysis {analysis_ref}: {extract_error}")
+                except Exception as partial_error:
+                    logger.error(f"BACKGROUND_TASK: Error creating partial results for analysis {analysis_ref}: {partial_error}")
+                    partial_results = {
+                        "error": f"Analysis failed: {str(analysis_error)}",
+                        "partial_data": {"users": [], "incidents": [], "metadata": {}},
+                        "data_collection_successful": False,
+                        "failure_stage": "analysis_processing"
+                    }
+
+                _persist_analysis_result(
+                    analysis_id,
+                    status="failed",
+                    results=partial_results,
+                    error_message=f"Analysis failed: {str(analysis_error)}",
+                )
+                logger.info(f"BACKGROUND_TASK: Saved partial data for failed analysis {analysis_ref}")
+
+            except Exception as data_error:
+                logger.error(f"BACKGROUND_TASK: Could not save partial data for analysis {analysis_ref}: {data_error}")
+                _persist_analysis_result(
+                    analysis_id,
+                    status="failed",
+                    error_message=f"Analysis failed: {str(analysis_error)}",
+                )
+
     except Exception as e:
         # Handle any other errors (DB, etc.)
         logger.error(f"BACKGROUND_TASK: Critical error in analysis {analysis_ref}: {str(e)}", exc_info=True)
         try:
-            analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
-            if analysis:
-                analysis.status = "failed"
-                analysis.error_message = f"Task failed: {str(e)}"
-                analysis.completed_at = datetime.now()
-                db.commit()
+            if _persist_analysis_result(analysis_id, status="failed", error_message=f"Task failed: {str(e)}"):
                 logger.info(f"BACKGROUND_TASK: Updated analysis {analysis_ref} status to failed due to critical error")
             else:
                 logger.error(f"BACKGROUND_TASK: Could not find analysis {analysis_ref} to update error status")

@@ -60,14 +60,22 @@ POOL_RECYCLE = _int_env("DB_POOL_RECYCLE", 1800)  # recycle connections older th
 STATEMENT_TIMEOUT_MS = _int_env("DB_STATEMENT_TIMEOUT_MS", 60000)  # 60 seconds default
 LOCK_TIMEOUT_MS = _int_env("DB_LOCK_TIMEOUT_MS", 30000)            # 30 seconds default
 
-# Idle-connection reapers (in milliseconds). Railway Postgres has no idle
-# timeout and its TCP proxy keeps orphaned backends ESTABLISHED, so a leaked or
-# stranded connection would otherwise live forever and count against the shared
-# max_connections budget until the server is fully locked out ("FATAL: sorry,
-# too many clients already"). These make Postgres itself close such connections
-# so a leak can never saturate the server. pool_pre_ping reconnects transparently
-# when the server closes a pooled connection.
-IDLE_SESSION_TIMEOUT_MS = _int_env("DB_IDLE_SESSION_TIMEOUT_MS", 300000)          # 5 minutes
+# Idle-transaction reaper (in milliseconds). Railway Postgres has no idle
+# timeout and its TCP proxy keeps orphaned backends ESTABLISHED, so a connection
+# left idle-in-transaction (e.g. a leaked/stranded session that opened a
+# transaction but never committed) would otherwise live forever and count
+# against the shared max_connections budget until the server is fully locked out
+# ("FATAL: sorry, too many clients already"). This makes Postgres itself close
+# such connections so a leak can never saturate the server. pool_pre_ping
+# reconnects transparently when the server closes a pooled connection.
+#
+# NOTE: we deliberately do NOT set idle_session_timeout here. It would reap idle
+# connections regardless of transaction state — including the warm pooled
+# connections we intend to keep — and it is only recognized on PostgreSQL 14+,
+# so on an older server every connection would be rejected at connect time
+# ("FATAL: unrecognized configuration parameter"). idle_in_transaction_session_timeout
+# is supported since PostgreSQL 9.6 and only targets leaked transactions, which
+# is the actual connection-leak hazard we need to guard against.
 IDLE_IN_TX_TIMEOUT_MS = _int_env("DB_IDLE_IN_TRANSACTION_TIMEOUT_MS", 60000)      # 60 seconds
 
 # Tag every connection so it is identifiable in pg_stat_activity. This is what
@@ -94,7 +102,6 @@ engine = create_engine(
         "options": (
             f"-c statement_timeout={STATEMENT_TIMEOUT_MS} "
             f"-c lock_timeout={LOCK_TIMEOUT_MS} "
-            f"-c idle_session_timeout={IDLE_SESSION_TIMEOUT_MS} "
             f"-c idle_in_transaction_session_timeout={IDLE_IN_TX_TIMEOUT_MS}"
         ),
     },
