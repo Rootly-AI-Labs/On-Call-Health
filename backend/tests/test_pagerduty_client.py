@@ -105,15 +105,18 @@ class TestCheckPermissions(unittest.TestCase):
             self.assertIn("Connection error", result[endpoint]["error"])
 
     @patch("aiohttp.ClientSession")
-    def test_returns_all_four_endpoints(self, mock_session_cls):
-        """Test that result always contains all 4 endpoint keys."""
+    def test_returns_all_endpoints(self, mock_session_cls):
+        """Test that result always contains every probed endpoint key."""
         mock_response = _make_mock_response(200)
         mock_session = _make_mock_session(mock_response)
         mock_session_cls.return_value = mock_session
 
         result = self._run_async(self.client.check_permissions())
 
-        self.assertEqual(set(result.keys()), {"users", "incidents", "services", "oncalls"})
+        self.assertEqual(
+            set(result.keys()),
+            {"users", "incidents", "services", "oncalls", "analytics"},
+        )
 
 
 if __name__ == "__main__":

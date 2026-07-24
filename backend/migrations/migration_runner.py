@@ -1393,6 +1393,14 @@ class MigrationRunner:
                 "description": "Make organization_id nullable in ai_usage_integrations and add partial unique indexes",
                 "sql_file": "2026_04_20_ai_usage_nullable_org.sql"
             },
+            {
+                # New column: keep the original 052/053 names above unchanged so
+                # already-applied environments don't re-run them; add this as the
+                # next incrementing number instead.
+                "name": "054_add_pagerduty_teams_to_user_correlations",
+                "description": "Add pagerduty_teams JSONB column to user_correlations for storing team membership info",
+                "sql_file": "2026_07_24_add_pagerduty_teams_to_user_correlations.sql"
+            },
             # Add future migrations here with incrementing numbers
         ]
 

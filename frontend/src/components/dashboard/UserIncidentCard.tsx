@@ -27,6 +27,8 @@ interface Incident {
     started_by?: IncidentUser
     resolved_by?: IncidentUser
     mitigated_by?: IncidentUser
+    all_user_ids?: string[]
+    assigned_to?: IncidentUser
   }
   // PagerDuty normalized format (flat structure)
   title?: string
@@ -41,6 +43,8 @@ interface Incident {
   started_by?: IncidentUser
   resolved_by?: IncidentUser
   mitigated_by?: IncidentUser
+  all_user_ids?: string[]
+  assigned_to?: IncidentUser
 }
 
 // Safely extract numeric value, handling NaN and non-numbers
@@ -162,6 +166,8 @@ export function UserIncidentCard({
 
   const userIncidents = incidents.filter(incident => {
     const attrs = incident.attributes || incident
+
+    // Primary: Rootly-style nested user objects (user, started_by, resolved_by, mitigated_by)
     const involvedUsers = [
       attrs.user,
       attrs.started_by,
@@ -169,10 +175,21 @@ export function UserIncidentCard({
       attrs.mitigated_by
     ].filter(Boolean)
 
-    return involvedUsers.some(u =>
+    const matchedByUser = involvedUsers.some(u =>
       (userId && u?.id === userId) ||
       (userEmail && u?.email?.toLowerCase() === userEmail?.toLowerCase())
     )
+    if (matchedByUser) return true
+
+    // Fallback: PagerDuty analytics format stores all_user_ids + assigned_to.email
+    const allUserIds: string[] = attrs.all_user_ids || []
+    if (userId && allUserIds.includes(String(userId))) return true
+    if (userEmail) {
+      const assignedEmail = attrs.assigned_to?.email || attrs.user?.email
+      if (assignedEmail?.toLowerCase() === userEmail.toLowerCase()) return true
+    }
+
+    return false
   })
 
   if (loading) {

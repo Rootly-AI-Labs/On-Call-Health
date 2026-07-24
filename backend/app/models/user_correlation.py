@@ -20,6 +20,7 @@ class UserCorrelation(Base):
     rootly_user_id = Column(String(50), nullable=True, index=True)  # Rootly API user ID
     rootly_email = Column(String(255), nullable=True)
     pagerduty_user_id = Column(String(50), nullable=True)
+    pagerduty_teams = Column(JSON, nullable=True)  # Array of {id, name} team objects from PagerDuty
     jira_account_id = Column(String(100), nullable=True, index=True)  # Jira accountId (opaque UUID)
     jira_email = Column(String(255), nullable=True)  # Jira-specific email
     linear_user_id = Column(String(100), nullable=True, index=True)  # Linear user UUID

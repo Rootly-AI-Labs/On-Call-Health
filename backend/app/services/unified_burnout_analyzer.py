@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from sqlalchemy.orm import Session
 
 from ..core.rootly_client import RootlyAPIClient
-from ..core.pagerduty_client import PagerDutyAPIClient, PagerDutyDataCollector
+from ..core.pagerduty_client import PagerDutyAPIClient, PagerDutyDataCollector, PagerDutyAnalyticsUnavailable
 from ..core.och_config import calculate_composite_och_score, calculate_personal_burnout, calculate_work_related_burnout, generate_och_score_reasoning, get_structured_och_factors, OCHConfig
 from ..core.alert_health_calculator import calculate_alert_health_score
 from .ai_burnout_analyzer import get_ai_burnout_analyzer
@@ -97,6 +97,7 @@ class UnifiedBurnoutAnalyzer:
         db: Optional["Session"] = None,
         organization_id: Optional[int] = None,
         team_name: Optional[str] = None,
+        pagerduty_team_id: Optional[str] = None,
     ):
         # Check for mock data mode from environment
         self.use_mock_data = os.getenv('USE_MOCK_DATA', 'false').lower() == 'true'
@@ -110,6 +111,8 @@ class UnifiedBurnoutAnalyzer:
 
         # Store team_name for team-scoped Rootly keys
         self.team_name = team_name
+        # Store pagerduty_team_id for team-scoped PagerDuty analytics queries
+        self.pagerduty_team_id = pagerduty_team_id
 
         # Store db session for reuse (prevents connection pool exhaustion)
         self.db = db
@@ -999,7 +1002,7 @@ class UnifiedBurnoutAnalyzer:
                 "recommendations": self._generate_recommendations(team_health, team_analysis),
                 "daily_trends": daily_trends,
                 "individual_daily_data": individual_daily_data,
-                "raw_incident_data": slim_incidents(incidents),  # Store slimmed incident data (96% size reduction)
+                "raw_incident_data": slim_incidents(incidents, platform=self.platform),  # platform-aware slim + size cap
                 "period_summary": {
                     "average_score": round(period_average_score, 2),
                     "average_risk_score_100": round(period_risk_score_100, 2),
@@ -1197,10 +1200,8 @@ class UnifiedBurnoutAnalyzer:
 
                 # Always fetch fresh users from API to get current timezone settings
                 # Timezone is the source of truth from Rootly/PagerDuty
-                if self.platform == "pagerduty":
-                    api_users = await self.client.get_users(limit=10000)
-                else:  # rootly
-                    api_users = await self.client.get_users(limit=10000)
+                # (both platforms use the same call, so no per-platform branch needed)
+                api_users = await self.client.get_users(limit=10000)
 
                 # Store API users for timezone map (will be used by _build_user_tz_map)
                 self._api_users_for_timezone = api_users
@@ -1210,25 +1211,52 @@ class UnifiedBurnoutAnalyzer:
                 if self.platform == "pagerduty":
                     since = datetime.now(pytz.UTC) - timedelta(days=days_back)
                     until = datetime.now(pytz.UTC)
-                    raw_incidents = await self.client.get_incidents(since=since, until=until, limit=5000)
+                    # Use Analytics API; pass team_ids filter if a team scope is set.
+                    # If pagerduty_team_id is None we still pass team_ids=None which
+                    # means the collector will fetch all account-level teams automatically.
+                    pd_team_ids = [self.pagerduty_team_id] if self.pagerduty_team_id else None
+                    collector = PagerDutyDataCollector(self.client.api_token)
+                    try:
+                        analytics_incidents = await self.client.get_analytics_incidents(
+                            since=since,
+                            until=until,
+                            limit=5000,
+                            team_ids=pd_team_ids,
+                        )
+                        normalized_data = collector._normalize_analytics_incidents(
+                            analytics_incidents,
+                            api_users,
+                        )
+                        incidents = normalized_data.get("incidents", [])
+                        logger.info(
+                            f"TEAM SYNC: Fetched {len(analytics_incidents)} analytics incidents "
+                            f"(team_ids={pd_team_ids}), normalized to {len(incidents)}"
+                        )
+                    except PagerDutyAnalyticsUnavailable as e:
+                        # Account/token can't use the Analytics API — fall back to REST
+                        # /incidents (available on all plans). Note team scoping is not
+                        # applied on the REST fallback; the synced_users set already
+                        # limits attribution to team members, so scoping still holds.
+                        logger.warning(
+                            f"TEAM SYNC: Analytics API unavailable ({e}); "
+                            f"falling back to REST /incidents endpoint"
+                        )
+                        raw_incidents = await self.client.get_incidents(
+                            since=since, until=until, limit=5000
+                        )
+                        normalized_data = collector._normalize_with_enhanced_assignment_extraction(
+                            raw_incidents,
+                            api_users,
+                        )
+                        incidents = normalized_data.get("incidents", [])
+                        logger.info(
+                            f"TEAM SYNC: REST fallback fetched {len(raw_incidents)} incidents, "
+                            f"normalized to {len(incidents)}"
+                        )
                 else:  # rootly
                     # Don't pass team_name here: synced_users already contains only team members,
                     # so incident-to-member matching naturally scopes the results.
-                    # filter[team_names] only matches incidents explicitly tagged to a team,
-                    # not incidents where team members were individual responders.
                     raw_incidents = await self.client.get_incidents(days_back=days_back, limit=5000)
-
-                # Normalize incidents for PagerDuty to extract assigned_to from assignments array
-                if self.platform == "pagerduty":
-                    collector = PagerDutyDataCollector(self.client.api_token)
-                    # Use the enhanced normalization to extract assignments
-                    normalized_data = collector._normalize_with_enhanced_assignment_extraction(
-                        raw_incidents,
-                        self.synced_users
-                    )
-                    incidents = normalized_data.get("incidents", [])
-                    logger.info(f"TEAM SYNC: Normalized {len(incidents)} PagerDuty incidents with assignment extraction")
-                else:
                     incidents = raw_incidents
 
                 # Apply team scope to incidents for Rootly team-scoped integrations
@@ -1333,7 +1361,13 @@ class UnifiedBurnoutAnalyzer:
 
             # Fallback: Use the existing data collection method (backward compatibility)
             logger.info(f"ANALYZER DATA FETCH: No synced users provided, delegating to client.collect_analysis_data for {days_back} days")
-            data = await self.client.collect_analysis_data(days_back=days_back, team_name=self.team_name)
+            # collect_analysis_data has a platform-specific signature: PagerDuty takes
+            # team_ids, Rootly takes team_name. Passing the wrong kwarg raises TypeError.
+            if self.platform == "pagerduty":
+                pd_team_ids = [self.pagerduty_team_id] if self.pagerduty_team_id else None
+                data = await self.client.collect_analysis_data(days_back=days_back, team_ids=pd_team_ids)
+            else:  # rootly
+                data = await self.client.collect_analysis_data(days_back=days_back, team_name=self.team_name)
             
             fetch_duration = (datetime.now() - fetch_start_time).total_seconds()
             logger.info(f"ANALYZER DATA FETCH: Client returned after {fetch_duration:.2f}s - Type: {type(data)}")

@@ -203,31 +203,123 @@ def slim_incident(incident: Dict[str, Any]) -> Dict[str, Any]:
     return slimmed
 
 
-def slim_incidents(incidents: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """
-    Slim down a list of incidents.
+def slim_pd_incident(incident: Dict[str, Any]) -> Dict[str, Any]:
+    """Slim a PagerDuty Analytics-API normalized incident to the minimal set of
+    fields needed by UserIncidentCard on the frontend.
 
-    Convenience function to apply slim_incident() to a list of incidents
-    and log the results.
+    Analytics incidents arrive as flat dicts (no 'attributes' wrapper).
+    We reshape them so the frontend filter logic — which uses
+    `attrs.user / attrs.started_by / attrs.resolved_by` — finds the
+    primary assignee via `assigned_to` mapped to `user`.
+
+    Fields kept:
+      id, title, description, status, severity, created_at, service,
+      seconds_to_first_ack, auto_resolved, html_url,
+      user (reshaped from assigned_to),
+      all_user_ids (kept for secondary filtering)
+    """
+    if not incident or not isinstance(incident, dict):
+        return incident
+
+    assigned_to = incident.get("assigned_to") or {}
+    # Pre-computed metrics live under `analytics_data` on the normalized incident,
+    # not at the top level.
+    analytics_data = incident.get("analytics_data") or {}
+    # html_url isn't set during normalization; pull it from the raw Analytics payload.
+    raw_data = incident.get("raw_data") or {}
+
+    return {
+        "id": incident.get("id"),
+        "title": incident.get("title") or incident.get("description", ""),
+        "status": incident.get("status", ""),
+        "severity": incident.get("severity", ""),
+        "created_at": incident.get("created_at"),
+        "service": incident.get("service", ""),
+        "seconds_to_first_ack": analytics_data.get("seconds_to_first_ack"),
+        "auto_resolved": analytics_data.get("auto_resolved"),
+        "html_url": incident.get("html_url") or raw_data.get("html_url"),
+        # Map assigned_to → user so UserIncidentCard filter finds it via attrs.user
+        "user": {
+            "id": assigned_to.get("id"),
+            "email": assigned_to.get("email"),
+            "name": assigned_to.get("name"),
+        } if assigned_to.get("id") else None,
+        # Keep all involved user IDs for fallback filtering.
+        # Normalization stores these under `analytics_user_ids`; expose them as
+        # `all_user_ids` which is the key the frontend (UserIncidentCard) reads.
+        "all_user_ids": incident.get("all_user_ids") or incident.get("analytics_user_ids", []),
+    }
+
+
+# Hard cap: never store more than this many incidents in the DB results JSON.
+# With 500 incidents × ~300 bytes each = ~150 KB — well within Postgres limits.
+_RAW_INCIDENT_STORAGE_CAP = 500
+
+# Soft size cap: if slimmed payload exceeds this many bytes, truncate further.
+_RAW_INCIDENT_MAX_BYTES = 2 * 1024 * 1024  # 2 MB
+
+
+def slim_incidents(
+    incidents: List[Dict[str, Any]],
+    platform: str = "rootly",
+) -> List[Dict[str, Any]]:
+    """Slim a list of incidents before storing them in the analysis results JSON.
+
+    Applies a platform-aware slimmer then enforces a hard count cap
+    (_RAW_INCIDENT_STORAGE_CAP) and a byte-size cap (_RAW_INCIDENT_MAX_BYTES)
+    to prevent Postgres OOM crashes when the incident list is large.
 
     Args:
-        incidents: List of full incident objects
+        incidents: Raw incident list from the burnout analyser.
+        platform:  "pagerduty" or "rootly" — selects the correct slimmer.
 
     Returns:
-        List of slimmed incident objects
+        Capped, slimmed list ready for DB storage.
     """
     if not incidents:
         return incidents
 
+    import json as _json
+
     original_size = sum(len(str(inc)) for inc in incidents)
-    slimmed = [slim_incident(inc) for inc in incidents]
+    original_count = len(incidents)
+
+    # 1. Apply platform-aware slimmer
+    if platform == "pagerduty":
+        slimmed = [slim_pd_incident(inc) for inc in incidents]
+    else:
+        slimmed = [slim_incident(inc) for inc in incidents]
+
+    # 2. Enforce count cap (keep most-recent incidents which come first)
+    if len(slimmed) > _RAW_INCIDENT_STORAGE_CAP:
+        slimmed = slimmed[:_RAW_INCIDENT_STORAGE_CAP]
+        logger.warning(
+            f"slim_incidents: truncated {original_count} → {_RAW_INCIDENT_STORAGE_CAP} "
+            f"incidents (count cap)"
+        )
+
+    # 3. Enforce byte-size cap
+    payload_bytes = len(_json.dumps(slimmed).encode("utf-8"))
+    if payload_bytes > _RAW_INCIDENT_MAX_BYTES:
+        # Binary-search for the largest N that fits within the byte cap
+        lo, hi = 0, len(slimmed)
+        while lo < hi:
+            mid = (lo + hi + 1) // 2
+            if len(_json.dumps(slimmed[:mid]).encode("utf-8")) <= _RAW_INCIDENT_MAX_BYTES:
+                lo = mid
+            else:
+                hi = mid - 1
+        slimmed = slimmed[:lo]
+        logger.warning(
+            f"slim_incidents: truncated to {lo} incidents to stay under "
+            f"{_RAW_INCIDENT_MAX_BYTES // 1024} KB byte cap"
+        )
+
     slimmed_size = sum(len(str(inc)) for inc in slimmed)
-
     reduction_pct = (1 - slimmed_size / original_size) * 100 if original_size > 0 else 0
-
     logger.info(
-        f"Slimmed {len(incidents)} incidents: "
-        f"{original_size / 1024 / 1024:.2f} MB → {slimmed_size / 1024 / 1024:.2f} MB "
+        f"slim_incidents ({platform}): {original_count} → {len(slimmed)} incidents, "
+        f"{original_size / 1024:.1f} KB → {slimmed_size / 1024:.1f} KB "
         f"({reduction_pct:.1f}% reduction)"
     )
 

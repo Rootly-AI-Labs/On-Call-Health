@@ -16,6 +16,27 @@ logger = logging.getLogger(__name__)
 # Cache TTL for PagerDuty data (1 hour - users/services rarely change)
 PAGERDUTY_CACHE_TTL_SECONDS = 3600
 
+# Cache TTL for the Analytics API entitlement verdict per token. Entitlement
+# (plan/add-on) changes very rarely, so we cache the answer for longer to avoid
+# repeatedly probing an endpoint we already know the account can't use.
+PAGERDUTY_ENTITLEMENT_TTL_SECONDS = 6 * 3600
+
+
+class PagerDutyAnalyticsUnavailable(Exception):
+    """Raised when the PagerDuty Analytics API is not accessible for this account/token.
+
+    Typical causes: HTTP 402 (account lacks the Analytics entitlement/add-on),
+    403 (token lacks the analytics scope) or 401 (unauthorized). These are not
+    recoverable by retrying, so callers should fall back to the REST /incidents
+    endpoint, which is available on all PagerDuty plans.
+    """
+
+    def __init__(self, status: int, message: str = ""):
+        self.status = status
+        self.message = message
+        super().__init__(f"Analytics API unavailable (HTTP {status}): {message}")
+
+
 class PagerDutyAPIClient:
     """Client for interacting with PagerDuty API."""
     
@@ -28,12 +49,8 @@ class PagerDutyAPIClient:
             "Content-Type": "application/json"
         }
         
-        # 🎯 RAILWAY DEBUG: Token identification for debugging
         token_suffix = api_token[-4:] if len(api_token) > 4 else "***"
-        logger.info(f"PAGERDUTY CLIENT: Initialized with token ending in {token_suffix}")
-        logger.info(f"PAGERDUTY CLIENT: Enhanced normalization version ACTIVE - Build 875bd95")
-        import time
-        logger.info(f"PAGERDUTY CLIENT: On-call methods deployed - Build {int(time.time())}")
+        logger.debug(f"PAGERDUTY CLIENT: Initialized with token ending in {token_suffix}")
         
     async def test_connection(self) -> Dict[str, Any]:
         """Test the PagerDuty API connection and get account info."""
@@ -167,15 +184,25 @@ class PagerDutyAPIClient:
         except:
             return 0
     
-    async def get_users(self, limit: int = 100, offset: int = 0, force_refresh: bool = False) -> List[Dict[str, Any]]:
+    async def get_users(
+        self,
+        limit: int = 100,
+        offset: int = 0,
+        force_refresh: bool = False,
+        include_teams: bool = False,
+    ) -> List[Dict[str, Any]]:
         """Fetch users from PagerDuty with Redis caching.
 
         Args:
             limit: Maximum number of users to fetch
             offset: Pagination offset
             force_refresh: If True, bypass cache and fetch fresh data
+            include_teams: If True, request `include[]=teams` so each user object
+                           contains their team memberships.  This adds latency (~10-40 s
+                           for large accounts) so it defaults to False and should only
+                           be enabled during the org-sync flow.
         """
-        cache_params = {"limit": limit, "offset": offset}
+        cache_params = {"limit": limit, "offset": offset, "include_teams": include_teams}
 
         # Check cache first (unless force_refresh)
         if not force_refresh:
@@ -185,8 +212,9 @@ class PagerDutyAPIClient:
                 return cached
 
         try:
-            # Set 30 second timeout to prevent hanging on slow API responses
-            timeout = aiohttp.ClientTimeout(total=30)
+            # Increase timeout when fetching team memberships — include[]=teams can be slow
+            total_timeout = 90 if include_teams else 30
+            timeout = aiohttp.ClientTimeout(total=total_timeout)
             async with aiohttp.ClientSession(timeout=timeout) as session:
                 all_users = []
                 request_count = 0
@@ -195,15 +223,17 @@ class PagerDutyAPIClient:
                 while True:
                     request_count += 1
 
+                    params: Dict[str, Any] = {
+                        "limit": min(limit, 100),
+                        "offset": current_offset,
+                    }
+                    if include_teams:
+                        params["include[]"] = "teams"
+
                     async with session.get(
                         f"{self.base_url}/users",
                         headers=self.headers,
-                        params={
-                            "limit": min(limit, 100),
-                            "offset": current_offset
-                            # Removed include[]=contact_methods,teams - causes 40s+ response time
-                            # Only need basic user data (id, email, name) for sync
-                        }
+                        params=params,
                     ) as response:
                         if response.status != 200:
                             error_text = await response.text()
@@ -234,6 +264,269 @@ class PagerDutyAPIClient:
             logger.error(f"PD GET_USERS: ERROR - {e}")
             return []
     
+    async def get_teams(self, limit: int = 200, force_refresh: bool = False) -> List[Dict[str, Any]]:
+        """Fetch all PagerDuty teams for the account.
+
+        Returns a list of team objects, each containing at minimum:
+          - id   (e.g. "PRSR43D")
+          - name (human-readable team name)
+          - summary
+
+        Results are cached using the standard Redis cache layer.
+        """
+        cache_params = {"limit": limit}
+
+        if not force_refresh:
+            cached = get_cached_api_response("pagerduty", "teams", self.api_token, cache_params)
+            if cached is not None:
+                logger.info(f"PD GET_TEAMS: Using cached data ({len(cached)} teams)")
+                return cached
+
+        all_teams: List[Dict[str, Any]] = []
+        offset = 0
+        try:
+            timeout = aiohttp.ClientTimeout(total=30)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                while True:
+                    async with session.get(
+                        f"{self.base_url}/teams",
+                        headers=self.headers,
+                        params={"limit": min(100, limit), "offset": offset},
+                    ) as response:
+                        if response.status != 200:
+                            error_text = await response.text()
+                            logger.error(f"PD GET_TEAMS: HTTP {response.status}: {error_text[:200]}")
+                            break
+                        data = await response.json()
+                        teams = data.get("teams", [])
+                        all_teams.extend(teams)
+                        if not data.get("more", False) or len(all_teams) >= limit:
+                            break
+                        offset += len(teams)
+
+            logger.info(f"PD GET_TEAMS: Fetched {len(all_teams)} teams")
+            set_cached_api_response(
+                "pagerduty", "teams", self.api_token, all_teams,
+                PAGERDUTY_CACHE_TTL_SECONDS, cache_params
+            )
+        except Exception as e:
+            logger.error(f"PD GET_TEAMS: Error fetching teams: {e}")
+
+        return all_teams
+
+    async def get_team_members(self, team_id: str) -> List[Dict[str, Any]]:
+        """Fetch the members of a specific PagerDuty team.
+
+        Calls GET /teams/{team_id}/members (paginated).
+        Returns a list of user objects with at minimum id, email, name.
+        Results are cached for 1 hour.
+        """
+        cache_params = {"team_id": team_id}
+        cached = get_cached_api_response("pagerduty", f"team_members_{team_id}", self.api_token, cache_params)
+        if cached is not None:
+            logger.info(f"PD GET_TEAM_MEMBERS: Using cached data for team {team_id} ({len(cached)} members)")
+            return cached
+
+        all_members: List[Dict[str, Any]] = []
+        offset = 0
+        try:
+            timeout = aiohttp.ClientTimeout(total=30)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                while True:
+                    async with session.get(
+                        f"{self.base_url}/teams/{team_id}/members",
+                        headers=self.headers,
+                        params={"limit": 100, "offset": offset},
+                    ) as response:
+                        if response.status == 404:
+                            logger.warning(f"PD GET_TEAM_MEMBERS: Team {team_id} not found")
+                            break
+                        if response.status != 200:
+                            error_text = await response.text()
+                            logger.error(f"PD GET_TEAM_MEMBERS: HTTP {response.status}: {error_text[:200]}")
+                            break
+                        data = await response.json()
+                        # Response: {"members": [{"user": {...}, "role": "manager"}, ...]}
+                        members = data.get("members", [])
+                        all_members.extend(
+                            m["user"] for m in members if m.get("user")
+                        )
+                        if not data.get("more", False):
+                            break
+                        offset += len(members)
+
+            logger.info(f"PD GET_TEAM_MEMBERS: Team {team_id} has {len(all_members)} members")
+            set_cached_api_response(
+                "pagerduty", f"team_members_{team_id}", self.api_token,
+                all_members, PAGERDUTY_CACHE_TTL_SECONDS, cache_params
+            )
+        except Exception as e:
+            logger.error(f"PD GET_TEAM_MEMBERS: Error fetching members for team {team_id}: {e}")
+
+        return all_members
+
+    def _analytics_unavailable_status(self) -> Optional[int]:
+        """Return the cached HTTP status (401/402/403) if we've already determined
+        this token can't use the Analytics API, else None. Lets callers skip the
+        network round-trip and go straight to the REST fallback."""
+        cached = get_cached_api_response("pagerduty", "analytics_entitlement", self.api_token, {})
+        if cached and not cached.get("available", True):
+            return cached.get("status", 402)
+        return None
+
+    def _cache_analytics_entitlement(self, available: bool, status: Optional[int] = None) -> None:
+        """Remember whether this token can use the Analytics API, so we neither
+        re-probe when it's available nor keep hammering it when it isn't."""
+        payload = {"available": available}
+        if status is not None:
+            payload["status"] = status
+        set_cached_api_response(
+            "pagerduty", "analytics_entitlement", self.api_token,
+            payload, PAGERDUTY_ENTITLEMENT_TTL_SECONDS, {},
+        )
+
+    async def get_analytics_incidents(
+        self,
+        since: datetime,
+        until: Optional[datetime] = None,
+        limit: int = 1000,
+        time_zone: str = "Etc/UTC",
+        team_ids: Optional[List[str]] = None,
+    ) -> List[Dict[str, Any]]:
+        """Fetch incidents from the PagerDuty Analytics API (/analytics/raw/incidents).
+
+        Uses cursor-based pagination and returns richer per-incident data than the
+        REST /incidents endpoint, including:
+          - assigned_user_ids / acknowledged_user_ids / joined_user_ids  (accurate attribution)
+          - seconds_to_first_ack, seconds_to_resolve
+          - auto_resolved, escalation_count
+          - off_hour_interruptions, sleep_hour_interruptions, business_hour_interruptions
+          - total_interruptions, engaged_seconds
+
+        Args:
+            since:     Start of the analysis window (timezone-aware datetime).
+            until:     End of the analysis window (defaults to now).
+            limit:     Maximum total incidents to return (default 1000).
+            time_zone: Timezone for the analytics query (e.g. "America/New_York").
+            team_ids:  Optional list of PagerDuty team IDs to scope the query.
+                       When provided, only incidents belonging to those teams are
+                       returned.  Without this filter the API returns incidents from
+                       the entire PagerDuty account, which is usually not what we want.
+
+        Replaces the legacy GET /incidents call so that per-user burnout analysis is
+        driven by pre-computed analytics fields rather than heuristic assignment extraction.
+        """
+        if until is None:
+            until = datetime.now(pytz.UTC)
+
+        since_str = since.astimezone(pytz.UTC).strftime("%Y-%m-%dT%H:%M:%S")
+        until_str = until.astimezone(pytz.UTC).strftime("%Y-%m-%dT%H:%M:%S")
+        days_back = (datetime.now(pytz.UTC) - since).days
+
+        team_ids_str = ", ".join(team_ids) if team_ids else "ALL (no team filter)"
+        logger.info(
+            f"PD ANALYTICS: Starting fetch for {days_back} days "
+            f"({since_str} → {until_str}, limit={limit}, teams={team_ids_str})"
+        )
+
+        # Short-circuit: if a prior call already found this token isn't entitled to
+        # the Analytics API, don't waste a round-trip — signal the caller to use the
+        # REST fallback immediately.
+        cached_status = self._analytics_unavailable_status()
+        if cached_status is not None:
+            logger.info(
+                f"PD ANALYTICS: Skipping call — analytics known unavailable "
+                f"(cached HTTP {cached_status}) for this token"
+            )
+            raise PagerDutyAnalyticsUnavailable(cached_status, "cached entitlement verdict")
+
+        url = f"{self.base_url}/analytics/raw/incidents"
+        # Analytics API requires application/json Accept and Content-Type headers
+        analytics_headers = {
+            "Authorization": f"Token token={self.api_token}",
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
+
+        all_incidents: List[Dict[str, Any]] = []
+        cursor: Optional[str] = None
+        page = 0
+
+        try:
+            timeout = aiohttp.ClientTimeout(total=60)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                while len(all_incidents) < limit:
+                    page += 1
+                    filters: Dict[str, Any] = {
+                        "created_at_start": since_str,
+                        "created_at_end": until_str,
+                    }
+                    if team_ids:
+                        filters["team_ids"] = team_ids
+
+                    payload: Dict[str, Any] = {
+                        "filters": filters,
+                        "limit": min(1000, limit - len(all_incidents)),
+                        "order": "desc",
+                        "order_by": "created_at",
+                        "time_zone": time_zone,
+                    }
+                    if cursor:
+                        payload["cursor"] = cursor
+
+                    async with session.post(
+                        url, headers=analytics_headers, json=payload
+                    ) as response:
+                        if response.status != 200:
+                            error_text = await response.text()
+                            logger.error(
+                                f"PD ANALYTICS: HTTP {response.status} on page {page}: "
+                                f"{error_text[:300]}"
+                            )
+                            # Entitlement/permission failures mean this account or token
+                            # can't use the Analytics API at all — cache the verdict so we
+                            # stop probing it, and signal the caller to fall back to the
+                            # REST /incidents endpoint instead of silently returning zero.
+                            if response.status in (401, 402, 403):
+                                self._cache_analytics_entitlement(False, response.status)
+                                raise PagerDutyAnalyticsUnavailable(response.status, error_text[:200])
+                            break
+
+                        # First successful page confirms the token is entitled.
+                        if page == 1:
+                            self._cache_analytics_entitlement(True)
+
+                        data = await response.json()
+                        incidents = data.get("data", [])
+                        all_incidents.extend(incidents)
+
+                        # Cursor-based pagination
+                        cursor = (
+                            data.get("next_cursor")
+                            or data.get("cursor_after")
+                            or (data.get("response_metadata") or {}).get("cursors", {}).get("next")
+                        )
+                        if not cursor or not incidents:
+                            break  # last page
+
+                logger.info(
+                    f"PD ANALYTICS: Collected {len(all_incidents)} incidents in {page} page(s)"
+                )
+                return all_incidents
+
+        except PagerDutyAnalyticsUnavailable:
+            # Propagate so the caller can fall back to REST /incidents.
+            raise
+        except asyncio.TimeoutError:
+            logger.error(
+                f"PD ANALYTICS: Timeout after {page} page(s), "
+                f"{len(all_incidents)} incidents collected"
+            )
+            return all_incidents
+        except Exception as e:
+            logger.error(f"PD ANALYTICS: Failed to fetch incidents: {e}")
+            return all_incidents
+
     async def get_incidents(
         self,
         since: datetime,
@@ -336,7 +629,8 @@ class PagerDutyAPIClient:
             "users": {"access": False, "error": None},
             "incidents": {"access": False, "error": None},
             "services": {"access": False, "error": None},
-            "oncalls": {"access": False, "error": None}
+            "oncalls": {"access": False, "error": None},
+            "analytics": {"access": False, "error": None},
         }
 
         timeout = aiohttp.ClientTimeout(total=30)
@@ -356,6 +650,54 @@ class PagerDutyAPIClient:
             except Exception as e:
                 return (name, False, f"Connection error: {str(e)}")
 
+        async def _check_analytics_endpoint(session):
+            """Check analytics API access via a minimal POST probe."""
+            # Reuse the cached entitlement verdict if we have one — no need to probe
+            # an endpoint we already know the answer for.
+            cached_status = self._analytics_unavailable_status()
+            if cached_status is not None:
+                reason = {
+                    402: "Requires Analytics add-on (plan upgrade needed)",
+                    403: "Token lacks analytics permission",
+                    401: "Unauthorized - check API token",
+                }.get(cached_status, f"HTTP {cached_status}")
+                return ("analytics", False, f"{reason} (cached)")
+            try:
+                now = datetime.now(pytz.UTC)
+                payload = {
+                    "filters": {
+                        "created_at_start": (now - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%S"),
+                        "created_at_end": now.strftime("%Y-%m-%dT%H:%M:%S"),
+                    },
+                    "limit": 1,
+                }
+                analytics_headers = {
+                    "Authorization": f"Token token={self.api_token}",
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                }
+                async with session.post(
+                    f"{self.base_url}/analytics/raw/incidents",
+                    headers=analytics_headers,
+                    json=payload,
+                ) as response:
+                    if response.status == 200:
+                        self._cache_analytics_entitlement(True)
+                        return ("analytics", True, None)
+                    elif response.status == 402:
+                        self._cache_analytics_entitlement(False, 402)
+                        return ("analytics", False, "Requires Analytics add-on (plan upgrade needed)")
+                    elif response.status == 403:
+                        self._cache_analytics_entitlement(False, 403)
+                        return ("analytics", False, "Token lacks analytics permission")
+                    elif response.status == 401:
+                        self._cache_analytics_entitlement(False, 401)
+                        return ("analytics", False, "Unauthorized - check API token")
+                    else:
+                        return ("analytics", False, f"HTTP {response.status}")
+            except Exception as e:
+                return ("analytics", False, f"Connection error: {str(e)}")
+
         try:
             async with aiohttp.ClientSession(timeout=timeout) as session:
                 results = await asyncio.gather(
@@ -363,6 +705,7 @@ class PagerDutyAPIClient:
                     _check_endpoint(session, "incidents", f"{self.base_url}/incidents", {"limit": 1, "total": "true"}),
                     _check_endpoint(session, "services", f"{self.base_url}/services", {"limit": 1}),
                     _check_endpoint(session, "oncalls", f"{self.base_url}/oncalls", {"limit": 1}),
+                    _check_analytics_endpoint(session),
                 )
                 for name, access, error in results:
                     permissions[name]["access"] = access
@@ -540,16 +883,14 @@ class PagerDutyAPIClient:
         logger.info(f"Successfully extracted {len(on_call_user_emails)} on-call user emails from PagerDuty")
         return on_call_user_emails
 
-    async def collect_analysis_data(self, days_back: int = 30) -> Dict[str, Any]:
-        """🚀 ENHANCED: Collect all data needed for burnout analysis with enhanced normalization."""
-        # 🎯 CRITICAL FIX: This method was using old normalization - now using enhanced version
-        logger.info(f"🚀 ENHANCED PD COLLECT_ANALYSIS_DATA: Starting {days_back}-day collection")
-        
-        # Delegate to the enhanced data collection method 
+    async def collect_analysis_data(self, days_back: int = 30, team_ids: list = None) -> Dict[str, Any]:
+        """Collect all data needed for burnout analysis with enhanced normalization."""
+        logger.info(f"PD COLLECT_ANALYSIS_DATA: Starting {days_back}-day collection (team_ids={team_ids})")
+
         collector = PagerDutyDataCollector(self.api_token)
-        enhanced_data = await collector.collect_all_data(days_back)
-        
-        logger.info(f"🚀 ENHANCED PD COLLECT_ANALYSIS_DATA: Enhanced collection completed")
+        enhanced_data = await collector.collect_all_data(days_back, team_ids=team_ids)
+
+        logger.info(f"PD COLLECT_ANALYSIS_DATA: Collection completed")
         return enhanced_data
 
 
@@ -559,45 +900,80 @@ class PagerDutyDataCollector:
     def __init__(self, api_token: str):
         self.client = PagerDutyAPIClient(api_token)
         
-    async def collect_all_data(self, days_back: int = 30) -> Dict[str, Any]:
-        """Collect all necessary data for burnout analysis."""
-        # 🎯 RAILWAY DEBUG: Collection start
+    async def collect_all_data(self, days_back: int = 30, team_ids: list = None) -> Dict[str, Any]:
+        """Collect all necessary data for burnout analysis.
+
+        Args:
+            days_back: Number of days to look back.
+            team_ids: Optional list of PagerDuty team IDs to scope the query.
+                      When None, all account teams are fetched and used.
+        """
         token_suffix = self.client.api_token[-4:] if len(self.client.api_token) > 4 else "***"
         logger.info(f"PAGERDUTY COLLECTION: Starting {days_back}-day collection with token ending in {token_suffix}")
-        
-        # Calculate date range
+
         until = datetime.now(pytz.UTC)
         since = until - timedelta(days=days_back)
-        
-        logger.info(f"PAGERDUTY COLLECTION: Date range {since.isoformat()} to {until.isoformat()}")
-        
-        # Fetch data in parallel (no limits for complete data collection)
-        users_task = self.client.get_users(limit=1000)
-        incidents_task = self.client.get_incidents(since=since, until=until)
-        
-        logger.info(f"PAGERDUTY COLLECTION: Starting parallel API calls...")
-        users, incidents = await asyncio.gather(users_task, incidents_task)
-        
-        logger.info(f"PAGERDUTY COLLECTION: Collected {len(users)} users and {len(incidents)} incidents")
-        
-        # 🎯 RAILWAY DEBUG: Pre-normalization data check
-        if users:
-            sample_user = users[0]
-            has_email = bool(sample_user.get('email'))
-            logger.info(f"PAGERDUTY COLLECTION: Sample user structure - Keys: {list(sample_user.keys())}, Has email: {has_email}")
 
-        if incidents:
-            sample_incident = incidents[0]
-            assignments = sample_incident.get("assignments", [])
-            logger.info(f"PAGERDUTY COLLECTION: Sample incident has {len(assignments)} assignments")
-            if assignments:
-                assignee = assignments[0].get("assignee", {})
-                has_assignee_id = bool(assignee.get('id'))
-                logger.info(f"PAGERDUTY COLLECTION: Sample assignee structure - Has ID: {has_assignee_id}, Type: {assignee.get('type', 'NO_TYPE')}")
-        
-        # 🚀 ENHANCED NORMALIZATION
-        logger.info(f"🚀 PAGERDUTY COLLECTION: Starting ENHANCED normalization process...")
-        normalized_data = self._normalize_with_enhanced_assignment_extraction(incidents, users)
+        logger.info(f"PAGERDUTY COLLECTION: Date range {since.isoformat()} to {until.isoformat()}")
+
+        # Only users are needed here: incident scoping is handled by the Analytics
+        # `team_ids` filter (or the synced-user set), so we no longer fetch the full
+        # teams list — it was an unused API call.
+        users = await self.client.get_users(limit=1000)
+
+        # When no explicit team scope is requested, do NOT expand to the full
+        # team list: passing team_ids=None returns every incident (including
+        # ones not associated with any team). Only filter when a caller asks
+        # for a specific team scope.
+        scoped_team_ids = team_ids if team_ids else None
+        logger.info(
+            f"PAGERDUTY COLLECTION: Collected {len(users)} users "
+            f"(scoped team_ids: {scoped_team_ids or 'ALL (no filter)'})"
+        )
+
+        data_source = "pagerduty_analytics_api"
+        try:
+            analytics_incidents = await self.client.get_analytics_incidents(
+                since=since,
+                until=until,
+                team_ids=scoped_team_ids,
+            )
+
+            logger.info(
+                f"PAGERDUTY COLLECTION: Collected {len(analytics_incidents)} analytics incidents"
+            )
+
+            if users:
+                has_email = bool(users[0].get('email'))
+                logger.info(f"PAGERDUTY COLLECTION: Sample user structure - Keys: {list(users[0].keys())}, Has email: {has_email}")
+
+            if analytics_incidents:
+                sample = analytics_incidents[0]
+                has_assigned = bool(sample.get("assigned_user_ids"))
+                logger.info(
+                    f"PAGERDUTY COLLECTION: Sample analytics incident - "
+                    f"Keys: {list(sample.keys())[:10]}, Has assigned_user_ids: {has_assigned}"
+                )
+
+            # Normalize analytics incidents using user lookup maps for email resolution
+            logger.info(f"🚀 PAGERDUTY COLLECTION: Starting analytics normalization process...")
+            normalized_data = self._normalize_analytics_incidents(analytics_incidents, users)
+        except PagerDutyAnalyticsUnavailable as e:
+            # Account/token can't use the Analytics API — fall back to the REST
+            # /incidents endpoint (available on all plans) with the legacy
+            # assignment-extraction normalization so the analysis still works.
+            logger.warning(
+                f"PAGERDUTY COLLECTION: Analytics API unavailable ({e}); "
+                f"falling back to REST /incidents endpoint. Team scoping is not "
+                f"applied on the REST fallback."
+            )
+            analytics_incidents = await self.client.get_incidents(
+                since=since, until=until, limit=5000
+            )
+            normalized_data = self._normalize_with_enhanced_assignment_extraction(
+                analytics_incidents, users
+            )
+            data_source = "pagerduty_rest_fallback"
         
         # 🎯 RAILWAY DEBUG: Post-normalization validation
         normalized_incidents = normalized_data.get("incidents", [])
@@ -625,10 +1001,8 @@ class PagerDutyDataCollector:
                 "start": since.isoformat(),
                 "end": until.isoformat()
             },
-            "enhancement_applied": metadata.get("enhancement_applied", False),
-            "enhancement_timestamp": metadata.get("enhancement_timestamp"),
-            "assignment_stats": metadata.get("assignment_stats", {}),
-            "total_incidents": len(incidents),
+            "data_source": data_source,
+            "total_incidents": len(analytics_incidents),
             "total_users": len(users),
             "incidents_with_valid_emails": incidents_with_emails,
             "severity_breakdown": severity_counts
@@ -637,9 +1011,134 @@ class PagerDutyDataCollector:
         logger.info(f"PAGERDUTY COLLECTION: COMPLETE - Returning enhanced data")
         return normalized_data
     
+    def _normalize_analytics_incidents(
+        self,
+        analytics_incidents: List[Dict[str, Any]],
+        users: List[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        """Normalize PagerDuty Analytics API incidents into the standard format.
+
+        Analytics incidents carry pre-computed attribution fields
+        (assigned_user_ids, acknowledged_user_ids, joined_user_ids) which are more
+        accurate than heuristic extraction from the REST /incidents endpoint.
+
+        Also preserves rich per-incident metrics:
+          seconds_to_first_ack, auto_resolved, escalation_count,
+          off_hour_interruptions, sleep_hour_interruptions, business_hour_interruptions
+        """
+        # Build user lookup maps from the /users response
+        user_id_to_email: Dict[str, str] = {}
+        user_id_to_name: Dict[str, str] = {}
+        for user in users:
+            uid = user.get("id")
+            if uid:
+                user_id_to_email[str(uid)] = user.get("email", "")
+                user_id_to_name[str(uid)] = user.get("name") or user.get("summary", "Unknown")
+
+        normalized_users = [
+            {
+                "id": u.get("id"),
+                "name": u.get("name") or u.get("summary", "Unknown"),
+                "email": u.get("email", ""),
+                "timezone": u.get("time_zone", "UTC"),
+                "role": u.get("role", "user"),
+                "source": "pagerduty",
+                "job_title": u.get("job_title", ""),
+                "teams": [t.get("summary", "") for t in u.get("teams", [])],
+                "contact_methods_count": len(u.get("contact_methods", [])),
+            }
+            for u in users
+        ]
+
+        normalized_incidents = []
+        incidents_with_emails = 0
+
+        for incident in analytics_incidents:
+            if not incident or not isinstance(incident, dict):
+                continue
+
+            assigned_ids = [str(i) for i in (incident.get("assigned_user_ids") or [])]
+            ack_ids      = [str(i) for i in (incident.get("acknowledged_user_ids") or [])]
+            joined_ids   = [str(i) for i in (incident.get("joined_user_ids") or [])]
+
+            # All users involved — used downstream for multi-user attribution
+            all_user_ids = list(dict.fromkeys(assigned_ids + ack_ids + joined_ids))
+
+            # Primary assignee: first assigned user wins, fall back to first acknowledger
+            primary_id = assigned_ids[0] if assigned_ids else (ack_ids[0] if ack_ids else None)
+            assigned_to = None
+            if primary_id:
+                email = user_id_to_email.get(primary_id, "")
+                assigned_to = {
+                    "id": primary_id,
+                    "name": user_id_to_name.get(primary_id, ""),
+                    "email": email,
+                    "assignment_method": "analytics_assigned",
+                    "confidence": "high",
+                }
+                if email:
+                    incidents_with_emails += 1
+
+            urgency = incident.get("incident_urgency") or incident.get("urgency", "low")
+
+            normalized_incidents.append({
+                "id": incident.get("id"),
+                # Analytics API returns the incident title under `description`, not `title`.
+                "title": incident.get("title") or incident.get("description", ""),
+                "description": incident.get("description", ""),
+                "status": incident.get("status", "resolved"),
+                "severity": urgency,
+                "urgency": urgency,
+                "created_at": incident.get("created_at"),
+                "updated_at": incident.get("resolved_at"),
+                "resolved_at": incident.get("resolved_at"),
+                "assigned_to": assigned_to,
+                # All users involved — used by incident-to-user mapping for multi-user attribution
+                "analytics_user_ids": all_user_ids,
+                # Pre-computed interruption and response metrics from Analytics API
+                "analytics_data": {
+                    "seconds_to_first_ack":        incident.get("seconds_to_first_ack"),
+                    "seconds_to_resolve":           incident.get("seconds_to_resolve"),
+                    "auto_resolved":                bool(incident.get("auto_resolved")),
+                    "escalation_count":             incident.get("escalation_count", 0) or 0,
+                    "off_hour_interruptions":       incident.get("off_hour_interruptions", 0) or 0,
+                    "sleep_hour_interruptions":     incident.get("sleep_hour_interruptions", 0) or 0,
+                    "business_hour_interruptions":  incident.get("business_hour_interruptions", 0) or 0,
+                    "total_interruptions":          incident.get("total_interruptions", 0) or 0,
+                    "engaged_seconds":              incident.get("engaged_seconds", 0) or 0,
+                },
+                "service": incident.get("service_name", ""),
+                "incident_number": incident.get("incident_number"),
+                "teams": [incident.get("team_name")] if incident.get("team_name") else [],
+                "priority_name": incident.get("priority_name", ""),
+                "escalation_policy": incident.get("escalation_policy_name", ""),
+                "source": "pagerduty_analytics",
+                "raw_data": incident,
+            })
+
+        total = len(analytics_incidents)
+        email_pct = (incidents_with_emails / total * 100) if total > 0 else 0.0
+        logger.info(
+            f"🚀 PD ANALYTICS NORMALIZE: {total} incidents normalized, "
+            f"{incidents_with_emails} ({email_pct:.1f}%) with email attribution"
+        )
+
+        return {
+            "users": normalized_users,
+            "incidents": normalized_incidents,
+            "total_incidents": total,
+            "total_users": len(users),
+            "metadata": {
+                "source": "pagerduty_analytics",
+                "enhancement_applied": True,
+                "enhancement_timestamp": datetime.now(timezone.utc).isoformat(),
+                "email_success_rate": f"{incidents_with_emails}/{total} ({email_pct:.1f}%)",
+            },
+        }
+
     def _normalize_with_enhanced_assignment_extraction(
-        self, 
-        incidents: List[Dict[str, Any]], 
+        self,
+        incidents: List[Dict[str, Any]],
         users: List[Dict[str, Any]]
     ) -> Dict[str, Any]:
         """

@@ -264,6 +264,10 @@ function DashboardContent() {
   setDialogSelectedIntegration,
   noIntegrationsFound,
   setNoIntegrationsFound,
+  availableTeams,
+  selectedTeamId,
+  setSelectedTeamId,
+  loadingTeams,
   autoRefreshEnabled,
   setAutoRefreshEnabled,
   autoRefreshInterval,
@@ -645,6 +649,9 @@ function DashboardContent() {
                               <span className="font-medium truncate">{organizationName}</span>
                             </div>
                             <span className="text-neutral-500 flex-shrink-0">{analysis.time_range || 30}d</span>
+                          {(analysis as any).config?.pagerduty_team_id && (
+                            <span className="text-neutral-500 flex-shrink-0 text-[10px] bg-green-100 text-green-700 rounded px-1">team</span>
+                          )}
                           </div>
                           <div className="flex justify-between items-center w-full text-neutral-500">
                             <span>{dateStr}</span>
@@ -1604,6 +1611,49 @@ function DashboardContent() {
                   </p>
                 </div>
               );
+            })()}
+
+            {/* Team Scope — PagerDuty only */}
+            {dialogSelectedIntegration && (() => {
+              const selInt = integrations.find(i => i.id.toString() === dialogSelectedIntegration)
+              if (selInt?.platform !== 'pagerduty') return null
+              return (
+                <div>
+                  <label className="text-sm font-medium text-neutral-700 mb-2 block">
+                    Team Scope
+                  </label>
+                  {loadingTeams ? (
+                    <div className="flex items-center gap-2 p-3 bg-neutral-100 rounded-md border border-neutral-200">
+                      <div className="w-4 h-4 border-2 border-neutral-400 border-t-transparent rounded-full animate-spin" />
+                      <span className="text-sm text-neutral-500">Loading teams…</span>
+                    </div>
+                  ) : availableTeams.length === 0 ? (
+                    <div className="p-3 bg-neutral-100 rounded-md border border-neutral-200 text-sm text-neutral-500">
+                      No teams found — analysis will cover the whole org
+                    </div>
+                  ) : (
+                    <Select
+                      value={selectedTeamId || "__all__"}
+                      onValueChange={v => setSelectedTeamId(v === "__all__" ? "" : v)}
+                    >
+                      <SelectTrigger className="bg-white">
+                        <SelectValue placeholder="Whole organization (all teams)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__all__">Whole organization (all teams)</SelectItem>
+                        {availableTeams.map(t => (
+                          <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  {selectedTeamId && (
+                    <p className="text-xs text-neutral-500 mt-1">
+                      Only incidents and members from <strong>{availableTeams.find(t => t.id === selectedTeamId)?.name}</strong> will be included
+                    </p>
+                  )}
+                </div>
+              )
             })()}
 
             {/* Permission Error Alert - Only for Rootly */}

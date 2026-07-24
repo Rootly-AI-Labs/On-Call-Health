@@ -374,7 +374,8 @@ async def run_burnout_analysis(
                 "include_jira": request.include_jira,
                 "include_linear": request.include_linear,
                 "permission_warnings": permission_warnings,
-                "organization_name": integration.organization_name if hasattr(integration, 'organization_name') else integration.name
+                "organization_name": integration.organization_name if hasattr(integration, 'organization_name') else integration.name,
+                "pagerduty_team_id": getattr(request, 'pagerduty_team_id', None),
             }
         )
         db.add(analysis)
@@ -416,6 +417,7 @@ async def run_burnout_analysis(
                 include_linear=request.include_linear,
                 user_id=current_user.id,
                 enable_ai=request.enable_ai,
+                pagerduty_team_id=getattr(request, 'pagerduty_team_id', None),
                 include_ai_usage=request.include_ai_usage
             )
             logger.info(f"ENDPOINT: Successfully added background task for analysis {analysis.id}")
@@ -3015,6 +3017,7 @@ async def run_analysis_task(
     include_linear: bool = False,
     user_id: int = None,
     enable_ai: bool = False,
+    pagerduty_team_id: str = None,
     include_ai_usage: bool = True
 ):
     """Background task to run the actual burnout analysis."""
@@ -3058,6 +3061,10 @@ async def run_analysis_task(
             rootly_team_name = getattr(integration_obj, 'team_name', None) if integration_obj else None
             if rootly_team_name:
                 logger.info(f"BACKGROUND_TASK [{node_id}]: Rootly integration {integration_id} has team_name={rootly_team_name!r} - analysis will be team-scoped")
+
+        # PagerDuty team scope
+        if pagerduty_team_id and platform == "pagerduty":
+            logger.info(f"BACKGROUND_TASK [{node_id}]: PagerDuty team scope requested: team_id={pagerduty_team_id!r}")
 
         # Row-level locking prevents duplicate execution across replicas
         try:
@@ -3400,6 +3407,48 @@ async def run_analysis_task(
             except Exception as team_filter_err:
                 logger.warning(f"BACKGROUND_TASK: Team scope filter failed: {team_filter_err} — keeping all synced users")
 
+        # Filter synced_users to PagerDuty team members when a team is selected.
+        # We fetch team members directly from the PD API so this works even if
+        # the pagerduty_teams DB column hasn't been populated by a re-sync yet.
+        if pagerduty_team_id and platform == "pagerduty" and synced_users:
+            before_count = len(synced_users)
+            try:
+                from ...core.pagerduty_client import PagerDutyAPIClient as _PDClient
+                _pd_client = _PDClient(effective_api_token)
+                team_members = await _pd_client.get_team_members(pagerduty_team_id)
+
+                # Build lookup sets: PD user IDs and emails of team members
+                team_pd_ids: set = set()
+                team_emails: set = set()
+                for m in team_members:
+                    if m.get("id"):
+                        team_pd_ids.add(str(m["id"]))
+                    if m.get("email"):
+                        team_emails.add(m["email"].lower())
+
+                if team_pd_ids or team_emails:
+                    def _user_in_team(u: dict) -> bool:
+                        pd_uid = str(u.get("pagerduty_user_id") or u.get("id") or "")
+                        email = (u.get("email") or "").lower()
+                        return pd_uid in team_pd_ids or email in team_emails
+
+                    synced_users = [u for u in synced_users if _user_in_team(u)]
+                    logger.info(
+                        f"BACKGROUND_TASK: PagerDuty team scope '{pagerduty_team_id}': "
+                        f"{before_count} → {len(synced_users)} synced users "
+                        f"(team has {len(team_members)} members)"
+                    )
+                else:
+                    logger.warning(
+                        f"BACKGROUND_TASK: PagerDuty team '{pagerduty_team_id}' returned "
+                        f"no members — keeping all synced users"
+                    )
+            except Exception as _team_err:
+                logger.warning(
+                    f"BACKGROUND_TASK: Failed to fetch PagerDuty team members: {_team_err} "
+                    f"— keeping all {before_count} synced users"
+                )
+
         # Release any open read transaction before the long-running analysis
         # await. All setup reads above run inside an uncommitted transaction;
         # leaving it open would make this connection idle-in-transaction while
@@ -3426,7 +3475,8 @@ async def run_analysis_task(
             current_user_id=user_id,  # Pass the current user ID for Jira integration lookup
             organization_id=user.organization_id if user else None,  # Pass org_id for GitHub pre-filter scoping
             db=db,  # Reuse DB session to prevent connection pool exhaustion
-            team_name=rootly_team_name  # Team scope for incident filtering
+            team_name=rootly_team_name,  # Team scope for Rootly incident filtering
+            pagerduty_team_id=pagerduty_team_id,  # Team scope for PagerDuty analytics API
         )
         logger.info(f"BACKGROUND_TASK: UnifiedBurnoutAnalyzer initialized - Features: AI={use_ai_analyzer}, GitHub={include_github}, Slack={include_slack}, Jira={include_jira}, Linear={include_linear}, current_user_id={user_id}")
         

@@ -1327,17 +1327,9 @@ async def sync_integration_users(
                         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                         detail="Beta PagerDuty token not configured"
                     )
-                # Fetch users directly from API
-                client = PagerDutyAPIClient(beta_token)
-                raw_users = await client.get_users(limit=10000)
-                users = []
-                for user in raw_users:
-                    users.append({
-                        "id": user.get("id"),
-                        "email": user.get("email"),
-                        "name": user.get("name"),
-                        "platform": "pagerduty"
-                    })
+                # Delegate to UserSyncService so team info is also fetched
+                sync_service_beta = UserSyncService(db)
+                users = await sync_service_beta._fetch_pagerduty_users(beta_token)
                 platform = "pagerduty"
 
             # Sync to user_correlations with organization_id
@@ -1472,6 +1464,64 @@ async def sync_integration_users(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to sync users: {detail}"
         )
+
+@router.get("/integrations/{integration_id}/teams")
+async def get_integration_teams(
+    integration_id: str,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Return the list of PagerDuty teams for a given integration.
+    Used by the "Start Analysis" dialog to let users scope analysis to a specific team.
+    Only meaningful for PagerDuty integrations.
+    """
+    try:
+        from app.core.pagerduty_client import PagerDutyAPIClient
+
+        # Resolve integration and token
+        if integration_id == "beta-pagerduty":
+            import os as _os
+            api_token = _os.getenv("PAGERDUTY_API_TOKEN")
+            if not api_token:
+                raise HTTPException(status_code=500, detail="Beta PagerDuty token not configured")
+        else:
+            try:
+                numeric_id = int(integration_id)
+            except ValueError:
+                raise HTTPException(status_code=400, detail=f"Invalid integration ID: {integration_id}")
+
+            integration = db.query(RootlyIntegration).filter(
+                RootlyIntegration.id == numeric_id,
+                RootlyIntegration.user_id == current_user.id
+            ).first()
+
+            if not integration:
+                raise HTTPException(status_code=404, detail="Integration not found")
+
+            if integration.platform != "pagerduty":
+                # Non-PagerDuty integrations don't have teams in this sense
+                return {"teams": []}
+
+            api_token = integration.api_token
+
+        client = PagerDutyAPIClient(api_token)
+        teams = await client.get_teams(limit=200)
+
+        return {
+            "teams": [
+                {"id": t.get("id"), "name": t.get("summary") or t.get("name", "")}
+                for t in teams
+                if t.get("id")
+            ]
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching teams for integration {integration_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch teams: {str(e)}")
+
 
 @router.get("/integrations/{integration_id}/oncall-users")
 async def get_oncall_users(
@@ -1815,6 +1865,7 @@ async def get_synced_users(
                 "slack_user_id": corr.slack_user_id,
                 "rootly_user_id": corr.rootly_user_id,  # Added for Rootly incident matching
                 "pagerduty_user_id": corr.pagerduty_user_id,  # Added for PagerDuty incident matching
+                "pagerduty_teams": corr.pagerduty_teams or [],  # Teams from PagerDuty sync
                 "jira_account_id": corr.jira_account_id,
                 "jira_email": corr.jira_email,
                 "linear_user_id": corr.linear_user_id,
