@@ -20,7 +20,6 @@ function IntroGuide({ isOpen, currentStep, onNext, onPrev, onClose, onGoToStep }
     {
       title: "Welcome to On-Call Health",
       description: "Go to Integrations to connect to Rootly or PagerDuty, as well as other services such as Slack, Linear, or Jira for enhanced risk analysis.",
-      image: "/images/integrations-logos.png",
     },
     {
       title: "Run an Analysis",
