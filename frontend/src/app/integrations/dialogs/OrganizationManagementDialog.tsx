@@ -296,7 +296,7 @@ export function OrganizationManagementDialog({
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <h4 className="font-medium text-neutral-900 truncate">{invitation.organization_name}</h4>
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-700 capitalize">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-neutral-100 text-neutral-700 capitalize">
                               {invitation.role}
                             </span>
                           </div>
@@ -439,7 +439,7 @@ export function OrganizationManagementDialog({
                             <button
                               onClick={() => handleCancelInvitation(invitation.id, invitation.email)}
                               disabled={processingInvitationId === invitation.id}
-                              className="flex items-center gap-1 px-2 py-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                              className="flex items-center gap-1 px-2 py-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
                               title="Cancel invitation"
                             >
                               {processingInvitationId === invitation.id ? (
@@ -544,7 +544,7 @@ export function OrganizationManagementDialog({
                                 <span className="text-sm font-medium text-neutral-900">
                                   {member.name}
                                   {member.is_current_user && (
-                                    <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">You</span>
+                                    <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-sm">You</span>
                                   )}
                                 </span>
                               </div>

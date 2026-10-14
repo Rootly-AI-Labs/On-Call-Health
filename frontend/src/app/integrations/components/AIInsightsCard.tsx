@@ -292,7 +292,7 @@ export function AIInsightsCard({
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="font-medium">Your API Key:</span>
-                        <code className="font-mono text-xs bg-green-100 px-2 py-0.5 rounded border border-green-300">
+                        <code className="font-mono text-xs bg-green-100 px-2 py-0.5 rounded-sm border border-green-300">
                           {llmConfig.token_suffix}
                         </code>
                       </div>

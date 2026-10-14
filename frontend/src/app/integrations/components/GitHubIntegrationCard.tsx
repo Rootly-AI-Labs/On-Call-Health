@@ -80,16 +80,16 @@ export function GitHubIntegrationCard({ onConnect, isConnecting }: GitHubIntegra
                       <h4 className="font-medium text-neutral-900 mb-2"><strong>Step 3:</strong> Select Required Scopes</h4>
                       <p className="text-sm text-neutral-700 mb-2">Select these <strong>permissions:</strong></p>
                       <ul className="text-sm text-neutral-700 space-y-1 ml-4">
-                        <li>• <code className="bg-neutral-300 px-1 rounded">repo</code> - Full repository access</li>
-                        <li>• <code className="bg-neutral-300 px-1 rounded">read:user</code> - Read user profile information</li>
-                        <li>• <code className="bg-neutral-300 px-1 rounded">read:org</code> - Read organization membership</li>
+                        <li>• <code className="bg-neutral-300 px-1 rounded-sm">repo</code> - Full repository access</li>
+                        <li>• <code className="bg-neutral-300 px-1 rounded-sm">read:user</code> - Read user profile information</li>
+                        <li>• <code className="bg-neutral-300 px-1 rounded-sm">read:org</code> - Read organization membership</li>
                       </ul>
                     </div>
 
                     <div>
                       <h4 className="font-medium text-neutral-900 mb-2"><strong>Step 4:</strong> Generate and Copy Token</h4>
                       <p className="text-sm text-neutral-700">
-                        Click <strong>"Generate token"</strong> and immediately copy the token (starts with <code className="bg-neutral-300 px-1 rounded">ghp_</code>).
+                        Click <strong>"Generate token"</strong> and immediately copy the token (starts with <code className="bg-neutral-300 px-1 rounded-sm">ghp_</code>).
                         <strong>You won't be able to see it again!</strong>
                       </p>
                     </div>

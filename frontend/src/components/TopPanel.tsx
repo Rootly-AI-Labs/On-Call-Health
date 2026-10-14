@@ -218,7 +218,7 @@ export function TopPanel() {
                 }
               }}>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-1.5 sm:gap-2.5 px-1 sm:px-2.5 py-1 sm:py-1.5 rounded-full border border-neutral-200 bg-white hover:bg-purple-100 hover:border-neutral-300 transition-all duration-200 shadow-xs hover:shadow-sm">
+                  <button className="flex items-center gap-1.5 sm:gap-2.5 px-1 sm:px-2.5 py-1 sm:py-1.5 rounded-full border border-neutral-200 bg-white hover:bg-purple-100 hover:border-neutral-300 transition-all duration-200 shadow-xs hover:shadow-xs">
                     <Avatar className="h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 ring-2 ring-white">
                       <AvatarImage src={userInfo.avatar} alt={userInfo.name} />
                       <AvatarFallback className="bg-purple-700 text-white text-xs sm:text-sm font-semibold">
@@ -261,7 +261,7 @@ export function TopPanel() {
                     <Users className="w-4 h-4 mr-2" />
                     <span className="flex-1">Team</span>
                     {userInfo.role && (
-                      <span className="ml-2 px-1.5 py-0.5 text-[10px] font-medium rounded bg-purple-200 text-purple-900 capitalize">
+                      <span className="ml-2 px-1.5 py-0.5 text-[10px] font-medium rounded-sm bg-purple-200 text-purple-900 capitalize">
                         {userInfo.role.replace('_', ' ')}
                       </span>
                     )}

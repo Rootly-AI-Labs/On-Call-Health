@@ -173,19 +173,19 @@ function IndividualDailyHealthChart({ memberData, analysisId, currentAnalysis }:
       <CardContent>
         <div className="mb-4 flex flex-wrap items-center gap-4 text-xs text-neutral-500">
           <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 bg-red-500 rounded"></div>
+            <div className="w-3 h-3 bg-red-500 rounded-sm"></div>
             <span>Critical (75-100)</span>
           </div>
           <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 bg-orange-500 rounded"></div>
+            <div className="w-3 h-3 bg-orange-500 rounded-sm"></div>
             <span>Poor (50-74)</span>
           </div>
           <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 bg-yellow-500 rounded"></div>
+            <div className="w-3 h-3 bg-yellow-500 rounded-sm"></div>
             <span>Fair (25-49)</span>
           </div>
           <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 bg-green-500 rounded"></div>
+            <div className="w-3 h-3 bg-green-500 rounded-sm"></div>
             <span>Healthy (0-24)</span>
           </div>
         </div>

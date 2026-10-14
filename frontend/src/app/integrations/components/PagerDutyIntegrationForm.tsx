@@ -119,7 +119,7 @@ export function PagerDutyIntegrationForm({
                   <ol className="space-y-2 text-sm">
                     <li><strong>1.</strong> In your PagerDuty account, click on <strong>Integrations</strong> in the top navigation</li>
                     <li><strong>2.</strong> Look for <strong>API Access Keys</strong> in the dropdown menu</li>
-                    <li><strong>3.</strong> Click <code className="bg-green-100 px-1 rounded">Create API User Token</code> (NOT "Create API Key" - must be user-level)</li>
+                    <li><strong>3.</strong> Click <code className="bg-green-100 px-1 rounded-sm">Create API User Token</code> (NOT "Create API Key" - must be user-level)</li>
                     <li><strong>4.</strong> Give it a description (e.g., <strong>"On-Call Health"</strong>) and click <strong>Create</strong></li>
                     <li><strong>5.</strong> Copy the generated token (starts with letters/numbers like <strong>"u+..."</strong>)</li>
                   </ol>

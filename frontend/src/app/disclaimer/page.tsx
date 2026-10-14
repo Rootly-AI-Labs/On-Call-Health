@@ -153,7 +153,7 @@ export default function DisclaimerPage() {
                   <li key={section.id}>
                     <a
                       href={`#${section.id}`}
-                      className="block text-sm text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200 rounded px-3 py-2 transition-colors"
+                      className="block text-sm text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200 rounded-sm px-3 py-2 transition-colors"
                     >
                       {section.title}
                     </a>

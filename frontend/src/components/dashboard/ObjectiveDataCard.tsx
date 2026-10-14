@@ -617,15 +617,15 @@ export function ObjectiveDataCard({
               {selectedMetric === 'incident_load' ? (
                 <>
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded bg-red-500"></div>
+                    <div className="w-3 h-3 rounded-sm bg-red-500"></div>
                     <span>Critical</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded bg-orange-500"></div>
+                    <div className="w-3 h-3 rounded-sm bg-orange-500"></div>
                     <span>High</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded bg-neutral-400"></div>
+                    <div className="w-3 h-3 rounded-sm bg-neutral-400"></div>
                     <span>Medium/Low</span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -636,7 +636,7 @@ export function ObjectiveDataCard({
               ) : (
                 <>
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded bg-purple-600"></div>
+                    <div className="w-3 h-3 rounded-sm bg-purple-600"></div>
                     <span>{config.label}</span>
                   </div>
                   {selectedMetric === 'health_score' && (
@@ -753,7 +753,7 @@ export function ObjectiveDataCard({
             {/* Legend */}
             <div className="mt-4 flex items-center justify-start flex-wrap gap-3 md:gap-6 text-sm text-neutral-700">
               <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 rounded" style={{ backgroundColor: config.color }}></div>
+                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: config.color }}></div>
                 <span>{config.label}</span>
               </div>
               {config.showMeanLine && (

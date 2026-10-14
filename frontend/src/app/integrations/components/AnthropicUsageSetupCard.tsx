@@ -59,7 +59,7 @@ export function AnthropicUsageSetupCard({ onConnect, isConnecting }: AnthropicUs
                   <div>
                     <h5 className="text-sm font-medium text-neutral-900 mb-1"><strong>Step 2:</strong> Create a key with Admin permissions</h5>
                     <p className="text-sm text-neutral-700">
-                      Click <strong>"Create Key"</strong> and ensure it has <strong>Admin</strong> role — not Developer. The key starts with <code className="bg-neutral-300 px-1 rounded text-xs">sk-ant-admin-</code>.
+                      Click <strong>"Create Key"</strong> and ensure it has <strong>Admin</strong> role — not Developer. The key starts with <code className="bg-neutral-300 px-1 rounded-sm text-xs">sk-ant-admin-</code>.
                     </p>
                   </div>
                 </div>

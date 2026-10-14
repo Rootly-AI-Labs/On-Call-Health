@@ -536,7 +536,7 @@ export function UserObjectiveDataCard({
             {/* Legend */}
             <div className="flex items-center justify-center gap-6 mt-2 text-sm text-neutral-600">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded bg-purple-600"></div>
+                <div className="w-3 h-3 rounded-sm bg-purple-600"></div>
                 <span>{config.label}</span>
               </div>
               {selectedMetric === 'health_score' && (
@@ -656,7 +656,7 @@ export function UserObjectiveDataCard({
             {/* Legend */}
             <div className="mt-4 flex items-center justify-start space-x-6 text-sm text-neutral-700">
               <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 rounded" style={{ backgroundColor: config.color }}></div>
+                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: config.color }}></div>
                 <span>{config.label}</span>
               </div>
               {config.showMeanLine && (

@@ -153,7 +153,7 @@ function UnsubscribePage() {
                 >
                   {/* Custom checkbox */}
                   <span
-                    className={`mt-0.5 shrink-0 w-4 h-4 rounded border flex items-center justify-center transition-colors ${
+                    className={`mt-0.5 shrink-0 w-4 h-4 rounded-sm border flex items-center justify-center transition-colors ${
                       isChecked
                         ? "bg-violet-600 border-violet-600"
                         : "border-gray-300 bg-white"

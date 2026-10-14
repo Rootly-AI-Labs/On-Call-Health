@@ -262,15 +262,15 @@ export function UnifiedSlackCard({
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-neutral-300 rounded-lg"></div>
               <div className="space-y-2">
-                <div className="w-32 h-5 bg-neutral-300 rounded"></div>
-                <div className="w-64 h-4 bg-neutral-300 rounded"></div>
+                <div className="w-32 h-5 bg-neutral-300 rounded-sm"></div>
+                <div className="w-64 h-4 bg-neutral-300 rounded-sm"></div>
               </div>
             </div>
             <div className="w-24 h-9 bg-neutral-300 rounded-lg"></div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="h-40 bg-neutral-200 rounded animate-pulse"></div>
+          <div className="h-40 bg-neutral-200 rounded-sm animate-pulse"></div>
         </CardContent>
       </Card>
     )
@@ -365,9 +365,9 @@ export function UnifiedSlackCard({
                   <div className="mt-3 pt-3 border-t border-amber-300">
                     <p className="text-amber-900 font-medium mb-2">After admin approval:</p>
                     <ol className="list-decimal list-inside space-y-1 text-amber-800 ml-2 text-xs">
-                      <li>Invite the bot to channels you want analyzed (use <code className="bg-amber-100 px-1 rounded text-xs">/invite @On-Call Health</code>)</li>
+                      <li>Invite the bot to channels you want analyzed (use <code className="bg-amber-100 px-1 rounded-sm text-xs">/invite @On-Call Health</code>)</li>
                       <li>Bot can only read messages from channels it's been added to</li>
-                      <li>Team members can use <code className="bg-amber-100 px-1 rounded text-xs">/oncall-health</code> to submit health check-ins</li>
+                      <li>Team members can use <code className="bg-amber-100 px-1 rounded-sm text-xs">/oncall-health</code> to submit health check-ins</li>
                     </ol>
                   </div>
                 </div>
@@ -509,7 +509,7 @@ export function UnifiedSlackCard({
             <div className="space-y-3 pt-2 text-sm text-muted-foreground">
               <p>Disabling Slack Surveys will immediately pause all survey activity for this Slack workspace, including:</p>
               <ul className="list-disc list-inside space-y-1 text-sm">
-                <li>The <code className="bg-neutral-200 px-1 rounded">/oncall-health</code> command</li>
+                <li>The <code className="bg-neutral-200 px-1 rounded-sm">/oncall-health</code> command</li>
                 <li>Automated survey delivery, scheduled surveys, and follow-up reminders</li>
                 <li>Manual survey sending</li>
               </ul>

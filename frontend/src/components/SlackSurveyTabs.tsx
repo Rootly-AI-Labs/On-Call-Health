@@ -598,7 +598,7 @@ export function SlackSurveyTabs({
         {/* Slash Command Info */}
         <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
           <p className="text-sm text-purple-900">
-            <strong>Team members can check in anytime</strong> using the <code className="bg-purple-100 px-1.5 py-0.5 rounded text-xs font-mono">/oncall-health</code> command in Slack.
+            <strong>Team members can check in anytime</strong> using the <code className="bg-purple-100 px-1.5 py-0.5 rounded-sm text-xs font-mono">/oncall-health</code> command in Slack.
           </p>
         </div>
 
@@ -848,7 +848,7 @@ export function SlackSurveyTabs({
                             hasUnsavedScheduleChangesRef.current = true
                           }}
                           disabled={savingSchedule}
-                          className="ml-1 px-2 py-1 text-xs font-medium text-neutral-700 bg-neutral-200 hover:bg-neutral-300 rounded disabled:opacity-50"
+                          className="ml-1 px-2 py-1 text-xs font-medium text-neutral-700 bg-neutral-200 hover:bg-neutral-300 rounded-sm disabled:opacity-50"
                         >
                           {parseInt(scheduleTime.split(':')[0]) >= 12 ? 'PM' : 'AM'}
                         </button>
@@ -1048,7 +1048,7 @@ export function SlackSurveyTabs({
                 Are you sure you want to disable the automated schedule?
                 <div className="mt-3 p-3 bg-amber-50 rounded-md border border-amber-100">
                   <div className="text-sm text-amber-900">
-                    Surveys will no longer be sent automatically. Team members can still use the <code className="bg-amber-100 px-1 rounded">/oncall-health</code> command.
+                    Surveys will no longer be sent automatically. Team members can still use the <code className="bg-amber-100 px-1 rounded-sm">/oncall-health</code> command.
                   </div>
                 </div>
               </>

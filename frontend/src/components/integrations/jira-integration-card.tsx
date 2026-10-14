@@ -230,7 +230,7 @@ export function JiraIntegrationCard({
               {Object.entries(permissions).map(([key, value]) => (
                 <Badge
                   key={key}
-                  variant={value ? "default" : "outline-solid"}
+                  variant={value ? "default" : "outline"}
                   className={`text-xs ${value ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-700 border-red-200'}`}
                 >
                   {key.replace(/_/g, ' ')}

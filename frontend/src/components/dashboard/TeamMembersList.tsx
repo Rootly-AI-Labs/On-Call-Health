@@ -351,7 +351,7 @@ export function TeamMembersList({
                   {trendConfig.label}
                 </Badge>
                 {trendInfo.percentage > 0 && (
-                  <div className="absolute bottom-full left-0 mb-1 px-2 py-1 bg-neutral-900/95 text-white text-xs rounded whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                  <div className="absolute bottom-full left-0 mb-1 px-2 py-1 bg-neutral-900/95 text-white text-xs rounded-sm whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                     {trendInfo.trend.includes('improving')
                       ? `Down ${trendInfo.percentage}% (${Math.round(trendInfo.firstHalfScore)} → ${Math.round(trendInfo.secondHalfScore)})`
                       : trendInfo.trend.includes('worsening')
@@ -387,7 +387,7 @@ export function TeamMembersList({
               {trendConfig.label}
             </Badge>
             {trendInfo.percentage > 0 && (
-              <div className="absolute bottom-full left-0 mb-1 px-2 py-1 bg-neutral-900/95 text-white text-xs rounded whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+              <div className="absolute bottom-full left-0 mb-1 px-2 py-1 bg-neutral-900/95 text-white text-xs rounded-sm whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                 {trendInfo.trend.includes('improving')
                   ? `Down ${trendInfo.percentage}% (${Math.round(trendInfo.firstHalfScore)} → ${Math.round(trendInfo.secondHalfScore)})`
                   : trendInfo.trend.includes('worsening')
@@ -488,8 +488,8 @@ export function TeamMembersList({
               <div className="flex gap-1">
                 {/* Primary platform icon */}
                 {member.rootly_user_id && (
-                  <div className="flex items-center justify-center w-5 h-5 rounded" title="Rootly">
-                    <Image src="/images/rootly-logo-icon.jpg" alt="Rootly" width={14} height={14} className="rounded" />
+                  <div className="flex items-center justify-center w-5 h-5 rounded-sm" title="Rootly">
+                    <Image src="/images/rootly-logo-icon.jpg" alt="Rootly" width={14} height={14} className="rounded-sm" />
                   </div>
                 )}
                 {/* Fixed order: github, slack, jira, linear, openai */}
@@ -665,7 +665,7 @@ export function TeamMembersList({
                             <span>
                               {showMembersWithoutIncidents ? 'Hide' : 'Show'} team members with no activity
                             </span>
-                            <span className="ml-1 text-xs bg-neutral-300 px-2 py-1 rounded">
+                            <span className="ml-1 text-xs bg-neutral-300 px-2 py-1 rounded-sm">
                               {membersWithoutIncidents.length}
                             </span>
                           </>
@@ -690,7 +690,7 @@ export function TeamMembersList({
                         {!isLoading && (
                           <div className="flex items-center justify-center gap-2">
                             <span className="text-sm">with no activity</span>
-                            <span className="text-xs bg-neutral-300 px-2 py-1 rounded">
+                            <span className="text-xs bg-neutral-300 px-2 py-1 rounded-sm">
                               {membersWithoutIncidents.length}
                             </span>
                           </div>

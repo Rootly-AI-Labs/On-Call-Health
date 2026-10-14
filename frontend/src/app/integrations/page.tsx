@@ -2485,8 +2485,8 @@ export default function IntegrationsPage() {
           {/* Rootly Card */}
           {loadingRootly ? (
             <Card className="border-2 border-neutral-200 p-4 flex items-center justify-center relative h-20 animate-pulse">
-                <div className="absolute top-2 right-2 w-5 h-5 bg-neutral-300 rounded"></div>
-                <div className="h-8 w-32 bg-neutral-300 rounded"></div>
+                <div className="absolute top-2 right-2 w-5 h-5 bg-neutral-300 rounded-sm"></div>
+                <div className="h-8 w-32 bg-neutral-300 rounded-sm"></div>
             </Card>
           ) : (
               <Card
@@ -2551,10 +2551,10 @@ export default function IntegrationsPage() {
           {/* PagerDuty Card */}
           {(loadingPagerDuty ? (
             <Card className="border-2 border-neutral-200 p-4 flex items-center justify-center relative h-20 animate-pulse">
-              <div className="absolute top-2 right-2 w-5 h-5 bg-neutral-300 rounded"></div>
+              <div className="absolute top-2 right-2 w-5 h-5 bg-neutral-300 rounded-sm"></div>
               <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-neutral-300 rounded"></div>
-                <div className="h-6 w-24 bg-neutral-300 rounded"></div>
+                <div className="w-8 h-8 bg-neutral-300 rounded-sm"></div>
+                <div className="h-6 w-24 bg-neutral-300 rounded-sm"></div>
               </div>
             </Card>
           ) : (
@@ -2606,7 +2606,7 @@ export default function IntegrationsPage() {
                 </div>
               )}
               <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-green-600 rounded flex items-center justify-center">
+                <div className="w-8 h-8 bg-green-600 rounded-sm flex items-center justify-center">
                   <span className="text-white font-bold text-sm">PD</span>
                 </div>
                 <span className="text-lg font-bold text-neutral-900">PagerDuty</span>
@@ -2722,23 +2722,23 @@ export default function IntegrationsPage() {
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center space-x-3 mb-4">
-                            <div className="h-6 bg-neutral-300 rounded w-32"></div>
-                            <div className="h-5 bg-neutral-300 rounded w-20"></div>
-                            <div className="h-5 bg-neutral-300 rounded w-16"></div>
+                            <div className="h-6 bg-neutral-300 rounded-sm w-32"></div>
+                            <div className="h-5 bg-neutral-300 rounded-sm w-20"></div>
+                            <div className="h-5 bg-neutral-300 rounded-sm w-16"></div>
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             {[1, 2, 3, 4, 5].map((j) => (
                               <div key={j} className="flex items-start space-x-2">
-                                <div className="w-4 h-4 bg-neutral-300 rounded mt-0.5"></div>
+                                <div className="w-4 h-4 bg-neutral-300 rounded-sm mt-0.5"></div>
                                 <div>
-                                  <div className="h-4 bg-neutral-300 rounded w-20 mb-1"></div>
-                                  <div className="h-4 bg-neutral-300 rounded w-16"></div>
+                                  <div className="h-4 bg-neutral-300 rounded-sm w-20 mb-1"></div>
+                                  <div className="h-4 bg-neutral-300 rounded-sm w-16"></div>
                                 </div>
                               </div>
                             ))}
                           </div>
                         </div>
-                        <div className="h-8 bg-neutral-300 rounded w-24"></div>
+                        <div className="h-8 bg-neutral-300 rounded-sm w-24"></div>
                       </div>
                     </CardContent>
                   </Card>
@@ -2865,7 +2865,7 @@ export default function IntegrationsPage() {
                                     {selectedScopeLabel && (
                                       <span
                                         title={selectedScopeLabel}
-                                        className="px-1.5 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-700 inline-block max-w-44 shrink-0 truncate align-middle"
+                                        className="px-1.5 py-0.5 text-xs font-medium rounded-sm bg-purple-100 text-purple-700 inline-block max-w-44 shrink-0 truncate align-middle"
                                       >
                                         {selectedScopeLabel}
                                       </span>
@@ -2873,7 +2873,7 @@ export default function IntegrationsPage() {
                                     {selectedAttention && (
                                       <span
                                         title={selectedAttention.message}
-                                        className={`px-1.5 py-0.5 text-[11px] font-semibold rounded inline-block shrink-0 ${
+                                        className={`px-1.5 py-0.5 text-[11px] font-semibold rounded-sm inline-block shrink-0 ${
                                           selectedAttention.state === 'expired'
                                             ? 'bg-red-100 text-red-700'
                                             : 'bg-amber-100 text-amber-700'
@@ -2927,7 +2927,7 @@ export default function IntegrationsPage() {
                                         </div>
                                         {integration.team_name && (
                                           <div className="mt-1">
-                                            <span className="px-1.5 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-700 inline-flex max-w-full wrap-break-word">
+                                            <span className="px-1.5 py-0.5 text-xs font-medium rounded-sm bg-purple-100 text-purple-700 inline-flex max-w-full wrap-break-word">
                                               Team: {integration.team_name}
                                             </span>
                                           </div>
@@ -3055,7 +3055,7 @@ export default function IntegrationsPage() {
                             </div>
                             {rootlyScopeLabel && (
                               <div className="w-44 shrink-0 hidden lg:block">
-                                <span className="inline-flex items-center rounded bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
+                                <span className="inline-flex items-center rounded-sm bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
                                   {rootlyScopeLabel}
                                 </span>
                               </div>
@@ -3242,32 +3242,32 @@ export default function IntegrationsPage() {
                     <div className="p-6 rounded-lg border border-neutral-200 bg-neutral-100 animate-pulse">
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center space-x-3">
-                          <div className="w-6 h-6 bg-neutral-300 rounded"></div>
-                          <div className="h-5 w-32 bg-neutral-300 rounded"></div>
+                          <div className="w-6 h-6 bg-neutral-300 rounded-sm"></div>
+                          <div className="h-5 w-32 bg-neutral-300 rounded-sm"></div>
                         </div>
-                        <div className="w-16 h-6 bg-neutral-300 rounded"></div>
+                        <div className="w-16 h-6 bg-neutral-300 rounded-sm"></div>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
                         <div className="flex items-start space-x-2">
-                          <div className="w-4 h-4 mt-0.5 bg-neutral-300 rounded"></div>
+                          <div className="w-4 h-4 mt-0.5 bg-neutral-300 rounded-sm"></div>
                           <div>
-                            <div className="h-4 w-20 bg-neutral-300 rounded mb-2"></div>
-                            <div className="h-4 w-24 bg-neutral-300 rounded"></div>
+                            <div className="h-4 w-20 bg-neutral-300 rounded-sm mb-2"></div>
+                            <div className="h-4 w-24 bg-neutral-300 rounded-sm"></div>
                           </div>
                         </div>
                         <div className="flex items-start space-x-2">
-                          <div className="w-4 h-4 mt-0.5 bg-neutral-300 rounded"></div>
+                          <div className="w-4 h-4 mt-0.5 bg-neutral-300 rounded-sm"></div>
                           <div>
-                            <div className="h-4 w-16 bg-neutral-300 rounded mb-2"></div>
-                            <div className="h-4 w-8 bg-neutral-300 rounded"></div>
+                            <div className="h-4 w-16 bg-neutral-300 rounded-sm mb-2"></div>
+                            <div className="h-4 w-8 bg-neutral-300 rounded-sm"></div>
                           </div>
                         </div>
                         <div className="flex items-start space-x-2">
-                          <div className="w-4 h-4 mt-0.5 bg-neutral-300 rounded"></div>
+                          <div className="w-4 h-4 mt-0.5 bg-neutral-300 rounded-sm"></div>
                           <div>
-                            <div className="h-4 w-12 bg-neutral-300 rounded mb-2"></div>
-                            <div className="h-4 w-16 bg-neutral-300 rounded"></div>
+                            <div className="h-4 w-12 bg-neutral-300 rounded-sm mb-2"></div>
+                            <div className="h-4 w-16 bg-neutral-300 rounded-sm"></div>
                           </div>
                         </div>
                       </div>
@@ -3302,10 +3302,10 @@ export default function IntegrationsPage() {
             {/* GitHub Card */}
             {loadingGitHub ? (
               <Card className="border-2 border-neutral-200 p-4 flex items-center justify-center relative h-20 animate-pulse">
-                <div className="absolute top-2 right-2 w-16 h-5 bg-neutral-300 rounded"></div>
+                <div className="absolute top-2 right-2 w-16 h-5 bg-neutral-300 rounded-sm"></div>
                 <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-neutral-300 rounded"></div>
-                  <div className="h-6 w-20 bg-neutral-300 rounded"></div>
+                  <div className="w-8 h-8 bg-neutral-300 rounded-sm"></div>
+                  <div className="h-6 w-20 bg-neutral-300 rounded-sm"></div>
                 </div>
               </Card>
             ) : (
@@ -3333,7 +3333,7 @@ export default function IntegrationsPage() {
                     </div>
                   )}
                   <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 rounded flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-sm flex items-center justify-center">
                       <Image
                         src="/images/github-logo.png"
                         alt="GitHub"
@@ -3351,10 +3351,10 @@ export default function IntegrationsPage() {
             {/* Slack Card */}
             {loadingSlack ? (
               <Card className="border-2 border-neutral-200 p-4 flex items-center justify-center relative h-20 animate-pulse">
-                <div className="absolute top-2 right-2 w-16 h-5 bg-neutral-300 rounded"></div>
+                <div className="absolute top-2 right-2 w-16 h-5 bg-neutral-300 rounded-sm"></div>
                 <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-neutral-300 rounded"></div>
-                  <div className="h-6 w-16 bg-neutral-300 rounded"></div>
+                  <div className="w-8 h-8 bg-neutral-300 rounded-sm"></div>
+                  <div className="h-6 w-16 bg-neutral-300 rounded-sm"></div>
                 </div>
               </Card>
             ) : (
@@ -3379,7 +3379,7 @@ export default function IntegrationsPage() {
                     </div>
                   )}
                   <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 rounded flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-sm flex items-center justify-center">
                       <Image
                         src="/images/slack-logo.png"
                         alt="Slack"
@@ -3398,10 +3398,10 @@ export default function IntegrationsPage() {
             {/* Jira Card */}
             {loadingJira ? (
               <Card className="border-2 border-neutral-200 p-4 flex items-center justify-center relative h-20 animate-pulse">
-                <div className="absolute top-2 right-2 w-16 h-5 bg-neutral-300 rounded"></div>
+                <div className="absolute top-2 right-2 w-16 h-5 bg-neutral-300 rounded-sm"></div>
                 <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-neutral-300 rounded"></div>
-                  <div className="h-6 w-20 bg-neutral-300 rounded"></div>
+                  <div className="w-8 h-8 bg-neutral-300 rounded-sm"></div>
+                  <div className="h-6 w-20 bg-neutral-300 rounded-sm"></div>
                 </div>
               </Card>
             ) : (
@@ -3429,7 +3429,7 @@ export default function IntegrationsPage() {
                   </div>
                 )}
                 <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 rounded flex items-center justify-center bg-blue-600">
+                  <div className="w-8 h-8 rounded-sm flex items-center justify-center bg-blue-600">
                     <svg
                       viewBox="0 0 24 24"
                       className="w-5 h-5 text-white"
@@ -3446,10 +3446,10 @@ export default function IntegrationsPage() {
             {/* Linear Card */}
             {loadingLinear ? (
               <Card className="border-2 border-neutral-200 p-4 flex items-center justify-center relative h-20 animate-pulse">
-                <div className="absolute top-2 right-2 w-16 h-5 bg-neutral-300 rounded"></div>
+                <div className="absolute top-2 right-2 w-16 h-5 bg-neutral-300 rounded-sm"></div>
                 <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-neutral-300 rounded"></div>
-                  <div className="h-6 w-20 bg-neutral-300 rounded"></div>
+                  <div className="w-8 h-8 bg-neutral-300 rounded-sm"></div>
+                  <div className="h-6 w-20 bg-neutral-300 rounded-sm"></div>
                 </div>
               </Card>
             ) : (
@@ -4050,7 +4050,7 @@ export default function IntegrationsPage() {
                       type="checkbox"
                       checked={showOnlyFailed}
                       onChange={(e) => setShowOnlyFailed(e.target.checked)}
-                      className="rounded border-neutral-300"
+                      className="rounded-sm border-neutral-300"
                     />
                     Show only failed mappings
                   </label>
@@ -4148,7 +4148,7 @@ export default function IntegrationsPage() {
                                         value={inlineEditingValue}
                                         onChange={(e) => handleInlineValueChange(e.target.value)}
                                         placeholder={`Edit ${selectedMappingPlatform === 'github' ? 'GitHub' : 'Slack'} username`}
-                                        className={`flex-1 px-2 py-1 text-xs border rounded focus:outline-hidden focus:ring-1 ${
+                                        className={`flex-1 px-2 py-1 text-xs border rounded-sm focus:outline-hidden focus:ring-1 ${
                                           githubValidation?.valid === false 
                                             ? 'border-red-300 focus:ring-red-500' 
                                             : githubValidation?.valid === true
@@ -4244,7 +4244,7 @@ export default function IntegrationsPage() {
                                     value={inlineEditingValue}
                                     onChange={(e) => handleInlineValueChange(e.target.value)}
                                     placeholder={`Enter ${selectedMappingPlatform === 'github' ? 'GitHub' : 'Slack'} username`}
-                                    className={`flex-1 px-2 py-1 text-xs border rounded focus:outline-hidden focus:ring-1 ${
+                                    className={`flex-1 px-2 py-1 text-xs border rounded-sm focus:outline-hidden focus:ring-1 ${
                                       githubValidation?.valid === false 
                                         ? 'border-red-300 focus:ring-red-500' 
                                         : githubValidation?.valid === true
@@ -4319,7 +4319,7 @@ export default function IntegrationsPage() {
                               // Show clickable "Add username" area
                               <button
                                 onClick={() => startInlineEdit(mapping.id)}
-                                className="w-full text-left px-2 py-1 text-xs text-neutral-500 hover:text-blue-600 hover:bg-blue-50 rounded border border-dashed border-neutral-300 hover:border-blue-300 transition-colors flex items-center gap-2"
+                                className="w-full text-left px-2 py-1 text-xs text-neutral-500 hover:text-blue-600 hover:bg-blue-50 rounded-sm border border-dashed border-neutral-300 hover:border-blue-300 transition-colors flex items-center gap-2"
                                 title={`Click to add ${selectedMappingPlatform === 'github' ? 'GitHub' : 'Slack'} username`}
                               >
                                 <Plus className="w-3 h-3 shrink-0" />
@@ -4751,7 +4751,7 @@ export default function IntegrationsPage() {
             </div>
             <div className="pt-3 border-t border-neutral-200">
               <p className="text-xs text-neutral-700">
-                💡 The <code className="bg-neutral-200 px-1 rounded">/oncall-health</code> command will only show analyses for your organization
+                💡 The <code className="bg-neutral-200 px-1 rounded-sm">/oncall-health</code> command will only show analyses for your organization
               </p>
             </div>
           </div>
@@ -4795,7 +4795,7 @@ export default function IntegrationsPage() {
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-2">
               <p className="text-sm font-medium text-red-900">This will:</p>
               <ul className="text-sm text-red-800 space-y-1 list-disc list-inside">
-                <li>Disable the <code className="bg-red-100 px-1 rounded font-mono text-xs">/oncall-health</code> command in your Slack workspace</li>
+                <li>Disable the <code className="bg-red-100 px-1 rounded-sm font-mono text-xs">/oncall-health</code> command in your Slack workspace</li>
                 <li>Stop all automated survey delivery</li>
                 <li>Remove access to survey features for all team members</li>
               </ul>

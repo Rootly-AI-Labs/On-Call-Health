@@ -243,7 +243,7 @@ export function TrendsCard({
           <div className="mt-4 flex items-center justify-start space-x-6 text-sm text-neutral-700">
             <div className="flex items-center space-x-2">
               <div
-                className="w-3 h-3 rounded"
+                className="w-3 h-3 rounded-sm"
                 style={{ backgroundColor: config.color }}
               ></div>
               <span>{config.label}</span>

@@ -63,7 +63,7 @@ export function OpenAIUsageSetupCard({ onConnect, isConnecting }: OpenAIUsageSet
                   <div>
                     <h5 className="text-sm font-medium text-neutral-900 mb-1"><strong>Step 3:</strong> Copy the key immediately</h5>
                     <p className="text-sm text-neutral-700">
-                      Copy the key — it starts with <code className="bg-neutral-300 px-1 rounded text-xs">sk-admin-</code>. <strong>You won't be able to see it again.</strong>
+                      Copy the key — it starts with <code className="bg-neutral-300 px-1 rounded-sm text-xs">sk-admin-</code>. <strong>You won't be able to see it again.</strong>
                     </p>
                   </div>
                   <a href="https://platform.openai.com/docs/api-reference/usage/completions" target="_blank" rel="noopener noreferrer" className="inline-flex items-center text-sm text-blue-600 hover:underline">

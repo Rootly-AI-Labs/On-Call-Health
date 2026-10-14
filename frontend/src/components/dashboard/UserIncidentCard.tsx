@@ -351,7 +351,7 @@ export function UserIncidentCard({
 
                   const incidentContent = (
                     <>
-                      <span className={`px-2 py-0.5 text-xs font-semibold rounded ${getSeverityColor(severity)}`}>
+                      <span className={`px-2 py-0.5 text-xs font-semibold rounded-sm ${getSeverityColor(severity)}`}>
                         {severity}
                       </span>
                       <div className="flex-1 min-w-0">

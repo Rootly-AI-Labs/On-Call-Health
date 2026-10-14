@@ -87,7 +87,7 @@ function Sparkline({ usage, days, metric, color }: { usage: UsageData; days: str
       </svg>
       {hoverEntry && (
         <div className="absolute top-0 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
-          <div className="bg-neutral-900 text-white text-xs rounded px-2 py-1 whitespace-nowrap shadow-lg">
+          <div className="bg-neutral-900 text-white text-xs rounded-sm px-2 py-1 whitespace-nowrap shadow-lg">
             <div className="font-medium text-neutral-300">{formatDate(hoverEntry.day)}</div>
             <div className="font-semibold">{formatTokens(hoverEntry.val)}</div>
           </div>

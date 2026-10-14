@@ -154,7 +154,7 @@ export function CreateKeyDialog({
                   <Button
                     key={preset.label}
                     type="button"
-                    variant={isSelected ? "default" : "outline-solid"}
+                    variant={isSelected ? "default" : "outline"}
                     size="sm"
                     onClick={() => setExpirationPreset(preset.value)}
                     disabled={isCreating}

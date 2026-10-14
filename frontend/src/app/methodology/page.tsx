@@ -276,7 +276,7 @@ export default function MethodologyPage() {
                   <li key={section.id}>
                     <a
                       href={`#${section.id}`}
-                      className="block text-sm text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200 rounded px-3 py-2 transition-colors"
+                      className="block text-sm text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200 rounded-sm px-3 py-2 transition-colors"
                     >
                       {section.title}
                     </a>
@@ -324,7 +324,7 @@ export default function MethodologyPage() {
                         <h4 className="font-semibold text-neutral-900">{type.title}</h4>
                       </div>
                       <p className="text-sm text-neutral-700 mb-3">{type.description}</p>
-                      <div className="bg-white/60 rounded p-2 mb-3">
+                      <div className="bg-white/60 rounded-sm p-2 mb-3">
                         <p className="text-sm font-medium text-neutral-800">
                           Core question: <em>{type.question}</em>
                         </p>
@@ -519,7 +519,7 @@ export default function MethodologyPage() {
                 return (
                   <div key={idx}>
                     <h4 className="font-semibold text-neutral-900 mb-2 flex items-center">
-                      <div className={`w-4 h-4 ${colors.dot} rounded mr-2`}></div>
+                      <div className={`w-4 h-4 ${colors.dot} rounded-sm mr-2`}></div>
                       {dim.title}
                     </h4>
                     <p className="text-sm text-neutral-700 mb-3">{dim.description}</p>

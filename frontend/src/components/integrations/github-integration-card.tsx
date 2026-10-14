@@ -237,7 +237,7 @@ export function GitHubIntegrationCard({
                   return (
                     <Badge 
                       key={permission} 
-                      variant={isRequired ? "default" : "outline-solid"} 
+                      variant={isRequired ? "default" : "outline"}
                       className={`text-xs ${isRequired ? 'bg-green-100 text-green-700 border-green-200' : ''}`}
                     >
                       {permission}
@@ -253,7 +253,7 @@ export function GitHubIntegrationCard({
               )}
             </div>
             <div className="mt-1 text-xs text-neutral-500">
-              Required for auto-mapping: <code className="bg-neutral-200 px-1 rounded">read:user</code>, <code className="bg-neutral-200 px-1 rounded">read:org</code>, <code className="bg-neutral-200 px-1 rounded">repo</code>
+              Required for auto-mapping: <code className="bg-neutral-200 px-1 rounded-sm">read:user</code>, <code className="bg-neutral-200 px-1 rounded-sm">read:org</code>, <code className="bg-neutral-200 px-1 rounded-sm">repo</code>
             </div>
           </div>
 
