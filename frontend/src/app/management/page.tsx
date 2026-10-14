@@ -1143,10 +1143,10 @@ function TeamPageContent() {
               </p>
             </div>
             {/* View Mode Toggle */}
-            <div className="relative grid grid-cols-2 bg-white border border-neutral-200 rounded-lg p-1 md:flex-shrink-0">
+            <div className="relative grid grid-cols-2 bg-white border border-neutral-200 rounded-lg p-1 md:shrink-0">
               <button
                 onClick={() => setViewMode('organization')}
-                className={`relative z-10 flex items-center justify-center px-3 py-1.5 text-sm font-medium rounded transition-all duration-200 ${
+                className={`relative z-10 flex items-center justify-center px-3 py-1.5 text-sm font-medium rounded-sm transition-all duration-200 ${
                   viewMode === 'organization'
                     ? 'text-purple-700'
                     : 'text-neutral-600 hover:text-neutral-900'
@@ -1156,7 +1156,7 @@ function TeamPageContent() {
               </button>
               <button
                 onClick={() => setViewMode('company')}
-                className={`relative z-10 flex items-center justify-center px-3 py-1.5 text-sm font-medium rounded transition-all duration-200 ${
+                className={`relative z-10 flex items-center justify-center px-3 py-1.5 text-sm font-medium rounded-sm transition-all duration-200 ${
                   viewMode === 'company'
                     ? 'text-purple-700'
                     : 'text-neutral-600 hover:text-neutral-900'
@@ -1165,7 +1165,7 @@ function TeamPageContent() {
                 Team Roles
               </button>
               <div
-                className={`absolute top-1 bottom-1 bg-purple-100 rounded transition-all duration-300 ease-in-out w-[calc(50%-0.25rem)] ${
+                className={`absolute top-1 bottom-1 bg-purple-100 rounded-sm transition-all duration-300 ease-in-out w-[calc(50%-0.25rem)] ${
                   viewMode === 'organization' ? 'left-1' : 'left-[calc(50%+0.125rem)]'
                 }`}
               />
@@ -1174,7 +1174,7 @@ function TeamPageContent() {
 
           {/* Organization Management Section */}
           {(selectedOrganization || !hasPrimaryIntegration) && !loadingIntegrations && (
-              <div className="bg-white rounded-lg border border-neutral-200 shadow-sm">
+              <div className="bg-white rounded-lg border border-neutral-200 shadow-xs">
               {viewMode === 'organization' ? (
                 <>
                   {/* Organization View */}
@@ -1208,7 +1208,7 @@ function TeamPageContent() {
 
                         {/* Top row: Organization Selector and Sync Button */}
                         <div className="flex flex-col md:flex-row md:items-center md:justify-between pb-3 border-b border-neutral-200 gap-4 md:gap-0">
-                          <div className="flex-shrink-0">
+                          <div className="shrink-0">
                             <label className="text-sm font-medium text-neutral-900 mb-2 block">Select Organization</label>
                             <Select
                               value={selectedOrganization}
@@ -1222,17 +1222,17 @@ function TeamPageContent() {
                                 <SelectValue placeholder="Select an organization...">
                                   {selectedIntegration && (
                                     <div className="flex items-center gap-2 min-w-0">
-                                      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${selectedIntegration.platform === "rootly" ? "bg-purple-500" : "bg-green-500"}`}></span>
+                                      <span className={`w-2 h-2 rounded-full shrink-0 ${selectedIntegration.platform === "rootly" ? "bg-purple-500" : "bg-green-500"}`}></span>
                                       <span className="truncate">{selectedIntegration.name || `Integration #${selectedIntegration.id}`}</span>
                                       {hasInvalidIntegrationToken(selectedIntegration) && (
                                         <Tooltip content={getInvalidTokenTooltip(selectedIntegration)}>
-                                          <span className="inline-flex flex-shrink-0" aria-label={getInvalidTokenTooltip(selectedIntegration)}>
+                                          <span className="inline-flex shrink-0" aria-label={getInvalidTokenTooltip(selectedIntegration)}>
                                             <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
                                           </span>
                                         </Tooltip>
                                       )}
                                       {getTeamScopeLabel(selectedIntegration) && (
-                                        <span className="ml-auto inline-flex max-w-[140px] items-center truncate rounded bg-purple-100 px-1.5 py-0.5 text-[11px] font-medium text-purple-700 flex-shrink-0">
+                                        <span className="ml-auto inline-flex max-w-[140px] items-center truncate rounded-sm bg-purple-100 px-1.5 py-0.5 text-[11px] font-medium text-purple-700 shrink-0">
                                           {getTeamScopeLabel(selectedIntegration)}
                                         </span>
                                       )}
@@ -1244,17 +1244,17 @@ function TeamPageContent() {
                                 {integrations.map((integration) => (
                                   <SelectItem key={integration.id} value={integration.id.toString()}>
                                     <div className="flex items-center gap-2 min-w-0">
-                                      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${integration.platform === "rootly" ? "bg-purple-500" : "bg-green-500"}`}></span>
+                                      <span className={`w-2 h-2 rounded-full shrink-0 ${integration.platform === "rootly" ? "bg-purple-500" : "bg-green-500"}`}></span>
                                       <span className="truncate">{integration.name || `Integration #${integration.id}`}</span>
                                       {hasInvalidIntegrationToken(integration) && (
                                         <Tooltip content={getInvalidTokenTooltip(integration)}>
-                                          <span className="inline-flex flex-shrink-0" aria-label={getInvalidTokenTooltip(integration)}>
+                                          <span className="inline-flex shrink-0" aria-label={getInvalidTokenTooltip(integration)}>
                                             <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
                                           </span>
                                         </Tooltip>
                                       )}
                                       {getTeamScopeLabel(integration) && (
-                                        <span className="ml-auto inline-flex max-w-[140px] items-center truncate rounded bg-purple-100 px-1.5 py-0.5 text-[11px] font-medium text-purple-700 flex-shrink-0">
+                                        <span className="ml-auto inline-flex max-w-[140px] items-center truncate rounded-sm bg-purple-100 px-1.5 py-0.5 text-[11px] font-medium text-purple-700 shrink-0">
                                           {getTeamScopeLabel(integration)}
                                         </span>
                                       )}
@@ -1325,7 +1325,7 @@ function TeamPageContent() {
                   <div className="text-center max-w-md">
                     <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-4">
                       <div className="flex items-start gap-3">
-                        <svg className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <svg className="w-5 h-5 text-red-600 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                         </svg>
                         <div className="text-left flex-1">
@@ -1547,7 +1547,7 @@ function TeamPageContent() {
                                         <div className="space-y-2">
                                         {/* GitHub */}
                                         {connectedIntegrations.has('github') && (
-                                          <div className="border border-neutral-200 rounded">
+                                          <div className="border border-neutral-200 rounded-sm">
                                             <button
                                               onClick={() => setExpandedIntegration(expandedIntegration === 'github' ? null : 'github')}
                                               className="w-full flex items-center justify-between p-2 hover:bg-neutral-50"
@@ -1584,7 +1584,7 @@ function TeamPageContent() {
                                                       {user.github_username && (
                                                         <button
                                                           onClick={() => handleUserMapping(user.id, 'github', '')}
-                                                          className="w-full text-left px-2 py-1 text-sm hover:bg-red-50 text-red-600 rounded border-b border-neutral-200 mb-1"
+                                                          className="w-full text-left px-2 py-1 text-sm hover:bg-red-50 text-red-600 rounded-sm border-b border-neutral-200 mb-1"
                                                         >
                                                           Clear mapping
                                                         </button>
@@ -1596,7 +1596,7 @@ function TeamPageContent() {
                                                             <button
                                                               key={username}
                                                               onClick={() => handleUserMapping(user.id, 'github', username)}
-                                                              className="w-full text-left px-2 py-1 text-sm hover:bg-neutral-50 rounded"
+                                                              className="w-full text-left px-2 py-1 text-sm hover:bg-neutral-50 rounded-sm"
                                                             >
                                                               {username}
                                                             </button>
@@ -1614,7 +1614,7 @@ function TeamPageContent() {
 
                                         {/* Jira */}
                                         {connectedIntegrations.has('jira') && (
-                                          <div className="border border-neutral-200 rounded">
+                                          <div className="border border-neutral-200 rounded-sm">
                                             <button
                                               onClick={() => setExpandedIntegration(expandedIntegration === 'jira' ? null : 'jira')}
                                               className="w-full flex items-center justify-between p-2 hover:bg-neutral-50"
@@ -1651,7 +1651,7 @@ function TeamPageContent() {
                                                       {user.jira_account_id && (
                                                         <button
                                                           onClick={() => handleUserMapping(user.id, 'jira', '')}
-                                                          className="w-full text-left px-2 py-1 text-sm hover:bg-red-50 text-red-600 rounded border-b border-neutral-200 mb-1"
+                                                          className="w-full text-left px-2 py-1 text-sm hover:bg-red-50 text-red-600 rounded-sm border-b border-neutral-200 mb-1"
                                                         >
                                                           Clear mapping
                                                         </button>
@@ -1669,7 +1669,7 @@ function TeamPageContent() {
                                                             <button
                                                               key={jiraUser.account_id || jiraUser.accountId || `jira-${idx}`}
                                                               onClick={() => handleUserMapping(user.id, 'jira', jiraUser.account_id || jiraUser.accountId)}
-                                                              className="w-full text-left px-2 py-1 text-sm hover:bg-neutral-50 rounded"
+                                                              className="w-full text-left px-2 py-1 text-sm hover:bg-neutral-50 rounded-sm"
                                                             >
                                                               {jiraUser.display_name || jiraUser.displayName || jiraUser.email || jiraUser.emailAddress}
                                                             </button>
@@ -1689,7 +1689,7 @@ function TeamPageContent() {
 
                                         {/* Linear */}
                                         {connectedIntegrations.has('linear') && (
-                                          <div className="border border-neutral-200 rounded">
+                                          <div className="border border-neutral-200 rounded-sm">
                                             <button
                                               onClick={() => setExpandedIntegration(expandedIntegration === 'linear' ? null : 'linear')}
                                               className="w-full flex items-center justify-between p-2 hover:bg-neutral-50"
@@ -1724,7 +1724,7 @@ function TeamPageContent() {
                                                       {user.linear_user_id && (
                                                         <button
                                                           onClick={() => handleUserMapping(user.id, 'linear', '')}
-                                                          className="w-full text-left px-2 py-1 text-sm hover:bg-red-50 text-red-600 rounded border-b border-neutral-200 mb-1"
+                                                          className="w-full text-left px-2 py-1 text-sm hover:bg-red-50 text-red-600 rounded-sm border-b border-neutral-200 mb-1"
                                                         >
                                                           Clear mapping
                                                         </button>
@@ -1736,7 +1736,7 @@ function TeamPageContent() {
                                                             <button
                                                               key={linearUser.id}
                                                               onClick={() => handleUserMapping(user.id, 'linear', linearUser.id)}
-                                                              className="w-full text-left px-2 py-1 text-sm hover:bg-neutral-50 rounded"
+                                                              className="w-full text-left px-2 py-1 text-sm hover:bg-neutral-50 rounded-sm"
                                                             >
                                                               {linearUser.name || linearUser.email}
                                                             </button>
@@ -1754,7 +1754,7 @@ function TeamPageContent() {
 
                                         {/* Slack */}
                                         {connectedIntegrations.has('slack') && (
-                                          <div className="border border-neutral-200 rounded">
+                                          <div className="border border-neutral-200 rounded-sm">
                                             <button
                                               onClick={() => setExpandedIntegration(expandedIntegration === 'slack' ? null : 'slack')}
                                               className="w-full flex items-center justify-between p-2 hover:bg-neutral-50"
@@ -1789,7 +1789,7 @@ function TeamPageContent() {
                                                       {user.slack_user_id && (
                                                         <button
                                                           onClick={() => handleUserMapping(user.id, 'slack', '')}
-                                                          className="w-full text-left px-2 py-1 text-sm hover:bg-red-50 text-red-600 rounded border-b border-neutral-200 mb-1"
+                                                          className="w-full text-left px-2 py-1 text-sm hover:bg-red-50 text-red-600 rounded-sm border-b border-neutral-200 mb-1"
                                                         >
                                                           Clear mapping
                                                         </button>
@@ -1801,7 +1801,7 @@ function TeamPageContent() {
                                                             <button
                                                               key={slackUser.id}
                                                               onClick={() => handleUserMapping(user.id, 'slack', slackUser.id)}
-                                                              className="w-full text-left px-2 py-1 text-sm hover:bg-neutral-50 rounded"
+                                                              className="w-full text-left px-2 py-1 text-sm hover:bg-neutral-50 rounded-sm"
                                                             >
                                                               {slackUser.name || slackUser.email}
                                                             </button>
@@ -1819,7 +1819,7 @@ function TeamPageContent() {
 
                                         {/* OpenAI */}
                                         {connectedIntegrations.has('openai-usage') && (
-                                          <div className="border border-neutral-200 rounded">
+                                          <div className="border border-neutral-200 rounded-sm">
                                             <button
                                               onClick={() => setExpandedIntegration(expandedIntegration === 'openai' ? null : 'openai')}
                                               className="w-full flex items-center justify-between p-2 hover:bg-neutral-50"
@@ -1843,7 +1843,7 @@ function TeamPageContent() {
                                                   return emailMatch ? (
                                                     <button
                                                       onClick={() => handleUserMapping(user.id, 'openai', emailMatch.id)}
-                                                      className="w-full text-left px-2 py-1 text-sm bg-purple-50 text-purple-700 rounded border border-purple-200 mb-2 flex items-center gap-1"
+                                                      className="w-full text-left px-2 py-1 text-sm bg-purple-50 text-purple-700 rounded-sm border border-purple-200 mb-2 flex items-center gap-1"
                                                     >
                                                       <CheckCircle className="w-3 h-3 shrink-0" />
                                                       Auto Map: {emailMatch.email}
@@ -1867,7 +1867,7 @@ function TeamPageContent() {
                                                       {user.openai_user_id && (
                                                         <button
                                                           onClick={() => handleUserMapping(user.id, 'openai', '')}
-                                                          className="w-full text-left px-2 py-1 text-sm hover:bg-red-50 text-red-600 rounded border-b border-neutral-200 mb-1"
+                                                          className="w-full text-left px-2 py-1 text-sm hover:bg-red-50 text-red-600 rounded-sm border-b border-neutral-200 mb-1"
                                                         >
                                                           Clear mapping
                                                         </button>
@@ -1879,7 +1879,7 @@ function TeamPageContent() {
                                                             <button
                                                               key={member.id}
                                                               onClick={() => handleUserMapping(user.id, 'openai', member.id)}
-                                                              className={`w-full text-left px-2 py-1 text-sm hover:bg-neutral-50 rounded flex items-center justify-between ${user.openai_user_id === member.id ? 'bg-neutral-50' : ''}`}
+                                                              className={`w-full text-left px-2 py-1 text-sm hover:bg-neutral-50 rounded-sm flex items-center justify-between ${user.openai_user_id === member.id ? 'bg-neutral-50' : ''}`}
                                                             >
                                                               <span>{member.email}</span>
                                                               {user.openai_user_id === member.id && <CheckCircle className="w-3 h-3 text-green-600" />}

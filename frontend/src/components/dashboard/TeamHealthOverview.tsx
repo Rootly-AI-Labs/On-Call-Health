@@ -111,7 +111,7 @@ export function TeamHealthOverview({
   return (
     <>
       {/* OCH Risk Level Tooltip Portal */}
-      <div className="fixed z-[99999] invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-neutral-900 text-white text-xs rounded-lg p-3 w-72 shadow-lg pointer-events-none"
+      <div className="fixed z-99999 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-neutral-900 text-white text-xs rounded-lg p-3 w-72 shadow-lg pointer-events-none"
         id="och-score-tooltip"
         style={{ top: '-200px', left: '-200px' }}>
         <div className="space-y-2">
@@ -124,7 +124,7 @@ export function TeamHealthOverview({
       </div>
 
       {/* Info Icon Rubric Tooltip Portal */}
-      <div className="fixed z-[99999] invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-neutral-900 text-white text-xs rounded-lg p-4 w-80 shadow-lg pointer-events-none"
+      <div className="fixed z-99999 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-neutral-900 text-white text-xs rounded-lg p-4 w-80 shadow-lg pointer-events-none"
         id="health-rubric-tooltip"
         style={{ top: '-200px', left: '-200px' }}>
         <div className="space-y-3">
@@ -212,7 +212,7 @@ export function TeamHealthOverview({
                     <div className="text-center mb-2 md:mb-3">
                       <div className="text-xl md:text-3xl font-bold text-neutral-900">
                         {scoreValue !== null ? scoreValue : 'N/A'}
-                        <span className="text-[10px] md:text-sm font-normal text-neutral-400 ml-0.5">/100</span>
+                        <span className="text-[10px]/[28px] md:text-sm font-normal text-neutral-400 ml-0.5">/100</span>
                       </div>
                       <p className="text-[10px] md:text-xs text-neutral-500 inline-flex items-center gap-0.5 md:gap-1">
                         Risk Level

@@ -444,7 +444,7 @@ function AlertBreakdownChart({
                 <button
                   key={mode}
                   onClick={() => setOverlayMode((prev) => prev === mode ? "none" : mode)}
-                  className={`text-[10px] px-2.5 py-0.5 rounded border transition-colors ${
+                  className={`text-[10px] px-2.5 py-0.5 rounded-sm border transition-colors ${
                     overlayMode === mode
                       ? "bg-neutral-800 text-white border-neutral-800"
                       : "bg-white text-neutral-400 border-neutral-200 hover:border-neutral-400 hover:text-neutral-600"
@@ -761,7 +761,7 @@ export function AlertsCountCard({ currentAnalysis }: AlertsCountCardProps): Reac
               <span>Alerts data unavailable ({alerts.error})</span>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="flex flex-col gap-4">
               {alerts.truncated && (
                 <div className="text-xs text-yellow-700">Alert count may be partial (page limit reached)</div>
               )}
@@ -781,7 +781,7 @@ export function AlertsCountCard({ currentAnalysis }: AlertsCountCardProps): Reac
 
               {/* Signal Quality */}
               {notNoisePct !== null && (
-                <div className="my-6">
+                <div>
                   <div className="flex items-center justify-between text-[13px] mb-1">
                     <div className="flex items-center gap-1">
                       <span className="text-neutral-700 font-medium">Signal Quality</span>

@@ -735,13 +735,13 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
     
     if (platform === 'rootly') {
       return (
-        <div className={`${sizeClass} rounded bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center`} title="Rootly">
+        <div className={`${sizeClass} rounded-sm bg-linear-to-br from-purple-500 to-purple-600 flex items-center justify-center`} title="Rootly">
           <span className="text-white font-bold text-[10px]">R</span>
         </div>
       )
     } else if (platform === 'pagerduty') {
       return (
-        <div className={`${sizeClass} rounded bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center`} title="PagerDuty">
+        <div className={`${sizeClass} rounded-sm bg-linear-to-br from-green-500 to-green-600 flex items-center justify-center`} title="PagerDuty">
           <span className="text-white font-bold text-[10px]">PD</span>
         </div>
       )
@@ -1113,7 +1113,7 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
                 </div>
 
                 {/* Data Rows */}
-                <div className="divide-y max-h-[32rem] overflow-y-auto">
+                <div className="divide-y max-h-128 overflow-y-auto">
                   {sortedMappings.length > 0 ? sortedMappings.map((mapping) => (
                     <div key={mapping.id} className="px-4 py-3">
                       <div className="grid grid-cols-4 gap-4 text-sm">
@@ -1180,7 +1180,7 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
                                 value={inlineEditingValue}
                                 onChange={(e) => setInlineEditingValue(e.target.value)}
                                 placeholder={`Enter ${platform === 'github' ? 'GitHub username' : 'Slack user ID'}`}
-                                className={`flex-1 px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 ${
+                                className={`flex-1 px-2 py-1 text-xs border rounded-sm focus:outline-hidden focus:ring-1 ${
                                   githubValidation?.valid === false 
                                     ? 'border-red-300 focus:ring-red-500' 
                                     : githubValidation?.valid === true
@@ -1276,7 +1276,7 @@ export function MappingDrawer({ isOpen, onClose, platform, onRefresh }: MappingD
                               return (
                                 <button
                                   onClick={() => startInlineEdit(mapping.id)}
-                                  className="flex items-center space-x-1 px-3 py-1 text-xs text-neutral-500 border border-dashed border-neutral-300 rounded hover:bg-neutral-100 hover:border-neutral-400 hover:text-neutral-700 transition-colors"
+                                  className="flex items-center space-x-1 px-3 py-1 text-xs text-neutral-500 border border-dashed border-neutral-300 rounded-sm hover:bg-neutral-100 hover:border-neutral-400 hover:text-neutral-700 transition-colors"
                                 >
                                   <span>+ Click to add {platform === 'github' ? 'GitHub username' : 'Slack user ID'}</span>
                                 </button>

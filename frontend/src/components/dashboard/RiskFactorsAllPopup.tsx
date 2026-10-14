@@ -114,7 +114,7 @@ export default function RiskFactorsAllPopup({
                           onClick={() => handleMemberClick(member)}
                         >
                           {/* Avatar */}
-                          <Avatar className="flex-shrink-0 h-10 w-10">
+                          <Avatar className="shrink-0 h-10 w-10">
                             <AvatarFallback className="text-xs font-medium">
                               {member.user_name
                                 .split(' ')
@@ -131,7 +131,7 @@ export default function RiskFactorsAllPopup({
                               </h4>
 
                               {/* Factor Tag on the right - only for current section */}
-                              <span className={`flex-shrink-0 text-xs font-semibold px-3 py-1 rounded-full ${getFactorTagColor(relevantScore)} whitespace-nowrap`}>
+                              <span className={`shrink-0 text-xs font-semibold px-3 py-1 rounded-full ${getFactorTagColor(relevantScore)} whitespace-nowrap`}>
                                 {getTagLabel()}
                               </span>
                             </div>

@@ -58,8 +58,8 @@ export function EnhancementCards({
           </CardHeader>
           <CardContent>
             <div className="animate-pulse space-y-2">
-              <div className="w-full h-4 bg-neutral-300 rounded"></div>
-              <div className="w-3/4 h-4 bg-neutral-300 rounded"></div>
+              <div className="w-full h-4 bg-neutral-300 rounded-sm"></div>
+              <div className="w-3/4 h-4 bg-neutral-300 rounded-sm"></div>
             </div>
           </CardContent>
         </Card>
@@ -171,8 +171,8 @@ export function EnhancementCards({
           </CardHeader>
           <CardContent>
             <div className="animate-pulse space-y-2">
-              <div className="w-full h-4 bg-purple-300 rounded"></div>
-              <div className="w-3/4 h-4 bg-purple-300 rounded"></div>
+              <div className="w-full h-4 bg-purple-300 rounded-sm"></div>
+              <div className="w-3/4 h-4 bg-purple-300 rounded-sm"></div>
             </div>
           </CardContent>
         </Card>

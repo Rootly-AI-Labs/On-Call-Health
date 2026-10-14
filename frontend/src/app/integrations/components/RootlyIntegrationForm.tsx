@@ -206,7 +206,7 @@ export function RootlyIntegrationForm({
                 <AlertDescription>
                   <ol className="space-y-2 text-sm">
                     <li><strong>1.</strong> Log in to your Rootly account</li>
-                    <li><strong>2.</strong> Navigate to <code className="bg-purple-100 px-1 rounded">Settings → API Keys</code></li>
+                    <li><strong>2.</strong> Navigate to <code className="bg-purple-100 px-1 rounded-sm">Settings → API Keys</code></li>
                     <li><strong>3.</strong> Click <strong>Generate New API Key</strong></li>
                     <li><strong>4.</strong> Select <strong>Global API key</strong> or <strong>Personal API Key</strong></li>
                     <li><strong>5a.</strong> For <strong>Global API key</strong>: pick <strong>Admin</strong> or <strong>Owner</strong> as Role (required to read all team members)</li>
@@ -362,7 +362,7 @@ export function RootlyIntegrationForm({
                               </DropdownMenuTrigger>
                               <DropdownMenuContent
                                 align="start"
-                                className="w-[var(--radix-dropdown-menu-trigger-width)] max-h-72 overflow-y-auto"
+                                className="w-(--radix-dropdown-menu-trigger-width) max-h-72 overflow-y-auto"
                               >
                                 <DropdownMenuCheckboxItem
                                   checked={selectedTeamNames.length === 0}

@@ -290,13 +290,13 @@ export function OrganizationManagementDialog({
 
               <div className="space-y-2">
                 {receivedInvitations.map((invitation) => (
-                  <div key={invitation.id} className="group relative rounded-lg border border-neutral-200 bg-white hover:border-neutral-300 hover:shadow-sm transition-all">
+                  <div key={invitation.id} className="group relative rounded-lg border border-neutral-200 bg-white hover:border-neutral-300 hover:shadow-xs transition-all">
                     <div className="p-4">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <h4 className="font-medium text-neutral-900 truncate">{invitation.organization_name}</h4>
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-700 capitalize">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-neutral-100 text-neutral-700 capitalize">
                               {invitation.role}
                             </span>
                           </div>
@@ -310,7 +310,7 @@ export function OrganizationManagementDialog({
                           {/* Warning about leaving current org - Always visible if user is in an org */}
                           {userInfo?.organization_id && (
                             <div className="mt-3 flex items-start gap-2 p-3 rounded-md bg-orange-50 border-2 border-orange-300">
-                              <AlertCircle className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                              <AlertCircle className="h-5 w-5 text-orange-600 shrink-0 mt-0.5" />
                               <div>
                                 <p className="text-sm font-semibold text-orange-900 mb-1">
                                   ⚠️ You will leave your current organization
@@ -323,7 +323,7 @@ export function OrganizationManagementDialog({
                           )}
                         </div>
 
-                        <div className="flex items-center gap-2 flex-shrink-0">
+                        <div className="flex items-center gap-2 shrink-0">
                           <Button
                             size="sm"
                             variant="ghost"
@@ -381,7 +381,7 @@ export function OrganizationManagementDialog({
                       id="invite-role"
                       value={inviteRole}
                       onChange={(e) => onInviteRoleChange(e.target.value)}
-                      className="px-3 py-2.5 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-sm h-10"
+                      className="px-3 py-2.5 border border-neutral-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-purple-500 bg-white text-sm h-10"
                     >
                       <option value="member">Member</option>
                       <option value="admin">Admin</option>
@@ -426,20 +426,20 @@ export function OrganizationManagementDialog({
                       <div className="mt-3 space-y-2">
                         {pendingInvitations.map((invitation) => (
                           <div key={invitation.id} className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-3 p-3 bg-blue-50 rounded-md border border-blue-200 text-xs">
-                            <span className="font-medium text-neutral-900 flex-shrink-0">{invitation.email}</span>
-                            <span className={`px-2 py-0.5 rounded-full capitalize flex-shrink-0 ${
+                            <span className="font-medium text-neutral-900 shrink-0">{invitation.email}</span>
+                            <span className={`px-2 py-0.5 rounded-full capitalize shrink-0 ${
                               invitation.role === 'admin'
                                 ? 'bg-red-100 text-red-800'
                                 : 'bg-yellow-100 text-yellow-800'
                             }`}>
                               {invitation.role}
                             </span>
-                            <span className="text-neutral-600 flex-shrink-0">Invited by {invitation.invited_by?.name || 'Unknown'}</span>
-                            <span className="text-neutral-500 flex-shrink-0">Expires {new Date(invitation.expires_at).toLocaleDateString()}</span>
+                            <span className="text-neutral-600 shrink-0">Invited by {invitation.invited_by?.name || 'Unknown'}</span>
+                            <span className="text-neutral-500 shrink-0">Expires {new Date(invitation.expires_at).toLocaleDateString()}</span>
                             <button
                               onClick={() => handleCancelInvitation(invitation.id, invitation.email)}
                               disabled={processingInvitationId === invitation.id}
-                              className="flex items-center gap-1 px-2 py-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                              className="flex items-center gap-1 px-2 py-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
                               title="Cancel invitation"
                             >
                               {processingInvitationId === invitation.id ? (
@@ -544,7 +544,7 @@ export function OrganizationManagementDialog({
                                 <span className="text-sm font-medium text-neutral-900">
                                   {member.name}
                                   {member.is_current_user && (
-                                    <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">You</span>
+                                    <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-sm">You</span>
                                   )}
                                 </span>
                               </div>
@@ -557,7 +557,7 @@ export function OrganizationManagementDialog({
                                 <select
                                   value={member.role || 'member'}
                                   onChange={(e) => onRoleChange(member.id as number, e.target.value)}
-                                  className="text-sm px-2 py-1 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+                                  className="text-sm px-2 py-1 border border-neutral-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-purple-500 bg-white"
                                 >
                                   <option value="member">Member</option>
                                   <option value="admin">Admin</option>

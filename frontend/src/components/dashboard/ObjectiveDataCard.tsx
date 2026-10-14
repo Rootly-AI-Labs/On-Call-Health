@@ -364,7 +364,7 @@ export function ObjectiveDataCard({
 
   return (
     <Card className="mb-6">
-      <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <CardHeader className="space-y-0 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="space-y-1.5">
           <div className="flex items-center gap-3">
             <CardTitle>Team Trends</CardTitle>
@@ -397,14 +397,14 @@ export function ObjectiveDataCard({
           <CardDescription>{description}</CardDescription>
         </div>
 
-        <div className="flex items-center flex-wrap gap-2 w-full md:w-auto md:space-x-2">
+        <div className="flex items-center flex-wrap gap-2 w-full md:w-auto md:space-x-2 mt-1.5">
           {/* View Toggle */}
           <div className="flex items-center bg-neutral-100 rounded-lg p-0.5 flex-1 md:flex-none">
             <button
               onClick={() => setViewMode('weekly')}
               className={`px-3 py-0.5 md:py-1.5 text-xs font-medium rounded-md transition-colors min-h-[32px] md:min-h-0 flex-1 ${
                 viewMode === 'weekly'
-                  ? 'bg-white text-neutral-900 shadow-sm'
+                  ? 'bg-white text-neutral-900 shadow-xs'
                   : 'text-neutral-500 hover:text-neutral-700'
               }`}
             >
@@ -414,7 +414,7 @@ export function ObjectiveDataCard({
               onClick={() => setViewMode('daily')}
               className={`px-3 py-0.5 md:py-1.5 text-xs font-medium rounded-md transition-colors min-h-[32px] md:min-h-0 flex-1 ${
                 viewMode === 'daily'
-                  ? 'bg-white text-neutral-900 shadow-sm'
+                  ? 'bg-white text-neutral-900 shadow-xs'
                   : 'text-neutral-500 hover:text-neutral-700'
               }`}
             >
@@ -617,15 +617,15 @@ export function ObjectiveDataCard({
               {selectedMetric === 'incident_load' ? (
                 <>
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded bg-red-500"></div>
+                    <div className="w-3 h-3 rounded-sm bg-red-500"></div>
                     <span>Critical</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded bg-orange-500"></div>
+                    <div className="w-3 h-3 rounded-sm bg-orange-500"></div>
                     <span>High</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded bg-neutral-400"></div>
+                    <div className="w-3 h-3 rounded-sm bg-neutral-400"></div>
                     <span>Medium/Low</span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -636,7 +636,7 @@ export function ObjectiveDataCard({
               ) : (
                 <>
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded bg-purple-600"></div>
+                    <div className="w-3 h-3 rounded-sm bg-purple-600"></div>
                     <span>{config.label}</span>
                   </div>
                   {selectedMetric === 'health_score' && (
@@ -753,7 +753,7 @@ export function ObjectiveDataCard({
             {/* Legend */}
             <div className="mt-4 flex items-center justify-start flex-wrap gap-3 md:gap-6 text-sm text-neutral-700">
               <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 rounded" style={{ backgroundColor: config.color }}></div>
+                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: config.color }}></div>
                 <span>{config.label}</span>
               </div>
               {config.showMeanLine && (

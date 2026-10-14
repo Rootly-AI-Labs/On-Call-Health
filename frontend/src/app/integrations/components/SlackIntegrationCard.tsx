@@ -78,7 +78,7 @@ export function SlackIntegrationCard({ onConnect, isConnecting }: SlackIntegrati
                         <li>• Toggle "Activate Incoming Webhooks" to <strong>On</strong></li>
                         <li>• Click "Add New Webhook to Workspace"</li>
                         <li>• Select a channel and click "Allow"</li>
-                        <li>• Copy the webhook URL (starts with <code className="bg-purple-200 px-1 rounded">https://hooks.slack.com/</code>)</li>
+                        <li>• Copy the webhook URL (starts with <code className="bg-purple-200 px-1 rounded-sm">https://hooks.slack.com/</code>)</li>
                       </ul>
                     </div>
 
@@ -86,11 +86,11 @@ export function SlackIntegrationCard({ onConnect, isConnecting }: SlackIntegrati
                       <h4 className="font-medium text-purple-900 mb-2">Step 3: Add Bot Token Scopes</h4>
                       <p className="text-sm text-purple-800 mb-2">In "OAuth & Permissions" → "Scopes" → "Bot Token Scopes", add these <strong>3 required scopes</strong>:</p>
                       <ul className="text-sm text-purple-800 space-y-1 ml-4">
-                        <li>• <code className="bg-purple-200 px-1 rounded">channels:read</code> - View basic channel information</li>
-                        <li>• <code className="bg-purple-200 px-1 rounded">channels:history</code> - Read public channel messages</li>
-                        <li>• <code className="bg-purple-200 px-1 rounded">users:read</code> - View user information</li>
+                        <li>• <code className="bg-purple-200 px-1 rounded-sm">channels:read</code> - View basic channel information</li>
+                        <li>• <code className="bg-purple-200 px-1 rounded-sm">channels:history</code> - Read public channel messages</li>
+                        <li>• <code className="bg-purple-200 px-1 rounded-sm">users:read</code> - View user information</li>
                       </ul>
-                      <div className="mt-2 p-2 bg-amber-100 border border-amber-300 rounded text-xs text-amber-800">
+                      <div className="mt-2 p-2 bg-amber-100 border border-amber-300 rounded-sm text-xs text-amber-800">
                         <strong>Important:</strong> After adding scopes, you MUST reinstall the app to your workspace for changes to take effect.
                       </div>
                     </div>
@@ -100,7 +100,7 @@ export function SlackIntegrationCard({ onConnect, isConnecting }: SlackIntegrati
                       <ul className="text-sm text-purple-800 space-y-1 ml-4">
                         <li>• Click "Install to Workspace" at the top of OAuth & Permissions</li>
                         <li>• Review permissions and click "Allow"</li>
-                        <li>• Copy the "Bot User OAuth Token" (starts with <code className="bg-purple-200 px-1 rounded">xoxb-</code>)</li>
+                        <li>• Copy the "Bot User OAuth Token" (starts with <code className="bg-purple-200 px-1 rounded-sm">xoxb-</code>)</li>
                       </ul>
                     </div>
 
@@ -109,15 +109,15 @@ export function SlackIntegrationCard({ onConnect, isConnecting }: SlackIntegrati
                       <p className="text-sm text-purple-800 mb-2">After setup, add the bot to relevant channels:</p>
                       <ul className="text-sm text-purple-800 space-y-1 ml-4">
                         <li>• Go to each channel you want analyzed in Slack</li>
-                        <li>• Type <code className="bg-purple-200 px-1 rounded">@On-Call Health</code> and invite the bot</li>
+                        <li>• Type <code className="bg-purple-200 px-1 rounded-sm">@On-Call Health</code> and invite the bot</li>
                         <li>• The bot must be in channels to read message history</li>
                       </ul>
-                      <div className="mt-2 p-2 bg-red-100 border border-red-300 rounded text-xs text-red-800">
+                      <div className="mt-2 p-2 bg-red-100 border border-red-300 rounded-sm text-xs text-red-800">
                         <strong>Required:</strong> Bot permissions will show "Bot not in channels" until you add it to at least one channel.
                       </div>
                     </div>
 
-                    <div className="bg-purple-100 border border-purple-500 rounded p-3">
+                    <div className="bg-purple-100 border border-purple-500 rounded-sm p-3">
                       <p className="text-sm text-purple-800">
                         <strong>Note:</strong> You'll need both the webhook URL and bot token. The webhook is for sending notifications,
                         and the bot token is for reading messages and user data.

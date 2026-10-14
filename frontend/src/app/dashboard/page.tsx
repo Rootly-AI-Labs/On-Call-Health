@@ -440,7 +440,7 @@ function DashboardContent() {
             />
           )}
         {/* Navigation */}
-        <div className={`flex-1 flex flex-col min-h-0 ${sidebarCollapsed ? 'p-1 sm:p-1.5 md:p-2' : 'p-4'} space-y-2 relative z-0`}>
+        <div className={`flex-1 flex flex-col min-h-0 ${sidebarCollapsed ? 'p-1 sm:p-1.5 md:p-2' : 'p-4'} gap-y-2 relative z-0`}>
           {/* New Analysis Button - show when expanded, or on desktop when collapsed */}
           {sidebarCollapsed ? (
             <Button
@@ -462,7 +462,7 @@ function DashboardContent() {
           )}
 
           {!sidebarCollapsed ? (
-            <div className="flex-1 space-y-1 min-h-0 flex flex-col overflow-y-auto scrollbar-dark">
+            <div className="flex-1 min-h-0 flex flex-col gap-1 overflow-y-auto scrollbar-dark">
 
               {/* AUTO ANALYSIS section */}
               <p className="text-xs text-neutral-500 uppercase tracking-wide px-2 py-1 mt-4 flex items-center gap-1">
@@ -476,7 +476,7 @@ function DashboardContent() {
                 const isArSelected = currentAnalysis?.id === autoRefreshAnalysis.id
                 const isArRunning = autoRefreshAnalysis.status === 'running' || autoRefreshAnalysis.status === 'pending'
                 return (
-                  <div className={`relative group ${isArSelected ? 'bg-neutral-800' : ''} rounded`}>
+                  <div className={`relative group ${isArSelected ? 'bg-neutral-800' : ''} rounded-sm`}>
                     <Button
                       variant="ghost"
                       disabled={analysisRunning || loadingAnalysisId !== null}
@@ -494,7 +494,7 @@ function DashboardContent() {
                         <div className="flex justify-between items-center w-full mb-1 gap-2">
                           <div className="flex items-center space-x-2 min-w-0">
                             {arColor !== 'bg-neutral-1000' && (
-                              <div className={`w-2.5 h-2.5 rounded-full ${arColor} flex-shrink-0`}></div>
+                              <div className={`w-2.5 h-2.5 rounded-full ${arColor} shrink-0`}></div>
                             )}
                             <span className="font-medium truncate" title={arOrgName}>{arOrgName}</span>
                           </div>
@@ -527,7 +527,7 @@ function DashboardContent() {
               )}
 
               {/* SAVED section */}
-              <p className="text-xs text-neutral-500 uppercase tracking-wide px-2 py-1 mt-3 flex items-center gap-1">
+              <p className="text-xs text-neutral-500 uppercase tracking-wide px-2 py-1 flex items-center gap-1">
                 <Bookmark className="w-3 h-3" />
                 Saved
               </p>
@@ -551,7 +551,7 @@ function DashboardContent() {
                   const isSelected = currentAnalysis?.id === analysis.id
                   const platformColor = getPlatformColor(analysisPlatform)
                   return (
-                    <div key={analysis.id} className={`relative group ${isSelected ? 'bg-neutral-800' : ''} rounded`}>
+                    <div key={analysis.id} className={`relative group ${isSelected ? 'bg-neutral-800' : ''} rounded-sm`}>
                       <Button
                         variant="ghost"
                         disabled={analysisRunning || loadingAnalysisId !== null}
@@ -569,12 +569,12 @@ function DashboardContent() {
                           <div className="flex justify-between items-center w-full mb-1 gap-2">
                             <div className="flex items-center space-x-2 min-w-0">
                               {platformColor !== 'bg-neutral-1000' && (
-                                <div className={`w-2.5 h-2.5 rounded-full ${platformColor} flex-shrink-0`}></div>
+                                <div className={`w-2.5 h-2.5 rounded-full ${platformColor} shrink-0`}></div>
                               )}
                               <span className="font-medium truncate" title={organizationName}>{organizationName}</span>
                             </div>
                           {(analysis as any).config?.pagerduty_team_id && (
-                            <span className="text-neutral-500 flex-shrink-0 text-[10px] bg-green-100 text-green-700 rounded px-1">team</span>
+                            <span className="text-neutral-500 shrink-0 text-[10px] bg-green-100 text-green-700 rounded-sm px-1">team</span>
                           )}
                           </div>
                           <AnalysisSidebarDetails analysis={analysis} />
@@ -617,7 +617,7 @@ function DashboardContent() {
               )}
             </div>
           ) : (
-            <div className="flex items-center justify-center pt-2 md:hidden">
+            <div className="flex items-center justify-center pt-2 md:hidden mt-2">
               {/* Collapsed state - show chevron arrow at top (click sidebar to expand) - mobile only */}
               <ChevronRight className="w-6 h-6 text-white" />
             </div>
@@ -659,12 +659,12 @@ function DashboardContent() {
            currentAnalysis?.is_auto_refresh === false && (
             <div className="mb-4 flex items-center justify-between gap-4 rounded-lg border border-violet-200 bg-violet-50 px-4 py-3">
               <div className="flex items-center gap-2 text-violet-800 text-sm">
-                <Bookmark className="w-4 h-4 flex-shrink-0" />
+                <Bookmark className="w-4 h-4 shrink-0" />
                 <span>This analysis hasn&apos;t been saved yet.</span>
               </div>
               <button
                 onClick={saveCurrentAnalysis}
-                className="flex-shrink-0 rounded-md bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-violet-700 transition-colors"
+                className="shrink-0 rounded-md bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-violet-700 transition-colors"
               >
                 Save Analysis
               </button>
@@ -702,9 +702,9 @@ function DashboardContent() {
                   <span className="text-blue-600">|</span>
                   <span className="flex items-center gap-1">
                     Integrations:
-                    {currentAnalysis.config?.include_github && <span className="ml-1 text-xs bg-blue-100 px-1.5 py-0.5 rounded">GitHub</span>}
-                    {currentAnalysis.config?.include_jira && <span className="ml-1 text-xs bg-blue-100 px-1.5 py-0.5 rounded">Jira</span>}
-                    {currentAnalysis.config?.include_linear && <span className="ml-1 text-xs bg-blue-100 px-1.5 py-0.5 rounded">Linear</span>}
+                    {currentAnalysis.config?.include_github && <span className="ml-1 text-xs bg-blue-100 px-1.5 py-0.5 rounded-sm">GitHub</span>}
+                    {currentAnalysis.config?.include_jira && <span className="ml-1 text-xs bg-blue-100 px-1.5 py-0.5 rounded-sm">Jira</span>}
+                    {currentAnalysis.config?.include_linear && <span className="ml-1 text-xs bg-blue-100 px-1.5 py-0.5 rounded-sm">Linear</span>}
                   </span>
                 </>
               ) : null}
@@ -749,7 +749,7 @@ function DashboardContent() {
             <>
               {/* Demo Analysis Banner */}
               {currentAnalysis?.config?.is_demo && (
-                <div className="mb-6 p-4 bg-gradient-to-r from-amber-500 to-orange-500 rounded-lg shadow-lg">
+                <div className="mb-6 p-4 bg-linear-to-r from-amber-500 to-orange-500 rounded-lg shadow-lg">
                   <div className="flex items-center justify-between flex-wrap gap-4">
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-white/20 rounded-full">
@@ -1082,7 +1082,7 @@ function DashboardContent() {
                                     </div>
                                     <div
                                       data-bar-tooltip
-                                      className="absolute -top-7 left-1/2 -translate-x-1/2 px-2 py-1 rounded bg-neutral-900 text-white text-xs font-medium pointer-events-none z-50 transition-opacity"
+                                      className="absolute -top-7 left-1/2 -translate-x-1/2 px-2 py-1 rounded-sm bg-neutral-900 text-white text-xs font-medium pointer-events-none z-50 transition-opacity"
                                       style={{ opacity: 0 }}
                                     >
                                       {Math.round(factor.value)}%
@@ -1455,7 +1455,7 @@ function DashboardContent() {
                           <div className="min-w-0">
                             <span className="font-medium block truncate">{organizationName}</span>
                             {selected.platform === 'rootly' && selected.team_name && (
-                              <span className="mt-1 inline-flex px-1.5 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-700">
+                              <span className="mt-1 inline-flex px-1.5 py-0.5 text-xs font-medium rounded-sm bg-purple-100 text-purple-700">
                                 Team scope: {selected.team_name}
                               </span>
                             )}
@@ -1645,7 +1645,7 @@ function DashboardContent() {
                         <>
                           <div className="flex items-start justify-between mb-2">
                             <div className="flex items-center space-x-2">
-                              <div className="w-6 h-6 bg-neutral-900 rounded flex items-center justify-center">
+                              <div className="w-6 h-6 bg-neutral-900 rounded-sm flex items-center justify-center">
                                 <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                                   <path fillRule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z" clipRule="evenodd" />
                                 </svg>
@@ -1683,7 +1683,7 @@ function DashboardContent() {
                       <>
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex items-center space-x-2">
-                            <div className="w-6 h-6 rounded flex items-center justify-center opacity-50">
+                            <div className="w-6 h-6 rounded-sm flex items-center justify-center opacity-50">
                               <svg className="w-6 h-6" viewBox="0 0 124 124" fill="none">
                                 <path d="M26.3996 78.2003C26.3996 84.7003 21.2996 89.8003 14.7996 89.8003C8.29961 89.8003 3.19961 84.7003 3.19961 78.2003C3.19961 71.7003 8.29961 66.6003 14.7996 66.6003H26.3996V78.2003Z" fill="#E01E5A"/>
                                 <path d="M32.2996 78.2003C32.2996 71.7003 37.3996 66.6003 43.8996 66.6003C50.3996 66.6003 55.4996 71.7003 55.4996 78.2003V109.2C55.4996 115.7 50.3996 120.8 43.8996 120.8C37.3996 120.8 32.2996 115.7 32.2996 109.2V78.2003Z" fill="#E01E5A"/>
@@ -1720,7 +1720,7 @@ function DashboardContent() {
                         <>
                           <div className="flex items-start justify-between mb-2">
                             <div className="flex items-center space-x-2">
-                              <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center">
+                              <div className="w-6 h-6 bg-blue-600 rounded-sm flex items-center justify-center">
                                 <svg
                                   viewBox="0 0 24 24"
                                   className="w-4 h-4 text-white"
@@ -1762,7 +1762,7 @@ function DashboardContent() {
                         <>
                           <div className="flex items-start justify-between mb-2">
                             <div className="flex items-center space-x-2">
-                              <Image src="/images/linear-logo.png" alt="Linear" width={24} height={24} className="rounded" />
+                              <Image src="/images/linear-logo.png" alt="Linear" width={24} height={24} className="rounded-sm" />
                               <div>
                                 <h3 className="text-sm font-medium text-neutral-900">Linear</h3>
                               </div>
@@ -1874,8 +1874,8 @@ function DashboardContent() {
               </div>
             </div>
             
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-neutral-700 mb-2 block">
+            <div className="flex flex-col gap-3">
+              <label className="text-sm font-medium text-neutral-700 block">
                 Analysis Time Range
               </label>
 

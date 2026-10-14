@@ -195,7 +195,7 @@ export function DataRetentionSettings() {
   ) : null
 
   return (
-    <section aria-labelledby="data-retention-heading" className="mb-6 rounded-lg border border-neutral-200 bg-white shadow-sm">
+    <section aria-labelledby="data-retention-heading" className="mb-6 rounded-lg border border-neutral-200 bg-white shadow-xs">
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 p-4">
         <div className="flex min-w-0 items-center gap-3">
           <div>

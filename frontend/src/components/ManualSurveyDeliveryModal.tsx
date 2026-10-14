@@ -277,7 +277,7 @@ export default function ManualSurveyDeliveryModal({
                           type="checkbox"
                           checked={selectedRecipients.has(recipient.email)}
                           onChange={() => toggleRecipient(recipient.email)}
-                          className="w-4 h-4 text-purple-600 border-neutral-300 rounded focus:ring-purple-500"
+                          className="w-4 h-4 text-purple-600 border-neutral-300 rounded-sm focus:ring-purple-500"
                         />
                         <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium">
                           {recipient.name.charAt(0).toUpperCase()}

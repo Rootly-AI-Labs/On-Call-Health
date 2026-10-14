@@ -48,7 +48,7 @@ export function NotificationItem({
     >
       <div className="flex gap-4">
         {/* Icon */}
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-neutral-200">
             {getNotificationIcon(notification.type, notification.title)}
           </div>
@@ -58,7 +58,7 @@ export function NotificationItem({
         <div className="min-w-0 flex-1 space-y-1.5">
           <div className="flex items-start justify-between gap-4">
             <h3 className="text-base font-semibold text-foreground">{notification.title}</h3>
-            {isUnread && <div className="h-2 w-2 flex-shrink-0 rounded-full bg-black" />}
+            {isUnread && <div className="h-2 w-2 shrink-0 rounded-full bg-black" />}
           </div>
           <p className="text-sm leading-relaxed text-neutral-700">{notification.message}</p>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">

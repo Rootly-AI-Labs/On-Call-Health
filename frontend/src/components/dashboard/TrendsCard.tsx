@@ -101,7 +101,7 @@ export function TrendsCard({
       </CardHeader>
 
       <CardContent className="pb-6">
-        <div className="space-y-3">
+        <div className="flex flex-col gap-3">
           <div className="h-[300px]">
             {loading ? <LoadingState /> : !hasData ? <EmptyState /> : (
               <ResponsiveContainer width="100%" height="100%">
@@ -160,7 +160,7 @@ export function TrendsCard({
                       const isPositive = percentageChange <= 0;
 
                       return (
-                        <div className="bg-neutral-900/95 p-3 border border-neutral-700 rounded-lg shadow-lg backdrop-blur-sm">
+                        <div className="bg-neutral-900/95 p-3 border border-neutral-700 rounded-lg shadow-lg backdrop-blur-xs">
                           <p className="text-sm font-medium text-neutral-300 mb-2">
                             {data?.date}
                           </p>
@@ -240,10 +240,10 @@ export function TrendsCard({
           </div>
 
           {/* Legend */}
-          <div className="mt-4 flex items-center justify-start space-x-6 text-sm text-neutral-700">
+          <div className="flex items-center justify-start space-x-6 text-sm text-neutral-700">
             <div className="flex items-center space-x-2">
               <div
-                className="w-3 h-3 rounded"
+                className="w-3 h-3 rounded-sm"
                 style={{ backgroundColor: config.color }}
               ></div>
               <span>{config.label}</span>

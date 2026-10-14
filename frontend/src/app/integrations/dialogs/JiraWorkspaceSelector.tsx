@@ -148,7 +148,7 @@ export function JiraWorkspaceSelector({
                           <img
                             src={workspace.avatarUrl}
                             alt={workspace.name}
-                            className="h-5 w-5 rounded"
+                            className="h-5 w-5 rounded-sm"
                           />
                         )}
                         <h4 className="font-semibold">{workspace.name}</h4>

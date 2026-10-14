@@ -106,7 +106,7 @@ export default function GitHubAllMetricsPopup({
                           onClick={() => handleMemberClick(member)}
                         >
                           {/* Avatar */}
-                          <Avatar className="flex-shrink-0 h-10 w-10">
+                          <Avatar className="shrink-0 h-10 w-10">
                             <AvatarFallback className="text-xs font-medium">
                               {member.user_name
                                 ? member.user_name.split(' ')
@@ -125,7 +125,7 @@ export default function GitHubAllMetricsPopup({
 
                               {/* Tags on the right */}
                               {tags.length > 0 && (
-                                <div className="flex-shrink-0 flex items-center flex-wrap gap-1 justify-end">
+                                <div className="shrink-0 flex items-center flex-wrap gap-1 justify-end">
                                   {tags.map((tag, idx) => {
                                     // Extract color class without border
                                     const colorClass = getTagColorClasses(tag.color)

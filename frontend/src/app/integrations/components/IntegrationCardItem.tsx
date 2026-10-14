@@ -83,7 +83,7 @@ export const IntegrationCardItem = memo(function IntegrationCardItem({
         onClick={() => !editingIntegration && onToggleExpand(integration.id)}
       >
         {/* Expand/Collapse Icon */}
-        <div className="flex-shrink-0 w-6">
+        <div className="shrink-0 w-6">
           {isExpanded ? (
             <ChevronUp className="w-4 h-4 text-neutral-500" />
           ) : (
@@ -131,7 +131,7 @@ export const IntegrationCardItem = memo(function IntegrationCardItem({
                 e.stopPropagation()
                 onEdit(integration.id, integration.name)
               }}
-              className="h-5 w-5 p-0 flex-shrink-0"
+              className="h-5 w-5 p-0 shrink-0"
             >
               <Edit3 className="w-3 h-3" />
             </Button>
@@ -141,17 +141,17 @@ export const IntegrationCardItem = memo(function IntegrationCardItem({
         {/* Stats in collapsed view - fixed widths for alignment */}
         {!isExpanded && (
           <>
-            <div className="flex items-center gap-1 text-sm text-neutral-700 w-16 flex-shrink-0">
+            <div className="flex items-center gap-1 text-sm text-neutral-700 w-16 shrink-0">
               <Users className="w-3 h-3" />
               <span>{integration.total_users}</span>
             </div>
-            <div className="text-sm text-neutral-500 w-28 flex-shrink-0">•••{integration.token_suffix}</div>
+            <div className="text-sm text-neutral-500 w-28 shrink-0">•••{integration.token_suffix}</div>
           </>
         )}
 
         {/* Badge - fixed width for alignment */}
         <Badge variant={integration.platform === 'rootly' ? 'default' : 'secondary'}
-               className={`flex-shrink-0 w-24 justify-center ${integration.platform === 'rootly' ? 'bg-purple-100 text-purple-700' : 'bg-green-100 text-green-700'}`}>
+               className={`shrink-0 w-24 justify-center ${integration.platform === 'rootly' ? 'bg-purple-100 text-purple-700' : 'bg-green-100 text-green-700'}`}>
           {integration.platform}
         </Badge>
       </div>

@@ -262,15 +262,15 @@ export function UnifiedSlackCard({
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-neutral-300 rounded-lg"></div>
               <div className="space-y-2">
-                <div className="w-32 h-5 bg-neutral-300 rounded"></div>
-                <div className="w-64 h-4 bg-neutral-300 rounded"></div>
+                <div className="w-32 h-5 bg-neutral-300 rounded-sm"></div>
+                <div className="w-64 h-4 bg-neutral-300 rounded-sm"></div>
               </div>
             </div>
             <div className="w-24 h-9 bg-neutral-300 rounded-lg"></div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="h-40 bg-neutral-200 rounded animate-pulse"></div>
+          <div className="h-40 bg-neutral-200 rounded-sm animate-pulse"></div>
         </CardContent>
       </Card>
     )
@@ -348,13 +348,13 @@ export function UnifiedSlackCard({
             {/* Permissions Info Box */}
             <div className="bg-amber-50 border border-amber-300 rounded-lg p-4">
               <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                <div className="space-y-2 text-sm">
+                <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <div className="flex flex-col gap-2 text-sm">
                   <p className="font-semibold text-amber-900">⚠️ Admin Approval May Be Required</p>
                   <p className="text-amber-800">
                     If you're not a Workspace Admin, clicking "Add to Slack" will send an approval request to your admins.
                   </p>
-                  <div className="mt-3 pt-3 border-t border-amber-300">
+                  <div className="pt-3 border-t border-amber-300">
                     <p className="text-amber-900 font-medium mb-2">Required permissions:</p>
                     <ul className="list-disc list-inside space-y-1 text-amber-800 ml-2 text-xs">
                       <li><strong>Read channel messages</strong> - Analyze communication patterns</li>
@@ -362,12 +362,12 @@ export function UnifiedSlackCard({
                       <li><strong>Send DMs & slash commands</strong> - Deliver wellness surveys</li>
                     </ul>
                   </div>
-                  <div className="mt-3 pt-3 border-t border-amber-300">
+                  <div className="pt-3 border-t border-amber-300">
                     <p className="text-amber-900 font-medium mb-2">After admin approval:</p>
                     <ol className="list-decimal list-inside space-y-1 text-amber-800 ml-2 text-xs">
-                      <li>Invite the bot to channels you want analyzed (use <code className="bg-amber-100 px-1 rounded text-xs">/invite @On-Call Health</code>)</li>
+                      <li>Invite the bot to channels you want analyzed (use <code className="bg-amber-100 px-1 rounded-sm text-xs">/invite @On-Call Health</code>)</li>
                       <li>Bot can only read messages from channels it's been added to</li>
-                      <li>Team members can use <code className="bg-amber-100 px-1 rounded text-xs">/oncall-health</code> to submit health check-ins</li>
+                      <li>Team members can use <code className="bg-amber-100 px-1 rounded-sm text-xs">/oncall-health</code> to submit health check-ins</li>
                     </ol>
                   </div>
                 </div>
@@ -509,7 +509,7 @@ export function UnifiedSlackCard({
             <div className="space-y-3 pt-2 text-sm text-muted-foreground">
               <p>Disabling Slack Surveys will immediately pause all survey activity for this Slack workspace, including:</p>
               <ul className="list-disc list-inside space-y-1 text-sm">
-                <li>The <code className="bg-neutral-200 px-1 rounded">/oncall-health</code> command</li>
+                <li>The <code className="bg-neutral-200 px-1 rounded-sm">/oncall-health</code> command</li>
                 <li>Automated survey delivery, scheduled surveys, and follow-up reminders</li>
                 <li>Manual survey sending</li>
               </ul>

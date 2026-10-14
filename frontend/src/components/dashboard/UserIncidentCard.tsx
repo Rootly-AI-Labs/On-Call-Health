@@ -351,11 +351,11 @@ export function UserIncidentCard({
 
                   const incidentContent = (
                     <>
-                      <span className={`px-2 py-0.5 text-xs font-semibold rounded ${getSeverityColor(severity)}`}>
+                      <span className={`px-2 py-0.5 text-xs font-semibold rounded-sm ${getSeverityColor(severity)}`}>
                         {severity}
                       </span>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-neutral-800 break-words">{title}</p>
+                        <p className="text-sm text-neutral-800 wrap-break-word">{title}</p>
                         <p className="text-xs text-neutral-500">
                           {createdAt}
                           {duration && (
@@ -363,11 +363,11 @@ export function UserIncidentCard({
                           )}
                         </p>
                       </div>
-                      <span className={`text-xs font-medium capitalize flex-shrink-0 ${getStatusColor(status)}`}>
+                      <span className={`text-xs font-medium capitalize shrink-0 ${getStatusColor(status)}`}>
                         {status}
                       </span>
                       {incidentUrl && (
-                        <ExternalLink className="w-3.5 h-3.5 text-neutral-400 flex-shrink-0" />
+                        <ExternalLink className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
                       )}
                     </>
                   )

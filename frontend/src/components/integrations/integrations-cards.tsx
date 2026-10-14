@@ -122,20 +122,20 @@ export function IntegrationsCards({
     <Card className="animate-pulse">
       <CardHeader>
         <div className="flex items-center space-x-2">
-          <div className="w-6 h-6 bg-neutral-300 rounded"></div>
+          <div className="w-6 h-6 bg-neutral-300 rounded-sm"></div>
           <div>
-            <div className="w-32 h-5 bg-neutral-300 rounded mb-1"></div>
-            <div className="w-20 h-4 bg-neutral-300 rounded"></div>
+            <div className="w-32 h-5 bg-neutral-300 rounded-sm mb-1"></div>
+            <div className="w-20 h-4 bg-neutral-300 rounded-sm"></div>
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-2">
-          <div className="w-full h-4 bg-neutral-300 rounded"></div>
-          <div className="w-3/4 h-4 bg-neutral-300 rounded"></div>
-          <div className="flex space-x-2 mt-4">
-            <div className="w-20 h-8 bg-neutral-300 rounded"></div>
-            <div className="w-16 h-8 bg-neutral-300 rounded"></div>
+        <div className="flex flex-col gap-2">
+          <div className="w-full h-4 bg-neutral-300 rounded-sm"></div>
+          <div className="w-3/4 h-4 bg-neutral-300 rounded-sm"></div>
+          <div className="flex space-x-2">
+            <div className="w-20 h-8 bg-neutral-300 rounded-sm"></div>
+            <div className="w-16 h-8 bg-neutral-300 rounded-sm"></div>
           </div>
         </div>
       </CardContent>

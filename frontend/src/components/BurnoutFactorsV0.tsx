@@ -100,7 +100,7 @@ export function BurnoutFactorsV0({ ochReasoning }: BurnoutFactorsV0Props) {
                     {factor.subBullets.map((bullet, bulletIdx) => (
                       <div key={bulletIdx} className="flex items-start gap-2">
                         <div
-                          className="rounded-full flex-shrink-0"
+                          className="rounded-full shrink-0"
                           style={{
                             width: '4px',
                             height: '4px',
@@ -176,7 +176,7 @@ export function BurnoutFactorsV0({ ochReasoning }: BurnoutFactorsV0Props) {
                     {factor.subBullets.map((bullet, bulletIdx) => (
                       <div key={bulletIdx} className="flex items-start gap-2">
                         <div
-                          className="rounded-full flex-shrink-0"
+                          className="rounded-full shrink-0"
                           style={{
                             width: '4px',
                             height: '4px',

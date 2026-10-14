@@ -293,7 +293,7 @@ export function UserMappingDrawer({
                     <div className="max-h-96 overflow-y-auto space-y-1">
                       <button
                         onClick={() => handleClearMapping("github")}
-                        className="w-full text-left px-3 py-2 text-sm hover:bg-neutral-100 rounded italic text-neutral-500"
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-neutral-100 rounded-sm italic text-neutral-500"
                         disabled={saving}
                       >
                         Clear mapping
@@ -302,7 +302,7 @@ export function UserMappingDrawer({
                         <button
                           key={username}
                           onClick={() => handleSelectMapping("github", username)}
-                          className="w-full text-left px-3 py-2 text-sm hover:bg-neutral-100 rounded flex items-center justify-between"
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-neutral-100 rounded-sm flex items-center justify-between"
                           disabled={saving}
                         >
                           <span>{username}</span>
@@ -376,7 +376,7 @@ export function UserMappingDrawer({
                     <div className="max-h-96 overflow-y-auto space-y-1">
                       <button
                         onClick={() => handleClearMapping("jira")}
-                        className="w-full text-left px-3 py-2 text-sm hover:bg-neutral-100 rounded italic text-neutral-500"
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-neutral-100 rounded-sm italic text-neutral-500"
                         disabled={saving}
                       >
                         Clear mapping
@@ -394,7 +394,7 @@ export function UserMappingDrawer({
                                 email: jiraUser.email,
                               })
                             }
-                            className="w-full text-left px-3 py-2 text-sm hover:bg-neutral-100 rounded flex items-center justify-between"
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-neutral-100 rounded-sm flex items-center justify-between"
                             disabled={saving}
                           >
                             <span>{jiraUser.display_name || jiraUser.email}</span>
@@ -467,7 +467,7 @@ export function UserMappingDrawer({
                     <div className="max-h-96 overflow-y-auto space-y-1">
                       <button
                         onClick={() => handleClearMapping("linear")}
-                        className="w-full text-left px-3 py-2 text-sm hover:bg-neutral-100 rounded italic text-neutral-500"
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-neutral-100 rounded-sm italic text-neutral-500"
                         disabled={saving}
                       >
                         Clear mapping
@@ -476,7 +476,7 @@ export function UserMappingDrawer({
                         <button
                           key={linearUser.id}
                           onClick={() => handleSelectMapping("linear", linearUser.id)}
-                          className="w-full text-left px-3 py-2 text-sm hover:bg-neutral-100 rounded flex items-center justify-between"
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-neutral-100 rounded-sm flex items-center justify-between"
                           disabled={saving}
                         >
                           <span>{linearUser.name || linearUser.email}</span>

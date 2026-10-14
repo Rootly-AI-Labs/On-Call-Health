@@ -434,7 +434,7 @@ export function UserAlertsCard({ memberData, alertsMeta, platform }: UserAlertsC
                       <button
                         key={mode}
                         onClick={() => setOverlayMode((prev) => prev === mode ? "none" : mode)}
-                        className={`text-[10px] px-2.5 py-0.5 rounded border transition-colors ${
+                        className={`text-[10px] px-2.5 py-0.5 rounded-sm border transition-colors ${
                           overlayMode === mode
                             ? "bg-neutral-800 text-white border-neutral-800"
                             : "bg-white text-neutral-400 border-neutral-200 hover:border-neutral-400 hover:text-neutral-600"

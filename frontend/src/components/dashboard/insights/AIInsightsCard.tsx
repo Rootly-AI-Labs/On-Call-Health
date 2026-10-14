@@ -68,7 +68,7 @@ export function AIInsightsCard({ currentAnalysis }: AIInsightsCardProps) {
               return (
                 <div className="flex flex-col h-full pt-0.5 md:pt-1 pb-0 -mb-1">
                   <div className="mb-1 md:mb-2 overflow-hidden">
-                    <p className="text-[10px] md:text-sm text-neutral-700 leading-relaxed line-clamp-6">
+                    <p className="text-[10px] md:text-sm text-neutral-700 leading-relaxed md:leading-5 line-clamp-6">
                       {summaryText}
                     </p>
                   </div>

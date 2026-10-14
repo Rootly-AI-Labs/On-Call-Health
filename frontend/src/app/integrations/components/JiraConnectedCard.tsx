@@ -145,7 +145,7 @@ export function JiraConnectedCard({
         {integration.token_expires_at && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
             <div className="flex items-start space-x-2 text-xs text-blue-700">
-              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
               <div>
                 <div className="font-medium">Token Expiry</div>
                 <div>{new Date(integration.token_expires_at).toLocaleString()}</div>

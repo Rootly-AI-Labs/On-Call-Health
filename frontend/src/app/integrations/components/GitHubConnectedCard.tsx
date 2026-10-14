@@ -230,7 +230,7 @@ export function GitHubConnectedCard({
         {/* Name Matching Warning */}
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
           <div className="flex items-start space-x-2">
-            <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+            <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
             <div>
               <div className="font-medium mb-1">GitHub accounts are matched by name</div>
               <div>

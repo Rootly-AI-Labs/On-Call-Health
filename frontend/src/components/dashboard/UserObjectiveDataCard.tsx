@@ -372,7 +372,7 @@ export function UserObjectiveDataCard({
               const overallDirection = calculateTrend(lastWeeksAvg, firstWeeksAvg)
 
               return (
-                <div className="relative group flex-shrink-0 w-fit">
+                <div className="relative group shrink-0 w-fit">
                   <div className={`px-1 sm:px-1.5 py-0.5 rounded-full text-[10px] sm:text-xs font-medium flex items-center gap-0.5 cursor-help whitespace-nowrap ${getTrendStatusClass(overallDirection.direction)}`}>
                     {getTrendIcon(overallDirection.direction)}
                     {getTrendLabel(overallDirection.direction)}
@@ -400,7 +400,7 @@ export function UserObjectiveDataCard({
               onClick={() => setViewMode('weekly')}
               className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
                 viewMode === 'weekly'
-                  ? 'bg-white text-neutral-900 shadow-sm'
+                  ? 'bg-white text-neutral-900 shadow-xs'
                   : 'text-neutral-500 hover:text-neutral-700'
               }`}
             >
@@ -410,7 +410,7 @@ export function UserObjectiveDataCard({
               onClick={() => setViewMode('daily')}
               className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
                 viewMode === 'daily'
-                  ? 'bg-white text-neutral-900 shadow-sm'
+                  ? 'bg-white text-neutral-900 shadow-xs'
                   : 'text-neutral-500 hover:text-neutral-700'
               }`}
             >
@@ -420,7 +420,7 @@ export function UserObjectiveDataCard({
 
           {/* Info icon */}
           <div className="relative group">
-            <Info className="w-4 h-4 text-neutral-500 cursor-help hover:text-neutral-700 transition-colors flex-shrink-0" />
+            <Info className="w-4 h-4 text-neutral-500 cursor-help hover:text-neutral-700 transition-colors shrink-0" />
             <div className="absolute top-full left-0 mt-2 px-3 py-2 bg-neutral-900/95 text-white text-xs rounded-lg w-64 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
               <div className="font-semibold mb-1">{METRIC_DESCRIPTIONS[selectedMetric].title}</div>
               <div>{METRIC_DESCRIPTIONS[selectedMetric].description}</div>
@@ -536,7 +536,7 @@ export function UserObjectiveDataCard({
             {/* Legend */}
             <div className="flex items-center justify-center gap-6 mt-2 text-sm text-neutral-600">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded bg-purple-600"></div>
+                <div className="w-3 h-3 rounded-sm bg-purple-600"></div>
                 <span>{config.label}</span>
               </div>
               {selectedMetric === 'health_score' && (
@@ -656,7 +656,7 @@ export function UserObjectiveDataCard({
             {/* Legend */}
             <div className="mt-4 flex items-center justify-start space-x-6 text-sm text-neutral-700">
               <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 rounded" style={{ backgroundColor: config.color }}></div>
+                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: config.color }}></div>
                 <span>{config.label}</span>
               </div>
               {config.showMeanLine && (

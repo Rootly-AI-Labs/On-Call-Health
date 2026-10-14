@@ -247,7 +247,7 @@ export function JiraMapppingGrid({
     return (
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
         <div className="flex items-start space-x-3">
-          <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+          <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5 shrink-0" />
           <div>
             <h3 className="font-medium text-yellow-900">No team members found</h3>
             <p className="text-sm text-yellow-700 mt-1">
@@ -260,7 +260,7 @@ export function JiraMapppingGrid({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       <div className="overflow-x-auto border rounded-lg">
         <table className="w-full text-sm">
           <thead>
@@ -373,7 +373,7 @@ export function JiraMapppingGrid({
       </div>
 
       {/* Summary stats */}
-      <div className="grid grid-cols-3 gap-4 mt-6">
+      <div className="grid grid-cols-3 gap-4">
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="text-sm font-medium text-blue-900">Total Members</div>
           <div className="text-2xl font-bold text-blue-600 mt-1">

@@ -129,7 +129,7 @@ function IntroGuide({ isOpen, currentStep, onNext, onPrev, onClose, onGoToStep }
                 onClick={() => onGoToStep(index)}
                 aria-label={`Go to step ${index + 1}`}
                 aria-current={index === currentStep ? "step" : undefined}
-                className={`h-1.5 rounded-full transition-all cursor-pointer hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 ${
+                className={`h-1.5 rounded-full transition-all cursor-pointer hover:opacity-80 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 ${
                   index === currentStep ? "w-4 bg-purple-600 dark:bg-purple-500" : "w-1.5 bg-slate-300 dark:bg-slate-600 hover:bg-slate-400 dark:hover:bg-slate-500"
                 }`}
               />
