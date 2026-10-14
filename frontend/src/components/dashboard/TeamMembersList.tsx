@@ -535,7 +535,7 @@ export function TeamMembersList({
     <>
       {/* Organization Members Grid */}
       <Card>
-        <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <CardHeader className="space-y-0 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
             <CardTitle className="flex flex-col md:flex-row md:items-center md:gap-1">
               <span className="md:inline">Team Member</span>
@@ -543,7 +543,7 @@ export function TeamMembersList({
             </CardTitle>
             <CardDescription>Click on a member to view detailed analysis</CardDescription>
           </div>
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-2 w-full md:w-auto">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-2 w-full md:w-auto mt-1.5">
             <span className="text-sm text-neutral-500">Sort by:</span>
             <div className="flex items-center bg-neutral-100 rounded-lg p-0.5">
               <button

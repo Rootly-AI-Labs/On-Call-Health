@@ -3541,7 +3541,8 @@ export default function IntegrationsPage() {
           </div>
 
           {/* Integration Forms */}
-          <div className="space-y-6">
+          {activeEnhancementTab && (
+            <div className="space-y-6">
             {/* GitHub Token Form */}
             {activeEnhancementTab === 'github' && !githubIntegration && (
               <GitHubIntegrationCard
@@ -3745,7 +3746,8 @@ export default function IntegrationsPage() {
               />
             )}
 
-          </div>
+            </div>
+          )}
 
           {/* AI Insights Section */}
           <div className="mt-8 pt-8 border-t border-neutral-200">

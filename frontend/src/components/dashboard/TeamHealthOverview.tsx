@@ -212,7 +212,7 @@ export function TeamHealthOverview({
                     <div className="text-center mb-2 md:mb-3">
                       <div className="text-xl md:text-3xl font-bold text-neutral-900">
                         {scoreValue !== null ? scoreValue : 'N/A'}
-                        <span className="text-[10px] md:text-sm font-normal text-neutral-400 ml-0.5">/100</span>
+                        <span className="text-[10px]/[28px] md:text-sm font-normal text-neutral-400 ml-0.5">/100</span>
                       </div>
                       <p className="text-[10px] md:text-xs text-neutral-500 inline-flex items-center gap-0.5 md:gap-1">
                         Risk Level

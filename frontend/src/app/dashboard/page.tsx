@@ -440,7 +440,7 @@ function DashboardContent() {
             />
           )}
         {/* Navigation */}
-        <div className={`flex-1 flex flex-col min-h-0 ${sidebarCollapsed ? 'p-1 sm:p-1.5 md:p-2' : 'p-4'} space-y-2 relative z-0`}>
+        <div className={`flex-1 flex flex-col min-h-0 ${sidebarCollapsed ? 'p-1 sm:p-1.5 md:p-2' : 'p-4'} gap-y-2 relative z-0`}>
           {/* New Analysis Button - show when expanded, or on desktop when collapsed */}
           {sidebarCollapsed ? (
             <Button
@@ -617,7 +617,7 @@ function DashboardContent() {
               )}
             </div>
           ) : (
-            <div className="flex items-center justify-center pt-2 md:hidden">
+            <div className="flex items-center justify-center pt-2 md:hidden mt-2">
               {/* Collapsed state - show chevron arrow at top (click sidebar to expand) - mobile only */}
               <ChevronRight className="w-6 h-6 text-white" />
             </div>
