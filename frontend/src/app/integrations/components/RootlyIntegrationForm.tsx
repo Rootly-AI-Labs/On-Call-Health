@@ -362,7 +362,7 @@ export function RootlyIntegrationForm({
                               </DropdownMenuTrigger>
                               <DropdownMenuContent
                                 align="start"
-                                className="w-[var(--radix-dropdown-menu-trigger-width)] max-h-72 overflow-y-auto"
+                                className="w-(--radix-dropdown-menu-trigger-width) max-h-72 overflow-y-auto"
                               >
                                 <DropdownMenuCheckboxItem
                                   checked={selectedTeamNames.length === 0}

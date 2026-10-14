@@ -237,7 +237,7 @@ export function GitHubIntegrationCard({
                   return (
                     <Badge 
                       key={permission} 
-                      variant={isRequired ? "default" : "outline"} 
+                      variant={isRequired ? "default" : "outline-solid"} 
                       className={`text-xs ${isRequired ? 'bg-green-100 text-green-700 border-green-200' : ''}`}
                     >
                       {permission}

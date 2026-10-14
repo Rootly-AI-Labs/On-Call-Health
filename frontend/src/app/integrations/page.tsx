@@ -2852,7 +2852,7 @@ export default function IntegrationsPage() {
                                 : null
                               return (
                                 <div className="flex w-full items-center gap-2">
-                                  <div className={`h-3 w-3 rounded-full flex-shrink-0 ${
+                                  <div className={`h-3 w-3 rounded-full shrink-0 ${
                                     selected.platform === 'rootly' ? 'bg-purple-500' : 'bg-green-500'
                                   }`}></div>
                                   <div className="min-w-0 flex flex-1 items-center gap-2">
@@ -2865,7 +2865,7 @@ export default function IntegrationsPage() {
                                     {selectedScopeLabel && (
                                       <span
                                         title={selectedScopeLabel}
-                                        className="px-1.5 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-700 inline-block max-w-44 flex-shrink-0 truncate align-middle"
+                                        className="px-1.5 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-700 inline-block max-w-44 shrink-0 truncate align-middle"
                                       >
                                         {selectedScopeLabel}
                                       </span>
@@ -2873,7 +2873,7 @@ export default function IntegrationsPage() {
                                     {selectedAttention && (
                                       <span
                                         title={selectedAttention.message}
-                                        className={`px-1.5 py-0.5 text-[11px] font-semibold rounded inline-block flex-shrink-0 ${
+                                        className={`px-1.5 py-0.5 text-[11px] font-semibold rounded inline-block shrink-0 ${
                                           selectedAttention.state === 'expired'
                                             ? 'bg-red-100 text-red-700'
                                             : 'bg-amber-100 text-amber-700'
@@ -2884,7 +2884,7 @@ export default function IntegrationsPage() {
                                     )}
                                   </div>
                                   {selected.is_default && (
-                                    <Star className="w-4 h-4 text-yellow-500 fill-yellow-500 flex-shrink-0" />
+                                    <Star className="w-4 h-4 text-yellow-500 fill-yellow-500 shrink-0" />
                                   )}
                                 </div>
                               )
@@ -2920,14 +2920,14 @@ export default function IntegrationsPage() {
                                     className="cursor-pointer py-2"
                                   >
                                     <div className="flex items-start gap-2 w-full min-w-0">
-                                      <div className="w-3 h-3 bg-purple-500 rounded-full mt-0.5 flex-shrink-0"></div>
+                                      <div className="w-3 h-3 bg-purple-500 rounded-full mt-0.5 shrink-0"></div>
                                       <div className="min-w-0 flex-1">
-                                        <div className="font-medium text-sm sm:text-base leading-tight line-clamp-2 break-words">
+                                        <div className="font-medium text-sm sm:text-base leading-tight line-clamp-2 wrap-break-word">
                                           {dropdownDisplayName}
                                         </div>
                                         {integration.team_name && (
                                           <div className="mt-1">
-                                            <span className="px-1.5 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-700 inline-flex max-w-full break-words">
+                                            <span className="px-1.5 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-700 inline-flex max-w-full wrap-break-word">
                                               Team: {integration.team_name}
                                             </span>
                                           </div>
@@ -2951,9 +2951,9 @@ export default function IntegrationsPage() {
                                   className="cursor-pointer py-2"
                                 >
                                   <div className="flex items-start gap-2 w-full min-w-0">
-                                    <div className="w-3 h-3 bg-green-500 rounded-full mt-0.5 flex-shrink-0"></div>
+                                    <div className="w-3 h-3 bg-green-500 rounded-full mt-0.5 shrink-0"></div>
                                     <div className="min-w-0 flex-1">
-                                      <div className="font-medium text-sm sm:text-base leading-tight line-clamp-2 break-words">
+                                      <div className="font-medium text-sm sm:text-base leading-tight line-clamp-2 wrap-break-word">
                                         {integration.name}
                                       </div>
                                     </div>
@@ -3000,7 +3000,7 @@ export default function IntegrationsPage() {
                         onClick={() => !editingIntegration && toggleIntegrationExpanded(integration.id)}
                       >
                         {/* Expand/Collapse Icon */}
-                        <div className="flex-shrink-0 w-6">
+                        <div className="shrink-0 w-6">
                           {isExpanded ? (
                             <ChevronUp className="w-4 h-4 text-neutral-500" />
                           ) : (
@@ -3041,7 +3041,7 @@ export default function IntegrationsPage() {
                           <h3 className="font-semibold text-base truncate flex-1 min-w-0 mr-3 hidden md:block">{integration.name}</h3>
                         )}
                         {integrationAttention && (
-                          <div className="mr-3 flex-shrink-0">
+                          <div className="mr-3 shrink-0">
                             {renderAttentionDot(integrationAttention)}
                           </div>
                         )}
@@ -3049,18 +3049,18 @@ export default function IntegrationsPage() {
                         {/* Stats in collapsed view - fixed widths for alignment */}
                         {!isExpanded && (
                           <>
-                            <div className="flex items-center gap-1 text-sm text-neutral-700 w-16 flex-shrink-0">
+                            <div className="flex items-center gap-1 text-sm text-neutral-700 w-16 shrink-0">
                               <Users className="w-3 h-3" />
                               <span>{integration.total_users}</span>
                             </div>
                             {rootlyScopeLabel && (
-                              <div className="w-44 flex-shrink-0 hidden lg:block">
+                              <div className="w-44 shrink-0 hidden lg:block">
                                 <span className="inline-flex items-center rounded bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
                                   {rootlyScopeLabel}
                                 </span>
                               </div>
                             )}
-                            <div className="text-sm text-neutral-500 w-28 flex-shrink-0 hidden md:block">•••{integration.token_suffix}</div>
+                            <div className="text-sm text-neutral-500 w-28 shrink-0 hidden md:block">•••{integration.token_suffix}</div>
                           </>
                         )}
                       </div>
@@ -3194,7 +3194,7 @@ export default function IntegrationsPage() {
                                   variant="ghost"
                                   onClick={() => refreshIntegrationPermissions(integration.id)}
                                   disabled={refreshingPermissions === integration.id}
-                                  className="h-7 px-2 text-neutral-500 hover:text-neutral-700 flex-shrink-0"
+                                  className="h-7 px-2 text-neutral-500 hover:text-neutral-700 shrink-0"
                                 >
                                   <RefreshCw className={`w-3 h-3 ${refreshingPermissions === integration.id ? 'animate-spin' : ''}`} />
                                 </Button>
@@ -3883,7 +3883,7 @@ export default function IntegrationsPage() {
 
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                         <div className="flex items-start space-x-2">
-                          <HelpCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                          <HelpCircle className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
                           <div className="text-sm text-blue-800">
                             <p className="font-medium mb-1">AI Features Include:</p>
                             <ul className="space-y-1 text-xs">
@@ -4148,7 +4148,7 @@ export default function IntegrationsPage() {
                                         value={inlineEditingValue}
                                         onChange={(e) => handleInlineValueChange(e.target.value)}
                                         placeholder={`Edit ${selectedMappingPlatform === 'github' ? 'GitHub' : 'Slack'} username`}
-                                        className={`flex-1 px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 ${
+                                        className={`flex-1 px-2 py-1 text-xs border rounded focus:outline-hidden focus:ring-1 ${
                                           githubValidation?.valid === false 
                                             ? 'border-red-300 focus:ring-red-500' 
                                             : githubValidation?.valid === true
@@ -4244,7 +4244,7 @@ export default function IntegrationsPage() {
                                     value={inlineEditingValue}
                                     onChange={(e) => handleInlineValueChange(e.target.value)}
                                     placeholder={`Enter ${selectedMappingPlatform === 'github' ? 'GitHub' : 'Slack'} username`}
-                                    className={`flex-1 px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 ${
+                                    className={`flex-1 px-2 py-1 text-xs border rounded focus:outline-hidden focus:ring-1 ${
                                       githubValidation?.valid === false 
                                         ? 'border-red-300 focus:ring-red-500' 
                                         : githubValidation?.valid === true
@@ -4322,7 +4322,7 @@ export default function IntegrationsPage() {
                                 className="w-full text-left px-2 py-1 text-xs text-neutral-500 hover:text-blue-600 hover:bg-blue-50 rounded border border-dashed border-neutral-300 hover:border-blue-300 transition-colors flex items-center gap-2"
                                 title={`Click to add ${selectedMappingPlatform === 'github' ? 'GitHub' : 'Slack'} username`}
                               >
-                                <Plus className="w-3 h-3 flex-shrink-0" />
+                                <Plus className="w-3 h-3 shrink-0" />
                                 <span className="truncate">Click to add {selectedMappingPlatform === 'github' ? 'GitHub' : 'Slack'} username</span>
                               </button>
                             )

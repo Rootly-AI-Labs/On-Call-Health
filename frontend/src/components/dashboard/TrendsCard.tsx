@@ -160,7 +160,7 @@ export function TrendsCard({
                       const isPositive = percentageChange <= 0;
 
                       return (
-                        <div className="bg-neutral-900/95 p-3 border border-neutral-700 rounded-lg shadow-lg backdrop-blur-sm">
+                        <div className="bg-neutral-900/95 p-3 border border-neutral-700 rounded-lg shadow-lg backdrop-blur-xs">
                           <p className="text-sm font-medium text-neutral-300 mb-2">
                             {data?.date}
                           </p>

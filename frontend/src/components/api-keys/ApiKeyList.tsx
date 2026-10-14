@@ -23,7 +23,7 @@ function formatLastUsed(dateString: string | null): string {
   return formatDistanceToNow(date, { addSuffix: true })
 }
 
-function getExpirationStatus(expiresAt: string | null): { text: string; variant: "default" | "secondary" | "destructive" | "outline" } {
+function getExpirationStatus(expiresAt: string | null): { text: string; variant: "default" | "secondary" | "destructive" | "outline-solid" } {
   if (!expiresAt) {
     return { text: "Never expires", variant: "secondary" }
   }

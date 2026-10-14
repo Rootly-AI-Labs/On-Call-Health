@@ -326,7 +326,7 @@ export function TeamMembersList({
         {/* Avatar + Name - Stack on mobile */}
         <td className="py-2 px-2 sm:py-3 sm:px-4 md:py-3 md:px-4">
           <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
-            <Avatar className="h-8 w-8 flex-shrink-0">
+            <Avatar className="h-8 w-8 shrink-0">
               {member.avatar_url && (
                 <AvatarImage src={member.avatar_url} alt={member.user_name || 'User avatar'} />
               )}
@@ -362,7 +362,7 @@ export function TeamMembersList({
               </div>
               {/* Risk Level Bar and Score */}
               <div className="flex items-center gap-2 md:gap-3">
-                <div className="relative h-2 w-16 md:w-24 overflow-hidden rounded-full bg-neutral-200 flex-shrink-0">
+                <div className="relative h-2 w-16 md:w-24 overflow-hidden rounded-full bg-neutral-200 shrink-0">
                   <div
                     className="h-full rounded-full transition-all"
                     style={{
@@ -550,7 +550,7 @@ export function TeamMembersList({
                 onClick={() => setSortBy('risk')}
                 className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
                   sortBy === 'risk'
-                    ? 'bg-white text-neutral-900 shadow-sm'
+                    ? 'bg-white text-neutral-900 shadow-xs'
                     : 'text-neutral-500 hover:text-neutral-700'
                 }`}
               >
@@ -560,7 +560,7 @@ export function TeamMembersList({
                 onClick={() => setSortBy('trend')}
                 className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
                   sortBy === 'trend'
-                    ? 'bg-white text-neutral-900 shadow-sm'
+                    ? 'bg-white text-neutral-900 shadow-xs'
                     : 'text-neutral-500 hover:text-neutral-700'
                 }`}
               >

@@ -494,7 +494,7 @@ function DashboardContent() {
                         <div className="flex justify-between items-center w-full mb-1 gap-2">
                           <div className="flex items-center space-x-2 min-w-0">
                             {arColor !== 'bg-neutral-1000' && (
-                              <div className={`w-2.5 h-2.5 rounded-full ${arColor} flex-shrink-0`}></div>
+                              <div className={`w-2.5 h-2.5 rounded-full ${arColor} shrink-0`}></div>
                             )}
                             <span className="font-medium truncate" title={arOrgName}>{arOrgName}</span>
                           </div>
@@ -569,12 +569,12 @@ function DashboardContent() {
                           <div className="flex justify-between items-center w-full mb-1 gap-2">
                             <div className="flex items-center space-x-2 min-w-0">
                               {platformColor !== 'bg-neutral-1000' && (
-                                <div className={`w-2.5 h-2.5 rounded-full ${platformColor} flex-shrink-0`}></div>
+                                <div className={`w-2.5 h-2.5 rounded-full ${platformColor} shrink-0`}></div>
                               )}
                               <span className="font-medium truncate" title={organizationName}>{organizationName}</span>
                             </div>
                           {(analysis as any).config?.pagerduty_team_id && (
-                            <span className="text-neutral-500 flex-shrink-0 text-[10px] bg-green-100 text-green-700 rounded px-1">team</span>
+                            <span className="text-neutral-500 shrink-0 text-[10px] bg-green-100 text-green-700 rounded px-1">team</span>
                           )}
                           </div>
                           <AnalysisSidebarDetails analysis={analysis} />
@@ -659,12 +659,12 @@ function DashboardContent() {
            currentAnalysis?.is_auto_refresh === false && (
             <div className="mb-4 flex items-center justify-between gap-4 rounded-lg border border-violet-200 bg-violet-50 px-4 py-3">
               <div className="flex items-center gap-2 text-violet-800 text-sm">
-                <Bookmark className="w-4 h-4 flex-shrink-0" />
+                <Bookmark className="w-4 h-4 shrink-0" />
                 <span>This analysis hasn&apos;t been saved yet.</span>
               </div>
               <button
                 onClick={saveCurrentAnalysis}
-                className="flex-shrink-0 rounded-md bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-violet-700 transition-colors"
+                className="shrink-0 rounded-md bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-violet-700 transition-colors"
               >
                 Save Analysis
               </button>
@@ -749,7 +749,7 @@ function DashboardContent() {
             <>
               {/* Demo Analysis Banner */}
               {currentAnalysis?.config?.is_demo && (
-                <div className="mb-6 p-4 bg-gradient-to-r from-amber-500 to-orange-500 rounded-lg shadow-lg">
+                <div className="mb-6 p-4 bg-linear-to-r from-amber-500 to-orange-500 rounded-lg shadow-lg">
                   <div className="flex items-center justify-between flex-wrap gap-4">
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-white/20 rounded-full">

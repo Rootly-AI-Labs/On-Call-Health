@@ -150,7 +150,7 @@ export function GitHubCommitsTimeline({ analysisId, totalCommits, weekendPercent
                 if (payload && payload.length > 0) {
                   const data = payload[0].payload;
                   return (
-                    <div className="bg-white p-2 border border-neutral-200 rounded shadow-sm">
+                    <div className="bg-white p-2 border border-neutral-200 rounded shadow-xs">
                       <p className="text-xs font-semibold">{label}</p>
                       <p className="text-xs text-green-600">
                         {data.commits} commits

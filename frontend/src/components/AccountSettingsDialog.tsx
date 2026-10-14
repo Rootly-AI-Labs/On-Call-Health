@@ -285,7 +285,7 @@ export function AccountSettingsDialog({
             </TabsList>
 
             <TabsContent value="weekly" className="mt-6">
-              <div className="border border-neutral-200 rounded-xl p-5 bg-white shadow-sm space-y-4">
+              <div className="border border-neutral-200 rounded-xl p-5 bg-white shadow-xs space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-semibold text-neutral-900 tracking-tight">
@@ -373,7 +373,7 @@ export function AccountSettingsDialog({
                 </div>
 
               {!showDeleteConfirmation ? (
-                <div className="bg-neutral-50/50 border border-neutral-200 rounded-xl p-5 shadow-sm">
+                <div className="bg-neutral-50/50 border border-neutral-200 rounded-xl p-5 shadow-xs">
                   <p className="text-[15px] text-neutral-700 mb-4 leading-relaxed">
                     This action cannot be undone. This will permanently delete your account and remove all data from our servers.
                   </p>
@@ -388,9 +388,9 @@ export function AccountSettingsDialog({
                 </div>
               ) : (
                 <div className="space-y-5">
-                  <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-5 shadow-sm">
+                  <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-5 shadow-xs">
                     <div className="flex gap-3.5">
-                      <div className="flex-shrink-0 mt-0.5">
+                      <div className="shrink-0 mt-0.5">
                         <svg className="w-5 h-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                         </svg>
@@ -432,13 +432,13 @@ export function AccountSettingsDialog({
                   </div>
 
                   {deleteError && (
-                    <div className="bg-red-50/70 border border-red-200/80 rounded-xl p-4 shadow-sm">
+                    <div className="bg-red-50/70 border border-red-200/80 rounded-xl p-4 shadow-xs">
                       <p className="text-[15px] text-red-800 leading-relaxed">{deleteError}</p>
                     </div>
                   )}
 
                   {showPromoteUsers && (
-                    <div className="bg-blue-50/70 border border-blue-200/80 rounded-xl p-5 shadow-sm">
+                    <div className="bg-blue-50/70 border border-blue-200/80 rounded-xl p-5 shadow-xs">
                       <div className="flex items-center gap-2.5 mb-3">
                         <UserPlus className="w-5 h-5 text-blue-600" />
                         <h4 className="text-[15px] font-semibold text-blue-900">
@@ -461,7 +461,7 @@ export function AccountSettingsDialog({
                           {promotableUsers.map((user) => (
                             <div
                               key={user.id}
-                              className="flex items-center justify-between p-3.5 bg-white rounded-lg border border-blue-200/80 hover:border-blue-300 hover:shadow-sm transition-all duration-200"
+                              className="flex items-center justify-between p-3.5 bg-white rounded-lg border border-blue-200/80 hover:border-blue-300 hover:shadow-xs transition-all duration-200"
                             >
                               <div>
                                 <p className="font-medium text-neutral-900 text-[15px]">{user.name}</p>

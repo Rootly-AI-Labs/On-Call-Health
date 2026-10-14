@@ -145,7 +145,7 @@ export default function DisclaimerPage() {
 
         <div className="flex gap-8">
           {/* Left Sidebar - Outline Navigation */}
-          <nav className="hidden lg:block w-64 flex-shrink-0">
+          <nav className="hidden lg:block w-64 shrink-0">
             <div className="sticky top-8">
               <h3 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-4">On this page</h3>
               <ul className="space-y-2">
@@ -168,7 +168,7 @@ export default function DisclaimerPage() {
             {/* Important Notice Banner */}
             <div className="mb-8 bg-amber-50 border border-amber-200 rounded-xl p-6">
               <div className="flex items-start gap-4">
-                <div className="bg-amber-100 rounded-full p-3 flex-shrink-0">
+                <div className="bg-amber-100 rounded-full p-3 shrink-0">
                   <AlertTriangle className="w-6 h-6 text-amber-600" />
                 </div>
                 <div>

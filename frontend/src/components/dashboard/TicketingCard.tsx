@@ -232,7 +232,7 @@ function JiraTicketCardContent({ memberData }: TicketingCardProps) {
             {sortedTickets.map((ticket, index) => (
               <div key={getItemKey(ticket) || `ticket-${index}`} className="flex items-center gap-2 p-2 bg-neutral-100 rounded-md hover:bg-neutral-200 transition">
                 <Badge
-                  className="text-xs flex-shrink-0"
+                  className="text-xs shrink-0"
                   style={getPriorityColor(ticket.priority)}
                 >
                   {ticket.priority || "N/A"}
@@ -243,7 +243,7 @@ function JiraTicketCardContent({ memberData }: TicketingCardProps) {
                     {ticket.summary || ticket.title ? ` - ${truncateTitle(ticket.summary || ticket.title)}` : ""}
                   </p>
                 </div>
-                <div className="flex items-center gap-1 text-xs text-neutral-500 whitespace-nowrap flex-shrink-0 ml-2">
+                <div className="flex items-center gap-1 text-xs text-neutral-500 whitespace-nowrap shrink-0 ml-2">
                   <Clock className="w-3 h-3" />
                   <span>{formatDueDate(ticket.duedate)}</span>
                 </div>
@@ -333,7 +333,7 @@ function JiraTicketCard({ memberData }: TicketingCardProps): React.ReactElement 
               {sortedTickets.map((ticket, index) => (
                 <div key={getItemKey(ticket) || `ticket-${index}`} className="flex items-center gap-2 p-2 bg-neutral-100 rounded-md hover:bg-neutral-200 transition">
                   <Badge
-                    className="text-xs flex-shrink-0"
+                    className="text-xs shrink-0"
                     style={getPriorityColor(ticket.priority)}
                   >
                     {ticket.priority || "N/A"}
@@ -344,7 +344,7 @@ function JiraTicketCard({ memberData }: TicketingCardProps): React.ReactElement 
                       {ticket.summary || ticket.title ? ` - ${truncateTitle(ticket.summary || ticket.title)}` : ""}
                     </p>
                   </div>
-                  <div className="flex items-center gap-1 text-xs text-neutral-500 whitespace-nowrap flex-shrink-0 ml-2">
+                  <div className="flex items-center gap-1 text-xs text-neutral-500 whitespace-nowrap shrink-0 ml-2">
                     <Clock className="w-3 h-3" />
                     <span>{formatDueDate(ticket.duedate)}</span>
                   </div>
@@ -418,7 +418,7 @@ function LinearIssueCardContent({ memberData }: TicketingCardProps) {
             {sortedIssues.map((issue, index) => (
               <div key={getItemKey(issue) || `issue-${index}`} className="flex items-center gap-2 p-2 bg-neutral-100 rounded-md hover:bg-neutral-200 transition">
                 <Badge
-                  className="text-xs flex-shrink-0"
+                  className="text-xs shrink-0"
                   style={getPriorityColor(issue.priority)}
                 >
                   {getLinearPriorityLabel(issue.priority)}
@@ -429,7 +429,7 @@ function LinearIssueCardContent({ memberData }: TicketingCardProps) {
                     {issue.title ? ` - ${truncateTitle(issue.title)}` : ""}
                   </p>
                 </div>
-                <div className="flex items-center gap-1 text-xs text-neutral-500 whitespace-nowrap flex-shrink-0 ml-2">
+                <div className="flex items-center gap-1 text-xs text-neutral-500 whitespace-nowrap shrink-0 ml-2">
                   <Clock className="w-3 h-3" />
                   <span>{formatDueDate(issue.dueDate)}</span>
                 </div>
@@ -519,7 +519,7 @@ function LinearIssueCard({ memberData }: TicketingCardProps): React.ReactElement
               {sortedIssues.map((issue, index) => (
                 <div key={getItemKey(issue) || `issue-${index}`} className="flex items-center gap-2 p-2 bg-neutral-100 rounded-md hover:bg-neutral-200 transition">
                   <Badge
-                    className="text-xs flex-shrink-0"
+                    className="text-xs shrink-0"
                     style={getPriorityColor(issue.priority)}
                   >
                     {getLinearPriorityLabel(issue.priority)}
@@ -530,7 +530,7 @@ function LinearIssueCard({ memberData }: TicketingCardProps): React.ReactElement
                       {issue.title ? ` - ${truncateTitle(issue.title)}` : ""}
                     </p>
                   </div>
-                  <div className="flex items-center gap-1 text-xs text-neutral-500 whitespace-nowrap flex-shrink-0 ml-2">
+                  <div className="flex items-center gap-1 text-xs text-neutral-500 whitespace-nowrap shrink-0 ml-2">
                     <Clock className="w-3 h-3" />
                     <span>{formatDueDate(issue.dueDate)}</span>
                   </div>

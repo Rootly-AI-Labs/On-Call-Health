@@ -268,7 +268,7 @@ export default function MethodologyPage() {
 
         <div className="flex gap-8">
           {/* Left Sidebar - Outline Navigation */}
-          <nav className="hidden lg:block w-64 flex-shrink-0">
+          <nav className="hidden lg:block w-64 shrink-0">
             <div className="sticky top-8">
               <h3 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-4">On this page</h3>
               <ul className="space-y-2">
@@ -358,7 +358,7 @@ export default function MethodologyPage() {
               <div className="space-y-3 mb-4">
                 {content.goalAndRole.baselines.reasons.map((reason, idx) => (
                   <div key={idx} className="flex items-start bg-orange-50 border border-orange-100 rounded-lg p-3">
-                    <div className="w-2 h-2 bg-orange-400 rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                    <div className="w-2 h-2 bg-orange-400 rounded-full mt-2 mr-3 shrink-0"></div>
                     <div>
                       <span className="font-medium text-neutral-900">{reason.label}.</span>{" "}
                       <span className="text-neutral-700">{reason.detail}</span>
@@ -441,9 +441,9 @@ export default function MethodologyPage() {
 
           {/* Conclusion - Different design as summary section */}
           {content.factors.conclusion && (
-            <div className="mt-8 bg-gradient-to-r from-blue-50 to-neutral-50 border border-blue-200 rounded-xl p-6">
+            <div className="mt-8 bg-linear-to-r from-blue-50 to-neutral-50 border border-blue-200 rounded-xl p-6">
               <div className="flex items-start gap-4">
-                <div className="bg-blue-100 rounded-full p-3 flex-shrink-0">
+                <div className="bg-blue-100 rounded-full p-3 shrink-0">
                   <Activity className="w-6 h-6 text-blue-600" />
                 </div>
                 <div className="flex-1">

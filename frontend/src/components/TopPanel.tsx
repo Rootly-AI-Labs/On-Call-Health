@@ -120,7 +120,7 @@ export function TopPanel() {
                 href="/dashboard"
                 className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 ${
                   isActive("/dashboard")
-                    ? "bg-purple-700 text-white shadow-sm"
+                    ? "bg-purple-700 text-white shadow-xs"
                     : "text-neutral-700 hover:text-white hover:bg-purple-800"
                 }`}
               >
@@ -130,7 +130,7 @@ export function TopPanel() {
                 href="/integrations"
                 className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 ${
                   isActive("/integrations")
-                    ? "bg-purple-700 text-white shadow-sm"
+                    ? "bg-purple-700 text-white shadow-xs"
                     : "text-neutral-700 hover:text-white hover:bg-purple-800"
                 }`}
               >
@@ -140,7 +140,7 @@ export function TopPanel() {
                 href="/management"
                 className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 ${
                   isActive("/management")
-                    ? "bg-purple-700 text-white shadow-sm"
+                    ? "bg-purple-700 text-white shadow-xs"
                     : "text-neutral-700 hover:text-white hover:bg-purple-800"
                 }`}
               >
@@ -163,7 +163,7 @@ export function TopPanel() {
                     onClick={() => setIsNavDrawerOpen(false)}
                     className={`px-4 py-3 text-base font-semibold rounded-lg transition-all duration-200 ${
                       isActive("/dashboard")
-                        ? "bg-purple-700 text-white shadow-sm"
+                        ? "bg-purple-700 text-white shadow-xs"
                         : "text-neutral-700 hover:text-white hover:bg-purple-800"
                     }`}
                   >
@@ -174,7 +174,7 @@ export function TopPanel() {
                     onClick={() => setIsNavDrawerOpen(false)}
                     className={`px-4 py-3 text-base font-semibold rounded-lg transition-all duration-200 ${
                       isActive("/integrations")
-                        ? "bg-purple-700 text-white shadow-sm"
+                        ? "bg-purple-700 text-white shadow-xs"
                         : "text-neutral-700 hover:text-white hover:bg-purple-800"
                     }`}
                   >
@@ -185,7 +185,7 @@ export function TopPanel() {
                     onClick={() => setIsNavDrawerOpen(false)}
                     className={`px-4 py-3 text-base font-semibold rounded-lg transition-all duration-200 ${
                       isActive("/management")
-                        ? "bg-purple-700 text-white shadow-sm"
+                        ? "bg-purple-700 text-white shadow-xs"
                         : "text-neutral-700 hover:text-white hover:bg-purple-800"
                     }`}
                   >
@@ -218,7 +218,7 @@ export function TopPanel() {
                 }
               }}>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-1.5 sm:gap-2.5 px-1 sm:px-2.5 py-1 sm:py-1.5 rounded-full border border-neutral-200 bg-white hover:bg-purple-100 hover:border-neutral-300 transition-all duration-200 shadow-sm hover:shadow">
+                  <button className="flex items-center gap-1.5 sm:gap-2.5 px-1 sm:px-2.5 py-1 sm:py-1.5 rounded-full border border-neutral-200 bg-white hover:bg-purple-100 hover:border-neutral-300 transition-all duration-200 shadow-xs hover:shadow-sm">
                     <Avatar className="h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 ring-2 ring-white">
                       <AvatarImage src={userInfo.avatar} alt={userInfo.name} />
                       <AvatarFallback className="bg-purple-700 text-white text-xs sm:text-sm font-semibold">

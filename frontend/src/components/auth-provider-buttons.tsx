@@ -39,7 +39,7 @@ const PROVIDERS: ProviderConfig[] = [
     path: "/auth/google",
     brandIcon: siGooglechrome,
     className:
-      "bg-[#E4E5EB] text-[color:var(--color-blue-15,_#1E1A33)] hover:bg-[#d7d8de]",
+      "bg-[#E4E5EB] text-(--color-blue-15,#1E1A33) hover:bg-[#d7d8de]",
   },
   {
     id: "github",
@@ -50,7 +50,7 @@ const PROVIDERS: ProviderConfig[] = [
     path: "/auth/github",
     brandIcon: siGithub,
     className:
-      "bg-[#100F12] text-[color:var(--text-text-contrast,_#FFFFFF)] hover:bg-[#1b1a1e]",
+      "bg-[#100F12] text-(--text-text-contrast,#FFFFFF) hover:bg-[#1b1a1e]",
   },
   {
     id: "okta",
@@ -177,7 +177,7 @@ export function AuthProviderButtons({
             >
               <span
                 className={cn(
-                  "flex min-w-0 items-center translate-y-[1px]",
+                  "flex min-w-0 items-center translate-y-px",
                   variant === "hero"
                     ? "justify-center gap-2.5 text-center"
                     : "w-full justify-start gap-3.5 text-left"

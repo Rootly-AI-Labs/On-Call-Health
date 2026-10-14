@@ -31,7 +31,7 @@ export default function AuthRedirectGate({
   if (isCheckingAuth) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-neutral-100">
-        <div className="flex items-center gap-3 rounded-full border border-neutral-200 bg-white px-5 py-3 text-sm font-medium text-neutral-600 shadow-sm">
+        <div className="flex items-center gap-3 rounded-full border border-neutral-200 bg-white px-5 py-3 text-sm font-medium text-neutral-600 shadow-xs">
           <Loader2 className="h-4 w-4 animate-spin text-purple-700" />
           Redirecting to your workspace...
         </div>

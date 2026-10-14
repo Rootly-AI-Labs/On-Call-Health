@@ -210,13 +210,13 @@ export default function LandingPage() {
     <div className={`${ppMori.className} min-h-screen bg-white overflow-x-hidden`}>
 
       {/* Hero Section */}
-      <section className="bg-[url(/images/landing/rootly-bg-hq.webp)] bg-cover bg-[position:50%_15%] lg:bg-[size:210%] lg:bg-[position:-1200px_-300px] relative lg:pb-[120px]" id="get-started">
+      <section className="bg-[url(/images/landing/rootly-bg-hq.webp)] bg-cover bg-position-[50%_15%] lg:bg-size-[210%] lg:bg-position-[-1200px_-300px] relative lg:pb-[120px]" id="get-started">
         {/* Header */}
         <div className="px-4 pt-6 pb-2 lg:px-16 lg:pt-8">
           <div className="flex items-start justify-between w-full gap-4">
             <div className="flex flex-col items-start -space-y-0.5">
               <div className="flex items-center gap-1.5">
-                <div className="text-xl leading-[1rem] lg:text-3xl font-normal text-black">On-Call Health</div>
+                <div className="text-xl leading-4 lg:text-3xl font-normal text-black">On-Call Health</div>
                 <Image
                   src="/images/on-call-health-logo.svg"
                   alt="On-Call Health"
@@ -251,12 +251,12 @@ export default function LandingPage() {
                     {isLoading === "okta" ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        <span className="relative top-[1px]">Connecting...</span>
+                        <span className="relative top-px">Connecting...</span>
                       </>
                     ) : (
                       <>
                         <Image src="/images/okta-icon.png" alt="Okta" width={16} height={16} className="h-4 w-4" />
-                        <span className="relative top-[1px]">Okta SSO</span>
+                        <span className="relative top-px">Okta SSO</span>
                       </>
                     )}
                   </span>
@@ -266,7 +266,7 @@ export default function LandingPage() {
                 href="https://github.com/Rootly-AI-Labs/On-Call-Health"
                 target="_blank"
                 rel="noreferrer"
-                className="h-10 rounded-2xl bg-[#7b6db1] px-5 text-sm font-semibold font-display text-[color:var(--text-text-primary,_#100F12)] hover:bg-[#6f62a5] flex items-center gap-2"
+                className="h-10 rounded-2xl bg-[#7b6db1] px-5 text-sm font-semibold font-display text-(--text-text-primary,#100F12) hover:bg-[#6f62a5] flex items-center gap-2"
               >
                 <Image src="/images/github-logo.png" alt="GitHub" width={20} height={20} className="h-4 w-4 lg:h-5 lg:w-5" />
                 <span className="relative top-[2px]">View on GitHub</span>
@@ -274,10 +274,10 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
-        <div className="container flex flex-col lg:flex-row flex-grow mx-auto px-4">
-          <main className="w-full flex-grow px-5 lg:pr-10 lg:w-[60%] text-white relative lg:top-14 lg:-ml-8">
+        <div className="container flex flex-col lg:flex-row grow mx-auto px-4">
+          <main className="w-full grow px-5 lg:pr-10 lg:w-[60%] text-white relative lg:top-14 lg:-ml-8">
             <div className="inline-flex items-center rounded-full border-[0.25px] border-white/50 px-2.5 py-1 text-[9px] tracking-[0.3em] uppercase font-bold text-white/80 mb-2 mt-4 lg:mb-6 translate-x-1 translate-y-1 lg:text-[10px] lg:tracking-[0.35em]">
-              <span className="relative top-[1px]">OPEN SOURCE - APACHE LICENSE 2.0</span>
+              <span className="relative top-px">OPEN SOURCE - APACHE LICENSE 2.0</span>
             </div>
             <h1 className="text-4xl lg:text-6xl tracking-tight mb-6 leading-tight pt-2 lg:pt-10 lg:pb-1 leading-snug relative lg:-top-8">
               Catch exhaustion
@@ -297,7 +297,7 @@ export default function LandingPage() {
             <div id="login" className="mt-6 flex flex-col sm:flex-row gap-4 items-center mb-6">
             <Button
               size="lg"
-              className="w-full rounded-3xl sm:w-auto bg-[#E4E5EB] hover:bg-[#d7d8de] text-[color:var(--color-blue-15,_#1E1A33)] px-6 py-5 text-base font-display font-bold flex items-center justify-center lg:px-8 lg:py-7 lg:text-lg"
+              className="w-full rounded-3xl sm:w-auto bg-[#E4E5EB] hover:bg-[#d7d8de] text-(--color-blue-15,#1E1A33) px-6 py-5 text-base font-display font-bold flex items-center justify-center lg:px-8 lg:py-7 lg:text-lg"
               onClick={handleGoogleLogin}
               disabled={isLoading === "google"}
             >
@@ -318,7 +318,7 @@ export default function LandingPage() {
 
             <Button
               size="lg"
-              className="w-full rounded-3xl sm:w-auto bg-[#100F12] hover:bg-[#1b1a1e] text-[color:var(--text-text-contrast,_#FFFFFF)] px-6 py-5 text-base font-display font-bold flex items-center justify-center lg:px-8 lg:py-7 lg:text-lg"
+              className="w-full rounded-3xl sm:w-auto bg-[#100F12] hover:bg-[#1b1a1e] text-(--text-text-contrast,#FFFFFF) px-6 py-5 text-base font-display font-bold flex items-center justify-center lg:px-8 lg:py-7 lg:text-lg"
               onClick={handleGitHubLogin}
               disabled={isLoading === "github"}
             >
@@ -372,7 +372,7 @@ export default function LandingPage() {
                   background: "linear-gradient(115deg, rgba(252,227,210,0.72) 0%, rgba(236,220,246,0.72) 55%, rgba(220,205,247,0.72) 100%)",
                 }}
               >
-                <p className="text-center text-base font-medium leading-relaxed text-slate-900 sm:text-lg sm:leading-relaxed lg:text-[22px] lg:leading-[1.5]">
+                <p className="text-center text-base font-medium leading-relaxed text-slate-900 sm:text-lg sm:leading-relaxed lg:text-[22px] lg:leading-normal">
                   &ldquo;{t.quote}&rdquo;
                 </p>
                 <div className="mt-5 sm:mt-6 lg:mt-7 flex items-center justify-between gap-4">
@@ -405,7 +405,7 @@ export default function LandingPage() {
             ))}
           </div>
         </div>
-    <div className="w-full mb-[-1px] absolute h-[240px] bottom-0 left-0 z-0 lg:h-[250px] bg-gradient-to-b from-transparent via-white/60 to-white pointer-events-none">                               
+    <div className="w-full -mb-px absolute h-[240px] bottom-0 left-0 z-0 lg:h-[250px] bg-linear-to-b from-transparent via-white/60 to-white pointer-events-none">                               
     </div> 
       </section>
       <div className="mx-auto my-12 h-px w-2/3 bg-slate-200 lg:hidden" />
@@ -528,7 +528,7 @@ export default function LandingPage() {
               />
             </div>
           </div>
-          <div className="mt-10 lg:mt-20 mb-0 w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] bg-[url(/images/landing/cta-background.png)] bg-cover bg-center lg:bg-[center_top_-450px]">
+          <div className="mt-10 lg:mt-20 mb-0 w-screen relative left-1/2 right-1/2 ml-[-50vw] mr-[-50vw] bg-[url(/images/landing/cta-background.png)] bg-cover bg-center lg:bg-position-[center_top_-450px]">
             <div className="grid place-items-center px-6 py-16 lg:py-20 text-center">
               <h2 className="text-4xl md:text-5xl font-medium text-slate-900 mb-6">Detect who's at risk of burnout<br /> in your team today.</h2>
               <div className="flex flex-col justify-center sm:flex-row gap-4 items-center mb-6">

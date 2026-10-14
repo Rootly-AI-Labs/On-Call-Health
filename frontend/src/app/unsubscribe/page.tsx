@@ -101,7 +101,7 @@ function UnsubscribePage() {
   if (status === "success") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-        <div className="max-w-md w-full bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
+        <div className="max-w-md w-full bg-white rounded-xl shadow-xs border border-gray-200 p-8 text-center">
           <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -125,7 +125,7 @@ function UnsubscribePage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="max-w-md w-full bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+      <div className="max-w-md w-full bg-white rounded-xl shadow-xs border border-gray-200 p-8">
         {/* Header */}
         <div className="mb-6">
           <span className="text-sm text-gray-400 font-medium">On-Call Health</span>
@@ -153,7 +153,7 @@ function UnsubscribePage() {
                 >
                   {/* Custom checkbox */}
                   <span
-                    className={`mt-0.5 flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center transition-colors ${
+                    className={`mt-0.5 shrink-0 w-4 h-4 rounded border flex items-center justify-center transition-colors ${
                       isChecked
                         ? "bg-violet-600 border-violet-600"
                         : "border-gray-300 bg-white"
@@ -178,7 +178,7 @@ function UnsubscribePage() {
                       }
                       placeholder={r.followUp.placeholder}
                       rows={2}
-                      className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent placeholder:text-gray-400"
+                      className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-hidden focus:ring-2 focus:ring-violet-400 focus:border-transparent placeholder:text-gray-400"
                     />
                   </div>
                 )}

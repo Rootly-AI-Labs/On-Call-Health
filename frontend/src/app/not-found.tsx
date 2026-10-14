@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 
 export default function NotFound() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-white">
+    <main className="min-h-screen bg-linear-to-b from-purple-50 via-white to-white">
       <div className="mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center px-6 text-center">
         <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-purple-700">
           Error 404

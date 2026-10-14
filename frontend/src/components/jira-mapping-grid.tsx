@@ -247,7 +247,7 @@ export function JiraMapppingGrid({
     return (
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
         <div className="flex items-start space-x-3">
-          <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+          <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5 shrink-0" />
           <div>
             <h3 className="font-medium text-yellow-900">No team members found</h3>
             <p className="text-sm text-yellow-700 mt-1">

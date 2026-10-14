@@ -79,7 +79,7 @@ export function Tooltip({
       {isVisible && typeof document !== "undefined" && createPortal(
         <div
           className={cn(
-            "fixed z-[9999] px-3 py-2 text-sm text-white bg-neutral-900 rounded-lg shadow-lg w-48 break-words pointer-events-none",
+            "fixed z-9999 px-3 py-2 text-sm text-white bg-neutral-900 rounded-lg shadow-lg w-48 wrap-break-word pointer-events-none",
             className
           )}
           style={{

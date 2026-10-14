@@ -11,7 +11,7 @@ export function ChartModeToggle() {
       <span className="text-sm text-neutral-700">Chart Mode:</span>
       <div className="flex gap-2">
         <Button
-          variant={chartMode === 'normal' ? 'default' : 'outline'}
+          variant={chartMode === 'normal' ? 'default' : 'outline-solid'}
           size="sm"
           onClick={() => setChartMode('normal')}
           className="h-8 px-3"
@@ -19,7 +19,7 @@ export function ChartModeToggle() {
           Normal
         </Button>
         <Button
-          variant={chartMode === 'running_average' ? 'default' : 'outline'}
+          variant={chartMode === 'running_average' ? 'default' : 'outline-solid'}
           size="sm"
           onClick={() => setChartMode('running_average')}
           className="h-8 px-3"

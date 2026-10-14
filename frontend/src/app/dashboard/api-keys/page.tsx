@@ -90,7 +90,7 @@ export default function ApiKeysPage() {
           </div>
 
           {/* Content */}
-          <div className="bg-white rounded-lg border border-neutral-200 shadow-sm">
+          <div className="bg-white rounded-lg border border-neutral-200 shadow-xs">
             {loading ? (
               <div className="flex items-center justify-center py-16">
                 <Loader2 className="w-8 h-8 animate-spin text-purple-600" />

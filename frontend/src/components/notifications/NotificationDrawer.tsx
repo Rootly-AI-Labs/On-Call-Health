@@ -77,7 +77,7 @@ export function NotificationDrawer() {
       </SheetTrigger>
 
       <SheetContent side="right" className="w-full sm:w-[600px] max-w-[600px] p-0 flex flex-col h-full">
-        <SheetHeader className="border-b border-neutral-200 px-6 py-4 flex-shrink-0">
+        <SheetHeader className="border-b border-neutral-200 px-6 py-4 shrink-0">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-neutral-200">

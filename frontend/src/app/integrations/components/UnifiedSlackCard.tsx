@@ -348,7 +348,7 @@ export function UnifiedSlackCard({
             {/* Permissions Info Box */}
             <div className="bg-amber-50 border border-amber-300 rounded-lg p-4">
               <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
                 <div className="space-y-2 text-sm">
                   <p className="font-semibold text-amber-900">⚠️ Admin Approval May Be Required</p>
                   <p className="text-amber-800">

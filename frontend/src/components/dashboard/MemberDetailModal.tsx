@@ -377,8 +377,8 @@ export function MemberDetailModal({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <h2 className="text-xl font-semibold break-words">{selectedMember?.name}</h2>
-                        <p className="text-neutral-700 break-words text-sm">{selectedMember?.role || selectedMember?.email}</p>
+                        <h2 className="text-xl font-semibold wrap-break-word">{selectedMember?.name}</h2>
+                        <p className="text-neutral-700 wrap-break-word text-sm">{selectedMember?.role || selectedMember?.email}</p>
                       </div>
                     </div>
                   </div>

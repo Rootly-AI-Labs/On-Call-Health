@@ -404,7 +404,7 @@ export function ObjectiveDataCard({
               onClick={() => setViewMode('weekly')}
               className={`px-3 py-0.5 md:py-1.5 text-xs font-medium rounded-md transition-colors min-h-[32px] md:min-h-0 flex-1 ${
                 viewMode === 'weekly'
-                  ? 'bg-white text-neutral-900 shadow-sm'
+                  ? 'bg-white text-neutral-900 shadow-xs'
                   : 'text-neutral-500 hover:text-neutral-700'
               }`}
             >
@@ -414,7 +414,7 @@ export function ObjectiveDataCard({
               onClick={() => setViewMode('daily')}
               className={`px-3 py-0.5 md:py-1.5 text-xs font-medium rounded-md transition-colors min-h-[32px] md:min-h-0 flex-1 ${
                 viewMode === 'daily'
-                  ? 'bg-white text-neutral-900 shadow-sm'
+                  ? 'bg-white text-neutral-900 shadow-xs'
                   : 'text-neutral-500 hover:text-neutral-700'
               }`}
             >

@@ -111,7 +111,7 @@ export function TeamHealthOverview({
   return (
     <>
       {/* OCH Risk Level Tooltip Portal */}
-      <div className="fixed z-[99999] invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-neutral-900 text-white text-xs rounded-lg p-3 w-72 shadow-lg pointer-events-none"
+      <div className="fixed z-99999 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-neutral-900 text-white text-xs rounded-lg p-3 w-72 shadow-lg pointer-events-none"
         id="och-score-tooltip"
         style={{ top: '-200px', left: '-200px' }}>
         <div className="space-y-2">
@@ -124,7 +124,7 @@ export function TeamHealthOverview({
       </div>
 
       {/* Info Icon Rubric Tooltip Portal */}
-      <div className="fixed z-[99999] invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-neutral-900 text-white text-xs rounded-lg p-4 w-80 shadow-lg pointer-events-none"
+      <div className="fixed z-99999 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-neutral-900 text-white text-xs rounded-lg p-4 w-80 shadow-lg pointer-events-none"
         id="health-rubric-tooltip"
         style={{ top: '-200px', left: '-200px' }}>
         <div className="space-y-3">
