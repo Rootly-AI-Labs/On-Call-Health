@@ -218,7 +218,7 @@ export function TopPanel() {
                 }
               }}>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-1.5 sm:gap-2.5 px-1 sm:px-2.5 py-1 sm:py-1.5 rounded-full border border-neutral-200 bg-white hover:bg-purple-100 hover:border-neutral-300 transition-all duration-200 shadow-xs hover:shadow-xs">
+                  <button className="flex items-center gap-1.5 sm:gap-2.5 px-1 sm:px-2.5 py-1 sm:py-1.5 rounded-full border border-neutral-200 bg-white hover:bg-purple-100 hover:border-neutral-300 transition-all duration-200 shadow-xs hover:shadow-sm">
                     <Avatar className="h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 ring-2 ring-white">
                       <AvatarImage src={userInfo.avatar} alt={userInfo.name} />
                       <AvatarFallback className="bg-purple-700 text-white text-xs sm:text-sm font-semibold">
