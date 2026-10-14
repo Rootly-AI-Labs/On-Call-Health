@@ -1,10 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { Chrome, Github, Loader2, type LucideIcon } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
+import { siGithub, siGooglechrome } from "simple-icons"
+import type { SimpleIcon } from "simple-icons"
 
 import { Button } from "@/components/ui/button"
+import { BrandIcon } from "@/components/ui/brand-icon"
 import { cn } from "@/lib/utils"
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
@@ -19,7 +22,7 @@ type ProviderConfig = {
   loadingLabel: string
   compactLoadingLabel: string
   path: string
-  icon?: LucideIcon
+  brandIcon?: SimpleIcon
   imageSrc?: string
   imageAlt?: string
   imageClassName?: string
@@ -34,7 +37,7 @@ const PROVIDERS: ProviderConfig[] = [
     loadingLabel: "Connecting to Google...",
     compactLoadingLabel: "Connecting...",
     path: "/auth/google",
-    icon: Chrome,
+    brandIcon: siGooglechrome,
     className:
       "bg-[#E4E5EB] text-[color:var(--color-blue-15,_#1E1A33)] hover:bg-[#d7d8de]",
   },
@@ -45,7 +48,7 @@ const PROVIDERS: ProviderConfig[] = [
     loadingLabel: "Connecting to GitHub...",
     compactLoadingLabel: "Connecting...",
     path: "/auth/github",
-    icon: Github,
+    brandIcon: siGithub,
     className:
       "bg-[#100F12] text-[color:var(--text-text-contrast,_#FFFFFF)] hover:bg-[#1b1a1e]",
   },
@@ -196,8 +199,8 @@ export function AuthProviderButtons({
                           alt={provider.imageAlt || provider.compactLabel}
                           className={cn("object-contain", provider.imageClassName)}
                         />
-                      ) : provider.icon ? (
-                        <provider.icon className="h-5 w-5 -translate-y-0.5" aria-hidden="true" />
+                      ) : provider.brandIcon ? (
+                        <BrandIcon icon={provider.brandIcon} className="h-5 w-5 -translate-y-0.5" />
                       ) : null}
                     </span>
                     <span>{buttonLabel}</span>
