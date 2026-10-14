@@ -12,7 +12,7 @@ COPY . .
 RUN bun run build
 
 # Production image, copy all the files and run next
-FROM oven/bun:1.4.2 AS runner
+FROM oven/bun:1.4.3 AS runner
 WORKDIR /app
 
 ENV NODE_ENV production

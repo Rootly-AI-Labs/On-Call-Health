@@ -4,8 +4,9 @@ import { useState, useEffect, useRef } from "react"
 import localFont from "next/font/local"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Link2, Brain, Target, Github, Chrome, Loader2, Flame, Linkedin } from "lucide-react";
-import { siX } from "simple-icons"
+import { Link2, Brain, Target, Loader2, Flame } from "lucide-react";
+import { siGithub, siGooglechrome, siX } from "simple-icons"
+import { BrandIcon } from "@/components/ui/brand-icon"
 import Image from "next/image"
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -308,7 +309,7 @@ export default function LandingPage() {
                   </>
                 ) : (
                   <>
-                    <Chrome className="h-6 w-6 -translate-y-0.5" aria-hidden="true" />
+                    <BrandIcon icon={siGooglechrome} className="h-6 w-6 -translate-y-0.5" />
                     Sign in with Google
                   </>
                 )}
@@ -329,7 +330,7 @@ export default function LandingPage() {
                   </>
                 ) : (
                   <>
-                    <Github className="h-6 w-6 -translate-y-0.5" aria-hidden="true" />
+                    <BrandIcon icon={siGithub} className="h-6 w-6 -translate-y-0.5" />
                     Sign in with GitHub
                   </>
                 )}
@@ -597,7 +598,7 @@ export default function LandingPage() {
                 aria-label="Rootly on LinkedIn"
                 className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/20"
               >
-                <Linkedin className="h-6 w-6 text-white" />
+                <BrandIcon icon="linkedin" className="h-6 w-6 text-white" />
               </a>
             </div>
           </div>
