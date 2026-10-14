@@ -3,7 +3,7 @@ fastapi[all]
 uvicorn[standard]
 
 # Database
-sqlalchemy
+sqlalchemy>=2.0,<2.1
 alembic
 psycopg2-binary
 
