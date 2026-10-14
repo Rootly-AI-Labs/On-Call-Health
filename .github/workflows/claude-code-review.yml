@@ -22,7 +22,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run Claude Code Action
-        uses: anthropics/claude-code-action@5ef2e550a465a721f4f45e4a7d3c340c873e1dcc # beta
+        uses: anthropics/claude-code-action@6c690188da61cf16ee7debb28383ba67f02abb4c # beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ github.token }}
@@ -45,7 +45,7 @@ jobs:
           fetch-depth: 0
 
       - name: Claude Auto Review
-        uses: anthropics/claude-code-action@5ef2e550a465a721f4f45e4a7d3c340c873e1dcc # beta
+        uses: anthropics/claude-code-action@6c690188da61cf16ee7debb28383ba67f02abb4c # beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ github.token }}
