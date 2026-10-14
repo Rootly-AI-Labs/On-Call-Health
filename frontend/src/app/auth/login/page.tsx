@@ -13,7 +13,7 @@ export default function LoginPage() {
           <Card className="w-full max-w-lg border border-white/20 bg-transparent text-white shadow-2xl backdrop-blur-xl">
             <CardContent className="p-6 sm:p-8">
               <div className="mb-8 flex flex-col items-center text-center">
-                <div className="flex flex-col items-center -space-y-0.5">
+                <div className="flex flex-col items-center">
                   <div className="flex items-center gap-1.5">
                     <span className="text-2xl font-normal text-white">On-Call Health</span>
                     <Image
@@ -24,7 +24,7 @@ export default function LoginPage() {
                       className="h-8 w-8 brightness-0 invert"
                     />
                   </div>
-                  <div className="mt-1 flex items-center gap-1.5">
+                  <div className="-mt-0.5 flex items-center gap-1.5">
                     <span className="text-xs font-light text-white/80">Powered by</span>
                     <Image
                       src="/images/rootly-ai-logo-white.png"

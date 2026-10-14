@@ -4,26 +4,25 @@
 @custom-variant dark (&:is(.dark *));
 
 @utility container {
+  width: 100%;
   margin-inline: auto;
   padding-inline: 2rem;
-  @media (width >= 40rem) {
-    max-width: 40rem;
-  }
-  @media (width >= 48rem) {
-    max-width: 48rem;
-  }
-  @media (width >= 64rem) {
-    max-width: 64rem;
-  }
-  @media (width >= 80rem) {
-    max-width: 80rem;
-  }
-  @media (width >= 96rem) {
+  max-width: none;
+  @media (width >= 87.5rem) {
     max-width: 1400px;
   }
 }
 
+@layer utilities {
+  .space-y-6-v3 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: calc(var(--spacing) * 6);
+    margin-bottom: 0;
+  }
+}
+
 @theme {
+  --font-display: inherit;
+
   --color-purple-25: #fefcff;
   --color-purple-100: #f6f3ff;
   --color-purple-200: #ece7ff;
@@ -96,10 +95,6 @@
       height: 0;
     }
   }
-}
-
-@theme {
-  --font-display: 'PP Mori', 'sans-serif';
 }
 
 /*

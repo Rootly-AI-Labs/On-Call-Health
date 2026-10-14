@@ -279,7 +279,7 @@ export default function LandingPage() {
             <div className="inline-flex items-center rounded-full border-[0.25px] border-white/50 px-2.5 py-1 text-[9px] tracking-[0.3em] uppercase font-bold text-white/80 mb-2 mt-4 lg:mb-6 translate-x-1 translate-y-1 lg:text-[10px] lg:tracking-[0.35em]">
               <span className="relative top-px">OPEN SOURCE - APACHE LICENSE 2.0</span>
             </div>
-            <h1 className="text-4xl lg:text-6xl tracking-tight mb-6 leading-tight pt-2 lg:pt-10 lg:pb-1 leading-snug relative lg:-top-8">
+            <h1 className="text-4xl lg:text-6xl tracking-tight mb-6 leading-tight pt-2 lg:pt-10 lg:pb-1 leading-snug lg:leading-none relative lg:-top-8">
               Catch exhaustion
               <br />
               before it burns out

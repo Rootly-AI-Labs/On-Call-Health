@@ -289,7 +289,7 @@ export default function MethodologyPage() {
           {/* Main Content */}
           <div className="flex-1 max-w-4xl">
             {/* Goal and Role Section - Redesigned */}
-            <div id="goal-and-role" className="space-y-6 mb-8 scroll-mt-8">
+            <div id="goal-and-role" className="space-y-6-v3 mb-8 scroll-mt-8">
           <h2 className="text-3xl font-semibold text-neutral-900">{content.goalAndRole.title}</h2>
           <p className="text-base text-neutral-700">{content.goalAndRole.description}</p>
 
@@ -405,7 +405,7 @@ export default function MethodologyPage() {
         </Card>
 
         {/* Key Workload Signals */}
-        <div id="workload-signals" className="space-y-6 mb-8 scroll-mt-8">
+        <div id="workload-signals" className="space-y-6-v3 mb-8 scroll-mt-8">
           <h2 className="text-3xl font-semibold text-neutral-900">{content.factors.title}</h2>
           <p className="text-base text-neutral-700" dangerouslySetInnerHTML={{ __html: content.factors.intro }} />
           <p className="text-base text-neutral-700 mb-6" dangerouslySetInnerHTML={{ __html: content.factors.subintro || '' }} />
@@ -457,7 +457,7 @@ export default function MethodologyPage() {
         </div>
 
         {/* Research-Based Enhancements */}
-        <div id="research-enhancements" className="space-y-6 mb-8 scroll-mt-8">
+        <div id="research-enhancements" className="space-y-6-v3 mb-8 scroll-mt-8">
           <h2 className="text-3xl font-semibold text-neutral-900">{content.enhancements.title}</h2>
           <p className="text-base text-neutral-700 mb-6">{content.enhancements.intro}</p>
 
