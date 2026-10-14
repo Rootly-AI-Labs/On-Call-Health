@@ -13,13 +13,6 @@
   }
 }
 
-@layer utilities {
-  .space-y-6-v3 > :not([hidden]) ~ :not([hidden]) {
-    margin-top: calc(var(--spacing) * 6);
-    margin-bottom: 0;
-  }
-}
-
 @theme {
   --font-display: inherit;
 

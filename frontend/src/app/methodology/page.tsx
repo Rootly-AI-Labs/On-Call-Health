@@ -289,7 +289,7 @@ export default function MethodologyPage() {
           {/* Main Content */}
           <div className="flex-1 max-w-4xl">
             {/* Goal and Role Section - Redesigned */}
-            <div id="goal-and-role" className="space-y-6-v3 mb-8 scroll-mt-8">
+            <div id="goal-and-role" className="mb-8 flex flex-col gap-6 scroll-mt-8">
           <h2 className="text-3xl font-semibold text-neutral-900">{content.goalAndRole.title}</h2>
           <p className="text-base text-neutral-700">{content.goalAndRole.description}</p>
 
@@ -310,8 +310,8 @@ export default function MethodologyPage() {
           </Card>
 
           {/* Two Data Types */}
-          <h2 className="text-2xl font-semibold text-neutral-900 mt-8 mb-4">{content.goalAndRole.dataTypes.title}</h2>
-          <p className="text-base text-neutral-700 mb-4">{content.goalAndRole.dataTypes.description}</p>
+          <h2 className="text-2xl font-semibold text-neutral-900">{content.goalAndRole.dataTypes.title}</h2>
+          <p className="text-base text-neutral-700">{content.goalAndRole.dataTypes.description}</p>
           <Card>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -405,10 +405,10 @@ export default function MethodologyPage() {
         </Card>
 
         {/* Key Workload Signals */}
-        <div id="workload-signals" className="space-y-6-v3 mb-8 scroll-mt-8">
+        <div id="workload-signals" className="mb-8 flex flex-col gap-6 scroll-mt-8">
           <h2 className="text-3xl font-semibold text-neutral-900">{content.factors.title}</h2>
           <p className="text-base text-neutral-700" dangerouslySetInnerHTML={{ __html: content.factors.intro }} />
-          <p className="text-base text-neutral-700 mb-6" dangerouslySetInnerHTML={{ __html: content.factors.subintro || '' }} />
+          <p className="text-base text-neutral-700" dangerouslySetInnerHTML={{ __html: content.factors.subintro || '' }} />
 
           {content.factors.items.map((factor, idx) => {
             const IconComponent = iconMap[factor.icon as keyof typeof iconMap]
@@ -441,7 +441,7 @@ export default function MethodologyPage() {
 
           {/* Conclusion - Different design as summary section */}
           {content.factors.conclusion && (
-            <div className="mt-8 bg-linear-to-r from-blue-50 to-neutral-50 border border-blue-200 rounded-xl p-6">
+            <div className="bg-linear-to-r from-blue-50 to-neutral-50 border border-blue-200 rounded-xl p-6">
               <div className="flex items-start gap-4">
                 <div className="bg-blue-100 rounded-full p-3 shrink-0">
                   <Activity className="w-6 h-6 text-blue-600" />
@@ -457,9 +457,9 @@ export default function MethodologyPage() {
         </div>
 
         {/* Research-Based Enhancements */}
-        <div id="research-enhancements" className="space-y-6-v3 mb-8 scroll-mt-8">
+        <div id="research-enhancements" className="mb-8 flex flex-col gap-6 scroll-mt-8">
           <h2 className="text-3xl font-semibold text-neutral-900">{content.enhancements.title}</h2>
-          <p className="text-base text-neutral-700 mb-6">{content.enhancements.intro}</p>
+          <p className="text-base text-neutral-700">{content.enhancements.intro}</p>
 
           {content.enhancements.items.map((item, idx) => {
             const IconComponent = iconMap[item.icon as keyof typeof iconMap]
@@ -508,7 +508,7 @@ export default function MethodologyPage() {
             <CardDescription>{content.dimensions.description}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-6">
+            <div className="flex flex-col gap-6">
               {content.dimensions.items.map((dim, idx) => {
                 const colorClasses: Record<string, { dot: string; bg: string; border: string; text: string }> = {
                   red: { dot: 'bg-red-500', bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-800' },
@@ -531,7 +531,7 @@ export default function MethodologyPage() {
                   </div>
                 )
               })}
-              <div className="mt-6 bg-neutral-100 border border-neutral-200 rounded-lg p-4">
+              <div className="bg-neutral-100 border border-neutral-200 rounded-lg p-4">
                 <p className="text-sm text-neutral-700" dangerouslySetInnerHTML={{ __html: content.dimensions.footer }} />
               </div>
             </div>
