@@ -130,10 +130,10 @@ export function IntegrationsCards({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-2">
+        <div className="flex flex-col gap-2">
           <div className="w-full h-4 bg-neutral-300 rounded-sm"></div>
           <div className="w-3/4 h-4 bg-neutral-300 rounded-sm"></div>
-          <div className="flex space-x-2 mt-4">
+          <div className="flex space-x-2">
             <div className="w-20 h-8 bg-neutral-300 rounded-sm"></div>
             <div className="w-16 h-8 bg-neutral-300 rounded-sm"></div>
           </div>

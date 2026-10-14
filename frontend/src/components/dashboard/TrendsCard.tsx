@@ -101,7 +101,7 @@ export function TrendsCard({
       </CardHeader>
 
       <CardContent className="pb-6">
-        <div className="space-y-3">
+        <div className="flex flex-col gap-3">
           <div className="h-[300px]">
             {loading ? <LoadingState /> : !hasData ? <EmptyState /> : (
               <ResponsiveContainer width="100%" height="100%">
@@ -240,7 +240,7 @@ export function TrendsCard({
           </div>
 
           {/* Legend */}
-          <div className="mt-4 flex items-center justify-start space-x-6 text-sm text-neutral-700">
+          <div className="flex items-center justify-start space-x-6 text-sm text-neutral-700">
             <div className="flex items-center space-x-2">
               <div
                 className="w-3 h-3 rounded-sm"

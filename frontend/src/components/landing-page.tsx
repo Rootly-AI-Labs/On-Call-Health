@@ -216,7 +216,7 @@ export default function LandingPage() {
           <div className="flex items-start justify-between w-full gap-4">
             <div className="flex flex-col items-start -space-y-0.5">
               <div className="flex items-center gap-1.5">
-                <div className="text-xl leading-4 lg:text-3xl font-normal text-black">On-Call Health</div>
+                <div className="text-xl leading-4 lg:text-3xl lg:leading-9 font-normal text-black">On-Call Health</div>
                 <Image
                   src="/images/on-call-health-logo.svg"
                   alt="On-Call Health"

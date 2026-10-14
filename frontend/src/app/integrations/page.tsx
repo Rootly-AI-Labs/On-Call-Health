@@ -2922,7 +2922,7 @@ export default function IntegrationsPage() {
                                     <div className="flex items-start gap-2 w-full min-w-0">
                                       <div className="w-3 h-3 bg-purple-500 rounded-full mt-0.5 shrink-0"></div>
                                       <div className="min-w-0 flex-1">
-                                        <div className="font-medium text-sm sm:text-base leading-tight line-clamp-2 wrap-break-word">
+                                        <div className="font-medium text-sm sm:text-base leading-tight sm:leading-normal line-clamp-2 wrap-break-word">
                                           {dropdownDisplayName}
                                         </div>
                                         {integration.team_name && (
@@ -2953,7 +2953,7 @@ export default function IntegrationsPage() {
                                   <div className="flex items-start gap-2 w-full min-w-0">
                                     <div className="w-3 h-3 bg-green-500 rounded-full mt-0.5 shrink-0"></div>
                                     <div className="min-w-0 flex-1">
-                                      <div className="font-medium text-sm sm:text-base leading-tight line-clamp-2 wrap-break-word">
+                                      <div className="font-medium text-sm sm:text-base leading-tight sm:leading-normal line-clamp-2 wrap-break-word">
                                         {integration.name}
                                       </div>
                                     </div>

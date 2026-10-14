@@ -349,12 +349,12 @@ export function UnifiedSlackCard({
             <div className="bg-amber-50 border border-amber-300 rounded-lg p-4">
               <div className="flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                <div className="space-y-2 text-sm">
+                <div className="flex flex-col gap-2 text-sm">
                   <p className="font-semibold text-amber-900">⚠️ Admin Approval May Be Required</p>
                   <p className="text-amber-800">
                     If you're not a Workspace Admin, clicking "Add to Slack" will send an approval request to your admins.
                   </p>
-                  <div className="mt-3 pt-3 border-t border-amber-300">
+                  <div className="pt-3 border-t border-amber-300">
                     <p className="text-amber-900 font-medium mb-2">Required permissions:</p>
                     <ul className="list-disc list-inside space-y-1 text-amber-800 ml-2 text-xs">
                       <li><strong>Read channel messages</strong> - Analyze communication patterns</li>
@@ -362,7 +362,7 @@ export function UnifiedSlackCard({
                       <li><strong>Send DMs & slash commands</strong> - Deliver wellness surveys</li>
                     </ul>
                   </div>
-                  <div className="mt-3 pt-3 border-t border-amber-300">
+                  <div className="pt-3 border-t border-amber-300">
                     <p className="text-amber-900 font-medium mb-2">After admin approval:</p>
                     <ol className="list-decimal list-inside space-y-1 text-amber-800 ml-2 text-xs">
                       <li>Invite the bot to channels you want analyzed (use <code className="bg-amber-100 px-1 rounded-sm text-xs">/invite @On-Call Health</code>)</li>

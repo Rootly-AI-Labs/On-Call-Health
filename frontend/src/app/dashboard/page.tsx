@@ -1874,8 +1874,8 @@ function DashboardContent() {
               </div>
             </div>
             
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-neutral-700 mb-2 block">
+            <div className="flex flex-col gap-3">
+              <label className="text-sm font-medium text-neutral-700 block">
                 Analysis Time Range
               </label>
 
