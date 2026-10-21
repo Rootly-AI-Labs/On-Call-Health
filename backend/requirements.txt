@@ -18,6 +18,7 @@ argon2-cffi==25.1.0  # Argon2id hashing for API key verification
 # HTTP client for API calls
 httpx
 aiohttp
+certifi>=2026.10.19  # CVE-2026-111943: drops compromised eMudhra intermediates
 
 # Resilience patterns for HTTP client
 tenacity>=9.1.4
